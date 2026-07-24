@@ -4,7 +4,7 @@
 
 当前仓库包含的设计文档和数据整理文件来自本项目开发过程中的分析与导出。iBaye / baye-alpha / baye-fmj-app 作为参考实现和数据来源使用，后续开发必须保留固定提交、文件位置和许可证记录，并避免直接混入不清楚授权的素材。
 
-当前确认的上游许可证边界并不统一：`Baye/baye_c` 目录声明 MIT，`Baye/baye_offline` 目录放置 GPL v2 许可证，技术文档、`.lib`、字体、原版图片和其他二进制资源仍需逐项确认。参考文件默认通过 `scripts/fetch-baye-reference.ps1` 下载到不受 Git 跟踪的 `.reference/`。
+当前确认的上游许可证边界并不统一：`Baye/baye_c` 目录声明 MIT，`Baye/baye_offline` 目录放置 GPL v2 许可证，技术文档、`.lib`、字体、原版图片和其他二进制资源仍需逐项确认。许可明确且频繁查阅的 C 规则与结构源码已筛选到 `references/vendor/baye-c-core/`，保留原许可证、固定提交和逐文件哈希；其余参考文件通过脚本下载到不受 Git 跟踪的 `.reference/`。
 
 计划中的长期实现：
 
@@ -19,7 +19,7 @@
 
 ## Baye C core
 
-`tools/reference/baye-battle-oracle.c` and the corresponding TypeScript compatibility formulas are derived from `Baye/baye_c` in `erduoniba/baye-fmj-app`.
+`references/vendor/baye-c-core/`, `tools/reference/baye-battle-oracle.c` and the corresponding TypeScript compatibility formulas are derived from `Baye/baye_c` in `erduoniba/baye-fmj-app` at commit `60c41ea2d9932b295833ece7004394497610596a`.
 
 The MIT License (MIT)
 

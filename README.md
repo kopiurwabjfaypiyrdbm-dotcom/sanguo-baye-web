@@ -42,13 +42,15 @@ npm run dev
 
 ## 获取复刻参考
 
-参考源固定到 `references/upstream-lock.json` 中的上游提交，并按需获取到被 Git 忽略的 `.reference/`：
+常用的 MIT C 规则与结构源码已筛选到 `references/vendor/baye-c-core/`，协作者普通拉取后即可开展对比，不依赖任何个人电脑上的外部路径。逐文件哈希和来源提交由 `npm run reference:check` 验证。
+
+参考源固定到 `references/upstream-lock.json` 中的上游提交。筛选范围以外的资料可按需获取到被 Git 忽略的 `.reference/`：
 
 ```powershell
-.\scripts\fetch-baye-reference.ps1
+npm run reference:setup
 ```
 
-规则差异、界面采集和来源边界记录在 `references/`。不要直接把上游 `.lib`、字体、WASM 或图片复制进主源码目录。
+需要完整 C 工程和技术文档时执行 `npm run reference:setup:full`；GPL 离线运行壳必须通过 `npm run reference:setup:offline` 显式获取。规则差异、界面采集和来源边界记录在 `references/`。不要直接把上游 `.lib`、字体、WASM 或图片复制进主源码目录。
 
 对于不含 Git 元数据的本地 ZIP 快照，使用哈希清单验证本阶段权威文件：
 
@@ -63,6 +65,8 @@ npx vite-node scripts/generate-bundled-scenarios.ts <path-to-Baye>
 ```
 
 生成器会先校验原始库 SHA-256，只输出城市、道路、人物和时期等解析记录，不复制二进制资源、美术或字体。
+
+完整的首次拉取、差分验证和上游更新流程见 `CONTRIBUTING.md`。
 
 ## 技术方向
 

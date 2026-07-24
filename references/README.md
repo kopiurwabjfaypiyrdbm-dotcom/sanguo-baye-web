@@ -2,11 +2,19 @@
 
 本目录记录步步高电子词典版《三国霸业》复刻工作的事实来源、版本锁定、差异状态和来源边界。
 
-上游代码或原版二进制不会直接复制进本仓库。协作者使用脚本将固定版本获取到被 Git 忽略的 `.reference/`：
+常用的 MIT C 规则与结构源码已按允许清单固定在 `vendor/baye-c-core/`，用于无需额外下载的日常差分开发。它保留许可证、固定提交和逐文件 SHA-256，并由以下命令校验：
 
 ```powershell
-.\scripts\fetch-baye-reference.ps1
+npm run reference:check
 ```
+
+允许清单之外的上游代码或原版二进制不会直接复制进本仓库。协作者使用跨平台脚本将固定版本获取到被 Git 忽略的 `.reference/`：
+
+```powershell
+npm run reference:setup
+```
+
+完整 C 工程与技术文档使用 `npm run reference:setup:full`。PowerShell 兼容入口 `scripts/fetch-baye-reference.ps1` 仍然保留。
 
 如果参考仓库由 ZIP 或其他本地方式提供，可先校验本阶段使用的权威文件：
 
@@ -19,7 +27,7 @@
 需要研究离线 Web 运行壳时可以显式加入 GPL 运行时文件：
 
 ```powershell
-.\scripts\fetch-baye-reference.ps1 -IncludeOfflineRuntime
+npm run reference:setup:offline
 ```
 
 默认参考范围：
@@ -35,6 +43,7 @@
 3. `.lib`、字体、头像、地图块和原版截图默认只作本地研究，不进入正式资产。
 4. 复制上游代码前先查看 `provenance/code.md`；不同目录的许可证并不一致。
 5. 更新上游版本必须修改 `upstream-lock.json`，并重新执行所有差分验证。
+6. `vendor/baye-c-core/` 不能手工扩充；更新时使用 `npm run reference:sync-core` 并审查生成差异。
 
 ## 文档索引
 
@@ -45,3 +54,4 @@
 - `screen-catalog.md`：原版界面采集模板。
 - `fixtures/`：可再生的最小 RNG、战斗与 `.lib` 结构参考输出。
 - `provenance/`：代码、数据和美术来源边界。
+- `vendor/baye-c-core/`：已获准入库的 MIT C 核心只读基线。
