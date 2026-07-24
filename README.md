@@ -28,6 +28,12 @@
 
 兼容范围、随机数策略和允许的现代化差异见 `docs/design/compatibility-policy.md`。兼容层现已包含原版 `.lib` 的安全容器解析器；原始资源仍只在本地使用，仓库只保存结构元数据和哈希证据。
 
+## 项目交接
+
+新协作者应先阅读 [`docs/HANDOFF.md`](docs/HANDOFF.md)。其中集中记录了当前可玩范围、关键架构、未完成系统、推荐接手重点、参考资料边界、存档注意事项和已知易踩点。
+
+协作规范与参考基线更新方式见 [`CONTRIBUTING.md`](CONTRIBUTING.md)，自动化协作者还必须遵循 [`AGENTS.md`](AGENTS.md)。状态发生实质变化时，应同步更新交接文档，避免仅依赖聊天记录或个人环境。
+
 ## 本地运行
 
 要求 Node.js 20 或更高版本。
@@ -38,7 +44,7 @@ npm run check
 npm run dev
 ```
 
-`npm run check` 会依次运行全部 Vitest 测试和生产构建。
+`npm run check` 会依次校验已入库参考基线、运行全部 Vitest 测试并执行生产构建。
 
 ## 获取复刻参考
 
@@ -80,7 +86,9 @@ npx vite-node scripts/generate-bundled-scenarios.ts <path-to-Baye>
 
 ```text
 data/source/       整理出的原始/编辑用数据表
+docs/HANDOFF.md    当前状态、接手入口和已知风险
 docs/design/       设计文档
+references/vendor/ 已筛选并锁定的上游只读参考源码
 src/core/          状态、校验、战斗、经济、回合和 AI
 src/compat/baye/   经过独立参考输出验证的原版兼容算法
 src/data/          CSV、原版剧本到领域状态的转换与校验
