@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "subject": "baye-web-port-rand-r",
+  "authority": {
+    "repository": "https://github.com/erduoniba/baye-fmj-app.git",
+    "expectedCommit": "60c41ea2d9932b295833ece7004394497610596a",
+    "snapshotCommitVerified": false,
+    "limitation": "The supplied ZIP snapshot has no Git metadata. Its WebAssembly output verifies the web port rand_r path, not the BBK SysRand implementation."
+  },
+  "generator": {
+    "command": "node scripts/collect-baye-rng-reference.mjs --source <path-to-Baye>",
+    "sourceEntry": "Baye/baye_c/src/comIn.c:gam_srand/gam_rand",
+    "runtimeExports": [
+      "bayeSRand",
+      "bayeRand",
+      "bayeGetSeed"
+    ],
+    "files": {
+      "Baye/baye_c/src/comIn.c": "8891070a4a8aca9ae528817b57edb842dfbd84265afca555fac9cf85e1ece1c4",
+      "Baye/baye_offline/js/baye.v2.js": "5d9861f7a3b57ebf0cc56ee8f22773c52c90e9c3573bb280c147f40ec5dfe14d",
+      "Baye/baye_offline/js/baye.v2.wasm": "7f23ae5dbe9401fb1a02748f2f3933437734a3bb7736237e47ddd09cec6840a6"
+    }
+  },
+  "sequences": [
+    {
+      "seed": 0,
+      "draws": [
+        {
+          "value": 27726646,
+          "seedAfter": 12345
+        },
+        {
+          "value": 798103066,
+          "seedAfter": 3554416254
+        },
+        {
+          "value": 662333491,
+          "seedAfter": 2802067423
+        },
+        {
+          "value": 2673421,
+          "seedAfter": 3596950572
+        },
+        {
+          "value": 404012694,
+          "seedAfter": 229283573
+        },
+        {
+          "value": 863480105,
+          "seedAfter": 3256818826
+        },
+        {
+          "value": 816862919,
+          "seedAfter": 1051550459
+        },
+        {
+          "value": 563091060,
+          "seedAfter": 3441282840
+        }
+      ]
+    },
+    {
+      "seed": 1,
+      "draws": [
+        {
+          "value": 1993684161,
+          "seedAfter": 1103527590
+        },
+        {
+          "value": 1388323688,
+          "seedAfter": 2524885223
+        },
+        {
+          "value": 65314989,
+          "seedAfter": 662824084
+        },
+        {
+          "value": 717128328,
+          "seedAfter": 3295386429
+        },
+        {
+          "value": 203192931,
+          "seedAfter": 4182499122
+        },
+        {
+          "value": 1738921823,
+          "seedAfter": 2516284547
+        },
+        {
+          "value": 1090507796,
+          "seedAfter": 3655513600
+        },
+        {
+          "value": 1102253002,
+          "seedAfter": 2633739833
+        }
+      ]
+    },
+    {
+      "seed": 12345,
+      "draws": [
+        {
+          "value": 798103066,
+          "seedAfter": 3554416254
+        },
+        {
+          "value": 662333491,
+          "seedAfter": 2802067423
+        },
+        {
+          "value": 2673421,
+          "seedAfter": 3596950572
+        },
+        {
+          "value": 404012694,
+          "seedAfter": 229283573
+        },
+        {
+          "value": 863480105,
+          "seedAfter": 3256818826
+        },
+        {
+          "value": 816862919,
+          "seedAfter": 1051550459
+        },
+        {
+          "value": 563091060,
+          "seedAfter": 3441282840
+        },
+        {
+          "value": 1077328415,
+          "seedAfter": 2941955441
+        }
+      ]
+    },
+    {
+      "seed": 2147483647,
+      "draws": [
+        {
+          "value": 71252599,
+          "seedAfter": 1043980748
+        },
+        {
+          "value": 1371649005,
+          "seedAfter": 2436463637
+        },
+        {
+          "value": 1703833040,
+          "seedAfter": 2793827114
+        },
+        {
+          "value": 1141897319,
+          "seedAfter": 1751031067
+        },
+        {
+          "value": 80520891,
+          "seedAfter": 2718518968
+        },
+        {
+          "value": 1739046349,
+          "seedAfter": 1849869457
+        },
+        {
+          "value": 1529810928,
+          "seedAfter": 595070966
+        },
+        {
+          "value": 1636318823,
+          "seedAfter": 2101342199
+        }
+      ]
+    },
+    {
+      "seed": 4294967295,
+      "draws": [
+        {
+          "value": 1077357429,
+          "seedAfter": 3191464396
+        },
+        {
+          "value": 365535983,
+          "seedAfter": 288979989
+        },
+        {
+          "value": 562461906,
+          "seedAfter": 646343466
+        },
+        {
+          "value": 518501,
+          "seedAfter": 3898514715
+        },
+        {
+          "value": 1086633913,
+          "seedAfter": 571035320
+        },
+        {
+          "value": 598715599,
+          "seedAfter": 3997353105
+        },
+        {
+          "value": 522657522,
+          "seedAfter": 2742554614
+        },
+        {
+          "value": 629157733,
+          "seedAfter": 4248825847
+        }
+      ]
+    }
+  ]
+}

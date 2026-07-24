@@ -1,0 +1,236 @@
+{
+  "schemaVersion": 1,
+  "subject": "baye-packed-structure-layout",
+  "authority": {
+    "repository": "https://github.com/erduoniba/baye-fmj-app.git",
+    "expectedCommit": "60c41ea2d9932b295833ece7004394497610596a",
+    "snapshotCommitVerified": false
+  },
+  "generator": {
+    "command": ".\\scripts\\collect-baye-structure-reference.ps1 -SourcePath <path-to-Baye>",
+    "sourceEntry": "Baye/baye_c/src/inc/dictsys.h; Baye/baye_c/src/baye/attribute.h",
+    "sourceSha256": {
+      "Baye/baye_c/src/inc/dictsys.h": "4e8767ef7e29e2fb586a6e5b30181a15d77f43db2c3e9c0cb5c068531f9c3b02",
+      "Baye/baye_c/src/baye/attribute.h": "d1e0a687544d16355e9fedc4533fa58c76abc5604ce9ec09e26049d5af8a71e5"
+    },
+    "probeSha256": "0e69f1aca02abeb43e91c6f87e38d8c1d12f26ba9c0463562f139537ab39fbdd",
+    "compiler": "gcc.exe (GCC) 14.2.0"
+  },
+  "results": {
+    "PersonType": {
+      "size": 19,
+      "fields": [
+        {
+          "name": "OldBelong",
+          "offset": 0,
+          "size": 2
+        },
+        {
+          "name": "Belong",
+          "offset": 2,
+          "size": 2
+        },
+        {
+          "name": "Level",
+          "offset": 4,
+          "size": 1
+        },
+        {
+          "name": "Force",
+          "offset": 5,
+          "size": 1
+        },
+        {
+          "name": "IQ",
+          "offset": 6,
+          "size": 1
+        },
+        {
+          "name": "Devotion",
+          "offset": 7,
+          "size": 1
+        },
+        {
+          "name": "Character",
+          "offset": 8,
+          "size": 1
+        },
+        {
+          "name": "Experience",
+          "offset": 9,
+          "size": 1
+        },
+        {
+          "name": "Thew",
+          "offset": 10,
+          "size": 1
+        },
+        {
+          "name": "ArmsType",
+          "offset": 11,
+          "size": 1
+        },
+        {
+          "name": "Arms",
+          "offset": 12,
+          "size": 2
+        },
+        {
+          "name": "Equip",
+          "offset": 14,
+          "size": 4
+        },
+        {
+          "name": "Age",
+          "offset": 18,
+          "size": 1
+        }
+      ]
+    },
+    "CityType": {
+      "size": 37,
+      "fields": [
+        {
+          "name": "State",
+          "offset": 0,
+          "size": 1
+        },
+        {
+          "name": "Belong",
+          "offset": 1,
+          "size": 2
+        },
+        {
+          "name": "SatrapId",
+          "offset": 3,
+          "size": 2
+        },
+        {
+          "name": "FarmingLimit",
+          "offset": 5,
+          "size": 2
+        },
+        {
+          "name": "Farming",
+          "offset": 7,
+          "size": 2
+        },
+        {
+          "name": "CommerceLimit",
+          "offset": 9,
+          "size": 2
+        },
+        {
+          "name": "Commerce",
+          "offset": 11,
+          "size": 2
+        },
+        {
+          "name": "PeopleDevotion",
+          "offset": 13,
+          "size": 1
+        },
+        {
+          "name": "AvoidCalamity",
+          "offset": 14,
+          "size": 1
+        },
+        {
+          "name": "PopulationLimit",
+          "offset": 15,
+          "size": 4
+        },
+        {
+          "name": "Population",
+          "offset": 19,
+          "size": 4
+        },
+        {
+          "name": "Money",
+          "offset": 23,
+          "size": 2
+        },
+        {
+          "name": "Food",
+          "offset": 25,
+          "size": 2
+        },
+        {
+          "name": "MothballArms",
+          "offset": 27,
+          "size": 2
+        },
+        {
+          "name": "PersonQueue",
+          "offset": 29,
+          "size": 2
+        },
+        {
+          "name": "Persons",
+          "offset": 31,
+          "size": 2
+        },
+        {
+          "name": "ToolQueue",
+          "offset": 33,
+          "size": 2
+        },
+        {
+          "name": "Tools",
+          "offset": 35,
+          "size": 2
+        }
+      ]
+    },
+    "GOODS": {
+      "size": 66,
+      "fields": [
+        {
+          "name": "idx_",
+          "offset": 0,
+          "size": 1
+        },
+        {
+          "name": "useflag",
+          "offset": 1,
+          "size": 1
+        },
+        {
+          "name": "atRange",
+          "offset": 2,
+          "size": 30
+        },
+        {
+          "name": "changeAttackRange",
+          "offset": 32,
+          "size": 1
+        },
+        {
+          "name": "reserved",
+          "offset": 33,
+          "size": 29
+        },
+        {
+          "name": "at",
+          "offset": 62,
+          "size": 1
+        },
+        {
+          "name": "iq",
+          "offset": 63,
+          "size": 1
+        },
+        {
+          "name": "move",
+          "offset": 64,
+          "size": 1
+        },
+        {
+          "name": "arm",
+          "offset": 65,
+          "size": 1
+        }
+      ]
+    }
+  }
+}

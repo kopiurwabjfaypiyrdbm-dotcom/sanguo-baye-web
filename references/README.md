@@ -8,6 +8,14 @@
 .\scripts\fetch-baye-reference.ps1
 ```
 
+如果参考仓库由 ZIP 或其他本地方式提供，可先校验本阶段使用的权威文件：
+
+```powershell
+.\scripts\verify-baye-local-reference.ps1 -SourcePath <path-to-Baye>
+```
+
+`source-manifest.json` 保存关键文件哈希。当前清单来自不含 `.git` 的用户快照，因此只能证明这些文件内容一致，不能证明快照对应锁文件中的提交；不得把两种验证混写。
+
 需要研究离线 Web 运行壳时可以显式加入 GPL 运行时文件：
 
 ```powershell
@@ -31,6 +39,9 @@
 ## 文档索引
 
 - `architecture-map.md`：上游三层架构与本项目对应关系。
+- `source-manifest.json`：本阶段权威文件与内容哈希。
+- `data-structure-map.md`：人物、城市、道具和剧本装载的字段/宽度/哨兵映射。
 - `parity-matrix.md`：规则和行为一致性状态。
 - `screen-catalog.md`：原版界面采集模板。
+- `fixtures/`：可再生的最小 RNG 与战斗参考输出。
 - `provenance/`：代码、数据和美术来源边界。

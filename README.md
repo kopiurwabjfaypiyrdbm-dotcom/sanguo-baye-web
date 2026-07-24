@@ -23,6 +23,8 @@
 
 当前 React 页面仍是静态布局，Phaser 主地图和操作面板将在下一阶段接入。暂不包含手动战斗棋盘。
 
+原版兼容证据已开始与临时玩法层分离：`src/compat/baye/` 包含经过参考样本验证的 Web 移植 RNG、战术攻防/伤害和战略自动战斗公式，但尚未接管 `src/core/` 的演示流程。范围和剩余不确定性见 `references/parity-matrix.md`。
+
 ## 本地运行
 
 要求 Node.js 20 或更高版本。
@@ -45,6 +47,12 @@ npm run dev
 
 规则差异、界面采集和来源边界记录在 `references/`。不要直接把上游 `.lib`、字体、WASM 或图片复制进主源码目录。
 
+对于不含 Git 元数据的本地 ZIP 快照，使用哈希清单验证本阶段权威文件：
+
+```powershell
+.\scripts\verify-baye-local-reference.ps1 -SourcePath <path-to-Baye>
+```
+
 ## 技术方向
 
 - Vite + TypeScript
@@ -59,6 +67,7 @@ npm run dev
 data/source/       整理出的原始/编辑用数据表
 docs/design/       设计文档
 src/core/          状态、校验、战斗、经济、回合和 AI
+src/compat/baye/   经过独立参考输出验证的原版兼容算法
 src/data/          数据导入与校验
 src/game/          Phaser 场景与地图渲染
 src/ui/            React UI

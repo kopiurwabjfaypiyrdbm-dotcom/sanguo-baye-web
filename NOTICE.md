@@ -16,3 +16,28 @@
 规则还原结论、视觉采集和资产来源记录见 `references/`。正式发布前需要再次审计所有第三方代码、数据、美术、字体和音频。
 
 在公开发布或引入美术、音频、原版资源前，需要再次确认对应资源的授权边界。
+
+## Baye C core
+
+`tools/reference/baye-battle-oracle.c` and the corresponding TypeScript compatibility formulas are derived from `Baye/baye_c` in `erduoniba/baye-fmj-app`.
+
+The MIT License (MIT)
+
+Copyright (c) 2015 loongw
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
