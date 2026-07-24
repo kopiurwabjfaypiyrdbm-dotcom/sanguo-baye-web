@@ -7,30 +7,41 @@ import { parseSave, serializeSave } from '../core/saveGame';
 import { loadFromSlot, saveToSlot, slotKey, type SaveSlotId } from '../core/saveStorage';
 import { advanceTurn } from '../core/turn';
 import type { GameLog, GameState } from '../core/types';
-import { createLegacyPeriodGameState, selectPlayerFaction } from '../data/legacyScenario';
+import {
+  createBundledScenario,
+  getScenarioOptions,
+  getScenarioRulers,
+  type BundledPeriodId,
+} from '../data/bundledScenarios';
 import { createGameBridge } from '../game/events';
 import { createStrategyMap, type StrategyMapController } from '../game/createGame';
+import { RulerScreen, ScenarioScreen, TitleScreen } from './CampaignSetup';
 import { CityPanel } from './CityPanel';
+
+type AppScreen = 'title' | 'scenario' | 'ruler' | 'game';
+const scenarioOptions = getScenarioOptions();
 
 export function App() {
   const initialGame = useMemo(loadInitialGame, []);
   const [state, setState] = useState<GameState>(initialGame.state);
+  const [screen, setScreen] = useState<AppScreen>('title');
+  const [hasContinue, setHasContinue] = useState(initialGame.hasAutoSave);
+  const [selectedPeriod, setSelectedPeriod] = useState<BundledPeriodId>(1);
+  const [selectedRulerIndex, setSelectedRulerIndex] = useState(() => getScenarioRulers(1)[0].sourceIndex);
   const [selectedCityId, setSelectedCityId] = useState(() => firstOwnedCityId(initialGame.state));
   const [sourceLabel, setSourceLabel] = useState(initialGame.sourceLabel);
   const [selectedSaveSlot, setSelectedSaveSlot] = useState<Exclude<SaveSlotId, 'auto'>>('1');
-  const [loadError, setLoadError] = useState<string>();
   const [feedback, setFeedback] = useState<{ kind: 'success' | 'error'; message: string }>();
   const [monthSummary, setMonthSummary] = useState<string[]>([]);
   const [isResolving, setIsResolving] = useState(false);
   const mapHost = useRef<HTMLDivElement>(null);
   const mapController = useRef<StrategyMapController | null>(null);
   const bridge = useMemo(() => createGameBridge(), []);
-  const campaignStarted = state.campaignStarted;
 
   useEffect(() => bridge.on('city:selected', ({ cityId }) => setSelectedCityId(cityId)), [bridge]);
 
   useEffect(() => {
-    if (!mapHost.current) return;
+    if (screen !== 'game' || !mapHost.current) return;
     mapController.current = createStrategyMap(mapHost.current, bridge, state, selectedCityId);
     return () => {
       mapController.current?.destroy();
@@ -38,43 +49,60 @@ export function App() {
     };
     // Phaser owns its canvas lifecycle; state updates flow through the controller below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bridge]);
+  }, [bridge, screen]);
 
   useEffect(() => {
     mapController.current?.update(state, selectedCityId);
   }, [state, selectedCityId]);
 
   useEffect(() => {
-    if (!state.campaignStarted) return;
+    if (screen !== 'game' || !state.campaignStarted) return;
     try {
       saveToSlot(window.localStorage, 'auto', state, `${sourceLabel} · 自动存档`);
+      setHasContinue(true);
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? `自动存档失败：${error.message}` : '自动存档失败。' });
     }
-  }, [state, sourceLabel]);
+  }, [screen, state, sourceLabel]);
 
-  async function loadOriginalLibrary(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    try {
-      const next = createLegacyPeriodGameState(new Uint8Array(await file.arrayBuffer()), 1);
-      setState(next);
-      setSelectedCityId(firstOwnedCityId(next));
-      setSourceLabel(`原版时期 1 · ${file.name} · 38 城`);
-      setLoadError(undefined);
-      setFeedback({ kind: 'success', message: '原版时期 1 已载入，可以开始下令。' });
-    } catch (error) {
-      setLoadError(error instanceof Error ? error.message : '无法读取该资源库。');
-    } finally {
-      event.target.value = '';
-    }
+  function beginNewGame() {
+    setFeedback(undefined);
+    setScreen('scenario');
   }
 
-  function changePlayerFaction(event: ChangeEvent<HTMLSelectElement>) {
-    const next = selectPlayerFaction(state, event.target.value);
+  function chooseScenario(period: BundledPeriodId) {
+    const rulers = getScenarioRulers(period);
+    setSelectedPeriod(period);
+    setSelectedRulerIndex(rulers[0].sourceIndex);
+    setScreen('ruler');
+  }
+
+  function startCampaign() {
+    const next = createBundledScenario(selectedPeriod, selectedRulerIndex);
+    const label = sourceLabelForState(next);
     setState(next);
     setSelectedCityId(firstOwnedCityId(next));
-    setFeedback({ kind: 'success', message: `现在扮演${next.factions[next.playerFactionId].name}。` });
+    setSourceLabel(label);
+    setMonthSummary([]);
+    setFeedback({ kind: 'success', message: `已选择${next.factions[next.playerFactionId].name}，霸业由此开始。` });
+    try {
+      saveToSlot(window.localStorage, 'auto', next, `${label} · 自动存档`);
+      setHasContinue(true);
+    } catch {
+      // Starting a campaign remains possible even if browser storage is unavailable.
+    }
+    setScreen('game');
+  }
+
+  function continueCampaign() {
+    try {
+      const envelope = loadFromSlot(window.localStorage, 'auto');
+      if (!envelope) throw new Error('尚无自动存档');
+      applyLoadedState(envelope.state, envelope.label);
+    } catch (error) {
+      setHasContinue(false);
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '自动存档载入失败。' });
+    }
   }
 
   function saveManualSlot() {
@@ -102,9 +130,9 @@ export function App() {
     setState(next);
     setSelectedCityId(firstOwnedCityId(next));
     setSourceLabel(sourceLabelForState(next));
-    setLoadError(undefined);
     setMonthSummary([]);
     setFeedback({ kind: 'success', message: label ? `已载入：${label}` : '存档已载入。' });
+    setScreen('game');
   }
 
   function exportCurrentSave() {
@@ -173,6 +201,28 @@ export function App() {
     }
   }
 
+  if (screen === 'title') {
+    return <TitleScreen hasContinue={hasContinue} onNewGame={beginNewGame} onContinue={continueCampaign} />;
+  }
+
+  if (screen === 'scenario') {
+    return <ScenarioScreen scenarios={scenarioOptions} onSelect={chooseScenario} onBack={() => setScreen('title')} />;
+  }
+
+  if (screen === 'ruler') {
+    const scenario = scenarioOptions.find((candidate) => candidate.period === selectedPeriod)!;
+    return (
+      <RulerScreen
+        scenario={scenario}
+        rulers={getScenarioRulers(selectedPeriod)}
+        selectedRulerIndex={selectedRulerIndex}
+        onSelectRuler={setSelectedRulerIndex}
+        onStart={startCampaign}
+        onBack={() => setScreen('scenario')}
+      />
+    );
+  }
+
   return (
     <main className="app-shell">
       <header className="top-bar">
@@ -199,23 +249,7 @@ export function App() {
               <input type="file" accept="application/json,.json" onChange={importSaveFile} />
             </label>
           </div>
-          <label className="file-action">
-            载入原版资料
-            <input type="file" accept=".lib,application/octet-stream" onChange={loadOriginalLibrary} />
-          </label>
-          <label className="ruler-select">
-            <span>扮演君主</span>
-            <select
-              value={state.playerFactionId}
-              onChange={changePlayerFaction}
-              disabled={campaignStarted || isResolving}
-              title={campaignStarted ? '战役开始后不能切换君主' : '选择本局扮演的君主'}
-            >
-              {state.factionOrder.map((factionId) => (
-                <option value={factionId} key={factionId}>{state.factions[factionId].name}</option>
-              ))}
-            </select>
-          </label>
+          <button type="button" className="return-title-action" onClick={() => setScreen('title')}>返回标题</button>
           <button type="button" className="primary-action" disabled={isResolving || state.phase === 'ended'} onClick={endMonth}>
             {isResolving ? '推演中…' : '结束本月'}
           </button>
@@ -228,7 +262,6 @@ export function App() {
           <span>{Object.keys(state.cities).length} 城 / {countCurrentOfficers(state)} 名当前人物</span>
         </div>
         <div className="map-host" ref={mapHost} />
-        {loadError && <div className="load-error" role="alert">载入失败：{loadError}</div>}
         {feedback && (
           <div className={`action-feedback ${feedback.kind}`} role={feedback.kind === 'error' ? 'alert' : 'status'}>
             {feedback.message}
@@ -303,21 +336,24 @@ function countCurrentOfficers(state: GameState): number {
   return Object.values(state.officers).filter((officer) => officer.status !== 'hidden').length;
 }
 
-function loadInitialGame(): { state: GameState; sourceLabel: string } {
+function loadInitialGame(): { state: GameState; sourceLabel: string; hasAutoSave: boolean } {
   try {
     const envelope = loadFromSlot(window.localStorage, 'auto');
-    if (envelope) return { state: envelope.state, sourceLabel: sourceLabelForState(envelope.state) };
+    if (envelope) return { state: envelope.state, sourceLabel: sourceLabelForState(envelope.state), hasAutoSave: true };
   } catch {
     // A damaged automatic save must never prevent the game from starting.
   }
   const state = createSampleState();
-  return { state, sourceLabel: sourceLabelForState(state) };
+  return { state, sourceLabel: sourceLabelForState(state), hasAutoSave: false };
 }
 
 function sourceLabelForState(state: GameState): string {
-  return state.scenario?.source === 'baye-legacy'
-    ? `原版时期 ${state.scenario.period ?? 1} · 已解析存档 · ${Object.keys(state.cities).length} 城`
-    : `内置演示剧本 · ${Object.keys(state.cities).length} 城`;
+  if (state.scenario?.source === 'baye-legacy') {
+    const period = state.scenario.period as BundledPeriodId | undefined;
+    const title = scenarioOptions.find((scenario) => scenario.period === period)?.title ?? `时期 ${period ?? 1}`;
+    return `${title} · ${Object.keys(state.cities).length} 城`;
+  }
+  return `内置演示剧本 · ${Object.keys(state.cities).length} 城`;
 }
 
 function summarizeMonth(logs: GameLog[]): string[] {

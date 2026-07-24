@@ -166,7 +166,7 @@ export function createGameStateFromLegacyPeriod(
       {
         id: 'log-001',
         kind: 'system',
-        message: `已从本地原版资料载入时期 ${period.period}：${Object.keys(cities).length} 城、${assignedPersonIndexes.size} 名当前人物，另保留 ${period.persons.length - assignedPersonIndexes.size} 名未登场人物。`,
+        message: `已载入原版时期 ${period.period}：${Object.keys(cities).length} 城、${assignedPersonIndexes.size} 名当前人物，另保留 ${period.persons.length - assignedPersonIndexes.size} 名未登场人物。`,
         turn: 1,
       },
     ],
