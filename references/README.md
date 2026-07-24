@@ -8,13 +8,15 @@
 npm run reference:check
 ```
 
-允许清单之外的上游代码或原版二进制不会直接复制进本仓库。协作者使用跨平台脚本将固定版本获取到被 Git 忽略的 `.reference/`：
+普通开发无需初始化额外参考。只有允许清单不足时，才从以下互斥级别中选择一个，把固定版本获取到被 Git 忽略的 `.reference/`：
 
 ```powershell
-npm run reference:setup
+npm run reference:setup          # 少量补充参考
+npm run reference:setup:full     # 完整 C 工程与技术文档
+npm run reference:setup:offline  # 完整参考再加 GPL 离线运行壳
 ```
 
-完整 C 工程与技术文档使用 `npm run reference:setup:full`。PowerShell 兼容入口 `scripts/fetch-baye-reference.ps1` 仍然保留。
+这些命令不能顺序执行，需求更高的级别已经包含较低级别。PowerShell 兼容入口 `scripts/fetch-baye-reference.ps1` 仍然保留。
 
 如果参考仓库由 ZIP 或其他本地方式提供，可先校验本阶段使用的权威文件：
 
@@ -24,17 +26,11 @@ npm run reference:setup
 
 `source-manifest.json` 保存关键文件哈希。当前清单来自不含 `.git` 的用户快照，因此只能证明这些文件内容一致，不能证明快照对应锁文件中的提交；不得把两种验证混写。
 
-需要研究离线 Web 运行壳时可以显式加入 GPL 运行时文件：
-
-```powershell
-npm run reference:setup:offline
-```
-
-默认参考范围：
+参考资料的角色：
 
 - `Baye/baye_c`：C 语言多平台移植核心，规则解析的首要事实源。
 - `Baye/baye_doc/_sources`：JavaScript 数据绑定、钩子和 MOD API 文档。
-- `Baye/baye_offline` 中少量说明及桥接文件：Web/WASM 适配参考。
+- `Baye/baye_offline`：只在显式选择 offline 级别时获取的 GPL Web/WASM 适配参考。
 
 ## 协作原则
 

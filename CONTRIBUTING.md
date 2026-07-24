@@ -3,20 +3,31 @@
 ## 首次拉取
 
 ```bash
-npm install
-npm run reference:check
+npm ci
 npm run check
 ```
 
-常用的 MIT C 核心已经筛选到 `references/vendor/baye-c-core/`，普通功能开发不依赖任何个人电脑上的外部目录。
+`npm ci` 只在首次拉取或锁文件变化后执行。`npm run check` 用于首次接手和提交前验证，不是常驻服务；其中 Vitest 会短暂启动并行工作进程，任务完成后自动退出。
 
-需要查看未入库的平台适配或技术资料时，再执行：
+日常开发运行一个服务器即可：
 
 ```bash
-npm run reference:setup
+npm run dev
 ```
 
-该命令按 `references/upstream-lock.json` 获取固定提交和基线需要的少量补充资料，放到被 Git 忽略的 `.reference/baye-fmj-app/`。完整 C 工程与技术文档可用 `npm run reference:setup:full` 获取；GPL 离线运行壳必须显式执行 `npm run reference:setup:offline`。
+不要在多个终端重复启动开发服务器。Vite 会持续监视整个仓库，应在原终端按 `Ctrl+C` 结束；配置已启用严格端口检查，避免端口被占用时悄悄产生第二个实例。
+
+常用的 MIT C 核心已经筛选到 `references/vendor/baye-c-core/`，普通功能开发不依赖任何个人电脑上的外部目录，也不需要执行参考初始化命令。
+
+需要额外资料时，只选择符合需求的一个命令：
+
+```bash
+npm run reference:setup          # 少量补充参考
+npm run reference:setup:full     # 完整 C 工程与技术文档，替代上一命令
+npm run reference:setup:offline  # 再加入 GPL 离线运行壳，替代前两个命令
+```
+
+这些命令不是顺序流程。它们按 `references/upstream-lock.json` 获取固定提交并放到被 Git 忽略的 `.reference/baye-fmj-app/`；GPL 内容只能作本地参考。
 
 ## 对比式开发闭环
 

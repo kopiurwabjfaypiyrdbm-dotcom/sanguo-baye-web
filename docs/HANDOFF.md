@@ -95,13 +95,22 @@ docs/design/       已确认的设计和兼容策略
 
 环境要求：Node.js 20 或更高版本。
 
+首次拉取或依赖锁变化后：
+
 ```bash
 npm ci
 npm run check
+```
+
+日常开发：
+
+```bash
 npm run dev
 ```
 
-`npm run check` 会依次验证已入库参考源码的提交与哈希、运行 Vitest，并执行 TypeScript 和 Vite 生产构建。当前交接基线为 96 项测试通过、4 项需要额外参考条件的测试跳过，生产构建通过。
+`npm run check` 是一次性验证命令，不是常驻服务。它会依次验证已入库参考源码的提交与哈希、并行运行 Vitest，并执行 TypeScript 和 Vite 生产构建；短暂使用多个 CPU 核心属于正常现象，完成后所有测试工作进程应退出。当前交接基线为 96 项测试通过、4 项需要额外参考条件的测试跳过，生产构建通过。
+
+只能保留一个 `npm run dev`。Vite 开发服务器会持续监视仓库文件，应在原终端按 `Ctrl+C` 关闭。项目启用了严格端口检查；若端口占用，应复用或关闭原实例，不要改用连续的新端口启动多个服务器。
 
 Vite 当前会提示主 JavaScript 包超过 500 kB；这是已知的非阻塞警告。引入新的大型战场模块时应考虑按场景动态加载，但不要在战术闭环之前展开无目标的性能重构。
 
@@ -113,7 +122,9 @@ Vite 当前会提示主 JavaScript 包超过 500 kB；这是已知的非阻塞�
 references/vendor/baye-c-core/
 ```
 
-它们绑定 `references/upstream-lock.json` 中的固定提交，并由 `MANIFEST.json` 保存逐文件哈希。不要手工修改该目录；更新使用：
+它们绑定 `references/upstream-lock.json` 中的固定提交，并由 `MANIFEST.json` 保存逐文件哈希。普通开发不需要初始化额外参考。
+
+只有更新 vendored 基线时才顺序执行：
 
 ```bash
 npm run reference:setup
@@ -121,14 +132,15 @@ npm run reference:sync-core
 npm run reference:check
 ```
 
-需要更完整的本地研究资料时：
+仅研究额外资料时，从下列级别选择一个，不能顺序执行：
 
 ```bash
-npm run reference:setup:full
-npm run reference:setup:offline
+npm run reference:setup          # 少量补充参考
+npm run reference:setup:full     # 完整 C 工程和技术文档
+npm run reference:setup:offline  # 完整参考再加 GPL 离线运行壳
 ```
 
-这些命令把资料放到被 Git 忽略的 `.reference/`。`reference:setup:offline` 会显式获取 GPL 离线运行壳，只能作为本地参考。
+这些互斥命令把资料放到被 Git 忽略的 `.reference/`。`reference:setup:offline` 会显式获取 GPL 离线运行壳，只能作为本地参考。
 
 禁止提交或混入正式产品的内容包括：`dat.lib.orig`、其他 `.lib`、字体、原版图片、音视频、WASM、内嵌原版资源数组，以及未确认独立再分发许可证的技术文档。四时期 `baye-periods.json` 是已解析的结构化运行数据，不包含上述原始文件。
 

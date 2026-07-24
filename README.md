@@ -38,25 +38,34 @@
 
 要求 Node.js 20 或更高版本。
 
+首次拉取仓库时安装依赖并验证基线：
+
 ```powershell
 npm ci
 npm run check
+```
+
+日常开发只需启动一个开发服务器：
+
+```powershell
 npm run dev
 ```
 
-`npm run check` 会依次校验已入库参考基线、运行全部 Vitest 测试并执行生产构建。
+`npm run check` 用于首次接手和提交前验证，会依次校验已入库参考基线、并行运行 Vitest 并执行生产构建；不需要在每次启动开发服务器前运行。测试和构建会短暂使用多个 CPU 核心，完成后自动退出。
+
+不要重复启动 `npm run dev`。开发服务器会持续监视仓库文件，应在原终端按 `Ctrl+C` 关闭；若端口已被占用，项目会直接报错而不会自动改用下一个端口。
 
 ## 获取复刻参考
 
 常用的 MIT C 规则与结构源码已筛选到 `references/vendor/baye-c-core/`，协作者普通拉取后即可开展对比，不依赖任何个人电脑上的外部路径。逐文件哈希和来源提交由 `npm run reference:check` 验证。
 
-参考源固定到 `references/upstream-lock.json` 中的上游提交。筛选范围以外的资料可按需获取到被 Git 忽略的 `.reference/`：
+普通开发不需要运行任何 `reference:setup*` 命令。只有入库参考不足时，才从以下三个互斥级别中选择一个：
 
-```powershell
-npm run reference:setup
-```
+- `npm run reference:setup`：获取少量补充参考。
+- `npm run reference:setup:full`：替代上一命令，获取完整 C 工程和技术文档。
+- `npm run reference:setup:offline`：替代前两个命令，同时获取仅供本地研究的 GPL 离线运行壳。
 
-需要完整 C 工程和技术文档时执行 `npm run reference:setup:full`；GPL 离线运行壳必须通过 `npm run reference:setup:offline` 显式获取。规则差异、界面采集和来源边界记录在 `references/`。不要直接把上游 `.lib`、字体、WASM 或图片复制进主源码目录。
+参考源固定到 `references/upstream-lock.json` 中的上游提交，按需资料放在被 Git 忽略的 `.reference/`。规则差异、界面采集和来源边界记录在 `references/`。不要直接把上游 `.lib`、字体、WASM 或图片复制进主源码目录。
 
 对于不含 Git 元数据的本地 ZIP 快照，使用哈希清单验证本阶段权威文件：
 
