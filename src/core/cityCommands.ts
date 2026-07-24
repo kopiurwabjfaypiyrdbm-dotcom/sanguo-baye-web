@@ -133,7 +133,7 @@ function validatePlayerCityOfficer(
 
   const officer = state.officers[order.officerId];
   if (!officer) throw new Error(`未知武将：${order.officerId}`);
-  if (officer.factionId !== state.playerFactionId || officer.cityId !== city.id) {
+  if (officer.status !== 'serving' || officer.factionId !== state.playerFactionId || officer.cityId !== city.id) {
     throw new Error('执行武将不在该城');
   }
   return { city, officer };

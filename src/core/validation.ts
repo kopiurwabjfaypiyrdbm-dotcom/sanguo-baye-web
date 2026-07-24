@@ -51,7 +51,12 @@ export function validateGameState(state: GameState): ValidationIssue[] {
     }
     const ruler = state.officers[faction.rulerOfficerId];
     if (!ruler) add(`factions.${key}.rulerOfficerId`, `unknown officer: ${faction.rulerOfficerId}`);
-    else if (ruler.factionId !== faction.id) add(`factions.${key}.rulerOfficerId`, 'ruler belongs to another faction');
+    else if (!faction.isNeutral && ruler.factionId !== faction.id) {
+      add(`factions.${key}.rulerOfficerId`, 'ruler belongs to another faction');
+    }
+    else if (!faction.isNeutral && ruler.status !== 'serving') {
+      add(`factions.${key}.rulerOfficerId`, 'non-neutral ruler must be serving');
+    }
   }
   if (playerFlags !== 1) add('factions', 'must contain exactly one player faction');
 
@@ -63,7 +68,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       add(`${path}.satrapOfficerId`, `unknown officer: ${city.satrapOfficerId}`);
     } else if (city.satrapOfficerId) {
       const satrap = state.officers[city.satrapOfficerId];
-      if (satrap.cityId !== city.id || satrap.factionId !== city.ownerId) {
+      if (satrap.status !== 'serving' || satrap.cityId !== city.id || satrap.factionId !== city.ownerId) {
         add(`${path}.satrapOfficerId`, 'satrap must be a stationed officer of the owning faction');
       }
     }
@@ -96,8 +101,20 @@ export function validateGameState(state: GameState): ValidationIssue[] {
   for (const [key, officer] of Object.entries(state.officers)) {
     const path = `officers.${key}`;
     if (key !== officer.id) add(`${path}.id`, `must match record key: ${key}`);
+    if (!['serving', 'free', 'hidden'].includes(officer.status)) add(`${path}.status`, `unknown status: ${officer.status}`);
     if (!state.factions[officer.factionId]) add(`${path}.factionId`, `unknown faction: ${officer.factionId}`);
-    if (!state.cities[officer.cityId]) add(`${path}.cityId`, `unknown city: ${officer.cityId}`);
+    if (officer.status === 'hidden') {
+      if (officer.cityId !== undefined) add(`${path}.cityId`, 'hidden officer must not be assigned to a city');
+      if (!state.factions[officer.factionId]?.isNeutral) add(`${path}.factionId`, 'hidden officer must be neutral');
+    } else {
+      if (!officer.cityId || !state.cities[officer.cityId]) add(`${path}.cityId`, `unknown city: ${officer.cityId}`);
+    }
+    if (officer.status === 'free' && !state.factions[officer.factionId]?.isNeutral) {
+      add(`${path}.factionId`, 'free officer must belong to the neutral faction');
+    }
+    if (officer.status === 'serving' && state.factions[officer.factionId]?.isNeutral) {
+      add(`${path}.factionId`, 'serving officer must belong to a playable faction');
+    }
     if (!state.armsTypes[officer.armsTypeId]) add(`${path}.armsTypeId`, `unknown arms type: ${officer.armsTypeId}`);
     for (const field of ['weaponItemId', 'intelligenceItemId', 'mountItemId'] as const) {
       const itemId = officer[field];

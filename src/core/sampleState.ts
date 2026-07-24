@@ -26,6 +26,15 @@ const factions: Record<string, Faction> = {
     isPlayer: false,
     aiProfile: 'aggressive',
   },
+  neutral: {
+    id: 'neutral',
+    name: '无所属',
+    rulerOfficerId: 'chen-gong',
+    color: '#77786f',
+    isPlayer: false,
+    isNeutral: true,
+    aiProfile: 'defensive',
+  },
 };
 
 const cities: Record<string, City> = {
@@ -56,6 +65,7 @@ const officers: Record<string, Officer> = {
   'zhou-yu': officer('zhou-yu', '周瑜', 78, 97, 92, 'navy', 'sun-quan', 'wuchang', 5000, 97, 34),
   'lu-xun': officer('lu-xun', '陆逊', 62, 96, 90, 'archer', 'sun-quan', 'jiangling', 4700, 95, 28),
   'taishi-ci': officer('taishi-ci', '太史慈', 95, 67, 79, 'navy', 'sun-quan', 'shouchun', 5100, 89, 37),
+  'chen-gong': officer('chen-gong', '陈宫', 55, 90, 76, 'infantry', 'neutral', 'chenliu', 800, 72, 35, undefined, 'free'),
 };
 
 const items: Record<string, Item> = {
@@ -148,6 +158,7 @@ function officer(
   loyalty: number,
   age: number,
   weaponItemId?: string,
+  status: Officer['status'] = 'serving',
 ): Officer {
   return {
     id,
@@ -157,6 +168,7 @@ function officer(
     leadership,
     armsTypeId,
     weaponItemId,
+    status,
     factionId,
     cityId,
     troops,

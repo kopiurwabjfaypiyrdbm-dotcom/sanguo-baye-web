@@ -40,7 +40,7 @@ export function applyMonthlyGrowth(state: GameState): GameState {
       const faction = state.factions[city.ownerId];
       if (!faction || faction.isNeutral) return [city.id, { ...city }];
       const stationed = Object.values(officers).filter(
-        (officer) => officer.cityId === city.id && officer.factionId === city.ownerId,
+        (officer) => officer.status === 'serving' && officer.cityId === city.id && officer.factionId === city.ownerId,
       );
       const stationedTroops = stationed.reduce((sum, officer) => sum + officer.troops, 0);
       const growth = calculateCityGrowth(city, state.calendar, stationedTroops);

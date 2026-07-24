@@ -67,11 +67,15 @@ export function createGameStateFromLegacyPeriod(
   };
 
   const officers: Record<string, Officer> = Object.fromEntries(
-    period.persons.filter((person) => assignedPersonIndexes.has(person.sourceIndex)).map((person) => {
-      const activeFaction = person.rulerIndex !== null && activeRulers.has(person.rulerIndex)
+    period.persons.map((person) => {
+      const isAssigned = assignedPersonIndexes.has(person.sourceIndex);
+      const activeFaction = isAssigned && person.rulerIndex !== null && activeRulers.has(person.rulerIndex)
         ? factionId(person.rulerIndex)
         : NEUTRAL_FACTION_ID;
       const isPlayer = activeFaction === factionId(playerRulerIndex);
+      const status: Officer['status'] = !isAssigned
+        ? 'hidden'
+        : activeFaction === NEUTRAL_FACTION_ID ? 'free' : 'serving';
       const armsTypeId = armsTypeIds[person.armsType] ?? armsTypeIds[0];
       const id = officerId(person.sourceIndex);
       return [
@@ -86,9 +90,10 @@ export function createGameStateFromLegacyPeriod(
           // prototype value isolated from the Baye-compatible battle layer.
           leadership: Math.round((person.force + person.intelligence) / 2),
           armsTypeId,
+          status,
           factionId: activeFaction,
-          cityId: cityIdByPerson[person.sourceIndex],
-          troops: isPlayer ? 100 : 800,
+          ...(isAssigned ? { cityId: cityIdByPerson[person.sourceIndex] } : {}),
+          troops: status === 'hidden' ? person.troops : isPlayer ? 100 : 800,
           loyalty: person.loyalty,
           age: person.age,
           stamina: 100,
@@ -160,7 +165,7 @@ export function createGameStateFromLegacyPeriod(
       {
         id: 'log-001',
         kind: 'system',
-        message: `已从本地原版资料载入时期 ${period.period}：${Object.keys(cities).length} 城、${Object.keys(officers).length} 人。`,
+        message: `已从本地原版资料载入时期 ${period.period}：${Object.keys(cities).length} 城、${assignedPersonIndexes.size} 名当前人物，另保留 ${period.persons.length - assignedPersonIndexes.size} 名未登场人物。`,
         turn: 1,
       },
     ],
@@ -188,7 +193,7 @@ export function selectPlayerFaction(state: GameState, playerFactionId: string): 
           officer.id,
           {
             ...officer,
-            troops: officer.factionId === playerFactionId ? 100 : 800,
+            troops: officer.status === 'hidden' ? officer.troops : officer.factionId === playerFactionId ? 100 : 800,
           },
         ]),
       )

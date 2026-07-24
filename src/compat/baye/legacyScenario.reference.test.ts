@@ -33,7 +33,10 @@ describe.skipIf(!sourceRoot)('local Baye period 1 reference', () => {
 
     const state = createLegacyPeriodGameState(bytes, 1);
     expect(Object.keys(state.cities)).toHaveLength(38);
-    expect(Object.keys(state.officers)).toHaveLength(157);
+    expect(Object.keys(state.officers)).toHaveLength(200);
+    expect(Object.values(state.officers).filter((officer) => officer.status !== 'hidden')).toHaveLength(157);
+    expect(Object.values(state.officers).filter((officer) => officer.status === 'hidden')).toHaveLength(43);
+    expect(Object.values(state.officers).some((officer) => officer.status === 'free')).toBe(true);
     expect(state.factions[state.playerFactionId].name).toBe('曹操军');
     expect(state.cities['city-0'].neighbors).toContain('city-3');
   });

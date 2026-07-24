@@ -13,8 +13,8 @@ describe('legacy scenario game-state bridge', () => {
       satrapOfficerId: 'officer-0',
       farmingLimit: 5000,
     });
-    expect(state.officers['officer-0']).toMatchObject({ factionId: 'ruler-0', cityId: 'city-0' });
-    expect(state.officers['officer-1']).toMatchObject({ factionId: 'neutral', cityId: 'city-0' });
+    expect(state.officers['officer-0']).toMatchObject({ status: 'serving', factionId: 'ruler-0', cityId: 'city-0' });
+    expect(state.officers['officer-1']).toMatchObject({ status: 'free', factionId: 'neutral', cityId: 'city-0' });
     expect(state.officers['officer-1'].troops).toBe(800);
     expect(state.cities['city-0'].food).toBe(900);
     expect(state.factions.neutral.isNeutral).toBe(true);
@@ -45,6 +45,15 @@ describe('legacy scenario game-state bridge', () => {
     expect(selected.officers['officer-2'].troops).toBe(100);
     expect(selected.officers['officer-0'].troops).toBe(800);
     expect(selected.cities['city-0'].food).toBe(original.cities['city-0'].food + 1000);
+  });
+
+  it('preserves people outside city queues as hidden records', () => {
+    const period = createPeriod();
+    period.persons.push(person(2, '未登场武将', null));
+    const state = createGameStateFromLegacyPeriod(period);
+
+    expect(state.officers['officer-2']).toMatchObject({ status: 'hidden', factionId: 'neutral' });
+    expect(state.officers['officer-2'].cityId).toBeUndefined();
   });
 
   it('does not allow ruler switching after a command has committed the campaign', () => {

@@ -337,7 +337,7 @@ select:focus-visible,
 
 .city-command-buttons {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 7px;
   margin-top: 8px;
 }
@@ -374,6 +374,24 @@ select:focus-visible,
   gap: 7px;
   align-items: end;
 }
+
+.personnel-command-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 62px 72px;
+  gap: 7px;
+  align-items: end;
+}
+
+.personnel-command-row button {
+  min-height: 35px;
+  color: #f6ecd3;
+  font-weight: 800;
+  background: #405e50;
+  border: 1px solid #577565;
+  border-radius: 4px;
+}
+
+.personnel-command-row button:disabled { color: #918d80; background: rgba(255, 255, 255, 0.24); }
 
 .distribution-row button {
   min-height: 35px;

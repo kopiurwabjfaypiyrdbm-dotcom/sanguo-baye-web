@@ -9,8 +9,12 @@ export function updateCitySatraps(state: GameState): GameState {
       }
 
       const stationed = Object.values(state.officers)
-        .filter((officer) => officer.factionId === city.ownerId && officer.cityId === city.id)
+        .filter((officer) => officer.status === 'serving' && officer.factionId === city.ownerId && officer.cityId === city.id)
         .sort(compareSatrapCandidates);
+      const current = city.satrapOfficerId
+        ? stationed.find((officer) => officer.id === city.satrapOfficerId)
+        : undefined;
+      if (current) return [city.id, { ...city, satrapOfficerId: current.id }];
       const ruler = stationed.find((officer) => officer.id === faction.rulerOfficerId);
       return [city.id, { ...city, satrapOfficerId: ruler?.id ?? stationed[0]?.id }];
     }),

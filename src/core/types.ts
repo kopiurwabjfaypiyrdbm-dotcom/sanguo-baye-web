@@ -8,6 +8,8 @@ export type GamePhase = 'player' | 'ai' | 'ended';
 
 export type GameOutcome = 'victory' | 'defeat';
 
+export type OfficerStatus = 'serving' | 'free' | 'hidden';
+
 export type Faction = {
   id: string;
   name: string;
@@ -72,8 +74,9 @@ export type Officer = {
   weaponItemId?: string;
   intelligenceItemId?: string;
   mountItemId?: string;
+  status: OfficerStatus;
   factionId: string;
-  cityId: string;
+  cityId?: string;
   troops: number;
   loyalty: number;
   age: number;

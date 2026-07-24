@@ -14,7 +14,7 @@
 | 游戏主循环 | `gamEng.c`、`GamBaYeEng` | `turn.ts` | 临时实现 | 记录一个完整原版月份的阶段顺序 |
 | 剧本加载 | `tactic.c:LoadPeriod`、`.lib` | `compat/baye/legacyScenario.ts`；`data/legacyScenario.ts` | 差异验证 | 扩展到时期 2–4，并接入未出仕人物出现条件 |
 | 城池、人物与道具结构 | `dictsys.h`、`attribute.h`、`bind-objects.c`、`dat.lib.orig` | `types.ts`；`data-structure-map.md` | 差异验证 | 解析道具记录并绑定两个原版装备槽 |
-| 城池命令 | `citycmd*.c` | `cityCommands.ts`（开垦、征兵、分配） | 临时实现 | 固化开垦随机样本，并继续对照征兵数量选择流程 |
+| 城池命令 | `citycmd*.c` | `cityCommands.ts`（开垦、征兵、分配）；`personnelCommands.ts`（搜寻、调动、任命） | 临时实现 | 接入搜寻伯乐条件与道具分支；移动改为按道路距离进入命令队列 |
 | 月度结算 | `tactic.c`、阶段钩子 | `economy.ts` | 临时实现 | 固定城池数据对照一个月结果 |
 | 战场进入 | `Fight.c`、`g_FgtParam` | 无 | 未开始 | 对照将领、方向、粮草和地图加载 |
 | 攻防属性 | `FgtCount.c:BuiltAtkAttr`、`.lib:dFgtLandF` | `compat/baye/tacticalBattle.ts` | 差异验证 | 在可运行战场状态中使用已验证的 6×8 地形表 |

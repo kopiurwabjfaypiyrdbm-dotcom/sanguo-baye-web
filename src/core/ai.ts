@@ -32,6 +32,7 @@ export function planAiAction(state: GameState, factionId = state.activeFactionId
     const officerIds = Object.values(state.officers)
       .filter(
         (officer) =>
+          officer.status === 'serving' &&
           officer.factionId === factionId &&
           officer.cityId === source.id &&
           officer.troops > 0 &&

@@ -7,6 +7,7 @@ import {
   calculateRecruitCapacity,
 } from '../core/cityCommands';
 import type { GameState } from '../core/types';
+import { SEARCH_STAMINA_COST } from '../core/personnelCommands';
 import { getCityOfficers, getNeighborCities } from '../core/selectors';
 
 type CityPanelProps = {
@@ -15,6 +16,9 @@ type CityPanelProps = {
   disabled?: boolean;
   onDevelop: (cityId: string, officerId: string) => void;
   onRecruit: (cityId: string, officerId: string) => void;
+  onSearch: (cityId: string, officerId: string) => void;
+  onMove: (sourceCityId: string, targetCityId: string, officerId: string) => void;
+  onAppoint: (cityId: string, officerId: string) => void;
   onDistribute: (cityId: string, officerId: string, targetTroops: number) => void;
   onAttack: (sourceCityId: string, targetCityId: string, officerIds: string[], provisions: number) => void;
 };
@@ -27,6 +31,9 @@ export function CityPanel({
   disabled = false,
   onDevelop,
   onRecruit,
+  onSearch,
+  onMove,
+  onAppoint,
   onDistribute,
   onAttack,
 }: CityPanelProps) {
@@ -40,8 +47,13 @@ export function CityPanel({
     () => getNeighborCities(state, cityId).filter((neighbor) => city && neighbor.ownerId !== city.ownerId),
     [state, cityId, city],
   );
+  const friendlyNeighbors = useMemo(
+    () => getNeighborCities(state, cityId).filter((neighbor) => city && neighbor.ownerId === city.ownerId),
+    [state, cityId, city],
+  );
   const [selectedOfficerId, setSelectedOfficerId] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
+  const [selectedMoveTargetId, setSelectedMoveTargetId] = useState('');
   const [distributionTarget, setDistributionTarget] = useState('0');
   const [selectedAttackerIds, setSelectedAttackerIds] = useState<string[]>([]);
   const [provisions, setProvisions] = useState('100');
@@ -63,6 +75,12 @@ export function CityPanel({
     }
   }, [hostileNeighbors, selectedTargetId]);
 
+  useEffect(() => {
+    if (!friendlyNeighbors.some((neighbor) => neighbor.id === selectedMoveTargetId)) {
+      setSelectedMoveTargetId(friendlyNeighbors[0]?.id ?? '');
+    }
+  }, [friendlyNeighbors, selectedMoveTargetId]);
+
   const faction = state.factions[city.ownerId];
   const satrap = city.satrapOfficerId ? state.officers[city.satrapOfficerId] : undefined;
   const selectedOfficer = state.officers[selectedOfficerId];
@@ -80,6 +98,10 @@ export function CityPanel({
     && (city.farmingLimit === undefined || city.farming < city.farmingLimit);
   const canRecruit = isOwned && Boolean(selectedOfficer) && selectedOfficer.stamina >= RECRUIT_STAMINA_COST
     && !selectedOfficerActed && calculateRecruitCapacity(city) > 0;
+  const canSearch = isOwned && Boolean(selectedOfficer) && selectedOfficer.stamina >= SEARCH_STAMINA_COST
+    && !selectedOfficerActed;
+  const canMove = isOwned && Boolean(selectedOfficer) && !selectedOfficerActed && Boolean(selectedMoveTargetId);
+  const canAppoint = isOwned && Boolean(selectedOfficer) && city.satrapOfficerId !== selectedOfficerId;
   const canDistribute = isOwned && Boolean(selectedOfficer) && Number.isInteger(distributionValue)
     && distributionValue >= 0 && distributionValue <= distributionCapacity
     && distributionDelta <= city.reserveTroops && distributionDelta !== 0;
@@ -182,6 +204,44 @@ export function CityPanel({
                 title={`征入后备兵，消耗体力 ${RECRUIT_STAMINA_COST}`}
               >
                 征兵
+              </button>
+              <button
+                type="button"
+                disabled={disabled || !canSearch}
+                onClick={() => onSearch(city.id, selectedOfficerId)}
+                title={`搜寻人才或资源，消耗体力 ${SEARCH_STAMINA_COST}`}
+              >
+                搜寻
+              </button>
+            </div>
+
+            <div className="personnel-command-row">
+              <label className="command-field">
+                <span>调动到相邻己方城池</span>
+                <select
+                  value={selectedMoveTargetId}
+                  onChange={(event) => setSelectedMoveTargetId(event.target.value)}
+                  disabled={friendlyNeighbors.length === 0}
+                >
+                  {friendlyNeighbors.length === 0 && <option value="">没有可调动城池</option>}
+                  {friendlyNeighbors.map((neighbor) => (
+                    <option value={neighbor.id} key={neighbor.id}>{neighbor.name}</option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                disabled={disabled || !canMove}
+                onClick={() => onMove(city.id, selectedMoveTargetId, selectedOfficerId)}
+              >
+                调动
+              </button>
+              <button
+                type="button"
+                disabled={disabled || !canAppoint}
+                onClick={() => onAppoint(city.id, selectedOfficerId)}
+              >
+                任太守
               </button>
             </div>
 

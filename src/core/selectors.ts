@@ -2,8 +2,14 @@ import type { City, Faction, GameState, Officer } from './types';
 
 export function getCityOfficers(state: GameState, cityId: string): Officer[] {
   return Object.values(state.officers)
-    .filter((officer) => officer.cityId === cityId)
+    .filter((officer) => officer.cityId === cityId && officer.status === 'serving')
     .sort((a, b) => b.leadership - a.leadership || b.force - a.force || a.name.localeCompare(b.name, 'zh-Hans-CN'));
+}
+
+export function getCityFreeOfficers(state: GameState, cityId: string): Officer[] {
+  return Object.values(state.officers)
+    .filter((officer) => officer.cityId === cityId && officer.status === 'free')
+    .sort((a, b) => b.intelligence - a.intelligence || b.force - a.force || a.name.localeCompare(b.name, 'zh-Hans-CN'));
 }
 
 export function getNeighborCities(state: GameState, cityId: string): City[] {

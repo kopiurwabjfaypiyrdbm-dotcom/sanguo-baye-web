@@ -201,7 +201,7 @@ function validateAttackOrder(state: GameState, order: AttackOrder) {
   const attackers = order.officerIds.map((officerId) => {
     const officer = state.officers[officerId];
     if (!officer) throw new Error(`Unknown attacking officer: ${officerId}`);
-    if (officer.factionId !== source.ownerId || officer.cityId !== source.id) {
+    if (officer.status !== 'serving' || officer.factionId !== source.ownerId || officer.cityId !== source.id) {
       throw new Error(`Officer is not stationed in the source city: ${officerId}`);
     }
     if (officer.troops <= 0) throw new Error(`Officer has no troops: ${officerId}`);
@@ -210,7 +210,7 @@ function validateAttackOrder(state: GameState, order: AttackOrder) {
     return officer;
   });
   const defenders = Object.values(state.officers)
-    .filter((officer) => officer.factionId === target.ownerId && officer.cityId === target.id && officer.troops > 0)
+    .filter((officer) => officer.status === 'serving' && officer.factionId === target.ownerId && officer.cityId === target.id && officer.troops > 0)
     .sort((a, b) => a.id.localeCompare(b.id));
 
   return { source, target, attackers, defenders };

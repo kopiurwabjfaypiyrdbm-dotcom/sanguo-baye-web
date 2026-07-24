@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { executeAttack } from '../core/battle';
 import { developFarming, distributeTroops, recruitTroops } from '../core/cityCommands';
 import { createSampleState } from '../core/sampleState';
+import { appointSatrap, moveOfficer, searchCity } from '../core/personnelCommands';
 import { advanceTurn } from '../core/turn';
 import type { GameState } from '../core/types';
 import { createLegacyPeriodGameState, selectPlayerFaction } from '../data/legacyScenario';
@@ -138,7 +139,7 @@ export function App() {
       <section className="map-section" aria-label="战略地图">
         <div className="map-toolbar">
           <span>拖动地图 · 滚轮缩放 · 点击城池</span>
-          <span>{Object.keys(state.cities).length} 城 / {Object.keys(state.officers).length} 名当前人物</span>
+          <span>{Object.keys(state.cities).length} 城 / {countCurrentOfficers(state)} 名当前人物</span>
         </div>
         <div className="map-host" ref={mapHost} />
         {loadError && <div className="load-error" role="alert">载入失败：{loadError}</div>}
@@ -164,6 +165,16 @@ export function App() {
         onRecruit={(cityId, officerId) => applyPlayerAction(
           (current) => recruitTroops(current, { cityId, officerId }),
         )}
+        onSearch={(cityId, officerId) => applyPlayerAction(
+          (current) => searchCity(current, { cityId, officerId }),
+        )}
+        onMove={(sourceCityId, targetCityId, officerId) => applyPlayerAction(
+          (current) => moveOfficer(current, { sourceCityId, targetCityId, officerId }),
+          targetCityId,
+        )}
+        onAppoint={(cityId, officerId) => applyPlayerAction(
+          (current) => appointSatrap(current, { cityId, officerId }),
+        )}
         onDistribute={(cityId, officerId, targetTroops) => applyPlayerAction(
           (current) => distributeTroops(current, { cityId, officerId, targetTroops }),
         )}
@@ -186,4 +197,8 @@ export function App() {
 function firstOwnedCityId(state: GameState): string {
   return Object.values(state.cities).find((city) => city.ownerId === state.playerFactionId)?.id
     ?? Object.keys(state.cities)[0];
+}
+
+function countCurrentOfficers(state: GameState): number {
+  return Object.values(state.officers).filter((officer) => officer.status !== 'hidden').length;
 }
