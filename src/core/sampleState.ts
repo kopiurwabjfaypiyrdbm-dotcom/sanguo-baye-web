@@ -1,4 +1,5 @@
 import type { ArmsType, City, Faction, GameState, Item, Officer } from './types';
+import { updateCitySatraps } from './administration';
 
 const factions: Record<string, Faction> = {
   'cao-cao': {
@@ -73,15 +74,18 @@ const armsTypes: Record<string, ArmsType> = {
 };
 
 export function createSampleState(): GameState {
-  return {
+  return updateCitySatraps({
     schemaVersion: 1,
+    scenario: { id: 'sample-190', source: 'sample' },
     turn: 1,
     phase: 'player',
     activeFactionId: 'cao-cao',
     factionOrder: ['cao-cao', 'liu-bei', 'sun-quan'],
     rngSeed: 0x190001,
     calendar: { year: 190, month: 1 },
+    campaignStarted: false,
     playerFactionId: 'cao-cao',
+    actedOfficerIds: [],
     factions: structuredClone(factions),
     cities: structuredClone(cities),
     officers: structuredClone(officers),
@@ -95,7 +99,7 @@ export function createSampleState(): GameState {
         turn: 1,
       },
     ],
-  };
+  });
 }
 
 function city(

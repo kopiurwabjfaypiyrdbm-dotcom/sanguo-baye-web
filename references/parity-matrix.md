@@ -12,9 +12,9 @@
 | 模块 | 上游事实源 | 当前实现 | 状态 | 下一验证 |
 |---|---|---|---|---|
 | 游戏主循环 | `gamEng.c`、`GamBaYeEng` | `turn.ts` | 临时实现 | 记录一个完整原版月份的阶段顺序 |
-| 剧本加载 | `tactic.c:LoadPeriod`、`.lib` | `sampleState.ts`；`compat/baye/libArchive.ts` | 已取样 | 解码时期 1 的 31 字节城市和 15 字节人物记录 |
-| 城池、人物与道具结构 | `dictsys.h`、`attribute.h`、`bind-objects.c`、`dat.lib.orig` | `types.ts`；`data-structure-map.md` | 已取样 | 分离原版 15/31 字节记录与移植运行期 19/37 字节结构 |
-| 城池命令 | `citycmd*.c` | 无 | 未开始 | 列出全部命令、消耗和执行条件 |
+| 剧本加载 | `tactic.c:LoadPeriod`、`.lib` | `compat/baye/legacyScenario.ts`；`data/legacyScenario.ts` | 差异验证 | 扩展到时期 2–4，并接入未出仕人物出现条件 |
+| 城池、人物与道具结构 | `dictsys.h`、`attribute.h`、`bind-objects.c`、`dat.lib.orig` | `types.ts`；`data-structure-map.md` | 差异验证 | 解析道具记录并绑定两个原版装备槽 |
+| 城池命令 | `citycmd*.c` | `cityCommands.ts`（开垦、征兵、分配） | 临时实现 | 固化开垦随机样本，并继续对照征兵数量选择流程 |
 | 月度结算 | `tactic.c`、阶段钩子 | `economy.ts` | 临时实现 | 固定城池数据对照一个月结果 |
 | 战场进入 | `Fight.c`、`g_FgtParam` | 无 | 未开始 | 对照将领、方向、粮草和地图加载 |
 | 攻防属性 | `FgtCount.c:BuiltAtkAttr`、`.lib:dFgtLandF` | `compat/baye/tacticalBattle.ts` | 差异验证 | 在可运行战场状态中使用已验证的 6×8 地形表 |
@@ -27,9 +27,9 @@
 | 存档格式 | `fsys.c`、数据管理代码 | 无 | 未开始 | 识别头部、版本和数据段 |
 | 随机数（Web 移植） | `comIn.c:rand_r`、WASM `bayeRand` | `compat/baye/rng.ts` | 差异验证 | 从锁定提交重生成 WASM 样本 |
 | 随机数（BBK 设备） | `fsys.h:SysRand` | 无 | 已定位 | 非阻塞考据；取得可信实现或设备序列后再新增参考模式 |
-| 经典 LCD 表现 | `gamEng.c`、`exportjs.c`、LCD 缓冲 | 静态 React 壳 | 已定位 | 在本地运行时采集首批原始截图 |
+| 经典 LCD 表现 | `gamEng.c`、`exportjs.c`、LCD 缓冲 | React 面板；Phaser 战略地图 | 有意变化 | 采集城市命令界面，约束下一阶段操作顺序 |
 
-当前 `battle.ts`、`economy.ts`、`ai.ts` 和 `core/random.ts` 仅证明现代 TypeScript 架构可运行，不代表原版规则已经还原。`src/compat/baye/` 是隔离的兼容证据层，尚未接管应用主流程。
+当前 `cityCommands.ts`、`battle.ts`、`economy.ts`、`ai.ts` 和 `core/random.ts` 共同提供可玩产品闭环，但仍包含现代临时规则，不代表原版规则已经还原。征兵已改为进入城池后备兵，并通过独立“分配”调整武将兵力；出征已支持多武将与携粮，但仍立即自动结算，尚未进入原版命令队列或战术战场。`src/compat/baye/` 是隔离的兼容证据层，尚未接管应用主流程。
 
 当前所有新增差异证据来自文件哈希吻合但无 `.git` 元数据的本地快照。具体限制见 `source-manifest.json` 和 `fixtures/README.md`。
 

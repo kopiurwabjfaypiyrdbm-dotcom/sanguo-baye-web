@@ -8,14 +8,14 @@ describe('automatic battle', () => {
     const state = createSampleState();
 
     expect(() =>
-      resolveBattle(state, { sourceCityId: 'luoyang', targetCityId: 'chengdu', officerIds: ['cao-cao'] }),
+      resolveBattle(state, { sourceCityId: 'luoyang', targetCityId: 'chengdu', officerIds: ['cao-cao'], provisions: 100 }),
     ).toThrow('Cities are not adjacent');
   });
 
   it('is deterministic and does not mutate the source state', () => {
     const state = createSampleState();
     const snapshot = structuredClone(state);
-    const order = { sourceCityId: 'chang-an', targetCityId: 'hanzhong', officerIds: ['cao-cao'] };
+    const order = { sourceCityId: 'chang-an', targetCityId: 'hanzhong', officerIds: ['cao-cao'], provisions: 100 };
     state.officers['cao-cao'].cityId = 'chang-an';
     const preparedSnapshot = structuredClone(state);
 
@@ -27,7 +27,7 @@ describe('automatic battle', () => {
   it('rewards leadership and city defense monotonically', () => {
     const state = createSampleState();
     state.officers['cao-cao'].cityId = 'chang-an';
-    const order = { sourceCityId: 'chang-an', targetCityId: 'hanzhong', officerIds: ['cao-cao'] };
+    const order = { sourceCityId: 'chang-an', targetCityId: 'hanzhong', officerIds: ['cao-cao'], provisions: 100 };
     const baseline = estimateBattle(state, order);
     state.officers['cao-cao'].leadership += 10;
     const betterLeader = estimateBattle(state, order);
@@ -48,6 +48,7 @@ describe('automatic battle', () => {
       sourceCityId: 'chang-an',
       targetCityId: 'hanzhong',
       officerIds: ['cao-cao'],
+      provisions: 100,
     });
     const next = applyBattleResult(state, result);
 
@@ -55,7 +56,10 @@ describe('automatic battle', () => {
     expect(next.cities.hanzhong.ownerId).toBe('cao-cao');
     expect(next.officers['cao-cao'].cityId).toBe('hanzhong');
     expect(next.officers['guan-yu'].cityId).toBe('chengdu');
+    expect(next.cities.hanzhong.satrapOfficerId).toBe('cao-cao');
     expect(next.officers['cao-cao'].troops).toBeLessThan(100_000);
+    expect(next.cities['chang-an'].food).toBe(state.cities['chang-an'].food - 100);
+    expect(next.actedOfficerIds).toContain('cao-cao');
     expect(next.rngSeed).toBe(result.nextRngSeed);
     expect(next.logs.at(-1)?.kind).toBe('battle');
     expect(validateGameState(next)).toEqual([]);
@@ -68,6 +72,7 @@ describe('automatic battle', () => {
       sourceCityId: 'chang-an',
       targetCityId: 'hanzhong',
       officerIds: ['cao-cao'],
+      provisions: 100,
     });
     const next = applyBattleResult(state, result);
 

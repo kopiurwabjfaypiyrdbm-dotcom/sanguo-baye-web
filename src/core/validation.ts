@@ -10,6 +10,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
   const add = (path: string, message: string) => issues.push({ path, message });
 
   if (state.schemaVersion !== 1) add('schemaVersion', 'must be 1');
+  if (typeof state.campaignStarted !== 'boolean') add('campaignStarted', 'must be a boolean');
   if (!Number.isInteger(state.turn) || state.turn < 1) add('turn', 'must be a positive integer');
   if (!Number.isInteger(state.rngSeed) || state.rngSeed < 0) add('rngSeed', 'must be a non-negative integer');
   if (!Number.isInteger(state.calendar.year) || state.calendar.year < 1) add('calendar.year', 'must be a positive integer');
@@ -22,11 +23,19 @@ export function validateGameState(state: GameState): ValidationIssue[] {
   if (state.phase === 'player' && state.activeFactionId !== state.playerFactionId) {
     add('activeFactionId', 'must be the player faction during the player phase');
   }
+  if (state.phase === 'ended' && !state.outcome) add('outcome', 'is required when the game has ended');
+  if (state.phase !== 'ended' && state.outcome) add('outcome', 'is only allowed when the game has ended');
+
+  const actedOfficerIds = new Set(state.actedOfficerIds);
+  if (actedOfficerIds.size !== state.actedOfficerIds.length) add('actedOfficerIds', 'contains duplicate officer ids');
+  for (const officerId of state.actedOfficerIds) {
+    if (!state.officers[officerId]) add('actedOfficerIds', `unknown officer: ${officerId}`);
+  }
 
   const orderSet = new Set(state.factionOrder);
   if (orderSet.size !== state.factionOrder.length) add('factionOrder', 'contains duplicate faction ids');
-  for (const factionId of Object.keys(state.factions)) {
-    if (!orderSet.has(factionId)) add('factionOrder', `missing faction: ${factionId}`);
+  for (const faction of Object.values(state.factions)) {
+    if (!faction.isNeutral && !orderSet.has(faction.id)) add('factionOrder', `missing faction: ${faction.id}`);
   }
   for (const factionId of state.factionOrder) {
     if (!state.factions[factionId]) add('factionOrder', `unknown faction: ${factionId}`);
@@ -36,6 +45,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
   for (const [key, faction] of Object.entries(state.factions)) {
     if (key !== faction.id) add(`factions.${key}.id`, `must match record key: ${key}`);
     if (faction.isPlayer) playerFlags += 1;
+    if (faction.isNeutral && faction.isPlayer) add(`factions.${key}.isPlayer`, 'neutral faction cannot be the player');
     if (faction.isPlayer !== (faction.id === state.playerFactionId)) {
       add(`factions.${key}.isPlayer`, 'must agree with playerFactionId');
     }
@@ -49,6 +59,14 @@ export function validateGameState(state: GameState): ValidationIssue[] {
     const path = `cities.${key}`;
     if (key !== city.id) add(`${path}.id`, `must match record key: ${key}`);
     if (!state.factions[city.ownerId]) add(`${path}.ownerId`, `unknown faction: ${city.ownerId}`);
+    if (city.satrapOfficerId && !state.officers[city.satrapOfficerId]) {
+      add(`${path}.satrapOfficerId`, `unknown officer: ${city.satrapOfficerId}`);
+    } else if (city.satrapOfficerId) {
+      const satrap = state.officers[city.satrapOfficerId];
+      if (satrap.cityId !== city.id || satrap.factionId !== city.ownerId) {
+        add(`${path}.satrapOfficerId`, 'satrap must be a stationed officer of the owning faction');
+      }
+    }
     if (city.name.trim() === '') add(`${path}.name`, 'must not be blank');
     for (const [field, value] of Object.entries({
       x: city.x,

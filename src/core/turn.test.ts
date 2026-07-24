@@ -25,7 +25,8 @@ describe('turn progression', () => {
     expect(next.calendar).toEqual({ year: 191, month: 1 });
     expect(next.phase).toBe('player');
     expect(next.activeFactionId).toBe('cao-cao');
-    expect(next.cities.luoyang.money).toBeGreaterThan(state.cities.luoyang.money);
+    expect(next.cities.luoyang.population).toBeGreaterThan(state.cities.luoyang.population);
+    expect(next.actedOfficerIds).toEqual([]);
     expect(validateGameState(next)).toEqual([]);
   });
 });

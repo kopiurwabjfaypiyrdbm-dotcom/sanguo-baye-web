@@ -35,16 +35,22 @@ export function planAiAction(state: GameState, factionId = state.activeFactionId
           officer.factionId === factionId &&
           officer.cityId === source.id &&
           officer.troops > 0 &&
-          officer.stamina > 0,
+          officer.stamina > 0 &&
+          !state.actedOfficerIds.includes(officer.id),
       )
       .sort((a, b) => b.leadership - a.leadership || a.id.localeCompare(b.id))
       .map((officer) => officer.id);
-    if (officerIds.length === 0) continue;
+    if (officerIds.length === 0 || source.food <= 0) continue;
 
     for (const targetId of [...source.neighbors].sort()) {
       const target = state.cities[targetId];
       if (!target || target.ownerId === factionId) continue;
-      const order = { sourceCityId: source.id, targetCityId: target.id, officerIds };
+      const order = {
+        sourceCityId: source.id,
+        targetCityId: target.id,
+        officerIds: officerIds.slice(0, 10),
+        provisions: Math.max(1, Math.min(source.food, 500)),
+      };
       const estimate = estimateBattle(state, order);
       candidates.push({ order, ratio: estimate.defender === 0 ? Number.POSITIVE_INFINITY : estimate.attacker / estimate.defender });
     }
@@ -99,6 +105,7 @@ export function runAiRound(state: GameState): GameState {
   if (state.phase !== 'ai') throw new Error('AI round requires the AI phase');
   let next = state;
   for (const factionId of state.factionOrder) {
+    if (next.phase === 'ended') break;
     if (factionId === state.playerFactionId) continue;
     next = { ...next, activeFactionId: factionId };
     next = runAiFactionTurn(next);

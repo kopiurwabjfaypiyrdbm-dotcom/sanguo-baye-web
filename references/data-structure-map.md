@@ -33,7 +33,7 @@
 
 ### 原版库中的 Person 记录（15 字节）
 
-时期 1 人物条目为 3000 字节，恰好是 200×15。旧布局保持相同字段顺序，但 `OldBelong`、`Belong` 与 `Equip[2]` 各元素均为 `U8`，因此相对当前 19 字节运行期结构少 4 字节。下一阶段的原版数据解码器必须读取 15 字节记录，再显式扩宽为现代领域值，不能使用当前 `PersonType` 的 `sizeof` 切片。
+时期 1 人物条目为 3000 字节，即 200 个 15 字节槽位。前 185 个是常规人物，随后包含 2 个特殊人物和未使用槽；时期 1 城市队列实际引用 157 名当前驻城人物。旧布局的 `Belong` 与 `Equip[2]` 各元素为 `U8`，首字节在常规人物中通常等于槽位索引，但特殊人物并不满足这一规律，因此解析器把槽位位置作为 `sourceIndex`、把首字节单独保留为 `legacyIndexMarker`。原版数据解码器必须读取 15 字节记录，再显式扩宽为现代领域值，不能使用当前 `PersonType` 的 `sizeof` 切片。
 
 ## CityType（37 字节）
 
@@ -52,7 +52,7 @@
 | `PersonQueue` / `Persons` | 2×U16 | 全局人物队列切片 | 由 `Officer.cityId` 反向表示 | 导入时展开，回写时需重建稳定顺序 |
 | `ToolQueue` / `Tools` | 2×U16 | 全局道具队列切片 | 无 | 导入层必须保留发现位与顺序 |
 
-当前 `City.defense`、`type`、`region` 和 `neighbors` 是现代地图/自动战斗模型，不是 `CityType` 原字段。城市坐标来自独立资源 `dCityPos`，也不在 `CityType` 内。
+当前 `City.defense`、`type`、`region` 和 `neighbors` 是现代地图/自动战斗模型，不是 `CityType` 原字段。原版 `AvoidCalamity` 只映射到 `disasterPrevention`，不得再作为城防值使用。城市坐标来自独立资源 `dCityPos`，也不在 `CityType` 内。
 
 ### 原版库中的 City 记录（31 字节）
 
@@ -83,3 +83,4 @@
 - `ResKey` 非零时，每个存储字节减去密钥并按 `U8` 回绕。城市名、人物名和道具名资源已能按 ID/条目定位和解密；字符编码与正式文本导出策略留待下一阶段。
 - `dFgtLandF` 已从资源 2、条目 4 取得 48 个有符号字节，并固化为 `BAYE_TERRAIN_SHIFTS`。资源证据见 `fixtures/lib-original.json`。
 - 本地 `dat.lib.orig` 只作研究输入，未进入版本控制；仓库中的 fixture 只含结构元数据、最小规则表和哈希。
+- `compat/baye/legacyScenario.ts` 已能解析四时期容器条目、GBK 名称、自定义字形、城市坐标和道路；`data/legacyScenario.ts` 当前将时期 1 的驻城人物转换为可玩的 `GameState`。未出仕人物的出现条件尚未接入领域状态。

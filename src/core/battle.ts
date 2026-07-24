@@ -2,11 +2,14 @@ import { appendLogs } from './logs';
 import { nextRandom } from './random';
 import type { GameState, Officer } from './types';
 import { assertValidGameState } from './validation';
+import { updateCitySatraps } from './administration';
+import { evaluateOutcome } from './outcome';
 
 export type AttackOrder = {
   sourceCityId: string;
   targetCityId: string;
   officerIds: string[];
+  provisions: number;
 };
 
 export type BattleConfig = {
@@ -36,6 +39,7 @@ export type BattleResult = {
   defenderFactionId: string;
   attackerOfficerIds: string[];
   defenderOfficerIds: string[];
+  provisions: number;
   winner: 'attacker' | 'defender';
   attackerScore: number;
   defenderScore: number;
@@ -105,6 +109,7 @@ export function resolveBattle(state: GameState, order: AttackOrder, config = bat
     defenderFactionId: context.target.ownerId,
     attackerOfficerIds: context.attackers.map((officer) => officer.id),
     defenderOfficerIds: context.defenders.map((officer) => officer.id),
+    provisions: order.provisions,
     winner,
     attackerScore,
     defenderScore,
@@ -134,6 +139,10 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
 
   const cities = {
     ...state.cities,
+    [source.id]: {
+      ...source,
+      food: source.food - result.provisions,
+    },
     [target.id]: {
       ...target,
       reserveTroops: Math.max(0, target.reserveTroops - result.defenderReserveLosses),
@@ -154,8 +163,17 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
     }
   }
 
-  let next: GameState = { ...state, cities, officers, rngSeed: result.nextRngSeed };
+  let next: GameState = {
+    ...state,
+    campaignStarted: true,
+    cities,
+    officers,
+    rngSeed: result.nextRngSeed,
+    actedOfficerIds: [...state.actedOfficerIds, ...result.attackerOfficerIds],
+  };
+  next = updateCitySatraps(next);
   next = appendLogs(next, 'battle', result.logs);
+  next = evaluateOutcome(next);
   assertValidGameState(next);
   return next;
 }
@@ -177,6 +195,8 @@ function validateAttackOrder(state: GameState, order: AttackOrder) {
   }
   if (order.officerIds.length === 0) throw new Error('At least one attacking officer is required');
   if (new Set(order.officerIds).size !== order.officerIds.length) throw new Error('Attacking officers must be unique');
+  if (!Number.isInteger(order.provisions) || order.provisions <= 0) throw new Error('Campaign provisions must be a positive integer');
+  if (source.food < order.provisions) throw new Error('Source city does not have enough provisions');
 
   const attackers = order.officerIds.map((officerId) => {
     const officer = state.officers[officerId];
@@ -186,6 +206,7 @@ function validateAttackOrder(state: GameState, order: AttackOrder) {
     }
     if (officer.troops <= 0) throw new Error(`Officer has no troops: ${officerId}`);
     if (officer.stamina <= 0) throw new Error(`Officer has no stamina: ${officerId}`);
+    if (state.actedOfficerIds.includes(officerId)) throw new Error(`Officer has already acted this month: ${officerId}`);
     return officer;
   });
   const defenders = Object.values(state.officers)

@@ -18,6 +18,7 @@ function playOneRound(): GameState {
     sourceCityId: 'xuchang',
     targetCityId: 'xiangyang',
     officerIds: ['xun-yu'],
+    provisions: 100,
   });
   return advanceTurn(afterAttack);
 }

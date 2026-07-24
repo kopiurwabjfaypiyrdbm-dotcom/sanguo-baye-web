@@ -21,7 +21,7 @@
 - 按性格阈值选择目标的基础 AI
 - 玩家行动、AI 行动、经济结算组成的完整核心回合
 
-当前 React 页面仍是静态布局，Phaser 主地图和操作面板将在下一阶段接入。暂不包含手动战斗棋盘。
+当前 React 页面已经接入可拖动、缩放和选择城池的 Phaser 战略地图，并显示势力、资源、太守和驻城人物。页面默认使用可提交的 12 城演示剧本；玩家可在浏览器中选择本地 `dat.lib.orig`，即时载入原版时期 1 的 38 城地图和当前人物。原始资源不会上传到外部服务或写入仓库。开垦、征兵、出征和月度推进已形成首个可玩闭环；手动战斗棋盘尚未实现。
 
 原版兼容证据已开始与临时玩法层分离：`src/compat/baye/` 包含经过参考样本验证的 Web 移植 RNG、战术攻防/伤害和战略自动战斗公式，但尚未接管 `src/core/` 的演示流程。范围和剩余不确定性见 `references/parity-matrix.md`。
 
@@ -55,6 +55,8 @@ npm run dev
 .\scripts\verify-baye-local-reference.ps1 -SourcePath <path-to-Baye>
 ```
 
+启动页面后点击“载入原版资料”，选择 `<path-to-Baye>/baye_c/src/dat.lib.orig`，即可切换到时期 1。该文件只由当前浏览器会话读取；刷新页面后恢复内置演示剧本。
+
 ## 技术方向
 
 - Vite + TypeScript
@@ -70,8 +72,8 @@ data/source/       整理出的原始/编辑用数据表
 docs/design/       设计文档
 src/core/          状态、校验、战斗、经济、回合和 AI
 src/compat/baye/   经过独立参考输出验证的原版兼容算法
-src/data/          数据导入与校验
-src/game/          Phaser 场景与地图渲染
+src/data/          CSV、原版剧本到领域状态的转换与校验
+src/game/          Phaser 战略地图、事件桥与生命周期
 src/ui/            React UI
 ```
 
