@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check": "npm test && npm run build"
   },
   "dependencies": {
     "phaser": "^3.90.0",

@@ -4,6 +4,8 @@ export type AiProfile = 'balanced' | 'aggressive' | 'defensive';
 
 export type LogKind = 'system' | 'turn' | 'battle' | 'ai' | 'map';
 
+export type GamePhase = 'player' | 'ai' | 'ended';
+
 export type Faction = {
   id: string;
   name: string;
@@ -55,10 +57,10 @@ export type Officer = {
   force: number;
   intelligence: number;
   leadership: number;
-  armsType: string;
-  weapon?: string;
-  intelligenceItem?: string;
-  mount?: string;
+  armsTypeId: string;
+  weaponItemId?: string;
+  intelligenceItemId?: string;
+  mountItemId?: string;
   factionId: string;
   cityId: string;
   troops: number;
@@ -75,6 +77,12 @@ export type GameLog = {
 };
 
 export type GameState = {
+  schemaVersion: 1;
+  turn: number;
+  phase: GamePhase;
+  activeFactionId: string;
+  factionOrder: string[];
+  rngSeed: number;
   calendar: {
     year: number;
     month: number;

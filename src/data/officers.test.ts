@@ -35,4 +35,17 @@ describe('parseOfficerRows', () => {
       mount: undefined,
     });
   });
+
+  it('rejects blank required numeric values', () => {
+    const csv = [
+      '武将ID,名字,武力,智力,统率,兵种,武器,智力道具,坐骑',
+      '2,赵云,,87,90,弓兵,,,',
+    ].join('\n');
+
+    expect(() => parseOfficerRows(csv)).toThrow('Missing required value in column: 武力');
+  });
+
+  it('rejects an empty officer file', () => {
+    expect(() => parseOfficerRows('')).toThrow('Officer CSV is empty');
+  });
 });
