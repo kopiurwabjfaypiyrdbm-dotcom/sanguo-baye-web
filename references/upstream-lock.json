@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "repository": {
+    "name": "erduoniba/baye-fmj-app",
+    "url": "https://github.com/erduoniba/baye-fmj-app.git",
+    "commit": "60c41ea2d9932b295833ece7004394497610596a",
+    "tree": "b917aaeb6063c07c276fed1ea166cc18b3e4fd0a",
+    "commitDate": "2026-03-30T12:37:37Z",
+    "pinnedOn": "2026-07-24"
+  },
+  "referencePaths": [
+    {
+      "path": "Baye/baye_c",
+      "role": "authoritative-port-source",
+      "license": "MIT"
+    },
+    {
+      "path": "Baye/baye_doc/_sources",
+      "role": "generated-script-api-source",
+      "license": "unverified-reference-only"
+    },
+    {
+      "path": "Baye/baye_offline/README.md",
+      "role": "web-distribution-documentation",
+      "license": "GPL-2.0-directory"
+    },
+    {
+      "path": "Baye/baye_offline/LICENSE",
+      "role": "web-distribution-license",
+      "license": "GPL-2.0-directory"
+    },
+    {
+      "path": "Baye/baye_offline/js/bridge.js",
+      "role": "web-bridge-reference",
+      "license": "GPL-2.0-directory"
+    },
+    {
+      "path": "Baye/baye_offline/js/lcd.js",
+      "role": "lcd-canvas-reference",
+      "license": "GPL-2.0-directory"
+    },
+    {
+      "path": "Baye/baye_offline/js/wasm-loader.js",
+      "role": "wasm-loader-reference",
+      "license": "GPL-2.0-directory"
+    }
+  ]
+}
