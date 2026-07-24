@@ -21,6 +21,21 @@
       "role": "person-city-tool-structures"
     },
     {
+      "path": "baye_c/src/baye/resource.h",
+      "sha256": "57abab34cd4131256ea09f8a10b7142ce613f70224bc9c61a1b453a1daec45d7",
+      "role": "legacy-resource-header"
+    },
+    {
+      "path": "baye_c/src/baye/datman.h",
+      "sha256": "9506ff0be534faa27747e22ac100f35e3d1ff1cd9522b24153d086166cb4007d",
+      "role": "wide-resource-header-and-item-index"
+    },
+    {
+      "path": "baye_c/src/baye/consdef.h",
+      "sha256": "2ba7a0c7c7625eea3aa10d149cd7d21c4adb39cb6035ffa4132f20360d75e9e1",
+      "role": "resource-ids"
+    },
+    {
       "path": "baye_c/src/baye/fight.h",
       "sha256": "8588cf29b11058291afc73a554ccb63759d56b1851932fc174f71b0f0b126bd5",
       "role": "arms-terrain-and-battle-constants"
@@ -34,6 +49,21 @@
       "path": "baye_c/src/tactic.c",
       "sha256": "3bbbfef568a643d65619f21ca68ec0430c874fd0f4c4bc16f82c807f52041cae",
       "role": "scenario-loading"
+    },
+    {
+      "path": "baye_c/src/datman.c",
+      "sha256": "c3f773edc4d78074995863751272698eec8eea78b6a3426461180156b87200d4",
+      "role": "resource-loading"
+    },
+    {
+      "path": "baye_c/src/data/pconst.h",
+      "sha256": "c289f77793835350357404d0dd273d202da4a9f3bfbaf61cf16f7a285690bc41",
+      "role": "resource-item-ids"
+    },
+    {
+      "path": "baye_c/src/dat.lib.orig",
+      "sha256": "c5b33922146e1631b5ab1c8429ca3c6cb3b80b26152747e391438409ec0f82ab",
+      "role": "local-only-original-resource-archive"
     },
     {
       "path": "baye_c/src/FgtCount.c",

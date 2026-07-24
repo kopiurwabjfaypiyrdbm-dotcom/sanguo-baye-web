@@ -33,3 +33,20 @@ oracle 固化 `FgtCount.c` 的 C 浮点到 `U16` 截断、无符号乘法、6×6
 ```
 
 该探针是 `data-structure-map.md` 中 19/37/66 字节结论的机器可重复证据，也用于防止过期源码注释被误当成二进制布局。
+
+## 原版 `.lib` 容器
+
+`lib-original.json` 由本地 `dat.lib.orig` 采集，只保存资源头、条目长度和解密后 SHA-256，不保存资源内容：
+
+```powershell
+node scripts/collect-baye-lib-reference.mjs --source <path-to-Baye> --output references/fixtures/lib-original.json
+```
+
+它覆盖 `dFgtLandF`、时期 1 城市/人物/人物队列/道具队列，以及首条城市、人物和道具名称。设置 `BAYE_REFERENCE_SOURCE` 后运行测试，可让正式 TypeScript 解析器直接复核本地库：
+
+```powershell
+$env:BAYE_REFERENCE_SOURCE = '<path-to-Baye>'
+npm test -- --run src/compat/baye/libArchive.reference.test.ts
+```
+
+本地原版库使用 12 字节资源头和 4 字节变长索引；当前 C 移植的 `datman.h` 已将相应字段扩宽，不能混用两种布局。

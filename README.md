@@ -25,6 +25,8 @@
 
 原版兼容证据已开始与临时玩法层分离：`src/compat/baye/` 包含经过参考样本验证的 Web 移植 RNG、战术攻防/伤害和战略自动战斗公式，但尚未接管 `src/core/` 的演示流程。范围和剩余不确定性见 `references/parity-matrix.md`。
 
+兼容范围、随机数策略和允许的现代化差异见 `docs/design/compatibility-policy.md`。兼容层现已包含原版 `.lib` 的安全容器解析器；原始资源仍只在本地使用，仓库只保存结构元数据和哈希证据。
+
 ## 本地运行
 
 要求 Node.js 20 或更高版本。

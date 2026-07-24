@@ -4,7 +4,8 @@
 
 ## 二进制约定
 
-- `dictsys.h` 将 `U8/U16/U32` 定义为 8/16/32 位无符号整数，并把多字节类型对齐设为 1。`fixtures/structure-layout.json` 的 GCC 探针得到 `sizeof(PersonType) == 19`、`sizeof(CityType) == 37`、`sizeof(GOODS) == 66`；`attribute.h` 中“12 Bytes”“30 Bytes”的旧注释不是当前布局依据。
+- `dictsys.h` 将 `U8/U16/U32` 定义为 8/16/32 位无符号整数，并把多字节类型对齐设为 1。`fixtures/structure-layout.json` 的 GCC 探针得到当前移植运行期的 `sizeof(PersonType) == 19`、`sizeof(CityType) == 37`、`sizeof(GOODS) == 66`。
+- 本地 `dat.lib.orig` 不是上述扩宽结构的直接内存镜像。它使用 12 字节 `RCHEAD`、4 字节 `RIDX`，人物/道具 ID 仍为 `U8`；当前 `datman.h` 与运行期结构已经扩宽，必须作为另一格式显式处理。
 - `PersonID`、`ToolID`、`SkillID` 都是 `U16`。人物、君主、太守和装备引用通常使用 `index + 1`，`0` 表示空引用；调用点会在访问数组前减 1。
 - 人物 `Belong == 0xffff` 在死亡/失去归属流程中出现，不能当作普通君主 ID。`OldBelong` 的实际用途是暂存旧归属并在部分月度事件中恢复；`LoadPeriod` 会把它重置为 `0`。
 - `g_PersonsQueue` 和 `g_GoodsQueue` 是全局连续队列，城池中的 `*Queue` 是起点、`Persons/Tools` 是长度，并不是独立数组。
@@ -30,6 +31,10 @@
 
 当前 `Officer.leadership` 和 CSV 的“统率”没有 `PersonType` 对应字段，属于现有原型扩展。原版默认攻击取武力、防御取智力；不得让统率进入原版兼容公式。
 
+### 原版库中的 Person 记录（15 字节）
+
+时期 1 人物条目为 3000 字节，恰好是 200×15。旧布局保持相同字段顺序，但 `OldBelong`、`Belong` 与 `Equip[2]` 各元素均为 `U8`，因此相对当前 19 字节运行期结构少 4 字节。下一阶段的原版数据解码器必须读取 15 字节记录，再显式扩宽为现代领域值，不能使用当前 `PersonType` 的 `sizeof` 切片。
+
 ## CityType（37 字节）
 
 | C 字段 | 宽度 | 已确认语义 | 当前 TypeScript 对应 | 差异/决定 |
@@ -49,6 +54,10 @@
 
 当前 `City.defense`、`type`、`region` 和 `neighbors` 是现代地图/自动战斗模型，不是 `CityType` 原字段。城市坐标来自独立资源 `dCityPos`，也不在 `CityType` 内。
 
+### 原版库中的 City 记录（31 字节）
+
+时期城市条目固定为 1180 字节：38×31 字节城市记录，末尾紧跟一个小端 `U16` 年份。四个时期实测年份为 190、198、208、225。旧布局中 `Belong`、`SatrapId`、`PersonQueue`、`Persons`、`ToolQueue`、`Tools` 为 `U8`；其余字段顺序与当前结构一致。`attribute.h` 的旧“30 Bytes”注释仍少算了 1 字节，不能作为切片长度。
+
 ## GOODS（66 字节）
 
 | C 字段 | 宽度 | 已确认语义 | 当前 TypeScript 对应 |
@@ -64,11 +73,13 @@
 
 - `LoadPeriod` 接受 1–4，对应董卓弄权、曹操崛起、赤壁之战、三国鼎立。
 - 城市记录来自 `CITY_RESID`，紧随全部城市记录之后读取 `g_YearDate`；默认配置为 38 城、主地图 12×9。
-- 人物来自 `GENERAL_RESID`，数量由资源长度除以 19 得出；人物队列和道具队列分别来自 `GENERAL_QUEUE`、`GOODS_QUEUE`。
+- 当前扩宽版运行时按 19 字节 `PersonType` 计算人物数；原版 `dat.lib.orig` 的时期人物条目则是 200×15 字节。人物队列和道具队列分别来自 `GENERAL_QUEUE`、`GOODS_QUEUE`，时期 1 实测长度为 200 和 33 字节。
 - 装载完成后月份设为 1、城池灾害状态清零、人物体力和兵力设为 100、`OldBelong` 清零。这些是运行期初始化规则，不能误写成资源文件字段。
 
-## 尚未解析
+## `.lib` 容器已确认
 
-- `.lib` 资源容器的目录、字节序验证和名称表绑定尚未形成可提交的最小样本；原始 `.lib` 仍只允许本地研究。
-- `dFgtLandF` 的每兵种×地形实际字节表位于资源文件，不在 C 源码内。兼容攻防函数因此把该有符号字节作为显式输入，不用文档示例中的全 1 表冒充原始数据。
-- 人物名称、城市名称和道具名称的编码与具体资源 ID 尚待导入器阶段解析。
+- 资源目录是按一基资源 ID 索引的绝对 `U32` 小端偏移，`0xffffffff` 表示缺失；资源条目和变长索引内部偏移同样使用一基条目编号。
+- 原版 legacy 头为 12 字节（`ItmLen: U16`），变长 `RIDX` 为 `U16 offset + U16 length`；当前移植 wide 头/索引分别为 14/8 字节。`src/compat/baye/libArchive.ts` 要求显式选择格式并进行全部边界检查。
+- `ResKey` 非零时，每个存储字节减去密钥并按 `U8` 回绕。城市名、人物名和道具名资源已能按 ID/条目定位和解密；字符编码与正式文本导出策略留待下一阶段。
+- `dFgtLandF` 已从资源 2、条目 4 取得 48 个有符号字节，并固化为 `BAYE_TERRAIN_SHIFTS`。资源证据见 `fixtures/lib-original.json`。
+- 本地 `dat.lib.orig` 只作研究输入，未进入版本控制；仓库中的 fixture 只含结构元数据、最小规则表和哈希。

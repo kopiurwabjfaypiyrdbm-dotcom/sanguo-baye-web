@@ -43,5 +43,5 @@
 - `data-structure-map.md`：人物、城市、道具和剧本装载的字段/宽度/哨兵映射。
 - `parity-matrix.md`：规则和行为一致性状态。
 - `screen-catalog.md`：原版界面采集模板。
-- `fixtures/`：可再生的最小 RNG 与战斗参考输出。
+- `fixtures/`：可再生的最小 RNG、战斗与 `.lib` 结构参考输出。
 - `provenance/`：代码、数据和美术来源边界。

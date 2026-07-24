@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../references/fixtures/battle-c-oracle.json';
+import libFixture from '../../../references/fixtures/lib-original.json';
 import {
+  BAYE_TERRAIN_SHIFTS,
   adjustBayeTerrainValue,
   buildBayeAttackAttributes,
   countBayeAttackDamage,
+  getBayeTerrainShift,
   resolveBayeArmsType,
   resolveBayeStrategicBattle,
   type BayeArmsType,
@@ -11,6 +14,20 @@ import {
 } from './tacticalBattle';
 
 describe('Baye C battle formula compatibility', () => {
+  it('matches the 6x8 dFgtLandF table extracted from the original resource library', () => {
+    const observation = libFixture.observations.find(
+      (candidate) => candidate.resourceId === 2 && candidate.itemIndex === 4,
+    );
+    expect(observation?.item.signedValues).toEqual(BAYE_TERRAIN_SHIFTS.flat());
+    for (let armsType = 0; armsType < BAYE_TERRAIN_SHIFTS.length; armsType += 1) {
+      for (let terrain = 0; terrain < BAYE_TERRAIN_SHIFTS[armsType].length; terrain += 1) {
+        expect(getBayeTerrainShift(armsType as BayeArmsType, terrain as BayeTerrain)).toBe(
+          BAYE_TERRAIN_SHIFTS[armsType][terrain],
+        );
+      }
+    }
+  });
+
   it('matches all six arms types across all eight terrain defence factors', () => {
     expect(fixture.results.attackAttributes).toHaveLength(6 * 8);
     for (const expected of fixture.results.attackAttributes) {
