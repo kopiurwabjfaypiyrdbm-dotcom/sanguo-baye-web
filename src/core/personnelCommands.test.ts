@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { createSampleState } from './sampleState';
-import { SEARCH_STAMINA_COST, appointSatrap, moveOfficer, searchCity } from './personnelCommands';
+import {
+  RECRUIT_OFFICER_STAMINA_COST,
+  REWARD_LOYALTY_GAIN,
+  REWARD_MONEY_COST,
+  SEARCH_STAMINA_COST,
+  appointSatrap,
+  moveOfficer,
+  recruitFreeOfficer,
+  rewardOfficer,
+  searchCity,
+} from './personnelCommands';
 import { getCityFreeOfficers, getCityOfficers } from './selectors';
 import { validateGameState } from './validation';
 
@@ -37,6 +47,35 @@ describe('personnel commands', () => {
       .toBeGreaterThan(state.cities.chenliu.money + state.cities.chenliu.food);
     expect(() => searchCity(searched, { cityId: 'chenliu', officerId: 'zhang-liao' }))
       .toThrow('本月已经执行过命令');
+  });
+
+  it('recruits a previously discovered free officer with deterministic random state', () => {
+    const state = createSampleState();
+    state.discoveredOfficerIds = ['chen-gong'];
+    state.rngSeed = 43;
+    const next = recruitFreeOfficer(state, {
+      cityId: 'chenliu',
+      executorOfficerId: 'zhang-liao',
+      targetOfficerId: 'chen-gong',
+    });
+
+    expect(next.officers['chen-gong'].status).toBe('serving');
+    expect(next.officers['zhang-liao'].stamina).toBe(100 - RECRUIT_OFFICER_STAMINA_COST);
+    expect(next.discoveredOfficerIds).toEqual([]);
+    expect(next.actedOfficerIds).toContain('zhang-liao');
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('rewards a stationed officer with the documented temporary money rule', () => {
+    const state = createSampleState();
+    const before = state.officers['xiahou-dun'].loyalty;
+    const next = rewardOfficer(state, { cityId: 'luoyang', officerId: 'xiahou-dun' });
+
+    expect(next.cities.luoyang.money).toBe(state.cities.luoyang.money - REWARD_MONEY_COST);
+    expect(next.officers['xiahou-dun'].loyalty).toBe(Math.min(100, before + REWARD_LOYALTY_GAIN));
+    expect(next.actedOfficerIds).toEqual([]);
+    expect(() => rewardOfficer(next, { cityId: 'luoyang', officerId: 'xiahou-dun' }))
+      .toThrow('忠诚已经达到上限');
   });
 
   it('moves an officer to an adjacent friendly city and repairs the satrap', () => {

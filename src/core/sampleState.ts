@@ -85,7 +85,7 @@ const armsTypes: Record<string, ArmsType> = {
 
 export function createSampleState(): GameState {
   return updateCitySatraps({
-    schemaVersion: 1,
+    schemaVersion: 2,
     scenario: { id: 'sample-190', source: 'sample' },
     turn: 1,
     phase: 'player',
@@ -96,6 +96,7 @@ export function createSampleState(): GameState {
     campaignStarted: false,
     playerFactionId: 'cao-cao',
     actedOfficerIds: [],
+    discoveredOfficerIds: [],
     factions: structuredClone(factions),
     cities: structuredClone(cities),
     officers: structuredClone(officers),

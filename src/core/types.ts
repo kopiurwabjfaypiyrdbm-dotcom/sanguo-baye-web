@@ -94,7 +94,7 @@ export type GameLog = {
 };
 
 export type GameState = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   scenario?: {
     id: string;
     source: 'sample' | 'baye-legacy';
@@ -113,6 +113,8 @@ export type GameState = {
   campaignStarted: boolean;
   playerFactionId: string;
   actedOfficerIds: string[];
+  /** Free officers whose whereabouts are known to the player. */
+  discoveredOfficerIds: string[];
   factions: Record<string, Faction>;
   cities: Record<string, City>;
   officers: Record<string, Officer>;

@@ -9,7 +9,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const add = (path: string, message: string) => issues.push({ path, message });
 
-  if (state.schemaVersion !== 1) add('schemaVersion', 'must be 1');
+  if (state.schemaVersion !== 2) add('schemaVersion', 'must be 2');
   if (typeof state.campaignStarted !== 'boolean') add('campaignStarted', 'must be a boolean');
   if (!Number.isInteger(state.turn) || state.turn < 1) add('turn', 'must be a positive integer');
   if (!Number.isInteger(state.rngSeed) || state.rngSeed < 0) add('rngSeed', 'must be a non-negative integer');
@@ -30,6 +30,16 @@ export function validateGameState(state: GameState): ValidationIssue[] {
   if (actedOfficerIds.size !== state.actedOfficerIds.length) add('actedOfficerIds', 'contains duplicate officer ids');
   for (const officerId of state.actedOfficerIds) {
     if (!state.officers[officerId]) add('actedOfficerIds', `unknown officer: ${officerId}`);
+  }
+
+  const discoveredOfficerIds = new Set(state.discoveredOfficerIds);
+  if (discoveredOfficerIds.size !== state.discoveredOfficerIds.length) {
+    add('discoveredOfficerIds', 'contains duplicate officer ids');
+  }
+  for (const officerId of state.discoveredOfficerIds) {
+    const officer = state.officers[officerId];
+    if (!officer) add('discoveredOfficerIds', `unknown officer: ${officerId}`);
+    else if (officer.status !== 'free') add('discoveredOfficerIds', `officer is not free: ${officerId}`);
   }
 
   const orderSet = new Set(state.factionOrder);

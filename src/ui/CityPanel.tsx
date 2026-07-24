@@ -7,8 +7,12 @@ import {
   calculateRecruitCapacity,
 } from '../core/cityCommands';
 import type { GameState } from '../core/types';
-import { SEARCH_STAMINA_COST } from '../core/personnelCommands';
-import { getCityOfficers, getNeighborCities } from '../core/selectors';
+import {
+  RECRUIT_OFFICER_STAMINA_COST,
+  REWARD_MONEY_COST,
+  SEARCH_STAMINA_COST,
+} from '../core/personnelCommands';
+import { getCityFreeOfficers, getCityOfficers, getNeighborCities } from '../core/selectors';
 
 type CityPanelProps = {
   state: GameState;
@@ -17,6 +21,8 @@ type CityPanelProps = {
   onDevelop: (cityId: string, officerId: string) => void;
   onRecruit: (cityId: string, officerId: string) => void;
   onSearch: (cityId: string, officerId: string) => void;
+  onRecruitOfficer: (cityId: string, executorOfficerId: string, targetOfficerId: string) => void;
+  onReward: (cityId: string, officerId: string) => void;
   onMove: (sourceCityId: string, targetCityId: string, officerId: string) => void;
   onAppoint: (cityId: string, officerId: string) => void;
   onDistribute: (cityId: string, officerId: string, targetTroops: number) => void;
@@ -32,6 +38,8 @@ export function CityPanel({
   onDevelop,
   onRecruit,
   onSearch,
+  onRecruitOfficer,
+  onReward,
   onMove,
   onAppoint,
   onDistribute,
@@ -42,6 +50,10 @@ export function CityPanel({
   const eligibleOfficers = useMemo(
     () => officers.filter((officer) => officer.factionId === state.playerFactionId),
     [officers, state.playerFactionId],
+  );
+  const discoveredFreeOfficers = useMemo(
+    () => getCityFreeOfficers(state, cityId).filter((officer) => state.discoveredOfficerIds.includes(officer.id)),
+    [state, cityId],
   );
   const hostileNeighbors = useMemo(
     () => getNeighborCities(state, cityId).filter((neighbor) => city && neighbor.ownerId !== city.ownerId),
@@ -54,6 +66,7 @@ export function CityPanel({
   const [selectedOfficerId, setSelectedOfficerId] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
   const [selectedMoveTargetId, setSelectedMoveTargetId] = useState('');
+  const [selectedRecruitTargetId, setSelectedRecruitTargetId] = useState('');
   const [distributionTarget, setDistributionTarget] = useState('0');
   const [selectedAttackerIds, setSelectedAttackerIds] = useState<string[]>([]);
   const [provisions, setProvisions] = useState('100');
@@ -81,6 +94,12 @@ export function CityPanel({
     }
   }, [friendlyNeighbors, selectedMoveTargetId]);
 
+  useEffect(() => {
+    if (!discoveredFreeOfficers.some((officer) => officer.id === selectedRecruitTargetId)) {
+      setSelectedRecruitTargetId(discoveredFreeOfficers[0]?.id ?? '');
+    }
+  }, [discoveredFreeOfficers, selectedRecruitTargetId]);
+
   const faction = state.factions[city.ownerId];
   const satrap = city.satrapOfficerId ? state.officers[city.satrapOfficerId] : undefined;
   const selectedOfficer = state.officers[selectedOfficerId];
@@ -100,6 +119,11 @@ export function CityPanel({
     && !selectedOfficerActed && calculateRecruitCapacity(city) > 0;
   const canSearch = isOwned && Boolean(selectedOfficer) && selectedOfficer.stamina >= SEARCH_STAMINA_COST
     && !selectedOfficerActed;
+  const canRecruitOfficer = isOwned && Boolean(selectedOfficer) && !selectedOfficerActed
+    && selectedOfficer.stamina >= RECRUIT_OFFICER_STAMINA_COST && Boolean(selectedRecruitTargetId);
+  const canReward = isOwned && Boolean(selectedOfficer)
+    && selectedOfficer.id !== state.factions[state.playerFactionId].rulerOfficerId
+    && selectedOfficer.loyalty < 100 && city.money >= REWARD_MONEY_COST;
   const canMove = isOwned && Boolean(selectedOfficer) && !selectedOfficerActed && Boolean(selectedMoveTargetId);
   const canAppoint = isOwned && Boolean(selectedOfficer) && city.satrapOfficerId !== selectedOfficerId;
   const canDistribute = isOwned && Boolean(selectedOfficer) && Number.isInteger(distributionValue)
@@ -159,9 +183,10 @@ export function CityPanel({
           {officers.slice(0, 8).map((officer) => (
             <div className="officer-row" key={officer.id}>
               <strong>{officer.name}</strong>
-              <span>武 {officer.force}</span>
-              <span>智 {officer.intelligence}</span>
+              <span>武 {officer.force} · 智 {officer.intelligence}</span>
               <span>兵 {number.format(officer.troops)}</span>
+              <span>忠 {officer.loyalty}</span>
+              <span>{city.satrapOfficerId === officer.id ? '太守' : '在职'} · {state.actedOfficerIds.includes(officer.id) ? '已行动' : '待命'}</span>
             </div>
           ))}
           {officers.length > 8 && <p className="more-officers">另有 {officers.length - 8} 人</p>}
@@ -188,6 +213,7 @@ export function CityPanel({
               </select>
             </label>
 
+            <p className="command-group-title">内政</p>
             <div className="city-command-buttons">
               <button
                 type="button"
@@ -215,6 +241,27 @@ export function CityPanel({
               </button>
             </div>
 
+            <p className="command-group-title">人事</p>
+            {discoveredFreeOfficers.length > 0 && (
+              <div className="recruit-command-row">
+                <label className="command-field">
+                  <span>已发现人才</span>
+                  <select value={selectedRecruitTargetId} onChange={(event) => setSelectedRecruitTargetId(event.target.value)}>
+                    {discoveredFreeOfficers.map((officer) => (
+                      <option value={officer.id} key={officer.id}>{officer.name} · 武 {officer.force} · 智 {officer.intelligence}</option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  disabled={disabled || !canRecruitOfficer}
+                  onClick={() => onRecruitOfficer(city.id, selectedOfficerId, selectedRecruitTargetId)}
+                  title={`消耗执行武将体力 ${RECRUIT_OFFICER_STAMINA_COST}`}
+                >
+                  登用
+                </button>
+              </div>
+            )}
             <div className="personnel-command-row">
               <label className="command-field">
                 <span>调动到相邻己方城池</span>
@@ -244,7 +291,19 @@ export function CityPanel({
                 任太守
               </button>
             </div>
+            <button
+              type="button"
+              className="reward-command"
+              disabled={disabled || !canReward}
+              onClick={() => onReward(city.id, selectedOfficerId)}
+              title={selectedOfficer?.loyalty >= 100
+                ? '该武将忠诚已经达到上限'
+                : `消耗城中金钱 ${REWARD_MONEY_COST}，不占用武将本月行动`}
+            >
+              奖赏所选武将（{REWARD_MONEY_COST} 金）
+            </button>
 
+            <p className="command-group-title">军事</p>
             <div className="distribution-row">
               <label className="command-field">
                 <span>分配后武将兵力（上限 {number.format(distributionCapacity)}）</span>

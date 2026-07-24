@@ -1,6 +1,20 @@
 import { estimateBattle, executeAttack, type AttackOrder } from './battle';
+import {
+  DEVELOP_MONEY_COST,
+  DEVELOP_STAMINA_COST,
+  RECRUIT_STAMINA_COST,
+  calculateOfficerTroopCapacity,
+  calculateRecruitCapacity,
+  developFarming,
+  distributeTroops,
+  recruitTroops,
+} from './cityCommands';
 import { appendLogs } from './logs';
+import { SEARCH_STAMINA_COST, moveOfficer, searchCity } from './personnelCommands';
 import type { AiProfile, GameState } from './types';
+
+export const AI_MAX_ACTIONS = 5;
+const AI_MIN_ATTACK_PROVISIONS = 200;
 
 export type AiDecision = {
   action: 'attack' | 'skip';
@@ -41,7 +55,7 @@ export function planAiAction(state: GameState, factionId = state.activeFactionId
       )
       .sort((a, b) => b.leadership - a.leadership || a.id.localeCompare(b.id))
       .map((officer) => officer.id);
-    if (officerIds.length === 0 || source.food <= 0) continue;
+    if (officerIds.length === 0 || source.food < AI_MIN_ATTACK_PROVISIONS) continue;
 
     for (const targetId of [...source.neighbors].sort()) {
       const target = state.cities[targetId];
@@ -88,18 +102,132 @@ export function planAiAction(state: GameState, factionId = state.activeFactionId
 }
 
 export function runAiFactionTurn(state: GameState): GameState {
-  const decision = planAiAction(state);
-  const faction = state.factions[decision.factionId];
-  if (decision.action === 'skip' || !decision.order) {
-    return appendLogs(state, 'ai', [`${faction.name}跳过军事行动：${decision.reason}`]);
+  const faction = state.factions[state.activeFactionId];
+  let next = state;
+  let actionCount = 0;
+
+  for (const operation of [balanceTroops, recruitReserves, developWeakCity, searchLocalTalent, reinforceFrontier]) {
+    if (actionCount >= AI_MAX_ACTIONS - 1 || next.phase === 'ended') break;
+    const operated = operation(next, faction.id);
+    if (operated) {
+      next = operated;
+      actionCount += 1;
+    }
   }
 
-  const source = state.cities[decision.order.sourceCityId];
-  const target = state.cities[decision.order.targetCityId];
-  const announced = appendLogs(state, 'ai', [
-    `${faction.name}决定从${source.name}进攻${target.name}：${decision.reason}`,
+  if (next.phase === 'ended' || actionCount >= AI_MAX_ACTIONS) return next;
+  const decision = planAiAction(next, faction.id);
+  if (decision.action === 'skip' || !decision.order) {
+    return appendLogs(next, 'ai', [`${faction.name}完成 ${actionCount} 项经营行动，未出征：${decision.reason}`]);
+  }
+
+  const source = next.cities[decision.order.sourceCityId];
+  const target = next.cities[decision.order.targetCityId];
+  const announced = appendLogs(next, 'ai', [
+    `${faction.name}完成 ${actionCount} 项经营行动后，决定从${source.name}进攻${target.name}：${decision.reason}`,
   ]);
   return executeAttack(announced, decision.order);
+}
+
+function balanceTroops(state: GameState, factionId: string): GameState | undefined {
+  const candidates = Object.values(state.cities)
+    .filter((city) => city.ownerId === factionId && city.reserveTroops > 0)
+    .flatMap((city) => Object.values(state.officers)
+      .filter((officer) => officer.status === 'serving' && officer.factionId === factionId && officer.cityId === city.id)
+      .map((officer) => ({ city, officer, capacity: calculateOfficerTroopCapacity(officer) })))
+    .filter(({ officer, capacity }) => officer.troops < capacity)
+    .sort((a, b) =>
+      (a.officer.troops / a.capacity) - (b.officer.troops / b.capacity)
+      || b.officer.leadership - a.officer.leadership
+      || a.officer.id.localeCompare(b.officer.id));
+  const candidate = candidates[0];
+  if (!candidate) return undefined;
+  return distributeTroops(state, {
+    cityId: candidate.city.id,
+    officerId: candidate.officer.id,
+    targetTroops: Math.min(candidate.capacity, candidate.officer.troops + candidate.city.reserveTroops),
+  });
+}
+
+function recruitReserves(state: GameState, factionId: string): GameState | undefined {
+  const candidates = Object.values(state.cities)
+    .filter((city) => city.ownerId === factionId && city.reserveTroops < 1_000 && city.food >= 200)
+    .filter((city) => calculateRecruitCapacity(city) > 0)
+    .sort((a, b) => a.reserveTroops - b.reserveTroops || a.id.localeCompare(b.id));
+  for (const city of candidates) {
+    const officer = availableOfficers(state, factionId, city.id, RECRUIT_STAMINA_COST)[0];
+    if (officer) return recruitTroops(state, { cityId: city.id, officerId: officer.id, amount: 500 });
+  }
+  return undefined;
+}
+
+function developWeakCity(state: GameState, factionId: string): GameState | undefined {
+  const candidates = Object.values(state.cities)
+    .filter((city) => city.ownerId === factionId && city.money >= DEVELOP_MONEY_COST)
+    .filter((city) => city.farmingLimit === undefined || city.farming < city.farmingLimit)
+    .sort((a, b) =>
+      farmingRatio(a.farming, a.farmingLimit) - farmingRatio(b.farming, b.farmingLimit)
+      || a.id.localeCompare(b.id));
+  for (const city of candidates) {
+    const officer = availableOfficers(state, factionId, city.id, DEVELOP_STAMINA_COST)
+      .sort((a, b) => b.intelligence - a.intelligence || a.id.localeCompare(b.id))[0];
+    if (officer) return developFarming(state, { cityId: city.id, officerId: officer.id });
+  }
+  return undefined;
+}
+
+function reinforceFrontier(state: GameState, factionId: string): GameState | undefined {
+  const borderCities = Object.values(state.cities)
+    .filter((city) => city.ownerId === factionId && city.neighbors.some((id) => state.cities[id]?.ownerId !== factionId))
+    .sort((a, b) => stationedCount(state, a.id, factionId) - stationedCount(state, b.id, factionId) || a.id.localeCompare(b.id));
+  for (const target of borderCities) {
+    const sources = target.neighbors
+      .map((id) => state.cities[id])
+      .filter((city) => city?.ownerId === factionId && stationedCount(state, city.id, factionId) > 1)
+      .sort((a, b) => stationedCount(state, b.id, factionId) - stationedCount(state, a.id, factionId) || a.id.localeCompare(b.id));
+    for (const source of sources) {
+      const faction = state.factions[factionId];
+      const officer = availableOfficers(state, factionId, source.id, 0)
+        .filter((candidate) => candidate.id !== faction.rulerOfficerId && candidate.id !== source.satrapOfficerId)
+        .sort((a, b) => b.leadership - a.leadership || a.id.localeCompare(b.id))[0];
+      if (officer) return moveOfficer(state, { sourceCityId: source.id, targetCityId: target.id, officerId: officer.id });
+    }
+  }
+  return undefined;
+}
+
+function searchLocalTalent(state: GameState, factionId: string): GameState | undefined {
+  const candidates = Object.values(state.cities)
+    .filter((city) => city.ownerId === factionId)
+    .filter((city) => Object.values(state.officers).some((officer) => officer.status === 'free' && officer.cityId === city.id))
+    .sort((a, b) => a.id.localeCompare(b.id));
+  for (const city of candidates) {
+    const officer = availableOfficers(state, factionId, city.id, SEARCH_STAMINA_COST)
+      .sort((a, b) => b.intelligence - a.intelligence || a.id.localeCompare(b.id))[0];
+    if (officer) return searchCity(state, { cityId: city.id, officerId: officer.id });
+  }
+  return undefined;
+}
+
+function availableOfficers(state: GameState, factionId: string, cityId: string, stamina: number) {
+  return Object.values(state.officers)
+    .filter((officer) =>
+      officer.status === 'serving'
+      && officer.factionId === factionId
+      && officer.cityId === cityId
+      && officer.stamina >= stamina
+      && !state.actedOfficerIds.includes(officer.id))
+    .sort((a, b) => b.leadership - a.leadership || a.id.localeCompare(b.id));
+}
+
+function stationedCount(state: GameState, cityId: string, factionId: string): number {
+  return Object.values(state.officers).filter(
+    (officer) => officer.status === 'serving' && officer.factionId === factionId && officer.cityId === cityId,
+  ).length;
+}
+
+function farmingRatio(farming: number, limit?: number): number {
+  return limit && limit > 0 ? farming / limit : farming / 1_000;
 }
 
 export function runAiRound(state: GameState): GameState {

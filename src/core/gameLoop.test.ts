@@ -40,14 +40,15 @@ describe('core game loop', () => {
     expect(validateGameState(first)).toEqual([]);
   });
 
-  it('preserves state invariants over several unattended turns', () => {
+  it('preserves state invariants over twelve unattended months', () => {
     let state = createSampleState();
-    for (let index = 0; index < 6; index += 1) {
+    for (let index = 0; index < 12; index += 1) {
       state = advanceTurn(state);
       expect(validateGameState(state)).toEqual([]);
     }
 
-    expect(state.turn).toBe(7);
+    expect(state.turn).toBe(13);
+    expect(state.calendar).toEqual({ year: 191, month: 1 });
     for (const city of Object.values(state.cities)) {
       expect(Number.isFinite(city.money)).toBe(true);
       expect(Number.isFinite(city.food)).toBe(true);

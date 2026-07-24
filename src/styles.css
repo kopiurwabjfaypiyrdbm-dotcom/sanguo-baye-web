@@ -100,6 +100,29 @@ select:focus-visible,
   gap: 9px;
 }
 
+.save-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 8px;
+  border-right: 1px solid rgba(238, 219, 166, 0.18);
+}
+
+.save-controls select,
+.save-controls button,
+.file-action.compact {
+  min-height: 30px;
+  padding: 0 7px;
+  color: #e9e2cf;
+  background: #293d36;
+  border: 1px solid #53675e;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.save-controls button { cursor: pointer; }
+.save-controls button:hover { background: #385046; }
+
 .file-action,
 .primary-action,
 .ruler-select select {
@@ -289,15 +312,15 @@ select:focus-visible,
 
 .officer-row {
   display: grid;
-  grid-template-columns: minmax(70px, 1fr) auto auto auto;
-  gap: 8px;
+  grid-template-columns: minmax(58px, .8fr) minmax(92px, 1.3fr) minmax(74px, 1fr);
+  gap: 3px 8px;
   align-items: center;
   padding: 8px 2px;
   border-bottom: 1px solid rgba(38, 58, 49, 0.12);
   font-size: 11px;
 }
 
-.officer-row strong { color: #26382f; font-size: 13px; }
+.officer-row strong { grid-row: 1 / 3; color: #26382f; font-size: 13px; }
 .officer-row span { color: #626e65; }
 .more-officers { margin: 9px 0 0; color: #68736b; font-size: 11px; }
 
@@ -342,6 +365,14 @@ select:focus-visible,
   margin-top: 8px;
 }
 
+.command-group-title {
+  margin: 14px 0 0;
+  color: #8a623d;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
 .city-command-buttons button,
 .attack-command {
   min-height: 36px;
@@ -382,7 +413,16 @@ select:focus-visible,
   align-items: end;
 }
 
-.personnel-command-row button {
+.recruit-command-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px;
+  gap: 7px;
+  align-items: end;
+}
+
+.personnel-command-row button,
+.recruit-command-row button,
+.reward-command {
   min-height: 35px;
   color: #f6ecd3;
   font-weight: 800;
@@ -391,7 +431,11 @@ select:focus-visible,
   border-radius: 4px;
 }
 
-.personnel-command-row button:disabled { color: #918d80; background: rgba(255, 255, 255, 0.24); }
+.personnel-command-row button:disabled,
+.recruit-command-row button:disabled,
+.reward-command:disabled { color: #918d80; background: rgba(255, 255, 255, 0.24); }
+
+.reward-command { width: 100%; margin-top: 7px; }
 
 .distribution-row button {
   min-height: 35px;
@@ -442,6 +486,9 @@ select:focus-visible,
 
 .log-panel {
   grid-area: log;
+  display: grid;
+  grid-template-columns: minmax(260px, .8fr) minmax(0, 1.2fr);
+  gap: 20px;
   padding: 13px 18px;
   color: #dcd7c8;
   background: #1d2925;
@@ -450,6 +497,16 @@ select:focus-visible,
 
 .log-lines { display: grid; gap: 5px; }
 .log-lines p { margin: 0; font-size: 12px; line-height: 1.4; }
+
+.month-summary {
+  display: grid;
+  gap: 2px;
+  max-height: 82px;
+  overflow: auto;
+}
+
+.month-summary strong { color: #f0d07d; font-size: 12px; }
+.month-summary p { margin: 0; color: #cbd2c8; font-size: 11px; line-height: 1.35; }
 
 @media (max-width: 1050px) {
   .top-bar { grid-template-columns: auto 1fr; }
@@ -468,7 +525,9 @@ select:focus-visible,
   }
   .top-bar { grid-template-columns: 1fr; gap: 10px; }
   .top-actions { flex-wrap: wrap; }
+  .save-controls { flex-wrap: wrap; border-right: 0; }
   .side-panel { border-top: 1px solid rgba(230, 211, 159, 0.28); border-left: 0; }
   .map-toolbar span:first-child { display: none; }
   .map-toolbar { justify-content: flex-end; }
+  .log-panel { grid-template-columns: 1fr; }
 }

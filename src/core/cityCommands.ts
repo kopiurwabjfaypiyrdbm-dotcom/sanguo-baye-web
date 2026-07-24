@@ -110,30 +110,28 @@ function validateCityCommand(
   order: CityCommandOrder,
   staminaCost: number,
 ): { city: City; officer: Officer } {
-  const result = validatePlayerCityOfficer(state, order);
+  const result = validateActiveCityOfficer(state, order);
   if (state.actedOfficerIds.includes(result.officer.id)) throw new Error('该武将本月已经执行过命令');
   if (result.officer.stamina < staminaCost) throw new Error(`武将体力不足，需要 ${staminaCost}`);
   return result;
 }
 
 function validateDistribution(state: GameState, order: CityCommandOrder): { city: City; officer: Officer } {
-  return validatePlayerCityOfficer(state, order);
+  return validateActiveCityOfficer(state, order);
 }
 
-function validatePlayerCityOfficer(
+function validateActiveCityOfficer(
   state: GameState,
   order: CityCommandOrder,
 ): { city: City; officer: Officer } {
-  if (state.phase !== 'player' || state.activeFactionId !== state.playerFactionId) {
-    throw new Error('只能在玩家阶段执行城市命令');
-  }
+  if (state.phase === 'ended') throw new Error('战役已经结束');
   const city = state.cities[order.cityId];
   if (!city) throw new Error(`未知城池：${order.cityId}`);
-  if (city.ownerId !== state.playerFactionId) throw new Error('只能在己方城池执行命令');
+  if (city.ownerId !== state.activeFactionId) throw new Error('只能在己方城池执行命令');
 
   const officer = state.officers[order.officerId];
   if (!officer) throw new Error(`未知武将：${order.officerId}`);
-  if (officer.status !== 'serving' || officer.factionId !== state.playerFactionId || officer.cityId !== city.id) {
+  if (officer.status !== 'serving' || officer.factionId !== state.activeFactionId || officer.cityId !== city.id) {
     throw new Error('执行武将不在该城');
   }
   return { city, officer };

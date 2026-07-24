@@ -86,4 +86,18 @@ describe.skipIf(!sourceRoot)('local Baye period 1 reference', () => {
     expect(nextMonth.phase).toBe('player');
     expect(validateGameState(nextMonth)).toEqual([]);
   });
+
+  it('keeps period 1 valid through twelve unattended months', () => {
+    const bytes = readFileSync(resolve(sourceRoot!, 'baye_c/src/dat.lib.orig'));
+    let state = createLegacyPeriodGameState(bytes, 1);
+
+    for (let index = 0; index < 12; index += 1) {
+      state = advanceTurn(state);
+      expect(validateGameState(state)).toEqual([]);
+      expect(state.phase).toBe('player');
+    }
+
+    expect(state.turn).toBe(13);
+    expect(state.calendar).toEqual({ year: 191, month: 1 });
+  });
 });

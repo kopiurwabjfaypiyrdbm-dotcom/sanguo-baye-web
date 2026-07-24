@@ -12,7 +12,8 @@ describe('basic AI', () => {
     }
     const next = runAiFactionTurn(state);
 
-    expect(next.rngSeed).toBe(state.rngSeed);
+    expect(next.logs.some((log) => log.kind === 'battle')).toBe(false);
+    expect(next.logs.at(-1)?.message).toContain('未出征');
     expect(next.logs.at(-1)?.message).toContain('没有具备出征条件的边境部队');
   });
 
@@ -50,6 +51,56 @@ describe('basic AI', () => {
 
     expect(battleStarts).toHaveLength(1);
     expect(next.rngSeed).not.toBe(state.rngSeed);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('recruits reserves before considering an attack', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId === 'liu-bei') city.reserveTroops = 0;
+    }
+    const next = runAiFactionTurn(state);
+
+    expect(next.logs.some((log) => log.message.includes('征募 500 名后备兵'))).toBe(true);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('reinforces an adjacent frontier without emptying the source city', () => {
+    const state = beginAiPhase(createSampleState());
+    state.officers['zhang-fei'].cityId = 'chengdu';
+    state.cities.jiangzhou.satrapOfficerId = undefined;
+    const next = runAiFactionTurn(state);
+
+    expect(next.officers['zhang-fei'].cityId).toBe('jiangzhou');
+    expect(Object.values(next.officers).filter((officer) => officer.cityId === 'chengdu' && officer.factionId === 'liu-bei'))
+      .toHaveLength(1);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('makes the same decisions from the same state', () => {
+    const state = beginAiPhase(createSampleState());
+    expect(runAiFactionTurn(structuredClone(state))).toEqual(runAiFactionTurn(structuredClone(state)));
+  });
+
+  it('does not launch a token-provision attack from a food-starved city', () => {
+    const state = beginAiPhase(createSampleState());
+    state.officers['guan-yu'].troops = 100_000;
+    state.cities.hanzhong.food = 1;
+    state.cities['chang-an'].reserveTroops = 0;
+
+    expect(planAiAction(state).action).toBe('skip');
+  });
+
+  it('searches for a local free officer when an eligible officer is available', () => {
+    const state = beginAiPhase(createSampleState());
+    state.officers['chen-gong'].cityId = 'hanzhong';
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId === 'liu-bei') city.farmingLimit = city.farming;
+    }
+    const next = runAiFactionTurn(state);
+
+    expect(next.actedOfficerIds).toContain('guan-yu');
+    expect(next.logs.some((log) => log.message.includes('关羽在汉中'))).toBe(true);
     expect(validateGameState(next)).toEqual([]);
   });
 });
