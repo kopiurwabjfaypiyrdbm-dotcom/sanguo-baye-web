@@ -75,11 +75,11 @@ const items: Record<string, Item> = {
 };
 
 const armsTypes: Record<string, ArmsType> = {
-  cavalry: { id: 'cavalry', name: '骑兵', attackModifier: 1.08, defenseModifier: 0.96, mobility: 4 },
-  infantry: { id: 'infantry', name: '步兵', attackModifier: 1, defenseModifier: 1.08, mobility: 3 },
-  archer: { id: 'archer', name: '弓兵', attackModifier: 1.04, defenseModifier: 0.92, mobility: 3 },
-  navy: { id: 'navy', name: '水兵', attackModifier: 0.98, defenseModifier: 1, mobility: 3 },
-  elite: { id: 'elite', name: '极兵', attackModifier: 1.16, defenseModifier: 1.12, mobility: 4 },
+  cavalry: { id: 'cavalry', name: '骑兵', attackModifier: 1.08, defenseModifier: 0.96, mobility: 5 },
+  infantry: { id: 'infantry', name: '步兵', attackModifier: 1, defenseModifier: 1.08, mobility: 4 },
+  archer: { id: 'archer', name: '弓兵', attackModifier: 1.04, defenseModifier: 0.92, mobility: 4 },
+  navy: { id: 'navy', name: '水兵', attackModifier: 0.98, defenseModifier: 1, mobility: 5 },
+  elite: { id: 'elite', name: '极兵', attackModifier: 1.16, defenseModifier: 1.12, mobility: 6 },
   mystic: { id: 'mystic', name: '玄兵', attackModifier: 0.94, defenseModifier: 1.18, mobility: 3 },
 };
 

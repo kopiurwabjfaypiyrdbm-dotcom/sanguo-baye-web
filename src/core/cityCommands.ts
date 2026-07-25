@@ -9,6 +9,8 @@ export const RECRUIT_STAMINA_COST = 12;
 export const ARMS_PER_DEVOTION = 20;
 export const ARMS_PER_MONEY = 10;
 export const DEFAULT_RECRUIT_AMOUNT = 500;
+/** Product pacing rule: one distribution command cannot multiply a fresh 100-troop unit in a single click/month. */
+export const MAX_DISTRIBUTION_INCREASE = 400;
 
 export type CityCommandOrder = {
   cityId: string;
@@ -93,12 +95,15 @@ export function distributeTroops(state: GameState, order: DistributionOrder): Ga
   if (order.targetTroops > maximum) throw new Error(`该武将最多统率 ${maximum} 兵力`);
   const delta = order.targetTroops - officer.troops;
   if (delta > city.reserveTroops) throw new Error('城中后备兵不足');
+  if (delta > MAX_DISTRIBUTION_INCREASE) {
+    throw new Error(`单次最多可为武将增补 ${MAX_DISTRIBUTION_INCREASE} 兵力`);
+  }
 
   const next = updateCityAndOfficer(
     state,
     { ...city, reserveTroops: city.reserveTroops - delta },
     { ...officer, troops: order.targetTroops },
-    false,
+    true,
   );
   return appendLogs(next, 'map', [
     `${city.name}完成兵力分配：${officer.name}现统率 ${order.targetTroops} 人，城中后备兵 ${next.cities[city.id].reserveTroops}。`,
@@ -117,7 +122,9 @@ function validateCityCommand(
 }
 
 function validateDistribution(state: GameState, order: CityCommandOrder): { city: City; officer: Officer } {
-  return validateActiveCityOfficer(state, order);
+  const result = validateActiveCityOfficer(state, order);
+  if (state.actedOfficerIds.includes(result.officer.id)) throw new Error('该武将本月已经执行过命令');
+  return result;
 }
 
 function validateActiveCityOfficer(

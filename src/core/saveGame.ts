@@ -1,5 +1,6 @@
 import type { GameState } from './types';
 import { assertValidGameState } from './validation';
+import { releaseLandlessFactionOfficers } from './administration';
 
 export const SAVE_FORMAT = 'sanguo-baye-web';
 export const SAVE_VERSION = 1;
@@ -67,13 +68,15 @@ export function parseSave(input: string | unknown): SaveEnvelope {
 
 export function migrateGameState(input: unknown): GameState {
   if (!isRecord(input)) throw new Error('存档中的游戏状态无效');
-  if (input.schemaVersion === 2) return structuredClone(input) as GameState;
+  if (input.schemaVersion === 2) {
+    return releaseLandlessFactionOfficers(structuredClone(input) as GameState);
+  }
   if (input.schemaVersion === 1) {
-    return {
+    return releaseLandlessFactionOfficers({
       ...structuredClone(input),
       schemaVersion: 2,
       discoveredOfficerIds: Array.isArray(input.discoveredOfficerIds) ? [...input.discoveredOfficerIds] : [],
-    } as GameState;
+    } as GameState);
   }
   throw new Error(`不支持的游戏状态版本：${String(input.schemaVersion)}`);
 }

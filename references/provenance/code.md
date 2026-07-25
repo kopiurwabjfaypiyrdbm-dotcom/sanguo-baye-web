@@ -23,6 +23,9 @@
 |---|---|---|---|
 | `src/compat/baye/rng.ts` | `comIn.c:gam_rand` 所调用的 Emscripten `rand_r` | 依据实际 WASM 序列重写 LCG 与 temper 步骤 | `fixtures/rng-web-wasm.json` |
 | `src/compat/baye/tacticalBattle.ts` | `FgtCount.c:BuiltAtkAttr/CountAtkHurt/FgtCountWon`、`tactic.c:GetArmType` | 重写常量、C 数值顺序和分支；不链接上游代码 | `fixtures/battle-c-oracle.json` |
+| `src/data/legacyScenario.ts:DEFAULT_STARTING_TROOPS` | 四时期人物记录中的初始兵力为 0；原版外围初始化尚未定位 | 现代临时产品规则：所有在职势力对称设为 400，替代旧的玩家 100/AI 800 不对称 | `src/data/legacyScenario.test.ts`、`src/data/bundledScenarios.test.ts` |
+| `src/data/legacyScenario.ts:buildCityFactionAssignments` | 时期 2 等少量已入城队列人物仍保留另一当前君主索引；城池队列与城池君主共同给出可验证的当前驻扎关系 | 解析桥接规则：仅对具备有效当前君主标记的已分配人物，以所在城池当前归属规范化势力；无君主或非当前君主记录仍保持在野 | `src/data/legacyScenario.test.ts`、四时期 `src/data/bundledScenarios.test.ts` |
+| `src/core/tacticalBattle.ts` | `citycmdd.c` 的 `g_FgtParam` 组装与 `FightResultDeal`；`Fight.c:GamFight/FgtDealMan/FgtDealCmp/FgtDealBout/FgtChkEnd`；`FightSub.c:FgtGetTerrain/FgtAtkAction`；`FgtCount.c:FgtIntMove/CountMoveP`；`FgtPkAi.c:FgtGetMCmd/FgtCmpMove/FgtAtkCmd` | 依据阶段、基础移动力与状态语义重新设计确定性 Web 战术核心；未复制控制流或表现代码，未导入原版地图与资源。原版进入城格立即判胜，本项目有意改为结束攻方阶段后确认 | `src/core/tacticalBattle.test.ts` 与浏览器手动战斗回归 |
 | `tools/reference/baye-battle-oracle.c` | 同上 | 参考专用最小 C oracle，保留原常量与运算顺序，不进入产品包 | GCC 生成固定 JSON 后与 TypeScript 差异测试 |
 
 上述上游 C 核心标记为 MIT；离线 GPL JavaScript/WASM 只在用户本地执行以产生数值样本，没有复制进仓库或产品构建。`references/vendor/baye-c-core/MANIFEST.json` 绑定锁定提交并校验逐文件内容；早期本地 ZIP 快照仍由 `source-manifest.json` 与夹具内 SHA-256 约束。

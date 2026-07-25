@@ -28,4 +28,20 @@ describe('game state validation', () => {
       'Invalid game state at officers.cao-cao.armsTypeId: unknown arms type: unknown',
     );
   });
+
+  it('rejects fractional combat values and serving officers stationed in enemy cities', () => {
+    const fractional = createSampleState();
+    fractional.officers['cao-cao'].troops = 100.5;
+    expect(validateGameState(fractional)).toContainEqual(expect.objectContaining({
+      path: 'officers.cao-cao.troops',
+      message: 'must be an integer',
+    }));
+
+    const enemyCity = createSampleState();
+    enemyCity.officers['cao-cao'].cityId = 'hanzhong';
+    expect(validateGameState(enemyCity)).toContainEqual(expect.objectContaining({
+      path: 'officers.cao-cao.cityId',
+      message: 'serving officer must be stationed in a city owned by their faction',
+    }));
+  });
 });

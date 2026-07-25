@@ -29,6 +29,46 @@ export type BattleEstimate = {
   defenderOfficerIds: string[];
 };
 
+export type BattleParticipantSnapshot = {
+  officerId: string;
+  cityId?: string;
+  factionId: string;
+  status: Officer['status'];
+  troops: number;
+  stamina: number;
+  force: number;
+  intelligence: number;
+  leadership: number;
+  level: number;
+  armsTypeId: string;
+  weaponItemId?: string;
+  intelligenceItemId?: string;
+  mountItemId?: string;
+  armsAttackModifier: number;
+  armsDefenseModifier: number;
+  armsMobility: number;
+  itemForceBonus: number;
+  itemIntelligenceBonus: number;
+  itemMoveBonus: number;
+};
+
+export type BattleStateGuard = {
+  sourceCityId: string;
+  targetCityId: string;
+  sourceFood: number;
+  targetFood: number;
+  targetDefense: number;
+  targetReserveTroops: number;
+  participants: BattleParticipantSnapshot[];
+};
+
+export type AttackContext = {
+  source: GameState['cities'][string];
+  target: GameState['cities'][string];
+  attackers: Officer[];
+  defenders: Officer[];
+};
+
 export type BattleResult = {
   turn: number;
   seedBefore: number;
@@ -46,6 +86,8 @@ export type BattleResult = {
   casualties: Record<string, number>;
   defenderReserveLosses: number;
   cityCaptured: boolean;
+  guard: BattleStateGuard;
+  targetFoodAfter?: number;
   logs: string[];
 };
 
@@ -116,6 +158,7 @@ export function resolveBattle(state: GameState, order: AttackOrder, config = bat
     casualties,
     defenderReserveLosses,
     cityCaptured,
+    guard: createBattleStateGuard(state, context),
     logs,
   };
 }
@@ -129,6 +172,7 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
   if (!source || !target || source.ownerId !== result.attackerFactionId || target.ownerId !== result.defenderFactionId) {
     throw new Error('Battle result references stale city ownership');
   }
+  assertBattleStateGuard(state, result.guard);
 
   const officers = { ...state.officers };
   for (const [officerId, losses] of Object.entries(result.casualties)) {
@@ -146,9 +190,11 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
     [target.id]: {
       ...target,
       reserveTroops: Math.max(0, target.reserveTroops - result.defenderReserveLosses),
+      food: result.targetFoodAfter ?? target.food,
     },
   };
 
+  const additionalLogs: string[] = [];
   if (result.cityCaptured) {
     cities[target.id] = { ...cities[target.id], ownerId: result.attackerFactionId };
     for (const officerId of result.attackerOfficerIds) {
@@ -156,10 +202,40 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
     }
 
     const retreatCity = findRetreatCity(state, target.id, result.defenderFactionId);
-    for (const officerId of result.defenderOfficerIds) {
+    const neutralFactionId = Object.values(state.factions).find((faction) => faction.isNeutral)?.id;
+    const retreatingOfficerIds = Object.values(officers)
+      .filter((officer) => officer.status === 'serving'
+        && officer.factionId === result.defenderFactionId
+        && officer.cityId === target.id)
+      .map((officer) => officer.id);
+    for (const officerId of retreatingOfficerIds) {
       officers[officerId] = retreatCity
         ? { ...officers[officerId], cityId: retreatCity }
-        : { ...officers[officerId], troops: 0, stamina: 0 };
+        : {
+            ...officers[officerId],
+            status: 'free',
+            factionId: neutralFactionId ?? officers[officerId].factionId,
+            cityId: target.id,
+            troops: 0,
+            stamina: 0,
+          };
+    }
+
+    const defenderEliminated = !Object.values(cities).some((city) => city.ownerId === result.defenderFactionId);
+    if (defenderEliminated) {
+      if (!neutralFactionId) throw new Error('Captured faction cannot be dissolved without a neutral faction');
+      for (const [officerId, officer] of Object.entries(officers)) {
+        if (officer.status !== 'serving' || officer.factionId !== result.defenderFactionId) continue;
+        officers[officerId] = {
+          ...officer,
+          status: 'free',
+          factionId: neutralFactionId,
+          cityId: officer.cityId ?? target.id,
+          troops: 0,
+          stamina: 0,
+        };
+      }
+      additionalLogs.push(`${state.factions[result.defenderFactionId].name}失去最后一座城池，所属武将转为在野。`);
     }
   }
 
@@ -172,7 +248,7 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
     actedOfficerIds: [...state.actedOfficerIds, ...result.attackerOfficerIds],
   };
   next = updateCitySatraps(next);
-  next = appendLogs(next, 'battle', result.logs);
+  next = appendLogs(next, 'battle', [...result.logs, ...additionalLogs]);
   next = evaluateOutcome(next);
   assertValidGameState(next);
   return next;
@@ -182,7 +258,7 @@ export function executeAttack(state: GameState, order: AttackOrder, config = bat
   return applyBattleResult(state, resolveBattle(state, order, config));
 }
 
-function validateAttackOrder(state: GameState, order: AttackOrder) {
+export function validateAttackOrder(state: GameState, order: AttackOrder): AttackContext {
   if (state.phase === 'ended') throw new Error('The game has ended');
   const source = state.cities[order.sourceCityId];
   const target = state.cities[order.targetCityId];
@@ -214,6 +290,94 @@ function validateAttackOrder(state: GameState, order: AttackOrder) {
     .sort((a, b) => a.id.localeCompare(b.id));
 
   return { source, target, attackers, defenders };
+}
+
+export function createBattleStateGuard(state: GameState, context: AttackContext): BattleStateGuard {
+  const guardedOfficers = Object.values(state.officers).filter(
+    (officer) => officer.status === 'serving'
+      && (officer.cityId === context.source.id || officer.cityId === context.target.id),
+  );
+  return {
+    sourceCityId: context.source.id,
+    targetCityId: context.target.id,
+    sourceFood: context.source.food,
+    targetFood: context.target.food,
+    targetDefense: context.target.defense,
+    targetReserveTroops: context.target.reserveTroops,
+    participants: guardedOfficers
+      .map((officer) => createParticipantSnapshot(state, officer))
+      .sort((a, b) => a.officerId.localeCompare(b.officerId)),
+  };
+}
+
+export function assertBattleStateGuard(state: GameState, guard: BattleStateGuard): void {
+  const currentParticipantIds = Object.values(state.officers)
+    .filter((officer) => officer.status === 'serving'
+      && (officer.cityId === guard.sourceCityId || officer.cityId === guard.targetCityId))
+    .map((officer) => officer.id)
+    .sort();
+  const guardedParticipantIds = guard.participants.map((participant) => participant.officerId);
+  const participantsAreCurrent = guard.participants.every((snapshot) => {
+    const officer = state.officers[snapshot.officerId];
+    return officer && participantSnapshotsMatch(createParticipantSnapshot(state, officer), snapshot);
+  });
+  if (!participantsAreCurrent || currentParticipantIds.join('\0') !== guardedParticipantIds.join('\0')) {
+    throw new Error('Battle result references stale participant state');
+  }
+
+  const source = state.cities[guard.sourceCityId];
+  if (!source || source.food !== guard.sourceFood) {
+    throw new Error('Battle result references stale source resources');
+  }
+
+  const target = state.cities[guard.targetCityId];
+  if (
+    !target
+    || target.food !== guard.targetFood
+    || target.defense !== guard.targetDefense
+    || target.reserveTroops !== guard.targetReserveTroops
+  ) {
+    throw new Error('Battle result references stale target resources');
+  }
+}
+
+function createParticipantSnapshot(state: GameState, officer: Officer): BattleParticipantSnapshot {
+  const armsType = state.armsTypes[officer.armsTypeId];
+  if (!armsType) throw new Error(`Unknown arms type: ${officer.armsTypeId}`);
+  const items = [officer.weaponItemId, officer.intelligenceItemId, officer.mountItemId]
+    .filter((itemId): itemId is string => Boolean(itemId))
+    .map((itemId) => state.items[itemId]);
+  return {
+    officerId: officer.id,
+    cityId: officer.cityId,
+    factionId: officer.factionId,
+    status: officer.status,
+    troops: officer.troops,
+    stamina: officer.stamina,
+    force: officer.force,
+    intelligence: officer.intelligence,
+    leadership: officer.leadership,
+    level: officer.level ?? 1,
+    armsTypeId: officer.armsTypeId,
+    weaponItemId: officer.weaponItemId,
+    intelligenceItemId: officer.intelligenceItemId,
+    mountItemId: officer.mountItemId,
+    armsAttackModifier: armsType.attackModifier,
+    armsDefenseModifier: armsType.defenseModifier,
+    armsMobility: armsType.mobility,
+    itemForceBonus: items.reduce((sum, item) => sum + (item?.forceBonus ?? 0), 0),
+    itemIntelligenceBonus: items.reduce((sum, item) => sum + (item?.intelligenceBonus ?? 0), 0),
+    itemMoveBonus: items.reduce((sum, item) => sum + (item?.moveBonus ?? 0), 0),
+  };
+}
+
+function participantSnapshotsMatch(
+  current: BattleParticipantSnapshot,
+  guarded: BattleParticipantSnapshot,
+): boolean {
+  return Object.keys(guarded).every((key) => (
+    current[key as keyof BattleParticipantSnapshot] === guarded[key as keyof BattleParticipantSnapshot]
+  ));
 }
 
 function scoreOfficers(

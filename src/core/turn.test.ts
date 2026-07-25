@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import { updateCitySatraps } from './administration';
+import { applyBattleResult } from './battle';
 import { createSampleState } from './sampleState';
-import { advanceCalendar, beginAiPhase, finishTurn } from './turn';
+import { advanceCalendar, advanceTurnUntilPlayerDefense, beginAiPhase, finishTurn } from './turn';
+import {
+  attackTacticalUnit,
+  createTacticalBattle,
+  createTacticalBattleResult,
+  endTacticalSide,
+} from './tacticalBattle';
 import { validateGameState } from './validation';
 
 describe('turn progression', () => {
@@ -28,5 +36,49 @@ describe('turn progression', () => {
     expect(next.cities.luoyang.population).toBeGreaterThan(state.cities.luoyang.population);
     expect(next.actedOfficerIds).toEqual([]);
     expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('pauses AI progression before an attack against the player', () => {
+    const state = createSampleState();
+    state.officers['guan-yu'].troops = 100_000;
+    state.cities['chang-an'].reserveTroops = 0;
+    const progress = advanceTurnUntilPlayerDefense(state);
+
+    expect(progress.completed).toBe(false);
+    expect(progress.state.phase).toBe('ai');
+    expect(progress.pendingPlayerDefense).toBeDefined();
+    expect(progress.state.cities[progress.pendingPlayerDefense!.order.targetCityId].ownerId).toBe(state.playerFactionId);
+    expect(progress.state.logs.at(-1)?.message).toContain('决定从');
+    expect(progress.state.logs.at(-1)?.kind).toBe('ai');
+    expect(validateGameState(progress.state)).toEqual([]);
+  });
+
+  it('can resolve a paused player defence and return a valid AI-phase state', () => {
+    let state = createSampleState();
+    state.officers['guan-yu'].troops = 100_000;
+    state.officers['cao-cao'].cityId = 'chang-an';
+    state.cities['chang-an'].reserveTroops = 0;
+    state = updateCitySatraps(state);
+    const progress = advanceTurnUntilPlayerDefense(state);
+    const pending = progress.pendingPlayerDefense!;
+    let battle = createTacticalBattle(progress.state, pending.order);
+    battle = endTacticalSide(battle);
+    const defender = Object.values(battle.units).find((unit) => unit.side === 'defender' && unit.officerId)!;
+    const attacker = Object.values(battle.units).find((unit) => unit.side === 'attacker')!;
+    battle = {
+      ...battle,
+      units: {
+        ...battle.units,
+        [defender.id]: { ...defender, x: 5, y: 4 },
+        [attacker.id]: { ...attacker, x: 4, y: 4, troops: 1 },
+      },
+    };
+    const finished = attackTacticalUnit(battle, defender.id, attacker.id);
+    const resumed = applyBattleResult(progress.state, createTacticalBattleResult(finished));
+
+    expect(finished.status).toBe('defender-won');
+    expect(resumed.phase).toBe('ai');
+    expect(resumed.cities[pending.order.targetCityId].ownerId).toBe(state.playerFactionId);
+    expect(validateGameState(resumed)).toEqual([]);
   });
 });

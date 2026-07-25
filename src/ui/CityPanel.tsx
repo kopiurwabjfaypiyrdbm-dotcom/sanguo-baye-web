@@ -370,7 +370,7 @@ export function CityPanel({
               disabled={disabled || !canAttack}
               onClick={() => onAttack(city.id, selectedTargetId, selectedAttackerIds, provisionValue)}
             >
-              出征并自动结算
+              筹划出征
             </button>
           </>
         ) : (

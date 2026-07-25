@@ -3,6 +3,7 @@ import {
   DEVELOP_MONEY_COST,
   DEVELOP_STAMINA_COST,
   RECRUIT_STAMINA_COST,
+  MAX_DISTRIBUTION_INCREASE,
   calculateOfficerTroopCapacity,
   calculateRecruitCapacity,
   developFarming,
@@ -15,6 +16,7 @@ import type { AiProfile, GameState } from './types';
 
 export const AI_MAX_ACTIONS = 5;
 const AI_MIN_ATTACK_PROVISIONS = 200;
+const OPENING_ATTACK_THRESHOLD = 4;
 
 export type AiDecision = {
   action: 'attack' | 'skip';
@@ -22,6 +24,11 @@ export type AiDecision = {
   order?: AttackOrder;
   scoreRatio?: number;
   reason: string;
+};
+
+export type InteractiveAiFactionTurn = {
+  state: GameState;
+  pendingPlayerDefense?: AttackOrder;
 };
 
 const attackThresholds: Record<AiProfile, number> = {
@@ -82,7 +89,9 @@ export function planAiAction(state: GameState, factionId = state.activeFactionId
       a.order.targetCityId.localeCompare(b.order.targetCityId),
   );
   const best = candidates[0];
-  const threshold = attackThresholds[faction.aiProfile];
+  const threshold = state.turn === 1
+    ? Math.max(attackThresholds[faction.aiProfile], OPENING_ATTACK_THRESHOLD)
+    : attackThresholds[faction.aiProfile];
   if (best.ratio < threshold) {
     return {
       action: 'skip',
@@ -102,6 +111,21 @@ export function planAiAction(state: GameState, factionId = state.activeFactionId
 }
 
 export function runAiFactionTurn(state: GameState): GameState {
+  const prepared = prepareAiFactionTurn(state);
+  return prepared.order ? executeAttack(prepared.state, prepared.order) : prepared.state;
+}
+
+export function runAiFactionTurnUntilPlayerDefense(state: GameState): InteractiveAiFactionTurn {
+  const prepared = prepareAiFactionTurn(state);
+  if (!prepared.order) return { state: prepared.state };
+  const target = prepared.state.cities[prepared.order.targetCityId];
+  if (target.ownerId === prepared.state.playerFactionId) {
+    return { state: prepared.state, pendingPlayerDefense: prepared.order };
+  }
+  return { state: executeAttack(prepared.state, prepared.order) };
+}
+
+function prepareAiFactionTurn(state: GameState): { state: GameState; order?: AttackOrder } {
   const faction = state.factions[state.activeFactionId];
   let next = state;
   let actionCount = 0;
@@ -115,10 +139,10 @@ export function runAiFactionTurn(state: GameState): GameState {
     }
   }
 
-  if (next.phase === 'ended' || actionCount >= AI_MAX_ACTIONS) return next;
+  if (next.phase === 'ended' || actionCount >= AI_MAX_ACTIONS) return { state: next };
   const decision = planAiAction(next, faction.id);
   if (decision.action === 'skip' || !decision.order) {
-    return appendLogs(next, 'ai', [`${faction.name}完成 ${actionCount} 项经营行动，未出征：${decision.reason}`]);
+    return { state: appendLogs(next, 'ai', [`${faction.name}完成 ${actionCount} 项经营行动，未出征：${decision.reason}`]) };
   }
 
   const source = next.cities[decision.order.sourceCityId];
@@ -126,7 +150,7 @@ export function runAiFactionTurn(state: GameState): GameState {
   const announced = appendLogs(next, 'ai', [
     `${faction.name}完成 ${actionCount} 项经营行动后，决定从${source.name}进攻${target.name}：${decision.reason}`,
   ]);
-  return executeAttack(announced, decision.order);
+  return { state: announced, order: decision.order };
 }
 
 function balanceTroops(state: GameState, factionId: string): GameState | undefined {
@@ -145,7 +169,11 @@ function balanceTroops(state: GameState, factionId: string): GameState | undefin
   return distributeTroops(state, {
     cityId: candidate.city.id,
     officerId: candidate.officer.id,
-    targetTroops: Math.min(candidate.capacity, candidate.officer.troops + candidate.city.reserveTroops),
+    targetTroops: Math.min(
+      candidate.capacity,
+      candidate.officer.troops + candidate.city.reserveTroops,
+      candidate.officer.troops + MAX_DISTRIBUTION_INCREASE,
+    ),
   });
 }
 

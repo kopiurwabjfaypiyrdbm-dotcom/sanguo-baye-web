@@ -14,7 +14,7 @@ describe('basic AI', () => {
 
     expect(next.logs.some((log) => log.kind === 'battle')).toBe(false);
     expect(next.logs.at(-1)?.message).toContain('未出征');
-    expect(next.logs.at(-1)?.message).toContain('没有具备出征条件的边境部队');
+    expect(next.logs.at(-1)?.message).toMatch(/没有具备出征条件|低于.*策略阈值/);
   });
 
   it('chooses only an adjacent hostile city when the advantage passes its threshold', () => {
@@ -38,6 +38,14 @@ describe('basic AI', () => {
 
     expect(decision.action).toBe('skip');
     expect(decision.reason).toContain('低于defensive策略阈值');
+  });
+
+  it('uses a higher attack threshold in the opening month', () => {
+    const state = beginAiPhase(createSampleState());
+    const decision = planAiAction(state);
+
+    expect(decision.action).toBe('skip');
+    expect(decision.reason).toContain('4.00');
   });
 
   it('executes at most one battle for the active faction', () => {

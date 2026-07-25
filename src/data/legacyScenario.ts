@@ -5,6 +5,8 @@ import { parseBayeLegacyPeriod, type BayeLegacyPeriod } from '../compat/baye/leg
 
 const NEUTRAL_FACTION_ID = 'neutral';
 const DEFAULT_PLAYER_RULER_INDEX = 1; // Cao Cao in period 1.
+/** Parsed period records begin at zero; use one symmetric modern baseline until original initialization is verified. */
+export const DEFAULT_STARTING_TROOPS = 400;
 const armsTypeIds = ['cavalry', 'infantry', 'archer', 'navy', 'elite', 'mystic'] as const;
 const factionColors = [
   '#a9534f', '#5477b7', '#c58b42', '#6c9b62', '#966bb0', '#4c9c9a',
@@ -31,6 +33,7 @@ export function createGameStateFromLegacyPeriod(
     : activeRulerIndexes[0];
   const activeRulers = new Set(activeRulerIndexes);
   const cityIdByPerson = buildCityAssignments(period);
+  const cityFactionByPerson = buildCityFactionAssignments(period, activeRulers);
   const assignedPersonIndexes = new Set(Object.keys(cityIdByPerson).map(Number));
   const neutralRulerIndex = period.persons.find(
     (person) =>
@@ -69,10 +72,12 @@ export function createGameStateFromLegacyPeriod(
   const officers: Record<string, Officer> = Object.fromEntries(
     period.persons.map((person) => {
       const isAssigned = assignedPersonIndexes.has(person.sourceIndex);
+      // A few period records retain a different active ruler index even though
+      // the person is already in another ruler's city queue. The queue is the
+      // authoritative current placement; a null/inactive ruler remains free.
       const activeFaction = isAssigned && person.rulerIndex !== null && activeRulers.has(person.rulerIndex)
-        ? factionId(person.rulerIndex)
+        ? cityFactionByPerson[person.sourceIndex]
         : NEUTRAL_FACTION_ID;
-      const isPlayer = activeFaction === factionId(playerRulerIndex);
       const status: Officer['status'] = !isAssigned
         ? 'hidden'
         : activeFaction === NEUTRAL_FACTION_ID ? 'free' : 'serving';
@@ -93,7 +98,7 @@ export function createGameStateFromLegacyPeriod(
           status,
           factionId: activeFaction,
           ...(isAssigned ? { cityId: cityIdByPerson[person.sourceIndex] } : {}),
-          troops: status === 'hidden' ? person.troops : isPlayer ? 100 : 800,
+          troops: status === 'serving' ? DEFAULT_STARTING_TROOPS : person.troops,
           loyalty: person.loyalty,
           age: person.age,
           stamina: 100,
@@ -130,7 +135,7 @@ export function createGameStateFromLegacyPeriod(
           // zero until a separately sourced rule is introduced.
           defense: 0,
           money: city.money,
-          food: ownerId === factionId(playerRulerIndex) ? city.food : city.food + 1000,
+          food: city.food,
           reserveTroops: city.reserveTroops,
           satrapOfficerId: city.satrapIndex === null ? undefined : officerId(city.satrapIndex),
           farmingLimit: city.farmingLimit,
@@ -188,35 +193,12 @@ export function selectPlayerFaction(state: GameState, playerFactionId: string): 
       { ...candidate, isPlayer: candidate.id === playerFactionId },
     ]),
   );
-  const officers = state.scenario?.source === 'baye-legacy'
-    ? Object.fromEntries(
-        Object.values(state.officers).map((officer) => [
-          officer.id,
-          {
-            ...officer,
-            troops: officer.status === 'hidden' ? officer.troops : officer.factionId === playerFactionId ? 100 : 800,
-          },
-        ]),
-      )
-    : state.officers;
-  const cities = state.scenario?.source === 'baye-legacy'
-    ? Object.fromEntries(
-        Object.values(state.cities).map((city) => {
-          let food = city.food;
-          if (city.ownerId === state.playerFactionId) food += 1000;
-          if (city.ownerId === playerFactionId) food = Math.max(0, food - 1000);
-          return [city.id, { ...city, food }];
-        }),
-      )
-    : state.cities;
   const next = updateCitySatraps({
     ...state,
     phase: 'player' as const,
     activeFactionId: playerFactionId,
     playerFactionId,
     factions,
-    cities,
-    officers,
   });
   assertValidGameState(next);
   return next;
@@ -233,13 +215,27 @@ function buildCityAssignments(period: BayeLegacyPeriod): Record<number, string> 
   return result;
 }
 
+function buildCityFactionAssignments(
+  period: BayeLegacyPeriod,
+  activeRulers: ReadonlySet<number>,
+): Record<number, string> {
+  const result: Record<number, string> = {};
+  for (const city of period.cities) {
+    const ownerId = city.rulerIndex !== null && activeRulers.has(city.rulerIndex)
+      ? factionId(city.rulerIndex)
+      : NEUTRAL_FACTION_ID;
+    for (const personIndex of city.personIndexes) result[personIndex] = ownerId;
+  }
+  return result;
+}
+
 function createArmsTypes(): Record<string, ArmsType> {
   return {
-    cavalry: { id: 'cavalry', name: '骑兵', attackModifier: 1.08, defenseModifier: 0.96, mobility: 4 },
-    infantry: { id: 'infantry', name: '步兵', attackModifier: 1, defenseModifier: 1.08, mobility: 3 },
-    archer: { id: 'archer', name: '弓兵', attackModifier: 1.04, defenseModifier: 0.92, mobility: 3 },
-    navy: { id: 'navy', name: '水兵', attackModifier: 0.98, defenseModifier: 1, mobility: 3 },
-    elite: { id: 'elite', name: '极兵', attackModifier: 1.16, defenseModifier: 1.12, mobility: 4 },
+    cavalry: { id: 'cavalry', name: '骑兵', attackModifier: 1.08, defenseModifier: 0.96, mobility: 5 },
+    infantry: { id: 'infantry', name: '步兵', attackModifier: 1, defenseModifier: 1.08, mobility: 4 },
+    archer: { id: 'archer', name: '弓兵', attackModifier: 1.04, defenseModifier: 0.92, mobility: 4 },
+    navy: { id: 'navy', name: '水兵', attackModifier: 0.98, defenseModifier: 1, mobility: 5 },
+    elite: { id: 'elite', name: '极兵', attackModifier: 1.16, defenseModifier: 1.12, mobility: 6 },
     mystic: { id: 'mystic', name: '玄兵', attackModifier: 0.94, defenseModifier: 1.18, mobility: 3 },
   };
 }

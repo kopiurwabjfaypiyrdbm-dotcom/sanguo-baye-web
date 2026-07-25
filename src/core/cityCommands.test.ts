@@ -3,6 +3,7 @@ import {
   DEVELOP_MONEY_COST,
   DEVELOP_STAMINA_COST,
   RECRUIT_STAMINA_COST,
+  MAX_DISTRIBUTION_INCREASE,
   calculateFarmingGain,
   calculateOfficerTroopCapacity,
   developFarming,
@@ -42,8 +43,10 @@ describe('city commands', () => {
     state.cities.xuchang.reserveTroops = 0;
     state.officers['xun-yu'].troops = 100;
     const recruited = recruitTroops(state, { cityId: 'xuchang', officerId: 'xun-yu', amount: 500 });
+    const distributionState = structuredClone(state);
+    distributionState.cities.xuchang.reserveTroops = 500;
     const targetTroops = 500;
-    const distributed = distributeTroops(recruited, {
+    const distributed = distributeTroops(distributionState, {
       cityId: 'xuchang',
       officerId: 'xun-yu',
       targetTroops,
@@ -54,6 +57,7 @@ describe('city commands', () => {
     expect(recruited.officers['xun-yu'].stamina).toBe(100 - RECRUIT_STAMINA_COST);
     expect(distributed.officers['xun-yu'].troops).toBe(targetTroops);
     expect(distributed.cities.xuchang.reserveTroops).toBe(100);
+    expect(distributed.actedOfficerIds).toContain('xun-yu');
     expect(distributed.campaignStarted).toBe(true);
     expect(validateGameState(distributed)).toEqual([]);
   });
@@ -74,6 +78,24 @@ describe('city commands', () => {
       officerId: 'cao-cao',
       targetTroops: calculateOfficerTroopCapacity(state.officers['cao-cao']) + 1,
     })).toThrow('最多统率');
+
+    state.officers['cao-cao'].troops = 100;
+    expect(() => distributeTroops(state, {
+      cityId: 'luoyang',
+      officerId: 'cao-cao',
+      targetTroops: 100 + MAX_DISTRIBUTION_INCREASE + 1,
+    })).toThrow('单次最多');
+
+    const once = distributeTroops(state, {
+      cityId: 'luoyang',
+      officerId: 'cao-cao',
+      targetTroops: state.officers['cao-cao'].troops - 1,
+    });
+    expect(() => distributeTroops(once, {
+      cityId: 'luoyang',
+      officerId: 'cao-cao',
+      targetTroops: once.officers['cao-cao'].troops - 1,
+    })).toThrow('本月已经执行过命令');
   });
 
   it('rejects enemy cities, absent officers, insufficient stamina, and insufficient money', () => {

@@ -1,5 +1,9 @@
 export const BAYE_ARMS_TYPES = ['cavalry', 'infantry', 'archer', 'navy', 'elite', 'mystic'] as const;
 export const BAYE_TERRAINS = ['grass', 'plain', 'hill', 'forest', 'village', 'city', 'camp', 'river'] as const;
+export const BAYE_ARMS_LABELS = ['骑兵', '步兵', '弓兵', '水兵', '极兵', '玄兵'] as const;
+export const BAYE_TERRAIN_LABELS = ['草地', '平原', '山地', '森林', '村庄', '城池', '营寨', '河流'] as const;
+/** Matches FgtCount.c:FgtIntMove and fight.h:MOV_* defaults, before equipment bonuses. */
+export const BAYE_BASE_MOBILITY = [5, 4, 4, 5, 6, 3] as const;
 
 export type BayeArmsType = 0 | 1 | 2 | 3 | 4 | 5;
 export type BayeTerrain = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;

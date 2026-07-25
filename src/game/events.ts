@@ -1,5 +1,7 @@
 export type GameEventMap = {
   'city:selected': { cityId: string };
+  'tactical:tile-selected': { x: number; y: number };
+  'tactical:unit-selected': { unitId: string };
 };
 
 export type GameBridge = {

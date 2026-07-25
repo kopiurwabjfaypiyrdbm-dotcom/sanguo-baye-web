@@ -60,11 +60,12 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       add(`factions.${key}.isPlayer`, 'must agree with playerFactionId');
     }
     const ruler = state.officers[faction.rulerOfficerId];
+    const factionOwnsCity = Object.values(state.cities).some((city) => city.ownerId === faction.id);
     if (!ruler) add(`factions.${key}.rulerOfficerId`, `unknown officer: ${faction.rulerOfficerId}`);
-    else if (!faction.isNeutral && ruler.factionId !== faction.id) {
+    else if (!faction.isNeutral && factionOwnsCity && ruler.factionId !== faction.id) {
       add(`factions.${key}.rulerOfficerId`, 'ruler belongs to another faction');
     }
-    else if (!faction.isNeutral && ruler.status !== 'serving') {
+    else if (!faction.isNeutral && factionOwnsCity && ruler.status !== 'serving') {
       add(`factions.${key}.rulerOfficerId`, 'non-neutral ruler must be serving');
     }
   }
@@ -125,6 +126,9 @@ export function validateGameState(state: GameState): ValidationIssue[] {
     if (officer.status === 'serving' && state.factions[officer.factionId]?.isNeutral) {
       add(`${path}.factionId`, 'serving officer must belong to a playable faction');
     }
+    if (officer.status === 'serving' && officer.cityId && state.cities[officer.cityId]?.ownerId !== officer.factionId) {
+      add(`${path}.cityId`, 'serving officer must be stationed in a city owned by their faction');
+    }
     if (!state.armsTypes[officer.armsTypeId]) add(`${path}.armsTypeId`, `unknown arms type: ${officer.armsTypeId}`);
     for (const field of ['weaponItemId', 'intelligenceItemId', 'mountItemId'] as const) {
       const itemId = officer[field];
@@ -138,8 +142,12 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       loyalty: officer.loyalty,
       age: officer.age,
       stamina: officer.stamina,
+      ...(officer.level === undefined ? {} : { level: officer.level }),
+      ...(officer.character === undefined ? {} : { character: officer.character }),
+      ...(officer.experience === undefined ? {} : { experience: officer.experience }),
     })) {
       if (!Number.isFinite(value)) add(`${path}.${field}`, 'must be a finite number');
+      else if (!Number.isInteger(value)) add(`${path}.${field}`, 'must be an integer');
       else if (value < 0) add(`${path}.${field}`, 'must not be negative');
     }
   }

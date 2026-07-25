@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { advanceTurn } from '../core/turn';
 import { validateGameState } from '../core/validation';
 import { createBundledScenario, getScenarioOptions, getScenarioRulers } from './bundledScenarios';
+import { DEFAULT_STARTING_TROOPS } from './legacyScenario';
 
 describe('bundled original scenarios', () => {
   it('offers all four original periods without a local file dependency', () => {
@@ -20,6 +21,9 @@ describe('bundled original scenarios', () => {
     expect(Object.keys(state.officers)).toHaveLength(200);
     expect(state.scenario).toMatchObject({ source: 'baye-legacy', period });
     expect(state.factionOrder).toHaveLength(rulers.length);
+    expect(new Set(Object.values(state.officers)
+      .filter((officer) => officer.status === 'serving')
+      .map((officer) => officer.troops))).toEqual(new Set([DEFAULT_STARTING_TROOPS]));
     expect(validateGameState(state)).toEqual([]);
   });
 
@@ -31,5 +35,16 @@ describe('bundled original scenarios', () => {
     expect(next.turn).toBe(2);
     expect(next.phase).toBe('player');
     expect(validateGameState(next)).toEqual([]);
+  });
+
+  it.each([1, 2, 3, 4] as const)('keeps bundled period %s valid through six campaign months', (period) => {
+    const rulers = getScenarioRulers(period);
+    const strongest = [...rulers].sort((a, b) => b.cityCount - a.cityCount || a.sourceIndex - b.sourceIndex)[0];
+    let state = createBundledScenario(period, strongest.sourceIndex);
+    for (let month = 0; month < 6 && state.phase !== 'ended'; month += 1) state = advanceTurn(state);
+
+    expect(state.turn).toBe(7);
+    expect(state.phase).toBe('player');
+    expect(validateGameState(state)).toEqual([]);
   });
 });

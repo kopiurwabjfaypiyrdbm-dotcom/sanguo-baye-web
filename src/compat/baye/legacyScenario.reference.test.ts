@@ -7,6 +7,7 @@ import { createLegacyPeriodGameState } from '../../data/legacyScenario';
 import { executeAttack } from '../../core/battle';
 import {
   calculateOfficerTroopCapacity,
+  MAX_DISTRIBUTION_INCREASE,
   developFarming,
   distributeTroops,
   recruitTroops,
@@ -59,14 +60,14 @@ describe.skipIf(!sourceRoot)('local Baye period 1 reference', () => {
     const officers = Object.values(state.officers).filter(
       (candidate) => candidate.factionId === state.playerFactionId && candidate.cityId === source!.id,
     );
-    expect(officers.length).toBeGreaterThanOrEqual(3);
+    expect(officers.length).toBeGreaterThanOrEqual(4);
     const targetId = source!.neighbors.find(
       (neighborId) => state.cities[neighborId]?.ownerId !== state.playerFactionId,
     )!;
     const developed = developFarming(state, { cityId: source!.id, officerId: officers[0].id });
     const recruited = recruitTroops(developed, { cityId: source!.id, officerId: officers[1].id, amount: 500 });
     const attackerTroops = Math.min(
-      officers[2].troops + 500,
+      officers[2].troops + MAX_DISTRIBUTION_INCREASE,
       calculateOfficerTroopCapacity(recruited.officers[officers[2].id]),
     );
     const distributed = distributeTroops(recruited, {
@@ -77,7 +78,7 @@ describe.skipIf(!sourceRoot)('local Baye period 1 reference', () => {
     const afterBattle = executeAttack(distributed, {
       sourceCityId: source!.id,
       targetCityId: targetId,
-      officerIds: [officers[2].id],
+      officerIds: [officers[3].id],
       provisions: 100,
     });
     const nextMonth = advanceTurn(afterBattle);

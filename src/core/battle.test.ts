@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyBattleResult, estimateBattle, resolveBattle } from './battle';
+import { updateCitySatraps } from './administration';
 import { createSampleState } from './sampleState';
 import { validateGameState } from './validation';
 
@@ -65,6 +66,28 @@ describe('automatic battle', () => {
     expect(validateGameState(next)).toEqual([]);
   });
 
+  it('retreats zero-troop stationed officers even though they did not join automatic combat', () => {
+    const state = createSampleState();
+    state.officers['cao-cao'].cityId = 'chang-an';
+    state.officers['cao-cao'].troops = 100_000;
+    state.officers['liu-bei'].cityId = 'hanzhong';
+    state.officers['liu-bei'].troops = 0;
+    state.officers['guan-yu'].troops = 1;
+    state.cities.hanzhong.reserveTroops = 0;
+    const result = resolveBattle(state, {
+      sourceCityId: 'chang-an',
+      targetCityId: 'hanzhong',
+      officerIds: ['cao-cao'],
+      provisions: 100,
+    });
+    const next = applyBattleResult(state, result);
+
+    expect(result.defenderOfficerIds).not.toContain('liu-bei');
+    expect(next.officers['liu-bei'].cityId).toBe('chengdu');
+    expect(next.officers['liu-bei'].status).toBe('serving');
+    expect(validateGameState(next)).toEqual([]);
+  });
+
   it('rejects applying the same battle result twice', () => {
     const state = createSampleState();
     state.officers['cao-cao'].cityId = 'chang-an';
@@ -77,5 +100,41 @@ describe('automatic battle', () => {
     const next = applyBattleResult(state, result);
 
     expect(() => applyBattleResult(next, result)).toThrow('Battle result does not match the current state');
+  });
+
+  it('turns all serving officers free when their faction loses its last city', () => {
+    let state = createSampleState();
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId === 'liu-bei' && city.id !== 'hanzhong') city.ownerId = 'neutral';
+    }
+    for (const officer of Object.values(state.officers)) {
+      if (officer.factionId === 'liu-bei') officer.cityId = 'hanzhong';
+    }
+    state.officers['cao-cao'].cityId = 'chang-an';
+    state.officers['cao-cao'].troops = 100_000;
+    state.cities.hanzhong.reserveTroops = 0;
+    for (const officer of Object.values(state.officers)) {
+      if (officer.factionId === 'liu-bei') officer.troops = 1;
+    }
+    state = updateCitySatraps(state);
+
+    const result = resolveBattle(state, {
+      sourceCityId: 'chang-an',
+      targetCityId: 'hanzhong',
+      officerIds: ['cao-cao'],
+      provisions: 100,
+    });
+    const next = applyBattleResult(state, result);
+    const formerLiuOfficers = Object.values(next.officers).filter((officer) =>
+      ['liu-bei', 'guan-yu', 'zhuge-liang', 'zhang-fei'].includes(officer.id),
+    );
+
+    expect(result.cityCaptured).toBe(true);
+    expect(formerLiuOfficers).toHaveLength(4);
+    expect(formerLiuOfficers.every((officer) =>
+      officer.status === 'free' && officer.factionId === 'neutral' && officer.troops === 0,
+    )).toBe(true);
+    expect(next.logs.some((log) => log.message.includes('失去最后一座城池'))).toBe(true);
+    expect(validateGameState(next)).toEqual([]);
   });
 });

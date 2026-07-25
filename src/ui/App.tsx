@@ -1,12 +1,38 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
-import { executeAttack } from '../core/battle';
+import { applyBattleResult, executeAttack, type AttackOrder } from '../core/battle';
 import { developFarming, distributeTroops, recruitTroops } from '../core/cityCommands';
 import { createSampleState } from '../core/sampleState';
 import { appointSatrap, moveOfficer, recruitFreeOfficer, rewardOfficer, searchCity } from '../core/personnelCommands';
 import { parseSave, serializeSave } from '../core/saveGame';
-import { loadFromSlot, saveToSlot, slotKey, type SaveSlotId } from '../core/saveStorage';
-import { advanceTurn } from '../core/turn';
+import {
+  deleteBattleCheckpoint,
+  loadBattleCheckpoint,
+  loadFromSlot,
+  saveBattleCheckpoint,
+  savePlayerBattleRollback,
+  saveToSlot,
+  slotKey,
+  type SaveSlotId,
+} from '../core/saveStorage';
+import {
+  advanceTurnUntilPlayerDefense,
+  continueTurnUntilPlayerDefense,
+  type InteractiveTurnProgress,
+} from '../core/turn';
 import type { GameLog, GameState } from '../core/types';
+import {
+  attackTacticalUnit,
+  createTacticalBattle,
+  createTacticalBattleResult,
+  endTacticalSide,
+  getAttackableUnitIds,
+  getReachableTiles,
+  moveTacticalUnit,
+  runBasicTacticalAi,
+  waitTacticalUnit,
+  type TacticalBattleState,
+  type TacticalPosition,
+} from '../core/tacticalBattle';
 import {
   createBundledScenario,
   getScenarioOptions,
@@ -17,8 +43,9 @@ import { createGameBridge } from '../game/events';
 import { createStrategyMap, type StrategyMapController } from '../game/createGame';
 import { RulerScreen, ScenarioScreen, TitleScreen } from './CampaignSetup';
 import { CityPanel } from './CityPanel';
+import { TacticalBattleScreen } from './TacticalBattleScreen';
 
-type AppScreen = 'title' | 'scenario' | 'ruler' | 'game';
+type AppScreen = 'title' | 'scenario' | 'ruler' | 'game' | 'battle';
 const scenarioOptions = getScenarioOptions();
 
 export function App() {
@@ -34,9 +61,30 @@ export function App() {
   const [feedback, setFeedback] = useState<{ kind: 'success' | 'error'; message: string }>();
   const [monthSummary, setMonthSummary] = useState<string[]>([]);
   const [isResolving, setIsResolving] = useState(false);
+  const [pendingAttack, setPendingAttack] = useState<AttackOrder>();
+  const [tacticalBattle, setTacticalBattle] = useState<TacticalBattleState>();
+  const [selectedTacticalUnitId, setSelectedTacticalUnitId] = useState<string>();
+  const [aiResumeFactionIndex, setAiResumeFactionIndex] = useState<number>();
   const mapHost = useRef<HTMLDivElement>(null);
   const mapController = useRef<StrategyMapController | null>(null);
+  const aiTurnLogStart = useRef(0);
   const bridge = useMemo(() => createGameBridge(), []);
+  const tacticalReachable = useMemo(() => {
+    if (!tacticalBattle || !selectedTacticalUnitId || tacticalBattle.status !== 'ongoing') return [];
+    try {
+      return getReachableTiles(tacticalBattle, selectedTacticalUnitId);
+    } catch {
+      return [];
+    }
+  }, [tacticalBattle, selectedTacticalUnitId]);
+  const tacticalAttackable = useMemo(() => {
+    if (!tacticalBattle || !selectedTacticalUnitId || tacticalBattle.status !== 'ongoing') return [];
+    try {
+      return getAttackableUnitIds(tacticalBattle, selectedTacticalUnitId);
+    } catch {
+      return [];
+    }
+  }, [tacticalBattle, selectedTacticalUnitId]);
 
   useEffect(() => bridge.on('city:selected', ({ cityId }) => setSelectedCityId(cityId)), [bridge]);
 
@@ -65,6 +113,21 @@ export function App() {
     }
   }, [screen, state, sourceLabel]);
 
+  useEffect(() => {
+    if (screen !== 'battle' || !tacticalBattle || tacticalBattle.status !== 'ongoing') return;
+    const playerSide = tacticalBattle.attackerFactionId === state.playerFactionId ? 'attacker' : 'defender';
+    if (tacticalBattle.activeSide === playerSide) return;
+    setIsResolving(true);
+    setFeedback({ kind: 'success', message: '敌方正在判断移动与攻击目标……' });
+    const timer = window.setTimeout(() => {
+      setTacticalBattle((current) => current ? runBasicTacticalAi(current) : current);
+      setSelectedTacticalUnitId(undefined);
+      setIsResolving(false);
+      setFeedback({ kind: 'success', message: '敌方阶段结束。' });
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [screen, state.playerFactionId, tacticalBattle]);
+
   function beginNewGame() {
     setFeedback(undefined);
     setScreen('scenario');
@@ -86,6 +149,7 @@ export function App() {
     setMonthSummary([]);
     setFeedback({ kind: 'success', message: `已选择${next.factions[next.playerFactionId].name}，霸业由此开始。` });
     try {
+      clearBattleCheckpoint();
       saveToSlot(window.localStorage, 'auto', next, `${label} · 自动存档`);
       setHasContinue(true);
     } catch {
@@ -96,6 +160,25 @@ export function App() {
 
   function continueCampaign() {
     try {
+      let checkpoint;
+      try {
+        checkpoint = loadBattleCheckpoint(window.localStorage);
+      } catch {
+        clearBattleCheckpoint();
+      }
+      if (checkpoint) {
+        const battle = createTacticalBattle(checkpoint.state, checkpoint.order);
+        setState(checkpoint.state);
+        setSelectedCityId(checkpoint.order.targetCityId);
+        setSourceLabel(sourceLabelForState(checkpoint.state));
+        setMonthSummary([]);
+        setTacticalBattle(battle);
+        setSelectedTacticalUnitId(undefined);
+        setAiResumeFactionIndex(checkpoint.nextFactionIndex);
+        setScreen('battle');
+        setFeedback({ kind: 'success', message: '已恢复到上一场未完成守城战的战前检查点。' });
+        return;
+      }
       const envelope = loadFromSlot(window.localStorage, 'auto');
       if (!envelope) throw new Error('尚无自动存档');
       applyLoadedState(envelope.state, envelope.label);
@@ -127,6 +210,7 @@ export function App() {
   }
 
   function applyLoadedState(next: GameState, label?: string) {
+    clearBattleCheckpoint();
     setState(next);
     setSelectedCityId(firstOwnedCityId(next));
     setSourceLabel(sourceLabelForState(next));
@@ -176,29 +260,213 @@ export function App() {
     }
   }
 
+  function requestAttack(order: AttackOrder) {
+    setPendingAttack(order);
+    setFeedback(undefined);
+  }
+
+  function resolvePendingAttackQuickly() {
+    if (!pendingAttack) return;
+    const order = pendingAttack;
+    setPendingAttack(undefined);
+    applyPlayerAction(
+      (current) => executeAttack(current, order),
+      (next) => next.cities[order.targetCityId].ownerId === next.playerFactionId
+        ? order.targetCityId
+        : order.sourceCityId,
+    );
+  }
+
+  function beginManualBattle() {
+    if (!pendingAttack) return;
+    try {
+      const battle = createTacticalBattle(state, pendingAttack);
+      clearBattleCheckpoint();
+      try {
+        savePlayerBattleRollback(window.localStorage, state, `${sourceLabel} · 战前自动存档`);
+        setHasContinue(true);
+      } catch {
+        // The battle remains playable when browser storage is unavailable.
+      }
+      setTacticalBattle(battle);
+      setSelectedTacticalUnitId(undefined);
+      setPendingAttack(undefined);
+      setFeedback({ kind: 'success', message: '战场已经展开，请选择己方单位。' });
+      setScreen('battle');
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '无法进入战场。' });
+      setPendingAttack(undefined);
+    }
+  }
+
+  function selectTacticalUnit(unitId: string) {
+    if (!tacticalBattle || tacticalBattle.status !== 'ongoing' || isResolving) return;
+    const playerSide = tacticalBattle.attackerFactionId === state.playerFactionId ? 'attacker' : 'defender';
+    const unit = tacticalBattle.units[unitId];
+    if (!unit || unit.troops <= 0) return;
+    if (unit.side === playerSide) {
+      if (tacticalBattle.activeSide !== playerSide) {
+        setFeedback({ kind: 'error', message: '敌方阶段尚未结束。' });
+        return;
+      }
+      if (unit.acted) {
+        setFeedback({ kind: 'error', message: `${unit.name}本阶段已经行动。` });
+        return;
+      }
+      setSelectedTacticalUnitId(unitId);
+      setFeedback({ kind: 'success', message: `已选择${unit.name}。青色格可移动，红框单位可攻击。` });
+      return;
+    }
+    if (!selectedTacticalUnitId) {
+      setFeedback({ kind: 'error', message: '请先选择一个己方单位。' });
+      return;
+    }
+    try {
+      const next = attackTacticalUnit(tacticalBattle, selectedTacticalUnitId, unitId);
+      setTacticalBattle(next);
+      setSelectedTacticalUnitId(undefined);
+      setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '攻击完成。' });
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '攻击失败。' });
+    }
+  }
+
+  function moveSelectedTacticalUnit(position: TacticalPosition) {
+    if (!tacticalBattle || !selectedTacticalUnitId || isResolving) return;
+    try {
+      const next = moveTacticalUnit(tacticalBattle, selectedTacticalUnitId, position);
+      setTacticalBattle(next);
+      setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '移动完成。' });
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '移动失败。' });
+    }
+  }
+
+  function waitSelectedTacticalUnit() {
+    if (!tacticalBattle || !selectedTacticalUnitId || isResolving) return;
+    try {
+      const next = waitTacticalUnit(tacticalBattle, selectedTacticalUnitId);
+      setTacticalBattle(next);
+      setSelectedTacticalUnitId(undefined);
+      setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '单位已待命。' });
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '待命失败。' });
+    }
+  }
+
+  function endPlayerTacticalSide() {
+    if (!tacticalBattle || isResolving) return;
+    try {
+      const next = endTacticalSide(tacticalBattle);
+      setTacticalBattle(next);
+      setSelectedTacticalUnitId(undefined);
+      setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '本方阶段结束。' });
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '无法结束阶段。' });
+    }
+  }
+
+  function finishManualBattle() {
+    if (!tacticalBattle || tacticalBattle.status === 'ongoing') return;
+    try {
+      const result = createTacticalBattleResult(tacticalBattle);
+      const next = applyBattleResult(state, result);
+      setTacticalBattle(undefined);
+      setSelectedTacticalUnitId(undefined);
+      if (aiResumeFactionIndex !== undefined && next.phase !== 'ended') {
+        const progress = continueTurnUntilPlayerDefense(next, aiResumeFactionIndex);
+        setAiResumeFactionIndex(undefined);
+        applyInteractiveTurnProgress(progress);
+      } else {
+        clearBattleCheckpoint();
+        setAiResumeFactionIndex(undefined);
+        setState(next);
+        setSelectedCityId(next.cities[result.targetCityId].ownerId === next.playerFactionId
+          ? result.targetCityId
+          : result.sourceCityId);
+        setScreen('game');
+        setFeedback({ kind: 'success', message: result.logs.at(-1) ?? '战斗已经结算。' });
+      }
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '战斗结算失败。' });
+    }
+  }
+
+  function applyInteractiveTurnProgress(progress: InteractiveTurnProgress) {
+    setState(progress.state);
+    if (progress.pendingPlayerDefense) {
+      try {
+        saveBattleCheckpoint(
+          window.localStorage,
+          progress.state,
+          progress.pendingPlayerDefense.order,
+          progress.pendingPlayerDefense.nextFactionIndex,
+          `${sourceLabel} · 守城战前检查点`,
+        );
+      } catch {
+        // The battle remains playable when browser storage is unavailable.
+      }
+      const battle = createTacticalBattle(progress.state, progress.pendingPlayerDefense.order);
+      setTacticalBattle(battle);
+      setSelectedTacticalUnitId(undefined);
+      setAiResumeFactionIndex(progress.pendingPlayerDefense.nextFactionIndex);
+      setScreen('battle');
+      setIsResolving(false);
+      setFeedback({
+        kind: 'success',
+        message: `${progress.state.factions[battle.attackerFactionId].name}来袭，请准备守城。`,
+      });
+      return;
+    }
+
+    setAiResumeFactionIndex(undefined);
+    clearBattleCheckpoint();
+    setMonthSummary(summarizeMonth(progress.state.logs.slice(aiTurnLogStart.current)));
+    if (progress.state.cities[selectedCityId]?.ownerId !== progress.state.playerFactionId) {
+      setSelectedCityId(firstOwnedCityId(progress.state));
+    }
+    setScreen('game');
+    setIsResolving(false);
+    setFeedback({
+      kind: 'success',
+      message: progress.state.phase === 'ended'
+        ? progress.state.outcome === 'victory' ? '战役已经胜利。' : '战役已经失败。'
+        : `已进入 ${progress.state.calendar.year} 年 ${progress.state.calendar.month} 月，武将体力与城池资源完成结算。`,
+    });
+  }
+
   async function endMonth() {
     if (isResolving) return;
     setIsResolving(true);
     setFeedback({ kind: 'success', message: '正在推演其他势力行动……' });
     await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
     try {
-      const next = advanceTurn(state);
-      setMonthSummary(summarizeMonth(next.logs.slice(state.logs.length)));
-      setState(next);
-      if (next.cities[selectedCityId]?.ownerId !== next.playerFactionId) {
-        setSelectedCityId(firstOwnedCityId(next));
-      }
-      setFeedback({
-        kind: 'success',
-        message: next.phase === 'ended'
-          ? next.outcome === 'victory' ? '战役已经胜利。' : '战役已经失败。'
-          : `已进入 ${next.calendar.year} 年 ${next.calendar.month} 月，武将体力与城池资源完成结算。`,
-      });
+      aiTurnLogStart.current = state.logs.length;
+      applyInteractiveTurnProgress(advanceTurnUntilPlayerDefense(state));
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '月度推进失败。' });
-    } finally {
       setIsResolving(false);
     }
+  }
+
+  if (screen === 'battle' && tacticalBattle) {
+    return (
+      <TacticalBattleScreen
+        campaign={state}
+        battle={tacticalBattle}
+        bridge={bridge}
+        selectedUnitId={selectedTacticalUnitId}
+        reachable={tacticalReachable}
+        attackableUnitIds={tacticalAttackable}
+        feedback={feedback}
+        isResolving={isResolving}
+        onUnitSelected={selectTacticalUnit}
+        onTileSelected={moveSelectedTacticalUnit}
+        onWait={waitSelectedTacticalUnit}
+        onEndSide={endPlayerTacticalSide}
+        onFinish={finishManualBattle}
+      />
+    );
   }
 
   if (screen === 'title') {
@@ -303,11 +571,55 @@ export function App() {
         onDistribute={(cityId, officerId, targetTroops) => applyPlayerAction(
           (current) => distributeTroops(current, { cityId, officerId, targetTroops }),
         )}
-        onAttack={(sourceCityId, targetCityId, officerIds, provisions) => applyPlayerAction(
-          (current) => executeAttack(current, { sourceCityId, targetCityId, officerIds, provisions }),
-          (next) => next.cities[targetCityId].ownerId === next.playerFactionId ? targetCityId : sourceCityId,
-        )}
+        onAttack={(sourceCityId, targetCityId, officerIds, provisions) => requestAttack({
+          sourceCityId,
+          targetCityId,
+          officerIds,
+          provisions,
+        })}
       />
+
+      {pendingAttack && (
+        <div
+          className="battle-choice-backdrop"
+          role="presentation"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setPendingAttack(undefined);
+            if (event.key !== 'Tab') return;
+            const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
+            if (buttons.length === 0) return;
+            const first = buttons[0];
+            const last = buttons[buttons.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+              event.preventDefault();
+              last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+              event.preventDefault();
+              first.focus();
+            }
+          }}
+        >
+          <section
+            className="battle-choice-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="battle-choice-title"
+            aria-describedby="battle-choice-description"
+          >
+            <p className="panel-kicker">Campaign decision</p>
+            <h2 id="battle-choice-title">如何处理这场战斗？</h2>
+            <p id="battle-choice-description">
+              {state.cities[pendingAttack.sourceCityId].name}将向
+              {state.cities[pendingAttack.targetCityId].name}出征，携粮 {pendingAttack.provisions}。
+            </p>
+            <div className="battle-choice-actions">
+              <button type="button" className="primary-action" autoFocus onClick={beginManualBattle}>亲自指挥</button>
+              <button type="button" onClick={resolvePendingAttackQuickly}>快速结算</button>
+              <button type="button" onClick={() => setPendingAttack(undefined)}>取消</button>
+            </div>
+          </section>
+        </div>
+      )}
 
       <section className="log-panel" aria-label="日志">
         <div>
@@ -338,6 +650,18 @@ function countCurrentOfficers(state: GameState): number {
 
 function loadInitialGame(): { state: GameState; sourceLabel: string; hasAutoSave: boolean } {
   try {
+    const checkpoint = loadBattleCheckpoint(window.localStorage);
+    if (checkpoint) {
+      return {
+        state: checkpoint.state,
+        sourceLabel: sourceLabelForState(checkpoint.state),
+        hasAutoSave: true,
+      };
+    }
+  } catch {
+    clearBattleCheckpoint();
+  }
+  try {
     const envelope = loadFromSlot(window.localStorage, 'auto');
     if (envelope) return { state: envelope.state, sourceLabel: sourceLabelForState(envelope.state), hasAutoSave: true };
   } catch {
@@ -345,6 +669,14 @@ function loadInitialGame(): { state: GameState; sourceLabel: string; hasAutoSave
   }
   const state = createSampleState();
   return { state, sourceLabel: sourceLabelForState(state), hasAutoSave: false };
+}
+
+function clearBattleCheckpoint(): void {
+  try {
+    deleteBattleCheckpoint(window.localStorage);
+  } catch {
+    // Checkpoint cleanup must never block campaign progress or loading.
+  }
 }
 
 function sourceLabelForState(state: GameState): string {

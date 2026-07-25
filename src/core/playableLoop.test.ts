@@ -13,7 +13,7 @@ describe('playable strategy loop', () => {
     original.officers['xun-yu'].troops = 100;
     original = updateCitySatraps(original);
     const developed = developFarming(original, { cityId: 'luoyang', officerId: 'xiahou-dun' });
-    const recruited = recruitTroops(developed, { cityId: 'xuchang', officerId: 'xun-yu', amount: 500 });
+    const recruited = recruitTroops(developed, { cityId: 'chenliu', officerId: 'zhang-liao', amount: 500 });
     const distributed = distributeTroops(recruited, {
       cityId: 'xuchang',
       officerId: 'xun-yu',
@@ -28,7 +28,7 @@ describe('playable strategy loop', () => {
     const nextMonth = advanceTurn(afterBattle);
 
     expect(developed.cities.luoyang.farming).toBeGreaterThan(original.cities.luoyang.farming);
-    expect(recruited.cities.xuchang.reserveTroops).toBe(original.cities.xuchang.reserveTroops + 500);
+    expect(recruited.cities.chenliu.reserveTroops).toBe(original.cities.chenliu.reserveTroops + 500);
     expect(distributed.officers['xun-yu'].troops).toBe(500);
     expect(afterBattle.logs.some((log) => log.kind === 'battle')).toBe(true);
     expect(nextMonth.turn).toBe(2);

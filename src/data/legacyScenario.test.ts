@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BayeLegacyPeriod } from '../compat/baye/legacyScenario';
-import { createGameStateFromLegacyPeriod, selectPlayerFaction } from './legacyScenario';
+import { DEFAULT_STARTING_TROOPS, createGameStateFromLegacyPeriod, selectPlayerFaction } from './legacyScenario';
 
 describe('legacy scenario game-state bridge', () => {
   it('creates playable and neutral factions while preserving city data', () => {
@@ -15,7 +15,8 @@ describe('legacy scenario game-state bridge', () => {
     });
     expect(state.officers['officer-0']).toMatchObject({ status: 'serving', factionId: 'ruler-0', cityId: 'city-0' });
     expect(state.officers['officer-1']).toMatchObject({ status: 'free', factionId: 'neutral', cityId: 'city-0' });
-    expect(state.officers['officer-1'].troops).toBe(800);
+    expect(state.officers['officer-0'].troops).toBe(DEFAULT_STARTING_TROOPS);
+    expect(state.officers['officer-1'].troops).toBe(0);
     expect(state.cities['city-0'].food).toBe(900);
     expect(state.factions.neutral.isNeutral).toBe(true);
   });
@@ -42,9 +43,9 @@ describe('legacy scenario game-state bridge', () => {
     expect(selected.playerFactionId).toBe('ruler-2');
     expect(selected.factions['ruler-2'].isPlayer).toBe(true);
     expect(selected.factions['ruler-0'].isPlayer).toBe(false);
-    expect(selected.officers['officer-2'].troops).toBe(100);
-    expect(selected.officers['officer-0'].troops).toBe(800);
-    expect(selected.cities['city-0'].food).toBe(original.cities['city-0'].food + 1000);
+    expect(selected.officers['officer-2'].troops).toBe(DEFAULT_STARTING_TROOPS);
+    expect(selected.officers['officer-0'].troops).toBe(DEFAULT_STARTING_TROOPS);
+    expect(selected.cities['city-0'].food).toBe(original.cities['city-0'].food);
   });
 
   it('preserves people outside city queues as hidden records', () => {
@@ -54,6 +55,30 @@ describe('legacy scenario game-state bridge', () => {
 
     expect(state.officers['officer-2']).toMatchObject({ status: 'hidden', factionId: 'neutral' });
     expect(state.officers['officer-2'].cityId).toBeUndefined();
+  });
+
+  it('uses the current city queue owner when an assigned record retains another active ruler', () => {
+    const period = createPeriod();
+    period.cities.push({
+      ...period.cities[0],
+      sourceIndex: 1,
+      name: '洛阳',
+      rulerIndex: 2,
+      satrapIndex: 2,
+      personIndexes: [2],
+      neighborIndexes: [0],
+      mapX: 4,
+    });
+    period.cities[0].neighborIndexes = [1];
+    period.persons.push(person(2, '董卓', 2), person(3, '旧属标记武将', 2));
+    period.cities[0].personIndexes.push(3);
+    const state = createGameStateFromLegacyPeriod(period, 0);
+
+    expect(state.officers['officer-3']).toMatchObject({
+      status: 'serving',
+      factionId: 'ruler-0',
+      cityId: 'city-0',
+    });
   });
 
   it('does not allow ruler switching after a command has committed the campaign', () => {

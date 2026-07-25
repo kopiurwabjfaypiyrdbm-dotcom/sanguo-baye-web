@@ -1,10 +1,20 @@
 import { applyMonthlyGrowth } from './economy';
-import { runAiRound } from './ai';
+import { runAiFactionTurnUntilPlayerDefense, runAiRound } from './ai';
 import { appendLogs } from './logs';
+import type { AttackOrder } from './battle';
 import type { GameState } from './types';
 import { assertValidGameState } from './validation';
 import { updateCitySatraps } from './administration';
 import { evaluateOutcome } from './outcome';
+
+export type InteractiveTurnProgress = {
+  state: GameState;
+  completed: boolean;
+  pendingPlayerDefense?: {
+    order: AttackOrder;
+    nextFactionIndex: number;
+  };
+};
 
 export function advanceCalendar(calendar: GameState['calendar']): GameState['calendar'] {
   return calendar.month === 12
@@ -45,4 +55,38 @@ export function advanceTurn(state: GameState): GameState {
   if (aiState.phase !== 'ai') return aiState;
   const afterAi = runAiRound(aiState);
   return afterAi.phase === 'ended' ? afterAi : finishTurn(afterAi);
+}
+
+export function advanceTurnUntilPlayerDefense(state: GameState): InteractiveTurnProgress {
+  const aiState = beginAiPhase(state);
+  if (aiState.phase !== 'ai') return { state: aiState, completed: true };
+  return continueTurnUntilPlayerDefense(aiState, 0);
+}
+
+export function continueTurnUntilPlayerDefense(
+  state: GameState,
+  startFactionIndex: number,
+): InteractiveTurnProgress {
+  if (state.phase === 'ended') return { state, completed: true };
+  if (state.phase !== 'ai') throw new Error('Interactive AI continuation requires the AI phase');
+  let next = state;
+  for (let index = startFactionIndex; index < state.factionOrder.length; index += 1) {
+    const factionId = state.factionOrder[index];
+    if (factionId === state.playerFactionId) continue;
+    next = { ...next, activeFactionId: factionId };
+    const progress = runAiFactionTurnUntilPlayerDefense(next);
+    next = progress.state;
+    if (next.phase === 'ended') return { state: next, completed: true };
+    if (progress.pendingPlayerDefense) {
+      return {
+        state: next,
+        completed: false,
+        pendingPlayerDefense: {
+          order: progress.pendingPlayerDefense,
+          nextFactionIndex: index + 1,
+        },
+      };
+    }
+  }
+  return { state: finishTurn(next), completed: true };
 }
