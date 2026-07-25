@@ -6,10 +6,12 @@ import {
   REWARD_MONEY_COST,
   SEARCH_STAMINA_COST,
   appointSatrap,
+  giveItemToOfficer,
   moveOfficer,
   recruitFreeOfficer,
   rewardOfficer,
   searchCity,
+  unequipOfficerItem,
 } from './personnelCommands';
 import { getCityFreeOfficers, getCityOfficers } from './selectors';
 import { validateGameState } from './validation';
@@ -49,6 +51,17 @@ describe('personnel commands', () => {
       .toThrow('本月已经执行过命令');
   });
 
+  it('reveals a hidden city item through the original-shaped odd search branch', () => {
+    const state = createSampleState();
+    state.rngSeed = 42;
+    const next = searchCity(state, { cityId: 'chenliu', officerId: 'zhang-liao' });
+
+    expect(next.cities.chenliu.hiddenItemIds).toEqual([]);
+    expect(next.cities.chenliu.itemIds).toContain('red-hare');
+    expect(next.logs.at(-1)?.message).toContain('搜得赤兔');
+    expect(validateGameState(next)).toEqual([]);
+  });
+
   it('recruits a previously discovered free officer with deterministic random state', () => {
     const state = createSampleState();
     state.discoveredOfficerIds = ['chen-gong'];
@@ -76,6 +89,58 @@ describe('personnel commands', () => {
     expect(next.actedOfficerIds).toEqual([]);
     expect(() => rewardOfficer(next, { cityId: 'luoyang', officerId: 'xiahou-dun' }))
       .toThrow('忠诚已经达到上限');
+  });
+
+  it('gives and removes equipment through city inventory without consuming a monthly action', () => {
+    const state = createSampleState();
+    const rewarded = giveItemToOfficer(state, {
+      cityId: 'luoyang',
+      officerId: 'xiahou-dun',
+      itemId: 'sunzi-manual',
+    });
+
+    expect(rewarded.cities.luoyang.itemIds).toEqual([]);
+    expect(rewarded.officers['xiahou-dun'].equipmentItemIds).toEqual(['sunzi-manual']);
+    expect(rewarded.officers['xiahou-dun'].loyalty).toBe(100);
+    expect(rewarded.actedOfficerIds).toEqual([]);
+
+    const unequipped = unequipOfficerItem(rewarded, {
+      cityId: 'luoyang',
+      officerId: 'xiahou-dun',
+      itemId: 'sunzi-manual',
+    });
+    expect(unequipped.officers['xiahou-dun'].equipmentItemIds).toEqual([]);
+    expect(unequipped.cities.luoyang.itemIds).toEqual(['sunzi-manual']);
+    expect(validateGameState(unequipped)).toEqual([]);
+  });
+
+  it('uses effective equipped attributes for兵符 and enforces the original two-slot capacity', () => {
+    const state = createSampleState();
+    state.items['training-spear'] = {
+      id: 'training-spear', name: '试验枪', forceBonus: 10, intelligenceBonus: 0, moveBonus: 0,
+    };
+    state.items['elite-token'] = {
+      id: 'elite-token', name: '铁骑兵符', forceBonus: 0, intelligenceBonus: 0, moveBonus: 0,
+      armsTypeOverride: 'elite',
+    };
+    state.officers['xiahou-dun'].force = 100;
+    state.officers['xiahou-dun'].equipmentItemIds = ['training-spear'];
+    state.cities.luoyang.itemIds = ['elite-token'];
+
+    const promoted = giveItemToOfficer(state, {
+      cityId: 'luoyang', officerId: 'xiahou-dun', itemId: 'elite-token',
+    });
+    expect(promoted.officers['xiahou-dun'].armsTypeId).toBe('elite');
+    expect(promoted.officers['xiahou-dun'].equipmentItemIds).toEqual(['training-spear']);
+
+    const full = structuredClone(state);
+    full.items['second-item'] = {
+      id: 'second-item', name: '副装备', forceBonus: 0, intelligenceBonus: 0, moveBonus: 1,
+    };
+    full.officers['xiahou-dun'].equipmentItemIds = ['training-spear', 'second-item'];
+    expect(() => giveItemToOfficer(full, {
+      cityId: 'luoyang', officerId: 'xiahou-dun', itemId: 'elite-token',
+    })).toThrow('2 个装备位置已经占满');
   });
 
   it('moves an officer to an adjacent friendly city and repairs the satrap', () => {

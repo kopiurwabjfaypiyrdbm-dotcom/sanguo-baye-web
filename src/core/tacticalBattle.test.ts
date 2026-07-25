@@ -46,6 +46,20 @@ describe('manual tactical battle core', () => {
     expect(battle.units['reserve:hanzhong'].troops).toBe(state.cities.hanzhong.reserveTroops);
   });
 
+  it('projects equipped attribute and movement bonuses into manual battle units', () => {
+    const { state, order } = battleFixture();
+    state.officers['cao-cao'].equipmentItemIds = ['qinglong-blade', 'red-hare'];
+
+    const unit = createTacticalBattle(state, order).units['officer:cao-cao'];
+
+    expect(unit.force).toBe(state.officers['cao-cao'].force + state.items['qinglong-blade'].forceBonus);
+    expect(unit.intelligence).toBe(state.officers['cao-cao'].intelligence);
+    expect(unit.mobility).toBe(Math.min(
+      8,
+      state.armsTypes[state.officers['cao-cao'].armsTypeId].mobility + state.items['red-hare'].moveBonus,
+    ));
+  });
+
   it('rejects deployments above the original ten-officer side limit', () => {
     const { state, order } = battleFixture();
     const defender = state.officers['guan-yu'];

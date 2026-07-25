@@ -10,6 +10,7 @@ import {
   type TacticalVictoryReason,
 } from '../core/tacticalBattle';
 import type { GameState } from '../core/types';
+import { getOfficerEquipmentIds } from '../core/equipment';
 import { createTacticalMap, type TacticalMapController } from '../game/createBattleGame';
 import type { GameBridge } from '../game/events';
 
@@ -85,6 +86,12 @@ export function TacticalBattleScreen({
   const selectedTerrain = selectedUnit
     ? getTacticalTile(battle, selectedUnit.x, selectedUnit.y)?.terrain
     : undefined;
+  const selectedOfficer = selectedUnit?.officerId ? campaign.officers[selectedUnit.officerId] : undefined;
+  const selectedEquipment = selectedOfficer
+    ? getOfficerEquipmentIds(selectedOfficer)
+      .map((itemId) => campaign.items[itemId]?.name)
+      .filter(Boolean)
+    : [];
 
   return (
     <main className="battle-shell">
@@ -134,6 +141,7 @@ export function TacticalBattleScreen({
                 移动 {selectedUnit.mobility} · 射程 {getTacticalAttackRange(selectedUnit.armsType)}
               </span>
               {selectedTerrain !== undefined && <span>所在地形：{BAYE_TERRAIN_LABELS[selectedTerrain]}</span>}
+              {selectedEquipment.length > 0 && <span>装备：{selectedEquipment.join('、')}</span>}
               <span>{selectedUnit.acted ? '本阶段已行动' : selectedUnit.moved ? '已移动，可攻击或待命' : '等待命令'}</span>
             </>
           ) : (

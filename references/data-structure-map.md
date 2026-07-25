@@ -26,7 +26,7 @@
 | `Thew` | U8 | 体力 | `Officer.stamina` | 一对一；新剧本载入后强制为 100 |
 | `ArmsType` | U8 | 原始兵种 0–5 | `Officer.armsTypeId` | 映射顺序见 `fight.h`，不得按名称排序 |
 | `Arms` | U16 | 兵力 | `Officer.troops` | 一对一；新剧本载入后先强制为 100，随后非玩家势力初始化为 800 |
-| `Equip[0..1]` | 2×U16 | 两个装备槽，ID 为资源索引 + 1 | 三个具名道具槽 | 当前武器/智力道具/坐骑三槽是现代模型，不能无损回写原版 |
+| `Equip[0..1]` | 2×U16 | 两个有序通用装备槽，ID 为资源索引 + 1 | `Officer.equipmentItemIds` | 一对一保留顺序和同类双装备；早期三个具名槽只在存档迁移入口读取 |
 | `Age` | U8 | 年龄 | `Officer.age` | 一对一 |
 
 当前 `Officer.leadership` 和 CSV 的“统率”没有 `PersonType` 对应字段，属于现有原型扩展。原版默认攻击取武力、防御取智力；不得让统率进入原版兼容公式。

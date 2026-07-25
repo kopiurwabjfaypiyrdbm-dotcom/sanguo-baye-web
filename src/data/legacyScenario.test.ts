@@ -21,6 +21,34 @@ describe('legacy scenario game-state bridge', () => {
     expect(state.factions.neutral.isNeutral).toBe(true);
   });
 
+  it('loads hidden/found city goods and existing equipment from period records', () => {
+    const period = createPeriod();
+    period.cities[0].goodsIndexes = [13, 0x80 | 22];
+    period.cities[0].goodsCount = 2;
+    period.persons[0].equipmentIndexes = [7, 24];
+    const state = createGameStateFromLegacyPeriod(period);
+
+    expect(state.cities['city-0'].hiddenItemIds).toEqual(['item-13']);
+    expect(state.cities['city-0'].itemIds).toEqual(['item-22']);
+    expect(state.officers['officer-0']).toMatchObject({
+      equipmentItemIds: ['item-7', 'item-24'],
+    });
+    expect(state.officers['officer-0'].force).toBe(period.persons[0].force - 10);
+    expect(state.officers['officer-0'].intelligence).toBe(period.persons[0].intelligence);
+    expect(state.items['item-13'].name).toBe('孙子兵法');
+  });
+
+  it('preserves two same-category original slots without double-counting their bonuses', () => {
+    const period = createPeriod();
+    period.persons[0].force = 109;
+    period.persons[0].equipmentIndexes = [9, 8];
+
+    const state = createGameStateFromLegacyPeriod(period);
+
+    expect(state.officers['officer-0'].equipmentItemIds).toEqual(['item-9', 'item-8']);
+    expect(state.officers['officer-0'].force).toBe(98);
+  });
+
   it('changes the player marker without mutating the source state', () => {
     const period = createPeriod();
     period.cities.push({

@@ -11,7 +11,13 @@ import {
   recruitTroops,
 } from './cityCommands';
 import { appendLogs } from './logs';
-import { SEARCH_STAMINA_COST, moveOfficer, searchCity } from './personnelCommands';
+import {
+  SEARCH_STAMINA_COST,
+  getGiveItemAvailability,
+  giveItemToOfficer,
+  moveOfficer,
+  searchCity,
+} from './personnelCommands';
 import type { AiProfile, GameState } from './types';
 
 export const AI_MAX_ACTIONS = 5;
@@ -130,7 +136,7 @@ function prepareAiFactionTurn(state: GameState): { state: GameState; order?: Att
   let next = state;
   let actionCount = 0;
 
-  for (const operation of [balanceTroops, recruitReserves, developWeakCity, searchLocalTalent, reinforceFrontier]) {
+  for (const operation of [useCityItem, balanceTroops, recruitReserves, developWeakCity, searchLocalTalent, reinforceFrontier]) {
     if (actionCount >= AI_MAX_ACTIONS - 1 || next.phase === 'ended') break;
     const operated = operation(next, faction.id);
     if (operated) {
@@ -151,6 +157,31 @@ function prepareAiFactionTurn(state: GameState): { state: GameState; order?: Att
     `${faction.name}完成 ${actionCount} 项经营行动后，决定从${source.name}进攻${target.name}：${decision.reason}`,
   ]);
   return { state: announced, order: decision.order };
+}
+
+function useCityItem(state: GameState, factionId: string): GameState | undefined {
+  const cities = Object.values(state.cities)
+    .filter((city) => city.ownerId === factionId && (city.itemIds?.length ?? 0) > 0)
+    .sort((a, b) => a.id.localeCompare(b.id));
+  for (const city of cities) {
+    for (const itemId of city.itemIds ?? []) {
+      const item = state.items[itemId];
+      if (!item) continue;
+      const candidates = Object.values(state.officers)
+        .filter((officer) => officer.status === 'serving' && officer.factionId === factionId && officer.cityId === city.id)
+        .filter((officer) => officer.armsTypeId !== item.armsTypeOverride)
+        .filter((officer) => getGiveItemAvailability(state, {
+          cityId: city.id,
+          officerId: officer.id,
+          itemId,
+        }).allowed)
+        .sort((a, b) => item.intelligenceBonus > item.forceBonus
+          ? b.intelligence - a.intelligence || a.id.localeCompare(b.id)
+          : b.force - a.force || a.id.localeCompare(b.id));
+      if (candidates[0]) return giveItemToOfficer(state, { cityId: city.id, officerId: candidates[0].id, itemId });
+    }
+  }
+  return undefined;
 }
 
 function balanceTroops(state: GameState, factionId: string): GameState | undefined {
@@ -227,7 +258,8 @@ function reinforceFrontier(state: GameState, factionId: string): GameState | und
 function searchLocalTalent(state: GameState, factionId: string): GameState | undefined {
   const candidates = Object.values(state.cities)
     .filter((city) => city.ownerId === factionId)
-    .filter((city) => Object.values(state.officers).some((officer) => officer.status === 'free' && officer.cityId === city.id))
+    .filter((city) => (city.hiddenItemIds?.length ?? 0) > 0
+      || Object.values(state.officers).some((officer) => officer.status === 'free' && officer.cityId === city.id))
     .sort((a, b) => a.id.localeCompare(b.id));
   for (const city of candidates) {
     const officer = availableOfficers(state, factionId, city.id, SEARCH_STAMINA_COST)

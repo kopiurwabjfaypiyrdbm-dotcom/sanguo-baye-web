@@ -11,8 +11,10 @@ import {
   RECRUIT_OFFICER_STAMINA_COST,
   REWARD_MONEY_COST,
   SEARCH_STAMINA_COST,
+  getGiveItemAvailability,
 } from '../core/personnelCommands';
 import { getCityFreeOfficers, getCityOfficers, getNeighborCities } from '../core/selectors';
+import { getEffectiveOfficerAttributes, getOfficerEquipmentIds } from '../core/equipment';
 
 type CityPanelProps = {
   state: GameState;
@@ -23,6 +25,8 @@ type CityPanelProps = {
   onSearch: (cityId: string, officerId: string) => void;
   onRecruitOfficer: (cityId: string, executorOfficerId: string, targetOfficerId: string) => void;
   onReward: (cityId: string, officerId: string) => void;
+  onGiveItem: (cityId: string, officerId: string, itemId: string) => void;
+  onUnequipItem: (cityId: string, officerId: string, itemId: string) => void;
   onMove: (sourceCityId: string, targetCityId: string, officerId: string) => void;
   onAppoint: (cityId: string, officerId: string) => void;
   onDistribute: (cityId: string, officerId: string, targetTroops: number) => void;
@@ -40,6 +44,8 @@ export function CityPanel({
   onSearch,
   onRecruitOfficer,
   onReward,
+  onGiveItem,
+  onUnequipItem,
   onMove,
   onAppoint,
   onDistribute,
@@ -68,6 +74,7 @@ export function CityPanel({
   const [selectedMoveTargetId, setSelectedMoveTargetId] = useState('');
   const [selectedRecruitTargetId, setSelectedRecruitTargetId] = useState('');
   const [distributionTarget, setDistributionTarget] = useState('0');
+  const [selectedItemId, setSelectedItemId] = useState('');
   const [selectedAttackerIds, setSelectedAttackerIds] = useState<string[]>([]);
   const [provisions, setProvisions] = useState('100');
 
@@ -100,9 +107,20 @@ export function CityPanel({
     }
   }, [discoveredFreeOfficers, selectedRecruitTargetId]);
 
+  const cityItems = useMemo(
+    () => (city.itemIds ?? []).map((itemId) => state.items[itemId]).filter(Boolean),
+    [city.itemIds, state.items],
+  );
+
+  useEffect(() => {
+    if (!cityItems.some((item) => item.id === selectedItemId)) setSelectedItemId(cityItems[0]?.id ?? '');
+  }, [cityItems, selectedItemId]);
+
   const faction = state.factions[city.ownerId];
   const satrap = city.satrapOfficerId ? state.officers[city.satrapOfficerId] : undefined;
   const selectedOfficer = state.officers[selectedOfficerId];
+  const selectedItem = state.items[selectedItemId];
+  const selectedEquipmentIds = selectedOfficer ? getOfficerEquipmentIds(selectedOfficer) : [];
   const isOwned = city.ownerId === state.playerFactionId && state.phase === 'player';
   const selectedOfficerActed = selectedOfficer ? state.actedOfficerIds.includes(selectedOfficer.id) : false;
   const availableAttackers = eligibleOfficers.filter(
@@ -124,6 +142,10 @@ export function CityPanel({
   const canReward = isOwned && Boolean(selectedOfficer)
     && selectedOfficer.id !== state.factions[state.playerFactionId].rulerOfficerId
     && selectedOfficer.loyalty < 100 && city.money >= REWARD_MONEY_COST;
+  const itemAvailability = selectedOfficer && selectedItem
+    ? getGiveItemAvailability(state, { cityId: city.id, officerId: selectedOfficer.id, itemId: selectedItem.id })
+    : { allowed: false as const, reason: cityItems.length === 0 ? '城中没有已发现道具' : '请选择受赏武将和道具' };
+  const canGiveItem = isOwned && itemAvailability.allowed;
   const canMove = isOwned && Boolean(selectedOfficer) && !selectedOfficerActed && Boolean(selectedMoveTargetId);
   const canAppoint = isOwned && Boolean(selectedOfficer) && city.satrapOfficerId !== selectedOfficerId;
   const canDistribute = isOwned && Boolean(selectedOfficer) && Number.isInteger(distributionValue)
@@ -180,15 +202,23 @@ export function CityPanel({
           <span>{officers.length} 人</span>
         </div>
         <div className="officer-list">
-          {officers.slice(0, 8).map((officer) => (
-            <div className="officer-row" key={officer.id}>
-              <strong>{officer.name}</strong>
-              <span>武 {officer.force} · 智 {officer.intelligence}</span>
-              <span>兵 {number.format(officer.troops)}</span>
-              <span>忠 {officer.loyalty}</span>
-              <span>{city.satrapOfficerId === officer.id ? '太守' : '在职'} · {state.actedOfficerIds.includes(officer.id) ? '已行动' : '待命'}</span>
-            </div>
-          ))}
+          {officers.slice(0, 8).map((officer) => {
+            const attributes = getEffectiveOfficerAttributes(state, officer);
+            const equipmentNames = getOfficerEquipmentIds(officer)
+              .map((itemId) => state.items[itemId]?.name)
+              .filter(Boolean)
+              .join('、');
+            return (
+              <div className="officer-row" key={officer.id}>
+                <strong>{officer.name}</strong>
+                <span>武 {attributes.force} · 智 {attributes.intelligence}</span>
+                <span>兵 {number.format(officer.troops)}</span>
+                <span>忠 {officer.loyalty}</span>
+                <span>装备 {equipmentNames || '无'}</span>
+                <span>{city.satrapOfficerId === officer.id ? '太守' : '在职'} · {state.actedOfficerIds.includes(officer.id) ? '已行动' : '待命'}</span>
+              </div>
+            );
+          })}
           {officers.length > 8 && <p className="more-officers">另有 {officers.length - 8} 人</p>}
         </div>
       </div>
@@ -302,6 +332,52 @@ export function CityPanel({
             >
               奖赏所选武将（{REWARD_MONEY_COST} 金）
             </button>
+            <div className="item-command-row">
+              <label className="command-field">
+                <span>城中道具（另有 {city.hiddenItemIds?.length ?? 0} 件未发现）</span>
+                <select
+                  value={selectedItemId}
+                  onChange={(event) => setSelectedItemId(event.target.value)}
+                  disabled={cityItems.length === 0}
+                >
+                  {cityItems.length === 0 && <option value="">暂无已发现道具</option>}
+                  {cityItems.map((item) => (
+                    <option value={item.id} key={item.id}>
+                      {item.name} · {describeItem(item)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                disabled={disabled || !canGiveItem}
+                onClick={() => onGiveItem(city.id, selectedOfficerId, selectedItemId)}
+                title={disabled
+                  ? '当前有待处理操作，暂时不能执行城池命令'
+                  : itemAvailability.allowed
+                    ? '原版道具赏赐：非君主忠诚 +8，不占用月行动'
+                    : itemAvailability.reason}
+              >
+                赏赐道具
+              </button>
+            </div>
+            {isOwned && !itemAvailability.allowed && (
+              <p className="command-hint">暂不可赏赐：{itemAvailability.reason}</p>
+            )}
+            {selectedEquipmentIds.length > 0 && (
+              <div className="equipment-actions" aria-label="所选武将装备">
+                {selectedEquipmentIds.map((itemId) => (
+                  <button
+                    type="button"
+                    key={itemId}
+                    disabled={disabled || !isOwned}
+                    onClick={() => onUnequipItem(city.id, selectedOfficerId, itemId)}
+                  >
+                    卸下 {state.items[itemId].name}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <p className="command-group-title">军事</p>
             <div className="distribution-row">
@@ -390,4 +466,14 @@ function Stat({ label, value }: { label: string; value: string }) {
       <dd>{value}</dd>
     </div>
   );
+}
+
+function describeItem(item: GameState['items'][string]): string {
+  if (item.armsTypeOverride) return `转为${item.armsTypeOverride === 'elite' ? '极兵' : item.armsTypeOverride === 'mystic' ? '玄兵' : '水兵'}`;
+  const bonuses = [
+    item.forceBonus > 0 ? `武力 +${item.forceBonus}` : '',
+    item.intelligenceBonus > 0 ? `智力 +${item.intelligenceBonus}` : '',
+    item.moveBonus > 0 ? `移动 +${item.moveBonus}` : '',
+  ].filter(Boolean);
+  return bonuses.join(' · ') || '无属性';
 }

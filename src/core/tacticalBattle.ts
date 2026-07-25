@@ -15,6 +15,7 @@ import {
   type BattleStateGuard,
 } from './battle';
 import type { GameState, Officer } from './types';
+import { getEffectiveOfficerAttributes } from './equipment';
 
 export type TacticalSide = 'attacker' | 'defender';
 export type TacticalBattleStatus = 'ongoing' | 'attacker-won' | 'defender-won';
@@ -516,6 +517,7 @@ function unitFromOfficer(
   y: number,
 ): TacticalUnit {
   const armsType = armsTypeIndex(officer.armsTypeId);
+  const effective = getEffectiveOfficerAttributes(state, officer);
   return {
     id: `officer:${officer.id}`,
     officerId: officer.id,
@@ -524,11 +526,11 @@ function unitFromOfficer(
     side,
     x,
     y,
-    force: officer.force,
-    intelligence: officer.intelligence,
+    force: effective.force,
+    intelligence: effective.intelligence,
     level: officer.level ?? 1,
     armsType,
-    mobility: clamp(state.armsTypes[officer.armsTypeId]?.mobility ?? 3, 1, 8),
+    mobility: clamp((state.armsTypes[officer.armsTypeId]?.mobility ?? 3) + effective.moveBonus, 1, 8),
     originalTroops: officer.troops,
     troops: officer.troops,
     moved: false,

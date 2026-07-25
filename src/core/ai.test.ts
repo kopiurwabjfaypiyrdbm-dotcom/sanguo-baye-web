@@ -111,4 +111,31 @@ describe('basic AI', () => {
     expect(next.logs.some((log) => log.message.includes('关羽在汉中'))).toBe(true);
     expect(validateGameState(next)).toEqual([]);
   });
+
+  it('uses a discovered city item before routine development', () => {
+    const state = beginAiPhase(createSampleState());
+    state.cities.hanzhong.itemIds = ['sunzi-manual'];
+    const next = runAiFactionTurn(state);
+
+    expect(next.officers['guan-yu'].equipmentItemIds).toContain('sunzi-manual');
+    expect(next.cities.hanzhong.itemIds).toEqual([]);
+    expect(next.logs.some((log) => log.message.includes('赏赐关羽孙子兵法'))).toBe(true);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('does not consume a兵符 on officers already using its target arms type', () => {
+    const state = beginAiPhase(createSampleState());
+    state.items['navy-token'] = {
+      id: 'navy-token', name: '水战兵符', forceBonus: 0, intelligenceBonus: 0, moveBonus: 0,
+      armsTypeOverride: 'navy',
+    };
+    state.cities.hanzhong.itemIds = ['navy-token'];
+    for (const officer of Object.values(state.officers)) {
+      if (officer.factionId === 'liu-bei' && officer.cityId === 'hanzhong') officer.armsTypeId = 'navy';
+    }
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.cities.hanzhong.itemIds).toEqual(['navy-token']);
+  });
 });

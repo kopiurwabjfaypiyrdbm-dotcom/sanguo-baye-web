@@ -2,6 +2,7 @@ import type { ArmsType, City, Faction, GameState, Officer } from '../core/types'
 import { updateCitySatraps } from '../core/administration';
 import { assertValidGameState } from '../core/validation';
 import { parseBayeLegacyPeriod, type BayeLegacyPeriod } from '../compat/baye/legacyScenario';
+import { createItemCatalog, itemId } from './itemCatalog';
 
 const NEUTRAL_FACTION_ID = 'neutral';
 const DEFAULT_PLAYER_RULER_INDEX = 1; // Cao Cao in period 1.
@@ -68,6 +69,7 @@ export function createGameStateFromLegacyPeriod(
     isNeutral: true,
     aiProfile: 'defensive',
   };
+  const items = createItemCatalog();
 
   const officers: Record<string, Officer> = Object.fromEntries(
     period.persons.map((person) => {
@@ -83,18 +85,29 @@ export function createGameStateFromLegacyPeriod(
         : activeFaction === NEUTRAL_FACTION_ID ? 'free' : 'serving';
       const armsTypeId = armsTypeIds[person.armsType] ?? armsTypeIds[0];
       const id = officerId(person.sourceIndex);
+      const equipmentItemIds = person.equipmentIndexes
+        .filter((sourceId): sourceId is number => sourceId !== null)
+        .map(itemId);
+      const equipment = equipmentItemIds.map((equipmentItemId) => items[equipmentItemId]).filter(Boolean);
+      // Baye stores current Force/IQ in the period record: AddGoodsPerson mutates
+      // those values when an item is equipped. The Web state keeps immutable
+      // base attributes, so remove the imported equipment contribution once.
+      const baseForce = person.force - equipment.reduce((sum, item) => sum + item.forceBonus, 0);
+      const baseIntelligence = person.intelligence - equipment.reduce((sum, item) => sum + item.intelligenceBonus, 0);
+      if (baseForce < 0 || baseIntelligence < 0) throw new Error(`legacy equipment exceeds ${person.name}'s attributes`);
       return [
         id,
         {
           id,
           sourceId: person.sourceIndex,
           name: person.name,
-          force: person.force,
-          intelligence: person.intelligence,
+          force: baseForce,
+          intelligence: baseIntelligence,
           // The original record has no leadership field. Keep this temporary
           // prototype value isolated from the Baye-compatible battle layer.
           leadership: Math.round((person.force + person.intelligence) / 2),
           armsTypeId,
+          equipmentItemIds,
           status,
           factionId: activeFaction,
           ...(isAssigned ? { cityId: cityIdByPerson[person.sourceIndex] } : {}),
@@ -143,6 +156,12 @@ export function createGameStateFromLegacyPeriod(
           populationLimit: city.populationLimit,
           publicLoyalty: city.publicLoyalty,
           disasterPrevention: city.disasterPrevention,
+          itemIds: city.goodsIndexes
+            .filter((rawItemId) => (rawItemId & 0x80) !== 0)
+            .map((rawItemId) => itemId(rawItemId & 0x7f)),
+          hiddenItemIds: city.goodsIndexes
+            .filter((rawItemId) => (rawItemId & 0x80) === 0)
+            .map((rawItemId) => itemId(rawItemId & 0x7f)),
         },
       ];
     }),
@@ -165,7 +184,7 @@ export function createGameStateFromLegacyPeriod(
     factions,
     cities,
     officers,
-    items: {},
+    items,
     armsTypes: createArmsTypes(),
     logs: [
       {

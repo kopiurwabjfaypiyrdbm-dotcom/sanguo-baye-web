@@ -4,6 +4,7 @@ import type { GameState, Officer } from './types';
 import { assertValidGameState } from './validation';
 import { updateCitySatraps } from './administration';
 import { evaluateOutcome } from './outcome';
+import { getOfficerEquipment, getOfficerEquipmentIds } from './equipment';
 
 export type AttackOrder = {
   sourceCityId: string;
@@ -41,9 +42,7 @@ export type BattleParticipantSnapshot = {
   leadership: number;
   level: number;
   armsTypeId: string;
-  weaponItemId?: string;
-  intelligenceItemId?: string;
-  mountItemId?: string;
+  equipmentKey: string;
   armsAttackModifier: number;
   armsDefenseModifier: number;
   armsMobility: number;
@@ -344,9 +343,7 @@ export function assertBattleStateGuard(state: GameState, guard: BattleStateGuard
 function createParticipantSnapshot(state: GameState, officer: Officer): BattleParticipantSnapshot {
   const armsType = state.armsTypes[officer.armsTypeId];
   if (!armsType) throw new Error(`Unknown arms type: ${officer.armsTypeId}`);
-  const items = [officer.weaponItemId, officer.intelligenceItemId, officer.mountItemId]
-    .filter((itemId): itemId is string => Boolean(itemId))
-    .map((itemId) => state.items[itemId]);
+  const items = getOfficerEquipment(state, officer);
   return {
     officerId: officer.id,
     cityId: officer.cityId,
@@ -359,9 +356,7 @@ function createParticipantSnapshot(state: GameState, officer: Officer): BattlePa
     leadership: officer.leadership,
     level: officer.level ?? 1,
     armsTypeId: officer.armsTypeId,
-    weaponItemId: officer.weaponItemId,
-    intelligenceItemId: officer.intelligenceItemId,
-    mountItemId: officer.mountItemId,
+    equipmentKey: getOfficerEquipmentIds(officer).join('\0'),
     armsAttackModifier: armsType.attackModifier,
     armsDefenseModifier: armsType.defenseModifier,
     armsMobility: armsType.mobility,
@@ -389,9 +384,7 @@ function scoreOfficers(
   return officers.reduce((total, officer) => {
     const armsType = state.armsTypes[officer.armsTypeId];
     if (!armsType) throw new Error(`Unknown arms type: ${officer.armsTypeId}`);
-    const items = [officer.weaponItemId, officer.intelligenceItemId, officer.mountItemId]
-      .filter((itemId): itemId is string => Boolean(itemId))
-      .map((itemId) => state.items[itemId]);
+    const items = getOfficerEquipment(state, officer);
     const forceBonus = items.reduce((sum, item) => sum + (item?.forceBonus ?? 0), 0);
     const intelligenceBonus = items.reduce((sum, item) => sum + (item?.intelligenceBonus ?? 0), 0);
     const moveBonus = items.reduce((sum, item) => sum + (item?.moveBonus ?? 0), 0);

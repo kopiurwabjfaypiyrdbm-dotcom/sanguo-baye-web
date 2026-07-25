@@ -5,6 +5,13 @@ import { createBundledScenario, getScenarioOptions, getScenarioRulers } from './
 import { DEFAULT_STARTING_TROOPS } from './legacyScenario';
 
 describe('bundled original scenarios', () => {
+  it('loads the complete item catalog, hidden city inventories, and original equipment', () => {
+    const state = createBundledScenario(1, getScenarioRulers(1)[0].sourceIndex);
+    expect(Object.keys(state.items)).toHaveLength(33);
+    expect(Object.values(state.cities).flatMap((city) => city.hiddenItemIds ?? []).length).toBe(22);
+    expect(Object.values(state.officers).some((officer) => (officer.equipmentItemIds?.length ?? 0) > 0)).toBe(true);
+    expect(validateGameState(state)).toEqual([]);
+  });
   it('offers all four original periods without a local file dependency', () => {
     const options = getScenarioOptions();
 

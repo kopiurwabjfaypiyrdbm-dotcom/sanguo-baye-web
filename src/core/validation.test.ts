@@ -44,4 +44,20 @@ describe('game state validation', () => {
       message: 'serving officer must be stationed in a city owned by their faction',
     }));
   });
+
+  it('rejects unknown or over-capacity equipment references', () => {
+    const unknown = createSampleState();
+    unknown.officers['cao-cao'].equipmentItemIds = ['missing-item'];
+    expect(validateGameState(unknown)).toContainEqual(expect.objectContaining({
+      path: 'officers.cao-cao.equipmentItemIds',
+      message: 'unknown item: missing-item',
+    }));
+
+    const overCapacity = createSampleState();
+    overCapacity.officers['cao-cao'].equipmentItemIds = ['qinglong-blade', 'sunzi-manual', 'red-hare'];
+    expect(validateGameState(overCapacity)).toContainEqual(expect.objectContaining({
+      path: 'officers.cao-cao.equipmentItemIds',
+      message: 'must contain at most 2 items',
+    }));
+  });
 });

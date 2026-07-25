@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { searchCity } from './personnelCommands';
+import { giveItemToOfficer, searchCity } from './personnelCommands';
 import { createSampleState } from './sampleState';
 import { parseSave, serializeSave } from './saveGame';
 import {
@@ -13,6 +13,8 @@ import {
   type SaveStorage,
 } from './saveStorage';
 import { beginAiPhase } from './turn';
+import { createBundledScenario, getScenarioRulers } from '../data/bundledScenarios';
+import { getEffectiveOfficerAttributes } from './equipment';
 
 describe('versioned saves', () => {
   it('round-trips the complete state and deterministic random sequence', () => {
@@ -51,6 +53,87 @@ describe('versioned saves', () => {
     expect(formerLiuOfficers.every((officer) =>
       officer.status === 'free' && officer.factionId === 'neutral' && officer.troops === 0,
     )).toBe(true);
+  });
+
+  it('adds empty item inventories when loading a pre-inventory schema-two save', () => {
+    const legacy = createSampleState();
+    for (const city of Object.values(legacy.cities)) {
+      delete city.itemIds;
+      delete city.hiddenItemIds;
+    }
+
+    const loaded = parseSave(legacy);
+    expect(loaded.state.cities.luoyang.itemIds).toEqual(['sunzi-manual']);
+    expect(loaded.state.cities.chenliu.hiddenItemIds).toEqual(['red-hare']);
+    expect(Object.values(loaded.state.cities).every((city) =>
+      Array.isArray(city.itemIds) && Array.isArray(city.hiddenItemIds),
+    )).toBe(true);
+  });
+
+  it('preserves discovered inventories and equipped items after a command round-trip', () => {
+    const state = createSampleState();
+    const equipped = giveItemToOfficer(state, {
+      cityId: 'luoyang',
+      officerId: 'xiahou-dun',
+      itemId: 'sunzi-manual',
+    });
+
+    const loaded = parseSave(serializeSave(equipped)).state;
+
+    expect(loaded.cities.luoyang.itemIds).toEqual([]);
+    expect(loaded.officers['xiahou-dun'].equipmentItemIds).toEqual(['sunzi-manual']);
+    expect(loaded.rngSeed).toBe(equipped.rngSeed);
+    expect(loaded.actedOfficerIds).toEqual(equipped.actedOfficerIds);
+  });
+
+  it('migrates early named equipment slots into the ordered two-slot model', () => {
+    const legacy = createSampleState();
+    delete legacy.officers['guan-yu'].equipmentItemIds;
+    legacy.officers['guan-yu'].weaponItemId = 'qinglong-blade';
+    legacy.officers['guan-yu'].mountItemId = 'red-hare';
+
+    const loaded = parseSave(legacy).state;
+
+    expect(loaded.officers['guan-yu'].equipmentItemIds).toEqual(['qinglong-blade', 'red-hare']);
+    expect(loaded.officers['guan-yu'].weaponItemId).toBeUndefined();
+    expect(loaded.officers['guan-yu'].mountItemId).toBeUndefined();
+  });
+
+  it('returns a third early named-slot item to the officer city during migration', () => {
+    const legacy = createSampleState();
+    delete legacy.officers['cao-cao'].equipmentItemIds;
+    legacy.officers['cao-cao'].weaponItemId = 'qinglong-blade';
+    legacy.officers['cao-cao'].intelligenceItemId = 'sunzi-manual';
+    legacy.officers['cao-cao'].mountItemId = 'red-hare';
+    legacy.cities.luoyang.itemIds = [];
+    legacy.cities.chenliu.hiddenItemIds = [];
+
+    const loaded = parseSave(legacy).state;
+
+    expect(loaded.officers['cao-cao'].equipmentItemIds).toEqual(['qinglong-blade', 'sunzi-manual']);
+    expect(loaded.cities.luoyang.itemIds).toEqual(['red-hare']);
+  });
+
+  it('restores the untouched item layer in pre-item bundled campaign saves', () => {
+    const legacy = createBundledScenario(4, getScenarioRulers(4)[0].sourceIndex);
+    for (const officer of Object.values(legacy.officers)) {
+      const effective = getEffectiveOfficerAttributes(legacy, officer);
+      officer.force = effective.force;
+      officer.intelligence = effective.intelligence;
+      delete officer.equipmentItemIds;
+    }
+    legacy.items = {};
+    for (const city of Object.values(legacy.cities)) {
+      delete city.itemIds;
+      delete city.hiddenItemIds;
+    }
+
+    const loaded = parseSave(legacy).state;
+    const zhaoYun = Object.values(loaded.officers).find((officer) => officer.name === '赵云')!;
+
+    expect(Object.keys(loaded.items)).toHaveLength(33);
+    expect(zhaoYun.equipmentItemIds).toEqual(['item-9', 'item-8']);
+    expect(getEffectiveOfficerAttributes(loaded, zhaoYun).force).toBe(109);
   });
 
   it('rejects unknown envelopes and invalid state references', () => {

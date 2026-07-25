@@ -2,7 +2,15 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { applyBattleResult, executeAttack, type AttackOrder } from '../core/battle';
 import { developFarming, distributeTroops, recruitTroops } from '../core/cityCommands';
 import { createSampleState } from '../core/sampleState';
-import { appointSatrap, moveOfficer, recruitFreeOfficer, rewardOfficer, searchCity } from '../core/personnelCommands';
+import {
+  appointSatrap,
+  giveItemToOfficer,
+  moveOfficer,
+  recruitFreeOfficer,
+  rewardOfficer,
+  searchCity,
+  unequipOfficerItem,
+} from '../core/personnelCommands';
 import { parseSave, serializeSave } from '../core/saveGame';
 import {
   deleteBattleCheckpoint,
@@ -560,6 +568,12 @@ export function App() {
         )}
         onReward={(cityId, officerId) => applyPlayerAction(
           (current) => rewardOfficer(current, { cityId, officerId }),
+        )}
+        onGiveItem={(cityId, officerId, itemId) => applyPlayerAction(
+          (current) => giveItemToOfficer(current, { cityId, officerId, itemId }),
+        )}
+        onUnequipItem={(cityId, officerId, itemId) => applyPlayerAction(
+          (current) => unequipOfficerItem(current, { cityId, officerId, itemId }),
         )}
         onMove={(sourceCityId, targetCityId, officerId) => applyPlayerAction(
           (current) => moveOfficer(current, { sourceCityId, targetCityId, officerId }),

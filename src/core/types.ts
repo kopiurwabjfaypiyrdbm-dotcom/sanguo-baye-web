@@ -44,10 +44,15 @@ export type City = {
   populationLimit?: number;
   publicLoyalty?: number;
   disasterPrevention?: number;
+  /** Discovered items available for use in this city. */
+  itemIds?: string[];
+  /** Scenario items that may be revealed by search. */
+  hiddenItemIds?: string[];
 };
 
 export type Item = {
   id: string;
+  sourceId?: number;
   name: string;
   forceBonus: number;
   intelligenceBonus: number;
@@ -71,8 +76,13 @@ export type Officer = {
   intelligence: number;
   leadership: number;
   armsTypeId: string;
+  /** Ordered Baye-compatible equipment slots. Original scenarios allow two arbitrary items. */
+  equipmentItemIds?: string[];
+  /** @deprecated schema-two migration input from the early three-slot prototype. */
   weaponItemId?: string;
+  /** @deprecated schema-two migration input from the early three-slot prototype. */
   intelligenceItemId?: string;
+  /** @deprecated schema-two migration input from the early three-slot prototype. */
   mountItemId?: string;
   status: OfficerStatus;
   factionId: string;

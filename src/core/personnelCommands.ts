@@ -5,6 +5,11 @@ import { getCityFreeOfficers } from './selectors';
 import { updateCitySatraps } from './administration';
 import type { City, GameState, Officer } from './types';
 import { assertValidGameState } from './validation';
+import {
+  OFFICER_EQUIPMENT_LIMIT,
+  getEffectiveOfficerAttributes,
+  getOfficerEquipmentIds,
+} from './equipment';
 
 export const SEARCH_STAMINA_COST = 8;
 export const RECRUIT_OFFICER_STAMINA_COST = 8;
@@ -33,6 +38,22 @@ export type RewardOfficerOrder = {
   officerId: string;
 };
 
+export type GiveItemOrder = {
+  cityId: string;
+  officerId: string;
+  itemId: string;
+};
+
+export type CommandAvailability =
+  | { allowed: true }
+  | { allowed: false; reason: string };
+
+export type UnequipItemOrder = {
+  cityId: string;
+  officerId: string;
+  itemId: string;
+};
+
 export type AppointSatrapOrder = {
   cityId: string;
   officerId: string;
@@ -55,23 +76,37 @@ export function searchCity(state: GameState, order: SearchOrder): GameState {
 
   if (resultType === 1) {
     const intelligenceRoll = draw(150);
-    if (intelligenceRoll < officer.intelligence && intelligenceRoll % 2 === 0) {
-      const candidates = getCityFreeOfficers(state, city.id);
-      if (candidates.length > 0) {
-        const candidate = candidates[draw(candidates.length)];
-        if (draw(110) < officer.intelligence) {
-          const loyalty = 70 + draw(30);
-          officers[candidate.id] = {
-            ...candidate,
-            status: 'serving',
-            factionId: state.activeFactionId,
-            loyalty,
+    if (intelligenceRoll < officer.intelligence) {
+      if (intelligenceRoll % 2 === 0) {
+        const candidates = getCityFreeOfficers(state, city.id);
+        if (candidates.length > 0) {
+          const candidate = candidates[draw(candidates.length)];
+          if (draw(110) < officer.intelligence) {
+            const loyalty = 70 + draw(30);
+            officers[candidate.id] = {
+              ...candidate,
+              status: 'serving',
+              factionId: state.activeFactionId,
+              loyalty,
+            };
+            discoveredOfficerIds.delete(candidate.id);
+            message = `${officer.name}在${city.name}访得${candidate.name}，成功请其出仕，忠诚为 ${loyalty}。`;
+          } else {
+            if (state.activeFactionId === state.playerFactionId) discoveredOfficerIds.add(candidate.id);
+            message = `${officer.name}在${city.name}听闻${candidate.name}之名，但未能请其出仕。`;
+          }
+        }
+      } else {
+        const candidates = city.hiddenItemIds ?? [];
+        if (candidates.length > 0) {
+          const foundItemId = candidates[draw(candidates.length)];
+          const foundItem = state.items[foundItemId];
+          nextCity = {
+            ...city,
+            itemIds: [...(city.itemIds ?? []), foundItemId],
+            hiddenItemIds: candidates.filter((_, index) => index !== candidates.indexOf(foundItemId)),
           };
-          discoveredOfficerIds.delete(candidate.id);
-          message = `${officer.name}在${city.name}访得${candidate.name}，成功请其出仕，忠诚为 ${loyalty}。`;
-        } else {
-          if (state.activeFactionId === state.playerFactionId) discoveredOfficerIds.add(candidate.id);
-          message = `${officer.name}在${city.name}听闻${candidate.name}之名，但未能请其出仕。`;
+          message = `${officer.name}在${city.name}搜得${foundItem.name}。`;
         }
       }
     }
@@ -177,6 +212,93 @@ export function rewardOfficer(state: GameState, order: RewardOfficerOrder): Game
     cities: { ...state.cities, [city.id]: { ...city, money: city.money - REWARD_MONEY_COST } },
     officers: { ...state.officers, [officer.id]: { ...officer, loyalty } },
   }, 'map', [`奖赏${officer.name}金钱 ${REWARD_MONEY_COST}，忠诚由 ${officer.loyalty} 提高至 ${loyalty}。`]);
+  assertValidGameState(next);
+  return next;
+}
+
+export function getGiveItemAvailability(state: GameState, order: GiveItemOrder): CommandAvailability {
+  if (state.phase === 'ended') return { allowed: false, reason: '战役已经结束' };
+  const city = state.cities[order.cityId];
+  if (!city || city.ownerId !== state.activeFactionId) return { allowed: false, reason: '只能使用己方城池中的道具' };
+  if (!(city.itemIds ?? []).includes(order.itemId)) return { allowed: false, reason: '该道具不在城中或尚未发现' };
+  const item = state.items[order.itemId];
+  if (!item) return { allowed: false, reason: `未知道具：${order.itemId}` };
+  const officer = state.officers[order.officerId];
+  if (!officer || officer.status !== 'serving' || officer.factionId !== state.activeFactionId || officer.cityId !== city.id) {
+    return { allowed: false, reason: '受赏武将不在该城' };
+  }
+
+  if (getOfficerEquipmentIds(officer).length >= OFFICER_EQUIPMENT_LIMIT) {
+    return { allowed: false, reason: `该武将的 ${OFFICER_EQUIPMENT_LIMIT} 个装备位置已经占满` };
+  }
+  const effective = getEffectiveOfficerAttributes(state, officer);
+  if (item.armsTypeOverride === 'elite' && effective.force <= 105) {
+    return { allowed: false, reason: '武力超过 105 才能使用铁骑兵符' };
+  }
+  if (item.armsTypeOverride === 'mystic' && effective.intelligence <= 105) {
+    return { allowed: false, reason: '智力超过 105 才能使用太玄兵符' };
+  }
+  return { allowed: true };
+}
+
+export function giveItemToOfficer(state: GameState, order: GiveItemOrder): GameState {
+  const availability = getGiveItemAvailability(state, order);
+  if (!availability.allowed) throw new Error(availability.reason);
+  const city = state.cities[order.cityId];
+  const itemIndex = (city.itemIds ?? []).indexOf(order.itemId);
+  const item = state.items[order.itemId];
+  const officer = state.officers[order.officerId];
+
+  let updatedOfficer: Officer;
+  let usage: string;
+  if (item.armsTypeOverride) {
+    updatedOfficer = { ...officer, armsTypeId: item.armsTypeOverride };
+    usage = `使用${item.name}，兵种变为${state.armsTypes[item.armsTypeOverride].name}`;
+  } else {
+    updatedOfficer = { ...officer, equipmentItemIds: [...getOfficerEquipmentIds(officer), item.id] };
+    usage = `装备${item.name}`;
+  }
+
+  const rulerId = state.factions[state.activeFactionId].rulerOfficerId;
+  if (officer.id !== rulerId) updatedOfficer = {
+    ...updatedOfficer,
+    loyalty: Math.min(100, officer.loyalty + REWARD_LOYALTY_GAIN),
+  };
+  const itemIds = [...(city.itemIds ?? [])];
+  itemIds.splice(itemIndex, 1);
+  const loyaltyText = officer.id === rulerId ? '' : `，忠诚提高至 ${updatedOfficer.loyalty}`;
+  const next = appendLogs({
+    ...state,
+    campaignStarted: true,
+    cities: { ...state.cities, [city.id]: { ...city, itemIds } },
+    officers: { ...state.officers, [officer.id]: updatedOfficer },
+  }, 'map', [`赏赐${officer.name}${item.name}：${usage}${loyaltyText}。`]);
+  assertValidGameState(next);
+  return next;
+}
+
+export function unequipOfficerItem(state: GameState, order: UnequipItemOrder): GameState {
+  if (state.phase === 'ended') throw new Error('战役已经结束');
+  const city = state.cities[order.cityId];
+  if (!city || city.ownerId !== state.activeFactionId) throw new Error('只能管理己方城池中的装备');
+  const officer = state.officers[order.officerId];
+  if (!officer || officer.status !== 'serving' || officer.factionId !== state.activeFactionId || officer.cityId !== city.id) {
+    throw new Error('待卸下装备的武将不在该城');
+  }
+  const equipmentItemIds = getOfficerEquipmentIds(officer);
+  const itemIndex = equipmentItemIds.indexOf(order.itemId);
+  if (itemIndex < 0) throw new Error('该武将没有装备指定道具');
+  const item = state.items[order.itemId];
+  equipmentItemIds.splice(itemIndex, 1);
+  const next = appendLogs({
+    ...state,
+    campaignStarted: true,
+    cities: {
+      ...state.cities,
+      [city.id]: { ...city, itemIds: [...(city.itemIds ?? []), order.itemId] },
+    },
+    officers: { ...state.officers, [officer.id]: { ...officer, equipmentItemIds } },
+  }, 'map', [`${officer.name}卸下${item.name}，道具返回${city.name}库存。`]);
   assertValidGameState(next);
   return next;
 }

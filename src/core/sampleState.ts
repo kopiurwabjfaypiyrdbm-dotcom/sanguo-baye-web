@@ -143,6 +143,8 @@ function city(
     money: 800,
     food: 1600,
     reserveTroops: 3000,
+    itemIds: id === 'luoyang' ? ['sunzi-manual'] : [],
+    hiddenItemIds: id === 'chenliu' ? ['red-hare'] : [],
   };
 }
 
@@ -158,7 +160,7 @@ function officer(
   troops: number,
   loyalty: number,
   age: number,
-  weaponItemId?: string,
+  equipmentItemId?: string,
   status: Officer['status'] = 'serving',
 ): Officer {
   return {
@@ -168,7 +170,7 @@ function officer(
     intelligence,
     leadership,
     armsTypeId,
-    weaponItemId,
+    equipmentItemIds: equipmentItemId ? [equipmentItemId] : [],
     status,
     factionId,
     cityId,

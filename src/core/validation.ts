@@ -1,4 +1,5 @@
 import type { GameState } from './types';
+import { OFFICER_EQUIPMENT_LIMIT, getOfficerEquipmentIds } from './equipment';
 
 export type ValidationIssue = {
   path: string;
@@ -98,6 +99,16 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       if (!Number.isFinite(value)) add(`${path}.${field}`, 'must be a finite number');
       else if (!['x', 'y'].includes(field) && value < 0) add(`${path}.${field}`, 'must not be negative');
     }
+    for (const field of ['itemIds', 'hiddenItemIds'] as const) {
+      const itemIds = city[field];
+      if (itemIds !== undefined && !Array.isArray(itemIds)) {
+        add(`${path}.${field}`, 'must be an array');
+        continue;
+      }
+      for (const itemId of itemIds ?? []) {
+        if (!state.items[itemId]) add(`${path}.${field}`, `unknown item: ${itemId}`);
+      }
+    }
     const neighbors = new Set<string>();
     for (const neighborId of city.neighbors) {
       if (neighborId === city.id) add(`${path}.neighbors`, 'must not contain the city itself');
@@ -130,9 +141,17 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       add(`${path}.cityId`, 'serving officer must be stationed in a city owned by their faction');
     }
     if (!state.armsTypes[officer.armsTypeId]) add(`${path}.armsTypeId`, `unknown arms type: ${officer.armsTypeId}`);
-    for (const field of ['weaponItemId', 'intelligenceItemId', 'mountItemId'] as const) {
-      const itemId = officer[field];
-      if (itemId && !state.items[itemId]) add(`${path}.${field}`, `unknown item: ${itemId}`);
+    const rawEquipment = (officer as { equipmentItemIds?: unknown }).equipmentItemIds;
+    if (rawEquipment !== undefined && !Array.isArray(rawEquipment)) {
+      add(`${path}.equipmentItemIds`, 'must be an array');
+    } else {
+      const equipmentItemIds = getOfficerEquipmentIds(officer);
+      if (equipmentItemIds.length > OFFICER_EQUIPMENT_LIMIT) {
+        add(`${path}.equipmentItemIds`, `must contain at most ${OFFICER_EQUIPMENT_LIMIT} items`);
+      }
+      for (const itemId of equipmentItemIds) {
+        if (!state.items[itemId]) add(`${path}.equipmentItemIds`, `unknown item: ${itemId}`);
+      }
     }
     for (const [field, value] of Object.entries({
       force: officer.force,
@@ -154,6 +173,19 @@ export function validateGameState(state: GameState): ValidationIssue[] {
 
   for (const [key, item] of Object.entries(state.items)) {
     if (key !== item.id) add(`items.${key}.id`, `must match record key: ${key}`);
+    for (const [field, value] of Object.entries({
+      forceBonus: item.forceBonus,
+      intelligenceBonus: item.intelligenceBonus,
+      moveBonus: item.moveBonus,
+      ...(item.sourceId === undefined ? {} : { sourceId: item.sourceId }),
+    })) {
+      if (!Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
+        add(`items.${key}.${field}`, 'must be a non-negative integer');
+      }
+    }
+    if (item.armsTypeOverride && !state.armsTypes[item.armsTypeOverride]) {
+      add(`items.${key}.armsTypeOverride`, `unknown arms type: ${item.armsTypeOverride}`);
+    }
   }
   for (const [key, armsType] of Object.entries(state.armsTypes)) {
     if (key !== armsType.id) add(`armsTypes.${key}.id`, `must match record key: ${key}`);

@@ -1,6 +1,9 @@
 import type { GameState } from './types';
 import { assertValidGameState } from './validation';
 import { releaseLandlessFactionOfficers } from './administration';
+import { getOfficerEquipmentIds } from './equipment';
+import { createBundledScenario, type BundledPeriodId } from '../data/bundledScenarios';
+import { createSampleState } from './sampleState';
 
 export const SAVE_FORMAT = 'sanguo-baye-web';
 export const SAVE_VERSION = 1;
@@ -69,16 +72,104 @@ export function parseSave(input: string | unknown): SaveEnvelope {
 export function migrateGameState(input: unknown): GameState {
   if (!isRecord(input)) throw new Error('存档中的游戏状态无效');
   if (input.schemaVersion === 2) {
-    return releaseLandlessFactionOfficers(structuredClone(input) as GameState);
+    return normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(
+      releaseLandlessFactionOfficers(structuredClone(input) as GameState),
+    )));
   }
   if (input.schemaVersion === 1) {
-    return releaseLandlessFactionOfficers({
+    return normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(releaseLandlessFactionOfficers({
       ...structuredClone(input),
       schemaVersion: 2,
       discoveredOfficerIds: Array.isArray(input.discoveredOfficerIds) ? [...input.discoveredOfficerIds] : [],
-    } as GameState);
+    } as GameState))));
   }
   throw new Error(`不支持的游戏状态版本：${String(input.schemaVersion)}`);
+}
+
+function restoreSampleInventories(state: GameState): GameState {
+  if (state.scenario?.id !== 'sample-190' || !Object.values(state.cities).every(
+    (city) => city.itemIds === undefined && city.hiddenItemIds === undefined,
+  )) return state;
+  const baseline = createSampleState();
+  const cities = Object.fromEntries(Object.values(state.cities).map((city) => [city.id, {
+    ...city,
+    itemIds: [...(baseline.cities[city.id]?.itemIds ?? [])],
+    hiddenItemIds: [...(baseline.cities[city.id]?.hiddenItemIds ?? [])],
+  }]));
+  return { ...state, cities };
+}
+
+/**
+ * Builds the item layer for saves made before the campaign exposed items.
+ * Those builds could not discover, move, equip or consume an item, so the
+ * bundled scenario baseline is still authoritative and no player action can
+ * be overwritten by this one-time migration.
+ */
+function restoreLegacyScenarioItems(state: GameState): GameState {
+  const period = state.scenario?.source === 'baye-legacy' ? state.scenario.period : undefined;
+  if (![1, 2, 3, 4].includes(period ?? 0) || Object.keys(state.items ?? {}).length > 0) return state;
+  const ruler = state.officers[state.factions[state.playerFactionId]?.rulerOfficerId];
+  if (ruler?.sourceId === undefined) return state;
+  const baseline = createBundledScenario(period as BundledPeriodId, ruler.sourceId);
+  const cities = Object.fromEntries(Object.values(state.cities).map((city) => [city.id, {
+    ...city,
+    itemIds: [...(baseline.cities[city.id]?.itemIds ?? [])],
+    hiddenItemIds: [...(baseline.cities[city.id]?.hiddenItemIds ?? [])],
+  }]));
+  const officers = Object.fromEntries(Object.values(state.officers).map((officer) => {
+    const baselineOfficer = baseline.officers[officer.id];
+    const equipmentItemIds = [...(baselineOfficer?.equipmentItemIds ?? [])];
+    const forceBonus = equipmentItemIds.reduce((sum, itemId) => sum + (baseline.items[itemId]?.forceBonus ?? 0), 0);
+    const intelligenceBonus = equipmentItemIds.reduce(
+      (sum, itemId) => sum + (baseline.items[itemId]?.intelligenceBonus ?? 0),
+      0,
+    );
+    return [officer.id, {
+      ...officer,
+      force: officer.force - forceBonus,
+      intelligence: officer.intelligence - intelligenceBonus,
+      equipmentItemIds,
+    }];
+  }));
+  return { ...state, items: baseline.items, cities, officers };
+}
+
+function normalizeItemInventories(state: GameState): GameState {
+  const overflowByCity = new Map<string, string[]>();
+  const officers = Object.fromEntries(Object.values(state.officers).map((officer) => {
+    const legacyEquipmentItemIds = getOfficerEquipmentIds(officer);
+    const equipmentItemIds = officer.equipmentItemIds === undefined
+      ? legacyEquipmentItemIds.slice(0, 2)
+      : legacyEquipmentItemIds;
+    if (officer.equipmentItemIds === undefined && legacyEquipmentItemIds.length > 2) {
+      const targetCityId = officer.cityId && state.cities[officer.cityId]
+        ? officer.cityId
+        : Object.values(state.cities)
+          .filter((city) => city.ownerId === officer.factionId)
+          .sort((a, b) => a.id.localeCompare(b.id))[0]?.id;
+      if (!targetCityId) throw new Error(`无法迁移${officer.name}的溢出装备`);
+      overflowByCity.set(targetCityId, [
+        ...(overflowByCity.get(targetCityId) ?? []),
+        ...legacyEquipmentItemIds.slice(2),
+      ]);
+    }
+    const {
+      weaponItemId: _weaponItemId,
+      intelligenceItemId: _intelligenceItemId,
+      mountItemId: _mountItemId,
+      ...canonicalOfficer
+    } = officer;
+    return [officer.id, { ...canonicalOfficer, equipmentItemIds }];
+  }));
+  const cities = Object.fromEntries(Object.values(state.cities).map((city) => [city.id, {
+    ...city,
+    itemIds: [
+      ...(Array.isArray(city.itemIds) ? city.itemIds : []),
+      ...(overflowByCity.get(city.id) ?? []),
+    ],
+    hiddenItemIds: Array.isArray(city.hiddenItemIds) ? [...city.hiddenItemIds] : [],
+  }]));
+  return { ...state, cities, officers };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
