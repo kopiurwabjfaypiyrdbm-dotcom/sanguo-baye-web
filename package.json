@@ -6,7 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "reference:setup": "node scripts/fetch-baye-reference.mjs",
+    "reference:setup:full": "node scripts/fetch-baye-reference.mjs --full-source",
+    "reference:setup:offline": "node scripts/fetch-baye-reference.mjs --full-source --include-offline-runtime",
+    "reference:sync-core": "node scripts/sync-baye-core-reference.mjs",
+    "reference:check": "node scripts/verify-baye-core-reference.mjs",
+    "check": "npm run reference:check && npm test && npm run build"
   },
   "dependencies": {
     "phaser": "^3.90.0",

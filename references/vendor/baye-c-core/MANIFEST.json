@@ -1,0 +1,273 @@
+{
+  "schemaVersion": 1,
+  "upstream": {
+    "repository": "https://github.com/erduoniba/baye-fmj-app.git",
+    "commit": "60c41ea2d9932b295833ece7004394497610596a",
+    "tree": "b917aaeb6063c07c276fed1ea166cc18b3e4fd0a"
+  },
+  "selectionPolicy": "MIT-licensed C rule and structure sources only",
+  "excluded": [
+    "original resource archives and generated data arrays",
+    "fonts, images, audio, video, WebAssembly and compiled binaries",
+    "GPL offline runtime",
+    "documentation without a verified redistribution license",
+    "unneeded platform projects and third-party submodules"
+  ],
+  "files": [
+    {
+      "path": "LICENSE",
+      "bytes": 1072,
+      "sha256": "e19d16207f2b8b86f409c20a181d9afacb96048b78c3fe666194404d8f45bfe1"
+    },
+    {
+      "path": "src/FgtCount.c",
+      "bytes": 26431,
+      "sha256": "548aafdb5454ea1591c4c0024721a0c63680545d358c9d2b46d0e3cef2c01617"
+    },
+    {
+      "path": "src/FgtPkAi.c",
+      "bytes": 37979,
+      "sha256": "cf34bdb8a23028e6d97aced2b7e0574990fa3536244e21eb3db9df45dcec6b26"
+    },
+    {
+      "path": "src/Fight.c",
+      "bytes": 53466,
+      "sha256": "7dd749819348122d81b6d7337fa4748b15f6f9856c7d5f36213be4c30958ad4f"
+    },
+    {
+      "path": "src/FightSub.c",
+      "bytes": 30347,
+      "sha256": "e83910af303b952952d4900323fc24c3aa37c079541d9de552f13e99d15d14bd"
+    },
+    {
+      "path": "src/PublicFun.c",
+      "bytes": 24601,
+      "sha256": "cbddb2101f59065dcbce3beccb175a8f86e5f128a19df5b9a51a83b924ee5656"
+    },
+    {
+      "path": "src/bind-objects.c",
+      "bytes": 17544,
+      "sha256": "563f9ffe8ffca0062587de0b041ceda62dcbc4ee7dab65492f3b7028dd2819b3"
+    },
+    {
+      "path": "src/citycmd.c",
+      "bytes": 37926,
+      "sha256": "0a20f9516068e3d1b5d7763b5c3dc94cda933b9a4a59266a8c704086ff21284a"
+    },
+    {
+      "path": "src/citycmdb.c",
+      "bytes": 36275,
+      "sha256": "a4d813274ea419cb38dbc25240a4e110bac5b6665111529b8776c30a1aa793c0"
+    },
+    {
+      "path": "src/citycmdc.c",
+      "bytes": 31394,
+      "sha256": "91959538589ea7709a62fa459fccf17f61bfa1d0d96c3c0a6a44de3ed821f548"
+    },
+    {
+      "path": "src/citycmdd.c",
+      "bytes": 32094,
+      "sha256": "de99db453047410766080c57be0f86f6078315d465eecc87d343abb78207070a"
+    },
+    {
+      "path": "src/citycmde.c",
+      "bytes": 15032,
+      "sha256": "3226dc065480159acf118fd90b132297899cb320f36eb9b705d05050475c9c79"
+    },
+    {
+      "path": "src/comIn.c",
+      "bytes": 12047,
+      "sha256": "8891070a4a8aca9ae528817b57edb842dfbd84265afca555fac9cf85e1ece1c4"
+    },
+    {
+      "path": "src/comOut.c",
+      "bytes": 20544,
+      "sha256": "fb0cafc710626b1f393652bc0aa9da4529e42b8447bdb6998840ef7a0f4ec4e8"
+    },
+    {
+      "path": "src/data-bind.c",
+      "bytes": 4479,
+      "sha256": "3db4d70d6b4ced8a8a1a8b592873a3dbf427bcc8968a67861966e936e1c69cc4"
+    },
+    {
+      "path": "src/data/pconst.h",
+      "bytes": 1701,
+      "sha256": "c289f77793835350357404d0dd273d202da4a9f3bfbaf61cf16f7a285690bc41"
+    },
+    {
+      "path": "src/datman.c",
+      "bytes": 7590,
+      "sha256": "c3f773edc4d78074995863751272698eec8eea78b6a3426461180156b87200d4"
+    },
+    {
+      "path": "src/fsys.c",
+      "bytes": 32884,
+      "sha256": "5cc9186a1b30d0196b56176e9cecc83c356d4f9a4e9a1813b4b98299f8f35e9e"
+    },
+    {
+      "path": "src/gamEng.c",
+      "bytes": 35460,
+      "sha256": "35dbf8bcc2861fcb98ae20563e6062dcd580ee6fa3756f801b9e0460129f1cbf"
+    },
+    {
+      "path": "src/infdeal.c",
+      "bytes": 25052,
+      "sha256": "f49ab2330d32f78130620b6047c026f9195e4687a718640d17a934fe11b34781"
+    },
+    {
+      "path": "src/paccount.c",
+      "bytes": 3768,
+      "sha256": "0c744a442c80da2b1bf6e156f083d3a96884aacf24aeb533f606078a638b9079"
+    },
+    {
+      "path": "src/platform/js/exportjs.c",
+      "bytes": 10861,
+      "sha256": "f57fb3289e54084a7a54d59f378e6dd903e60b0c2d951f892d37a851316ea80e"
+    },
+    {
+      "path": "src/tactic.c",
+      "bytes": 41729,
+      "sha256": "3bbbfef568a643d65619f21ca68ec0430c874fd0f4c4bc16f82c807f52041cae"
+    },
+    {
+      "path": "src/baye/attribute.h",
+      "bytes": 8677,
+      "sha256": "d1e0a687544d16355e9fedc4533fa58c76abc5604ce9ec09e26049d5af8a71e5"
+    },
+    {
+      "path": "src/baye/bind-objects.h",
+      "bytes": 2506,
+      "sha256": "dbcb86e46879b06166734828d7b34eb300077c58acc650534040cbdcf1d5f2fd"
+    },
+    {
+      "path": "src/baye/comm.h",
+      "bytes": 4967,
+      "sha256": "2eaa6ee003ebc3c141f3971a868f622ef1d5cfeedeae9830c3c3261bdc164681"
+    },
+    {
+      "path": "src/baye/compa.h",
+      "bytes": 3285,
+      "sha256": "8e86b63478bc56b263121bdf5facec0af3ef4ea1965ddad52090ce9731fa45e8"
+    },
+    {
+      "path": "src/baye/consdef.h",
+      "bytes": 5896,
+      "sha256": "2ba7a0c7c7625eea3aa10d149cd7d21c4adb39cb6035ffa4132f20360d75e9e1"
+    },
+    {
+      "path": "src/baye/data-bind.h",
+      "bytes": 3867,
+      "sha256": "64514e8b5dce9a1a3f1c6062f5e0712e85a9df0a4d1966d75166665653c1e3d4"
+    },
+    {
+      "path": "src/baye/datman.h",
+      "bytes": 1063,
+      "sha256": "9506ff0be534faa27747e22ac100f35e3d1ff1cd9522b24153d086166cb4007d"
+    },
+    {
+      "path": "src/baye/enghead.h",
+      "bytes": 351,
+      "sha256": "8ff6f8fe963299341f1d31a2fab70e44a39be2be4932360498b8f48dca918b75"
+    },
+    {
+      "path": "src/baye/errcode.h",
+      "bytes": 956,
+      "sha256": "7407395c080f1eb2097fff81b851ece20eb23d286b3217aadbf64c7864f83f4a"
+    },
+    {
+      "path": "src/baye/extern.h",
+      "bytes": 4059,
+      "sha256": "5839d6ba251df76a3ff69e23084f93080670bf6841feff9ea3bd1c2e0f7c9b7b"
+    },
+    {
+      "path": "src/baye/fight.h",
+      "bytes": 9359,
+      "sha256": "8588cf29b11058291afc73a554ccb63759d56b1851932fc174f71b0f0b126bd5"
+    },
+    {
+      "path": "src/baye/fsys.h",
+      "bytes": 1145,
+      "sha256": "745934add3c6ec96f3612e4f7ea80cebdf0394c5abd5c1bdcab6afa6e08dcd19"
+    },
+    {
+      "path": "src/baye/fundec.h",
+      "bytes": 2346,
+      "sha256": "e14d84dc7e0693db86545c4871d85e2d5d163a8426709b5f83335d949b215593"
+    },
+    {
+      "path": "src/baye/fundef.h",
+      "bytes": 188,
+      "sha256": "a7b83587dea2468cebb939b3ed72a873b4a7286d7ad0749197e86fe8249bd07f"
+    },
+    {
+      "path": "src/baye/graph.h",
+      "bytes": 436,
+      "sha256": "041829777ebbcf756b302b677bbaa1150984a497fe949aba9dd73a5928ea775a"
+    },
+    {
+      "path": "src/baye/itoa.h",
+      "bytes": 252,
+      "sha256": "4edd411a387a56a4e1ffbc038a3c2d7fb92c08c5060ac6a1eea8ecef4477bd15"
+    },
+    {
+      "path": "src/baye/order.h",
+      "bytes": 2826,
+      "sha256": "e6c7d4827f564ee3842f74dd034a11e0d0c525f4f5148b88606e900a12b74e50"
+    },
+    {
+      "path": "src/baye/paccount.h",
+      "bytes": 2168,
+      "sha256": "b4c3b59ee7dcba94ef1b2e5a674f15dd8e61bfd07322bfc0077cc206837741aa"
+    },
+    {
+      "path": "src/baye/resource.h",
+      "bytes": 540,
+      "sha256": "57abab34cd4131256ea09f8a10b7142ce613f70224bc9c61a1b453a1daec45d7"
+    },
+    {
+      "path": "src/baye/sconst.h",
+      "bytes": 3938,
+      "sha256": "3835237e647b1a5f140745261a2380f5f5cf3a5cd9cde5b419708cc9b11c33fd"
+    },
+    {
+      "path": "src/baye/script.h",
+      "bytes": 427,
+      "sha256": "f1c567101c98fe8ac6fa208bf789f5fc646803443544277986b3d7c5dafc3ff9"
+    },
+    {
+      "path": "src/baye/sharefun.h",
+      "bytes": 8168,
+      "sha256": "53524f5135530129fd28fddbe17766548834b3786f1706d3be35ff50cbccd888"
+    },
+    {
+      "path": "src/baye/sources.h",
+      "bytes": 271,
+      "sha256": "04a3e1fcbe24e79879578ab8809ef459981af4efffa0b5b0033aa9e7cabcd15a"
+    },
+    {
+      "path": "src/baye/speed.h",
+      "bytes": 683,
+      "sha256": "b08603b239416192dedfc479160f6e08c0e2f229a4e15ce17c83975ce136742b"
+    },
+    {
+      "path": "src/baye/stdsys.h",
+      "bytes": 481,
+      "sha256": "672d319b08137f9abda5f0a448622cad2c8826c24b5cc97d6f3fb1908f63d116"
+    },
+    {
+      "path": "src/inc/dictsys.h",
+      "bytes": 21180,
+      "sha256": "4e8767ef7e29e2fb586a6e5b30181a15d77f43db2c3e9c0cb5c068531f9c3b02"
+    },
+    {
+      "path": "src/inc/filetype.h",
+      "bytes": 4587,
+      "sha256": "8bf6924417a381a4e9ee081decf7018dad9b4284e73ddddef97b6577ca1f22df"
+    },
+    {
+      "path": "src/inc/fsys.h",
+      "bytes": 1932,
+      "sha256": "4c1717397e16170062b977f29563a0660fc6a4e6665510b6ff5f085971bf788d"
+    }
+  ]
+}

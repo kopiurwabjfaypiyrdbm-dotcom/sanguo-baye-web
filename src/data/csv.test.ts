@@ -22,4 +22,8 @@ describe('parseCsv', () => {
 
     expect(rows[1]).toEqual(['1', '', '']);
   });
+
+  it('rejects an unclosed quoted cell', () => {
+    expect(() => parseCsv('id,name\n1,"曹操')).toThrow('Unclosed quoted cell');
+  });
 });

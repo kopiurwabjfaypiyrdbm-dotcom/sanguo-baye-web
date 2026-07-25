@@ -4,17 +4,26 @@ export type AiProfile = 'balanced' | 'aggressive' | 'defensive';
 
 export type LogKind = 'system' | 'turn' | 'battle' | 'ai' | 'map';
 
+export type GamePhase = 'player' | 'ai' | 'ended';
+
+export type GameOutcome = 'victory' | 'defeat';
+
+export type OfficerStatus = 'serving' | 'free' | 'hidden';
+
 export type Faction = {
   id: string;
   name: string;
   rulerOfficerId: string;
   color: string;
   isPlayer: boolean;
+  /** Empty cities and unaffiliated people use this non-playable bucket. */
+  isNeutral?: boolean;
   aiProfile: AiProfile;
 };
 
 export type City = {
   id: string;
+  sourceIndex?: number;
   name: string;
   x: number;
   y: number;
@@ -29,6 +38,12 @@ export type City = {
   money: number;
   food: number;
   reserveTroops: number;
+  satrapOfficerId?: string;
+  farmingLimit?: number;
+  commerceLimit?: number;
+  populationLimit?: number;
+  publicLoyalty?: number;
+  disasterPrevention?: number;
 };
 
 export type Item = {
@@ -55,16 +70,20 @@ export type Officer = {
   force: number;
   intelligence: number;
   leadership: number;
-  armsType: string;
-  weapon?: string;
-  intelligenceItem?: string;
-  mount?: string;
+  armsTypeId: string;
+  weaponItemId?: string;
+  intelligenceItemId?: string;
+  mountItemId?: string;
+  status: OfficerStatus;
   factionId: string;
-  cityId: string;
+  cityId?: string;
   troops: number;
   loyalty: number;
   age: number;
   stamina: number;
+  level?: number;
+  character?: number;
+  experience?: number;
 };
 
 export type GameLog = {
@@ -75,11 +94,27 @@ export type GameLog = {
 };
 
 export type GameState = {
+  schemaVersion: 2;
+  scenario?: {
+    id: string;
+    source: 'sample' | 'baye-legacy';
+    period?: number;
+  };
+  turn: number;
+  phase: GamePhase;
+  outcome?: GameOutcome;
+  activeFactionId: string;
+  factionOrder: string[];
+  rngSeed: number;
   calendar: {
     year: number;
     month: number;
   };
+  campaignStarted: boolean;
   playerFactionId: string;
+  actedOfficerIds: string[];
+  /** Free officers whose whereabouts are known to the player. */
+  discoveredOfficerIds: string[];
   factions: Record<string, Faction>;
   cities: Record<string, City>;
   officers: Record<string, Officer>;

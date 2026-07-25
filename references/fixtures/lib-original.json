@@ -1,0 +1,239 @@
+{
+  "schemaVersion": 1,
+  "subject": "baye-original-lib-container",
+  "authority": {
+    "repository": "https://github.com/erduoniba/baye-fmj-app.git",
+    "expectedCommit": "60c41ea2d9932b295833ece7004394497610596a",
+    "snapshotCommitVerified": false,
+    "limitation": "The supplied ZIP snapshot has no Git metadata. dat.lib.orig remains local-only; this fixture stores structural metadata and hashes, not resource bytes."
+  },
+  "generator": {
+    "command": "node scripts/collect-baye-lib-reference.mjs --source <path-to-Baye> --output references/fixtures/lib-original.json",
+    "sourceEntry": "Baye/baye_c/src/datman.c:GetResStartAddr/GetResItem/ResItemGetN; resource IDs from consdef.h and pconst.h",
+    "files": {
+      "Baye/baye_c/src/baye/resource.h": "57abab34cd4131256ea09f8a10b7142ce613f70224bc9c61a1b453a1daec45d7",
+      "Baye/baye_c/src/baye/datman.h": "9506ff0be534faa27747e22ac100f35e3d1ff1cd9522b24153d086166cb4007d",
+      "Baye/baye_c/src/datman.c": "c3f773edc4d78074995863751272698eec8eea78b6a3426461180156b87200d4",
+      "Baye/baye_c/src/baye/consdef.h": "2ba7a0c7c7625eea3aa10d149cd7d21c4adb39cb6035ffa4132f20360d75e9e1",
+      "Baye/baye_c/src/data/pconst.h": "c289f77793835350357404d0dd273d202da4a9f3bfbaf61cf16f7a285690bc41",
+      "Baye/baye_c/src/dat.lib.orig": "c5b33922146e1631b5ab1c8429ca3c6cb3b80b26152747e391438409ec0f82ab"
+    }
+  },
+  "format": {
+    "byteOrder": "little-endian",
+    "directoryEntry": "U32 absolute offset, indexed by one-based resource ID; 0xffffffff means absent",
+    "headerVariant": "legacy-u16-item-length",
+    "headerLength": 12,
+    "variableItemIndex": "U16 relative offset + U16 length",
+    "decryption": "decodedByte = (storedByte - ResKey) & 0xff",
+    "newerPortDifference": "Current datman.h widens ItmLen and both RIDX fields to U32 (14-byte header, 8-byte index), while dat.lib.orig uses U16 (12-byte header, 4-byte index)."
+  },
+  "archive": {
+    "byteLength": 196890,
+    "sha256": "c5b33922146e1631b5ab1c8429ca3c6cb3b80b26152747e391438409ec0f82ab"
+  },
+  "observations": [
+    {
+      "name": "terrain combat modifiers (dFgtLandF)",
+      "resourceId": 2,
+      "itemIndex": 4,
+      "header": {
+        "resourceOffset": 170476,
+        "resourceLength": 1102,
+        "storedResourceId": 2,
+        "itemCount": 15,
+        "itemLength": 0,
+        "key": 0,
+        "reserved": 0
+      },
+      "item": {
+        "relativeOffset": 559,
+        "byteLength": 48,
+        "decodedSha256": "535b0df549002c2cc9084fc29f419acd50967b48a0d3e642eec4a7710b13432b",
+        "signedValues": [
+          0,
+          0,
+          2,
+          1,
+          0,
+          0,
+          0,
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          1,
+          1,
+          3,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "name": "period 1 cities",
+      "resourceId": 57,
+      "itemIndex": 1,
+      "header": {
+        "resourceOffset": 124860,
+        "resourceLength": 4732,
+        "storedResourceId": 57,
+        "itemCount": 4,
+        "itemLength": 1180,
+        "key": 0,
+        "reserved": 0
+      },
+      "item": {
+        "relativeOffset": 12,
+        "byteLength": 1180,
+        "decodedSha256": "76c7abcbf2b3890819c65f2eb69ebd5877e6ad34bdf4c85803ecdbb3d5800c8a"
+      }
+    },
+    {
+      "name": "first city name",
+      "resourceId": 58,
+      "itemIndex": 1,
+      "header": {
+        "resourceOffset": 192843,
+        "resourceLength": 392,
+        "storedResourceId": 58,
+        "itemCount": 43,
+        "itemLength": 10,
+        "key": 192,
+        "reserved": 0
+      },
+      "item": {
+        "relativeOffset": 12,
+        "byteLength": 10,
+        "decodedSha256": "7978abb9912419a6e1b74976320f000b8dd3bc5a6bdc16e91471722a87678c93"
+      }
+    },
+    {
+      "name": "period 1 persons",
+      "resourceId": 61,
+      "itemIndex": 1,
+      "header": {
+        "resourceOffset": 65536,
+        "resourceLength": 12013,
+        "storedResourceId": 61,
+        "itemCount": 4,
+        "itemLength": 3000,
+        "key": 0,
+        "reserved": 0
+      },
+      "item": {
+        "relativeOffset": 12,
+        "byteLength": 3000,
+        "decodedSha256": "f71228f5b7df755df4a533129abc072b838c9c3cc453a01b3025b07af49d8d28"
+      }
+    },
+    {
+      "name": "first period 1 person name",
+      "resourceId": 62,
+      "itemIndex": 1,
+      "header": {
+        "resourceOffset": 154986,
+        "resourceLength": 1612,
+        "storedResourceId": 62,
+        "itemCount": 207,
+        "itemLength": 8,
+        "key": 195,
+        "reserved": 0
+      },
+      "item": {
+        "relativeOffset": 12,
+        "byteLength": 8,
+        "decodedSha256": "73cdd37d19d9c7a678d47b4d4177ccef6f981e5bf369060e1b0cf0b94c7cd50e"
+      }
+    },
+    {
+      "name": "period 1 person queue",
+      "resourceId": 65,
+      "itemIndex": 1,
+      "header": {
+        "resourceOffset": 179194,
+        "resourceLength": 812,
+        "storedResourceId": 65,
+        "itemCount": 4,
+        "itemLength": 200,
+        "key": 0,
+        "reserved": 0
+      },
+      "item": {
+        "relativeOffset": 12,
+        "byteLength": 200,
+        "decodedSha256": "3df46f337c6684d24efba2e7fb1dddbdc55597058e933979544848dc6fe52491"
+      }
+    },
+    {
+      "name": "period 1 goods queue",
+      "resourceId": 68,
+      "itemIndex": 1,
+      "header": {
+        "resourceOffset": 196327,
+        "resourceLength": 144,
+        "storedResourceId": 68,
+        "itemCount": 5,
+        "itemLength": 33,
+        "key": 0,
+        "reserved": 0
+      },
+      "item": {
+        "relativeOffset": 12,
+        "byteLength": 33,
+        "decodedSha256": "525f47a9cb5e76671fd1dc69164e447f0e81c182ee478b4baeda934af79e9444"
+      }
+    },
+    {
+      "name": "first goods name",
+      "resourceId": 73,
+      "itemIndex": 1,
+      "header": {
+        "resourceOffset": 114326,
+        "resourceLength": 342,
+        "storedResourceId": 73,
+        "itemCount": 38,
+        "itemLength": 10,
+        "key": 195,
+        "reserved": 0
+      },
+      "item": {
+        "relativeOffset": 12,
+        "byteLength": 10,
+        "decodedSha256": "6194df16a9186cb9d956f5b285e07d8ccf6436730540367f2557b6ea82e098c7"
+      }
+    }
+  ]
+}

@@ -35,6 +35,9 @@ export function parseCsv(input: string): string[][] {
     }
 
     if (char === '"') {
+      if (cell.length > 0) {
+        throw new Error(`Unexpected quote at character ${index}`);
+      }
       inQuotes = true;
     } else if (char === ",") {
       pushCell();
@@ -50,6 +53,10 @@ export function parseCsv(input: string): string[][] {
     }
 
     index += 1;
+  }
+
+  if (inQuotes) {
+    throw new Error('Unclosed quoted cell');
   }
 
   if (cell.length > 0 || row.length > 0) {
