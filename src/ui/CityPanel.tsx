@@ -16,6 +16,12 @@ import {
 import { getCityCaptives, getCityFreeOfficers, getCityOfficers, getNeighborCities } from '../core/selectors';
 import { getEffectiveOfficerAttributes, getOfficerEquipmentIds } from '../core/equipment';
 import { SURRENDER_STAMINA_COST } from '../core/captiveCommands';
+import {
+  RECON_MONEY_COST,
+  RECON_STAMINA_COST,
+  getReconAvailability,
+  getReconTargets,
+} from '../core/reconnaissance';
 
 type CityPanelProps = {
   state: GameState;
@@ -33,6 +39,7 @@ type CityPanelProps = {
   onMove: (sourceCityId: string, targetCityId: string, officerId: string) => void;
   onAppoint: (cityId: string, officerId: string) => void;
   onDistribute: (cityId: string, officerId: string, targetTroops: number) => void;
+  onRecon: (sourceCityId: string, targetCityId: string, officerId: string) => void;
   onAttack: (sourceCityId: string, targetCityId: string, officerIds: string[], provisions: number) => void;
 };
 
@@ -54,6 +61,7 @@ export function CityPanel({
   onMove,
   onAppoint,
   onDistribute,
+  onRecon,
   onAttack,
 }: CityPanelProps) {
   const city = state.cities[cityId] ?? Object.values(state.cities)[0];
@@ -75,10 +83,12 @@ export function CityPanel({
     () => getNeighborCities(state, cityId).filter((neighbor) => city && neighbor.ownerId === city.ownerId),
     [state, cityId, city],
   );
+  const reconTargets = useMemo(() => getReconTargets(state, city.id), [state, city.id]);
   const [selectedOfficerId, setSelectedOfficerId] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
   const [selectedMoveTargetId, setSelectedMoveTargetId] = useState('');
   const [selectedRecruitTargetId, setSelectedRecruitTargetId] = useState('');
+  const [selectedReconTargetId, setSelectedReconTargetId] = useState('');
   const [distributionTarget, setDistributionTarget] = useState('0');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [selectedCaptiveId, setSelectedCaptiveId] = useState('');
@@ -109,6 +119,12 @@ export function CityPanel({
   }, [friendlyNeighbors, selectedMoveTargetId]);
 
   useEffect(() => {
+    if (!reconTargets.some((target) => target.id === selectedReconTargetId)) {
+      setSelectedReconTargetId(reconTargets[0]?.id ?? '');
+    }
+  }, [reconTargets, selectedReconTargetId]);
+
+  useEffect(() => {
     if (!discoveredFreeOfficers.some((officer) => officer.id === selectedRecruitTargetId)) {
       setSelectedRecruitTargetId(discoveredFreeOfficers[0]?.id ?? '');
     }
@@ -133,6 +149,8 @@ export function CityPanel({
   const selectedCaptive = captives.find((captive) => captive.id === selectedCaptiveId);
   const selectedItem = state.items[selectedItemId];
   const selectedEquipmentIds = selectedOfficer ? getOfficerEquipmentIds(selectedOfficer) : [];
+  const isPlayerCity = city.ownerId === state.playerFactionId;
+  const intelReport = isPlayerCity ? undefined : state.intelReports[city.id];
   const isOwned = city.ownerId === state.playerFactionId && state.phase === 'player';
   const selectedOfficerActed = selectedOfficer ? state.actedOfficerIds.includes(selectedOfficer.id) : false;
   const availableAttackers = eligibleOfficers.filter(
@@ -178,6 +196,16 @@ export function CityPanel({
     && distributionDelta <= city.reserveTroops && distributionDelta !== 0;
   const canAttack = isOwned && selectedAttackerIds.length > 0 && Boolean(selectedTargetId)
     && Number.isInteger(provisionValue) && provisionValue > 0 && provisionValue <= city.food;
+  const reconAvailability = selectedOfficer && selectedReconTargetId
+    ? getReconAvailability(state, {
+      sourceCityId: city.id,
+      targetCityId: selectedReconTargetId,
+      officerId: selectedOfficer.id,
+    })
+    : { allowed: false as const, reason: reconTargets.length === 0 ? '当前没有可侦察的非己方城池' : '请选择执行武将' };
+  const displayedReconAvailability = disabled
+    ? { allowed: false as const, reason: '当前有待处理操作，暂时不能执行城池命令' }
+    : reconAvailability;
 
   useEffect(() => {
     const availableIds = new Set(availableAttackers.map((officer) => officer.id));
@@ -211,22 +239,37 @@ export function CityPanel({
       </div>
 
       <dl className="city-stats">
-        <Stat label="人口" value={number.format(city.population)} />
-        <Stat label="金钱" value={number.format(city.money)} />
-        <Stat label="粮草" value={number.format(city.food)} />
-        <Stat label="后备兵" value={number.format(city.reserveTroops)} />
-        <Stat label="农业" value={`${city.farming}${city.farmingLimit ? ` / ${city.farmingLimit}` : ''}`} />
-        <Stat label="商业" value={`${city.commerce}${city.commerceLimit ? ` / ${city.commerceLimit}` : ''}`} />
-        <Stat label="民忠" value={String(city.publicLoyalty ?? '—')} />
-        <Stat label="太守" value={satrap?.name ?? '空缺'} />
+        <Stat label="人口" value={intelValue(isPlayerCity, city.population, intelReport?.population)} />
+        <Stat label="金钱" value={intelValue(isPlayerCity, city.money, intelReport?.money)} />
+        <Stat label="粮草" value={intelValue(isPlayerCity, city.food, intelReport?.food)} />
+        <Stat label="后备兵" value={intelValue(isPlayerCity, city.reserveTroops, intelReport?.reserveTroops)} />
+        <Stat label="农业" value={isPlayerCity
+          ? `${city.farming}${city.farmingLimit ? ` / ${city.farmingLimit}` : ''}`
+          : intelValue(false, city.farming, intelReport?.farming)} />
+        <Stat label="商业" value={isPlayerCity
+          ? `${city.commerce}${city.commerceLimit ? ` / ${city.commerceLimit}` : ''}`
+          : intelValue(false, city.commerce, intelReport?.commerce)} />
+        <Stat label="民忠" value={isPlayerCity
+          ? String(city.publicLoyalty ?? '—')
+          : intelValue(false, city.publicLoyalty ?? 0, intelReport?.publicLoyalty)} />
+        <Stat label="城防" value={intelValue(isPlayerCity, city.defense, intelReport?.defense)} />
+        <Stat label="太守" value={isPlayerCity ? satrap?.name ?? '空缺' : intelReport?.satrapName ?? '未知'} />
       </dl>
+
+      {!isPlayerCity && (
+        <p className={`intel-status ${intelReport ? 'known' : 'unknown'}`}>
+          {intelReport
+            ? `情报采集于 ${intelReport.observedYear} 年 ${intelReport.observedMonth} 月（${state.turn - intelReport.observedTurn} 月前）`
+            : '尚无该城情报；请从己方城池派武将侦察。'}
+        </p>
+      )}
 
       <div className="officer-section">
         <div className="section-title">
           <h3>驻城人物</h3>
-          <span>{officers.length} 人</span>
+          <span>{isPlayerCity ? `${officers.length} 人` : intelReport ? `${intelReport.officerCount} 人（侦察时）` : '未知'}</span>
         </div>
-        <div className="officer-list">
+        {isPlayerCity ? <div className="officer-list">
           {officers.slice(0, 8).map((officer) => {
             const attributes = getEffectiveOfficerAttributes(state, officer);
             const equipmentNames = getOfficerEquipmentIds(officer)
@@ -246,7 +289,13 @@ export function CityPanel({
             );
           })}
           {officers.length > 8 && <p className="more-officers">另有 {officers.length - 8} 人</p>}
-        </div>
+        </div> : intelReport ? (
+          <div className="intel-garrison-summary">
+            <strong>驻军合计 {number.format(intelReport.totalTroops)} 兵</strong>
+            <span>武将 {intelReport.officerCount} 人 · 后备兵 {number.format(intelReport.reserveTroops)}</span>
+            <span>这是侦察时的快照，后续变化不会自动更新。</span>
+          </div>
+        ) : <p className="command-hint">驻城武将与兵力未知。</p>}
       </div>
 
       <div className="command-panel" aria-label="城池命令">
@@ -447,6 +496,36 @@ export function CityPanel({
             )}
 
             <p className="command-group-title">军事</p>
+            <div className="recon-command-row">
+              <label className="command-field">
+                <span>侦察目标</span>
+                <select
+                  value={selectedReconTargetId}
+                  onChange={(event) => setSelectedReconTargetId(event.target.value)}
+                  disabled={reconTargets.length === 0}
+                >
+                  {reconTargets.length === 0 && <option value="">没有非己方城池</option>}
+                  {reconTargets.map((target) => (
+                    <option value={target.id} key={target.id}>
+                      {target.name} · {state.factions[target.ownerId]?.name ?? '未知势力'}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                disabled={!displayedReconAvailability.allowed}
+                onClick={() => onRecon(city.id, selectedReconTargetId, selectedOfficerId)}
+                title={displayedReconAvailability.allowed
+                  ? `获取敌城情报快照，消耗 ${RECON_MONEY_COST} 金、${RECON_STAMINA_COST} 体力和本月行动`
+                  : displayedReconAvailability.reason}
+              >
+                侦察
+              </button>
+            </div>
+            {!displayedReconAvailability.allowed && (
+              <p className="command-hint">暂不可侦察：{displayedReconAvailability.reason}</p>
+            )}
             <div className="distribution-row">
               <label className="command-field">
                 <span>分配后武将兵力（上限 {number.format(distributionCapacity)}）</span>
@@ -543,4 +622,8 @@ function describeItem(item: GameState['items'][string]): string {
     item.moveBonus > 0 ? `移动 +${item.moveBonus}` : '',
   ].filter(Boolean);
   return bonuses.join(' · ') || '无属性';
+}
+
+function intelValue(isCurrent: boolean, current: number, observed: number | undefined): string {
+  return isCurrent ? number.format(current) : observed === undefined ? '未知' : number.format(observed);
 }

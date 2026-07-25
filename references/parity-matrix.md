@@ -15,7 +15,7 @@
 | 剧本加载 | `tactic.c:LoadPeriod`、`.lib` | `compat/baye/legacyScenario.ts`；`data/legacyScenario.ts`；`generated/baye-periods.json` | 差异验证 | 已处理原版名字表自定义字形（含李傕）；接入未出仕人物出现条件，并继续核对时期 2–4 的初始差异 |
 | 开局兵力 | 时期人物记录兵力字段为 0；原版另有初始化流程待定位 | `data/legacyScenario.ts:DEFAULT_STARTING_TROOPS`，所有在职势力对称初始为 400 | 临时实现 | 定位原版选君主后的兵力/粮草初始化；不再使用玩家 100、AI 800 的人为不对称 |
 | 城池、人物与道具结构 | `dictsys.h`、`attribute.h`、`bind-objects.c`、时期结构夹具 | `types.ts`；`core/equipment.ts`；`data/itemCatalog.ts`；`data/legacyScenario.ts`；`data-structure-map.md` | 已取样 | 城池隐藏/发现队列、两个有序通用装备位和初始装备已接入；33 项道具内容仍来自早期整理表，固定上游与内容哈希重新关联前按临时数据处理 |
-| 城池命令 | `citycmd*.c` | `cityCommands.ts`（开垦、征兵、分配）；`personnelCommands.ts`（搜寻、登用、赏金、道具赏赐/卸装、调动、任命）；`captiveCommands.ts`（招降、释放） | 临时实现 | 招降保留智力、忠诚、性格与体力分支但立即结算；释放为现代选项；接入搜寻伯乐条件，移动与命令队列仍待实现 |
+| 城池命令 | `citycmd*.c` | `cityCommands.ts`（开垦、征兵、分配）；`personnelCommands.ts`（搜寻、登用、赏金、道具赏赐/卸装、调动、任命）；`reconnaissance.ts`（侦察快照）；`captiveCommands.ts`（招降、释放） | 临时实现 | 侦察保留任意非己方目标和即时查看语义；4 体力仅对齐 `order.h` 声明，运行时体力/金钱资源表均未入库。持久快照及不占命令队列为现代差异。招降立即结算；释放为现代选项；搜寻伯乐条件、移动与命令队列仍待实现 |
 | 月度结算 | `tactic.c`、阶段钩子 | `economy.ts` | 临时实现 | 固定城池数据对照一个月结果 |
 | 战场进入 | `citycmdd.c`、`Fight.c`、`g_FgtParam`、`fight.h:FIGHT_ORDER_MAX` | `core/tacticalBattle.ts:createTacticalBattle`；`ui/App.tsx` | 临时实现 | 已按固定参考限制每方最多 10 人；继续对照原版战场编号、进攻方向与部署位置；当前结构化战场为现代临时地图 |
 | 战败俘虏与招降 | `citycmdd.c:FightResultDeal/TheLoserDeal/HoldCaptive/LostEscape/KingOverDeal`；`citycmd.c:SurrenderDrv` | `core/battle.ts`；`core/captiveCommands.ts`；`ui/CityPanel.tsx` | 临时实现 | 已接入确定性捕获、羁押、招降、释放和 AI；战死、装备缴获、君主继承选择与原版 U8 概率回绕后置 |
@@ -31,7 +31,7 @@
 | 战术状态与反馈 | `Fight.c:FgtChkEnd`、`FightSub.c`战斗日与地形接口 | `core/tacticalBattle.ts`（普通攻击、计谋、天气、混乱、待命、阶段、粮草、胜因）；`ui/TacticalBattleScreen.tsx` | 临时实现 | 核对主将败退、战斗日/粮草与攻守方阶段语义 |
 | 战斗 AI | `FgtPkAi.c:FgtGetMCmd/FgtCmpMove/FgtAtkCmd` | `core/tacticalBattle.ts:runBasicTacticalAi`（击破优先、可攻击位置、攻城/守点与粮草紧迫度） | 临时实现 | 录制固定战场 AI 决策并替换当前确定性启发式 |
 | 战略 AI | `gamEng.c`、城市命令流程 | `ai.ts`（兵力均衡、征兵、开垦、搜寻、边境支援、出征） | 临时实现 | 定位电脑月度命令顺序并逐项替换临时优先级 |
-| 存档格式 | `fsys.c`、数据管理代码 | `saveGame.ts`、`saveStorage.ts`（现代 Web 存档及 AI 守城战前检查点） | 有意变化 | 识别原版头部、版本和数据段；保持与现代存档隔离；当前不保存战中战术局面 |
+| 存档格式 | `fsys.c`、数据管理代码 | `saveGame.ts`、`saveStorage.ts`（schema 3、情报快照、现代 Web 存档及 AI 守城战前检查点） | 有意变化 | schema 1/2 迁移已覆盖；识别原版头部、版本和数据段；保持与现代存档隔离；当前不保存战中战术局面 |
 | 随机数（Web 移植） | `comIn.c:rand_r`、WASM `bayeRand` | `compat/baye/rng.ts` | 差异验证 | 从锁定提交重生成 WASM 样本 |
 | 随机数（BBK 设备） | `fsys.h:SysRand` | 无 | 已定位 | 非阻塞考据；取得可信实现或设备序列后再新增参考模式 |
 | 经典 LCD 表现 | `gamEng.c`、`exportjs.c`、LCD 缓冲 | React 开局流程与面板；Phaser 战略地图 | 有意变化 | 采集城市命令界面，约束下一阶段操作顺序 |

@@ -45,6 +45,17 @@ describe('game state validation', () => {
     }));
   });
 
+  it('rejects fractional strategic resources before they can enter intelligence snapshots', () => {
+    const state = createSampleState();
+    state.cities.hanzhong.food = 10.5;
+    state.cities.hanzhong.publicLoyalty = 20.5;
+
+    expect(validateGameState(state)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'cities.hanzhong.food', message: 'must be an integer' }),
+      expect.objectContaining({ path: 'cities.hanzhong.publicLoyalty', message: 'must be a non-negative integer' }),
+    ]));
+  });
+
   it('rejects unknown or over-capacity equipment references', () => {
     const unknown = createSampleState();
     unknown.officers['cao-cao'].equipmentItemIds = ['missing-item'];
@@ -90,6 +101,36 @@ describe('game state validation', () => {
     expect(validateGameState(state)).toEqual(expect.arrayContaining([
       expect.objectContaining({ path: 'officers.cao-cao.level', message: 'must not exceed 20' }),
       expect.objectContaining({ path: 'officers.cao-cao.experience', message: 'must be below 100' }),
+    ]));
+  });
+
+  it('rejects intelligence reports with unknown cities or future observation turns', () => {
+    const state = createSampleState();
+    state.intelReports.missing = {
+      cityId: 'missing',
+      observedTurn: state.turn + 1,
+      observedYear: 191,
+      observedMonth: 1,
+      population: 1,
+      money: 1,
+      food: 1,
+      reserveTroops: 1,
+      farming: 1,
+      commerce: 1,
+      defense: 1,
+      officerCount: 1,
+      totalTroops: 1,
+    };
+
+    expect(validateGameState(state)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'intelReports.missing.cityId', message: 'unknown city: missing' }),
+      expect.objectContaining({
+        path: 'intelReports.missing.observedTurn', message: 'must not be later than the current turn',
+      }),
+      expect.objectContaining({
+        path: 'intelReports.missing.observedYear',
+        message: 'observation date must not be later than the current calendar',
+      }),
     ]));
   });
 });

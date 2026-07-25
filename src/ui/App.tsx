@@ -3,6 +3,7 @@ import { applyBattleResult, executeAttack, type AttackOrder } from '../core/batt
 import { developFarming, distributeTroops, recruitTroops } from '../core/cityCommands';
 import { createSampleState } from '../core/sampleState';
 import { recruitCaptive, releaseCaptive } from '../core/captiveCommands';
+import { reconnoitreCity } from '../core/reconnaissance';
 import {
   appointSatrap,
   giveItemToOfficer,
@@ -603,6 +604,10 @@ export function App() {
         )}
         onDistribute={(cityId, officerId, targetTroops) => applyPlayerAction(
           (current) => distributeTroops(current, { cityId, officerId, targetTroops }),
+        )}
+        onRecon={(sourceCityId, targetCityId, officerId) => applyPlayerAction(
+          (current) => reconnoitreCity(current, { sourceCityId, targetCityId, officerId }),
+          targetCityId,
         )}
         onAttack={(sourceCityId, targetCityId, officerIds, provisions) => requestAttack({
           sourceCityId,

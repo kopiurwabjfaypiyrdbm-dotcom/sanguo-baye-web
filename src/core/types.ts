@@ -107,8 +107,26 @@ export type GameLog = {
   turn: number;
 };
 
+export type CityIntelReport = {
+  cityId: string;
+  observedTurn: number;
+  observedYear: number;
+  observedMonth: number;
+  population: number;
+  money: number;
+  food: number;
+  reserveTroops: number;
+  farming: number;
+  commerce: number;
+  defense: number;
+  publicLoyalty?: number;
+  satrapName?: string;
+  officerCount: number;
+  totalTroops: number;
+};
+
 export type GameState = {
-  schemaVersion: 2;
+  schemaVersion: 3;
   scenario?: {
     id: string;
     source: 'sample' | 'baye-legacy';
@@ -129,6 +147,8 @@ export type GameState = {
   actedOfficerIds: string[];
   /** Free officers whose whereabouts are known to the player. */
   discoveredOfficerIds: string[];
+  /** Player intelligence snapshots keyed by target city id. */
+  intelReports: Record<string, CityIntelReport>;
   factions: Record<string, Faction>;
   cities: Record<string, City>;
   officers: Record<string, Officer>;

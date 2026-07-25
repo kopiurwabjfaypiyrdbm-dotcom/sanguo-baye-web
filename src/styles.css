@@ -473,6 +473,10 @@ select:focus-visible,
 
 .city-stats dt { color: #677268; font-size: 10px; }
 .city-stats dd { margin: 3px 0 0; color: #24362e; font-size: 14px; font-weight: 800; }
+.intel-status { margin: 8px 0 0; padding: 7px 9px; color: #76513b; background: rgba(156, 111, 62, .08); border-left: 3px solid #a47a4c; font-size: 10px; line-height: 1.45; }
+.intel-status.unknown { color: #74776f; background: rgba(80, 88, 82, .06); border-left-color: #999d96; }
+.intel-garrison-summary { display: grid; gap: 4px; margin-top: 8px; padding: 10px; color: #616e65; background: rgba(64, 94, 80, .06); border: 1px solid rgba(38, 58, 49, .16); font-size: 10px; }
+.intel-garrison-summary strong { color: #2c4137; font-size: 12px; }
 
 .officer-section { margin-top: 20px; }
 .section-title { align-items: baseline; }
@@ -591,6 +595,13 @@ select:focus-visible,
   align-items: end;
 }
 
+.recon-command-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px;
+  gap: 7px;
+  align-items: end;
+}
+
 .item-command-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 82px;
@@ -608,6 +619,7 @@ select:focus-visible,
 
 .personnel-command-row button,
 .recruit-command-row button,
+.recon-command-row button,
 .item-command-row button,
 .equipment-actions button,
 .reward-command {
@@ -621,6 +633,7 @@ select:focus-visible,
 
 .personnel-command-row button:disabled,
 .recruit-command-row button:disabled,
+.recon-command-row button:disabled,
 .item-command-row button:disabled,
 .equipment-actions button:disabled,
 .reward-command:disabled { color: #918d80; background: rgba(255, 255, 255, 0.24); }

@@ -169,7 +169,7 @@ export function createGameStateFromLegacyPeriod(
 
   const playerFactionId = factionId(playerRulerIndex);
   const state: GameState = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     scenario: { id: `baye-period-${period.period}`, source: 'baye-legacy', period: period.period },
     turn: 1,
     phase: 'player',
@@ -181,6 +181,7 @@ export function createGameStateFromLegacyPeriod(
     playerFactionId,
     actedOfficerIds: [],
     discoveredOfficerIds: [],
+    intelReports: {},
     factions,
     cities,
     officers,

@@ -35,8 +35,20 @@ describe('versioned saves', () => {
     delete legacy.discoveredOfficerIds;
 
     const loaded = parseSave(legacy);
-    expect(loaded.state.schemaVersion).toBe(2);
+    expect(loaded.state.schemaVersion).toBe(3);
     expect(loaded.state.discoveredOfficerIds).toEqual([]);
+    expect(loaded.state.intelReports).toEqual({});
+  });
+
+  it('migrates schema-two saves with an empty intelligence report layer', () => {
+    const legacy = structuredClone(createSampleState()) as unknown as Record<string, unknown>;
+    legacy.schemaVersion = 2;
+    delete legacy.intelReports;
+
+    const loaded = parseSave(legacy);
+
+    expect(loaded.state.schemaVersion).toBe(3);
+    expect(loaded.state.intelReports).toEqual({});
   });
 
   it('repairs landless serving officers produced by older schema-two battles', () => {
@@ -45,8 +57,11 @@ describe('versioned saves', () => {
       if (city.ownerId === 'liu-bei') city.ownerId = 'cao-cao';
       city.satrapOfficerId = undefined;
     }
+    const rawLegacy = legacy as unknown as Record<string, unknown>;
+    rawLegacy.schemaVersion = 2;
+    delete rawLegacy.intelReports;
 
-    const loaded = parseSave(legacy);
+    const loaded = parseSave(rawLegacy);
     const formerLiuOfficers = Object.values(loaded.state.officers).filter((officer) =>
       ['liu-bei', 'guan-yu', 'zhuge-liang', 'zhang-fei'].includes(officer.id),
     );
@@ -61,8 +76,11 @@ describe('versioned saves', () => {
       delete city.itemIds;
       delete city.hiddenItemIds;
     }
+    const rawLegacy = legacy as unknown as Record<string, unknown>;
+    rawLegacy.schemaVersion = 2;
+    delete rawLegacy.intelReports;
 
-    const loaded = parseSave(legacy);
+    const loaded = parseSave(rawLegacy);
     expect(loaded.state.cities.luoyang.itemIds).toEqual(['sunzi-manual']);
     expect(loaded.state.cities.chenliu.hiddenItemIds).toEqual(['red-hare']);
     expect(Object.values(loaded.state.cities).every((city) =>

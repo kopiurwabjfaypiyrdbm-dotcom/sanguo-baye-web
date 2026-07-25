@@ -10,7 +10,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const add = (path: string, message: string) => issues.push({ path, message });
 
-  if (state.schemaVersion !== 2) add('schemaVersion', 'must be 2');
+  if (state.schemaVersion !== 3) add('schemaVersion', 'must be 3');
   if (typeof state.campaignStarted !== 'boolean') add('campaignStarted', 'must be a boolean');
   if (!Number.isInteger(state.turn) || state.turn < 1) add('turn', 'must be a positive integer');
   if (!Number.isInteger(state.rngSeed) || state.rngSeed < 0) add('rngSeed', 'must be a non-negative integer');
@@ -41,6 +41,49 @@ export function validateGameState(state: GameState): ValidationIssue[] {
     const officer = state.officers[officerId];
     if (!officer) add('discoveredOfficerIds', `unknown officer: ${officerId}`);
     else if (officer.status !== 'free') add('discoveredOfficerIds', `officer is not free: ${officerId}`);
+  }
+
+  const rawIntelReports = (state as { intelReports?: unknown }).intelReports;
+  if (!isRecord(rawIntelReports)) {
+    add('intelReports', 'must be a record');
+  } else {
+    for (const [cityId, rawReport] of Object.entries(rawIntelReports)) {
+      const path = `intelReports.${cityId}`;
+      if (!isRecord(rawReport)) {
+        add(path, 'must be an object');
+        continue;
+      }
+      if (rawReport.cityId !== cityId) add(`${path}.cityId`, 'must match record key');
+      if (!state.cities[cityId]) add(`${path}.cityId`, `unknown city: ${cityId}`);
+      for (const field of [
+        'observedTurn', 'observedYear', 'observedMonth', 'population', 'money', 'food', 'reserveTroops',
+        'farming', 'commerce', 'defense', 'officerCount', 'totalTroops',
+      ] as const) {
+        const value = rawReport[field];
+        if (!Number.isInteger(value) || (value as number) < 0) add(`${path}.${field}`, 'must be a non-negative integer');
+      }
+      if (Number.isInteger(rawReport.observedTurn) && (rawReport.observedTurn as number) > state.turn) {
+        add(`${path}.observedTurn`, 'must not be later than the current turn');
+      }
+      if (rawReport.observedTurn === 0) add(`${path}.observedTurn`, 'must be a positive integer');
+      if (rawReport.observedYear === 0) add(`${path}.observedYear`, 'must be a positive integer');
+      if (Number.isInteger(rawReport.observedMonth)
+        && ((rawReport.observedMonth as number) < 1 || (rawReport.observedMonth as number) > 12)) {
+        add(`${path}.observedMonth`, 'must be from 1 to 12');
+      }
+      if (Number.isInteger(rawReport.observedYear) && Number.isInteger(rawReport.observedMonth)
+        && (rawReport.observedYear as number) * 12 + (rawReport.observedMonth as number)
+          > state.calendar.year * 12 + state.calendar.month) {
+        add(`${path}.observedYear`, 'observation date must not be later than the current calendar');
+      }
+      if (rawReport.publicLoyalty !== undefined
+        && (!Number.isInteger(rawReport.publicLoyalty) || (rawReport.publicLoyalty as number) < 0)) {
+        add(`${path}.publicLoyalty`, 'must be a non-negative integer when present');
+      }
+      if (rawReport.satrapName !== undefined && typeof rawReport.satrapName !== 'string') {
+        add(`${path}.satrapName`, 'must be a string when present');
+      }
+    }
   }
 
   const orderSet = new Set(state.factionOrder);
@@ -97,7 +140,19 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       reserveTroops: city.reserveTroops,
     })) {
       if (!Number.isFinite(value)) add(`${path}.${field}`, 'must be a finite number');
+      else if (!['x', 'y'].includes(field) && !Number.isInteger(value)) add(`${path}.${field}`, 'must be an integer');
       else if (!['x', 'y'].includes(field) && value < 0) add(`${path}.${field}`, 'must not be negative');
+    }
+    for (const [field, value] of Object.entries({
+      ...(city.farmingLimit === undefined ? {} : { farmingLimit: city.farmingLimit }),
+      ...(city.commerceLimit === undefined ? {} : { commerceLimit: city.commerceLimit }),
+      ...(city.populationLimit === undefined ? {} : { populationLimit: city.populationLimit }),
+      ...(city.publicLoyalty === undefined ? {} : { publicLoyalty: city.publicLoyalty }),
+      ...(city.disasterPrevention === undefined ? {} : { disasterPrevention: city.disasterPrevention }),
+    })) {
+      if (!Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
+        add(`${path}.${field}`, 'must be a non-negative integer');
+      }
     }
     for (const field of ['itemIds', 'hiddenItemIds'] as const) {
       const itemIds = city[field];
@@ -228,4 +283,8 @@ export function assertValidGameState(state: GameState): void {
     const issue = issues[0];
     throw new Error(`Invalid game state at ${issue.path}: ${issue.message}`);
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
