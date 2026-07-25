@@ -18,6 +18,7 @@ import {
   moveTacticalUnit,
   previewTacticalAttack,
   runBasicTacticalAi,
+  useTacticalSkill,
 } from './tacticalBattle';
 import { validateGameState } from './validation';
 
@@ -59,6 +60,105 @@ describe('manual tactical battle core', () => {
       8,
       state.armsTypes[state.officers['cao-cao'].armsTypeId].mobility + state.items['red-hare'].moveBonus,
     ));
+    expect(unit.maxSkillPoints).toBeGreaterThan(0);
+    expect(unit.skillPoints).toBe(unit.maxSkillPoints);
+  });
+
+  it('uses deterministic weather-aware fire tactics and records experience', () => {
+    const { state, order } = battleFixture();
+    let battle = createTacticalBattle(state, order);
+    const attacker = battle.units['officer:cao-cao'];
+    const defender = battle.units['officer:guan-yu'];
+    battle = {
+      ...battle,
+      weather: 'wind',
+      units: {
+        ...battle.units,
+        [attacker.id]: { ...attacker, x: 4, y: 4, intelligence: 255, skillPoints: 255 },
+        [defender.id]: { ...defender, x: 5, y: 4, intelligence: 0 },
+      },
+    };
+
+    const next = useTacticalSkill(battle, attacker.id, 'fire', defender.id);
+
+    expect(next).toEqual(useTacticalSkill(structuredClone(battle), attacker.id, 'fire', defender.id));
+    expect(next.units[defender.id].troops).toBeLessThan(defender.troops);
+    expect(next.units[attacker.id].skillPoints).toBeLessThan(255);
+    expect(next.experienceGains['cao-cao']).toBeGreaterThan(0);
+    expect(next.logs.at(-1)).toContain('火计');
+  });
+
+  it('applies confusion on the target next phase and changes weather each day', () => {
+    const { state, order } = battleFixture();
+    let battle = createTacticalBattle(state, order);
+    const attacker = battle.units['officer:cao-cao'];
+    const defender = battle.units['officer:guan-yu'];
+    battle = {
+      ...battle,
+      units: {
+        ...battle.units,
+        [attacker.id]: { ...attacker, x: 4, y: 4, intelligence: 255, skillPoints: 255 },
+        [defender.id]: { ...defender, x: 5, y: 4, intelligence: 0 },
+      },
+    };
+
+    const confused = useTacticalSkill(battle, attacker.id, 'confuse', defender.id);
+    const defenderPhase = endTacticalSide(confused);
+
+    expect(defenderPhase.units[defender.id]).toMatchObject({ status: 'confused', statusTurns: 0, acted: true });
+    expect(defenderPhase.logs.some((message) => message.includes('跳过本阶段行动'))).toBe(true);
+    const nextDay = endTacticalSide(defenderPhase);
+    expect(nextDay.day).toBe(2);
+    expect(nextDay.rngSeed).not.toBe(defenderPhase.rngSeed);
+    expect(nextDay.logs.some((message) => message.includes('天气转为'))).toBe(true);
+    expect(nextDay.units[defender.id].status).toBe('normal');
+  });
+
+  it('consumes skill points but grants no experience when a tactic fails', () => {
+    const { state, order } = battleFixture();
+    let battle = createTacticalBattle(state, order);
+    const attacker = battle.units['officer:cao-cao'];
+    const defender = battle.units['officer:guan-yu'];
+    battle = {
+      ...battle,
+      rngSeed: 1,
+      units: {
+        ...battle.units,
+        [attacker.id]: { ...attacker, x: 4, y: 4, intelligence: 70, skillPoints: 100 },
+        [defender.id]: { ...defender, x: 5, y: 4, intelligence: 255 },
+      },
+    };
+
+    const next = useTacticalSkill(battle, attacker.id, 'confuse', defender.id);
+
+    expect(next.units[defender.id].status).toBe('normal');
+    expect(next.units[attacker.id].skillPoints).toBeLessThan(100);
+    expect(next.experienceGains['cao-cao']).toBeUndefined();
+    expect(next.logs.at(-1)).toContain('未能奏效');
+  });
+
+  it('rallies a damaged ally, clears confusion, and restores its skipped action', () => {
+    const { state, order } = battleFixture();
+    state.officers['xiahou-dun'].cityId = 'chang-an';
+    order.officerIds.push('xiahou-dun');
+    let battle = createTacticalBattle(state, order);
+    const attacker = battle.units['officer:cao-cao'];
+    const ally = battle.units['officer:xiahou-dun'];
+    battle = {
+      ...battle,
+      units: {
+        ...battle.units,
+        [attacker.id]: { ...attacker, x: 4, y: 4, intelligence: 255, skillPoints: 255 },
+        [ally.id]: {
+          ...ally, x: 5, y: 4, troops: 100, status: 'confused', statusTurns: 0, moved: true, acted: true,
+        },
+      },
+    };
+
+    const next = useTacticalSkill(battle, attacker.id, 'rally', ally.id);
+
+    expect(next.units[ally.id].troops).toBeGreaterThan(100);
+    expect(next.units[ally.id]).toMatchObject({ status: 'normal', statusTurns: 0, moved: false, acted: false });
   });
 
   it('selects the first ten defenders when a city has more than the side limit', () => {
@@ -226,6 +326,69 @@ describe('manual tactical battle core', () => {
     expect(first.day).toBe(2);
   });
 
+  it('lets the tactical AI use the same skill command as the player', () => {
+    const { state, order } = battleFixture();
+    let battle = endTacticalSide(createTacticalBattle(state, order));
+    const attacker = battle.units['officer:cao-cao'];
+    const defender = battle.units['officer:guan-yu'];
+    battle = {
+      ...battle,
+      units: {
+        ...battle.units,
+        [attacker.id]: { ...attacker, x: 4, y: 4, intelligence: 0 },
+        [defender.id]: { ...defender, x: 5, y: 4, intelligence: 255, skillPoints: 255 },
+      },
+    };
+
+    const next = runBasicTacticalAi(battle);
+
+    expect(next.logs.some((message) => message.includes('施展扰乱'))).toBe(true);
+    expect(next).toEqual(runBasicTacticalAi(structuredClone(battle)));
+  });
+
+  it('lets tactical AI act with a unit restored by a later rally', () => {
+    const { state, order } = battleFixture();
+    let battle = endTacticalSide(createTacticalBattle(state, order));
+    const confused = battle.units['officer:guan-yu'];
+    const strategist = {
+      ...confused,
+      id: 'officer:z-strategist',
+      officerId: 'z-strategist',
+      name: '军师',
+      x: 6,
+      y: 4,
+      intelligence: 255,
+      skillPoints: 255,
+      maxSkillPoints: 255,
+      status: 'normal' as const,
+      statusTurns: 0,
+      moved: false,
+      acted: false,
+    };
+    battle = {
+      ...battle,
+      units: {
+        ...battle.units,
+        [confused.id]: {
+          ...confused,
+          x: 5,
+          y: 4,
+          status: 'confused',
+          statusTurns: 0,
+          moved: true,
+          acted: true,
+        },
+        [strategist.id]: strategist,
+      },
+    };
+
+    const next = runBasicTacticalAi(battle);
+    const rallyIndex = next.logs.findIndex((message) => message.includes('军师对关羽施展激励'));
+
+    expect(rallyIndex).toBeGreaterThanOrEqual(0);
+    expect(next.logs.slice(rallyIndex + 1).some((message) => message.startsWith('关羽'))).toBe(true);
+  });
+
   it('creates one atomic strategic result after a manual victory', () => {
     const { state, order } = battleFixture();
     state.cities.hanzhong.reserveTroops = 0;
@@ -255,6 +418,7 @@ describe('manual tactical battle core', () => {
     expect(next.officers['guan-yu']).toMatchObject({
       status: 'captive', captorFactionId: 'cao-cao', formerFactionId: 'liu-bei', cityId: 'hanzhong',
     });
+    expect(next.officers['cao-cao'].experience).toBeGreaterThan(state.officers['cao-cao'].experience ?? 0);
     expect(next.cities.hanzhong.food).toBe(finished.attackerFood + finished.defenderFood);
     expect(validateGameState(next)).toEqual([]);
     expect(() => applyBattleResult(next, result)).toThrow();

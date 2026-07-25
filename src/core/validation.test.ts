@@ -81,4 +81,15 @@ describe('game state validation', () => {
       }),
     ]));
   });
+
+  it('rejects out-of-range level and experience values', () => {
+    const state = createSampleState();
+    state.officers['cao-cao'].level = 21;
+    state.officers['cao-cao'].experience = 100;
+
+    expect(validateGameState(state)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'officers.cao-cao.level', message: 'must not exceed 20' }),
+      expect.objectContaining({ path: 'officers.cao-cao.experience', message: 'must be below 100' }),
+    ]));
+  });
 });

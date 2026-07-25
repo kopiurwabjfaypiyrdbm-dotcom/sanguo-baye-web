@@ -188,6 +188,8 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       else if (!Number.isInteger(value)) add(`${path}.${field}`, 'must be an integer');
       else if (value < 0) add(`${path}.${field}`, 'must not be negative');
     }
+    if ((officer.level ?? 1) > 20) add(`${path}.level`, 'must not exceed 20');
+    if ((officer.experience ?? 0) >= 100) add(`${path}.experience`, 'must be below 100');
   }
 
   for (const [key, item] of Object.entries(state.items)) {

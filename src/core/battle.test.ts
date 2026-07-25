@@ -72,6 +72,21 @@ describe('automatic battle', () => {
     expect(snapshot.cities).toEqual(state.cities);
   });
 
+  it('writes deterministic experience gains back after a quick battle', () => {
+    const state = createSampleState();
+    state.officers['cao-cao'].cityId = 'chang-an';
+    state.officers['cao-cao'].experience = 99;
+    const result = resolveBattle(state, {
+      sourceCityId: 'chang-an', targetCityId: 'hanzhong', officerIds: ['cao-cao'], provisions: 100,
+    });
+
+    const next = applyBattleResult(state, result);
+
+    expect(result.experienceGains?.['cao-cao']).toBeGreaterThan(0);
+    expect(next.officers['cao-cao'].level).toBeGreaterThan(state.officers['cao-cao'].level ?? 1);
+    expect(next.logs.some((log) => log.message.includes('升至'))).toBe(true);
+  });
+
   it('rewards leadership and city defense monotonically', () => {
     const state = createSampleState();
     state.officers['cao-cao'].cityId = 'chang-an';

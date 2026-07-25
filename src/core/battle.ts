@@ -5,6 +5,7 @@ import { assertValidGameState } from './validation';
 import { updateCitySatraps } from './administration';
 import { evaluateOutcome } from './outcome';
 import { getEffectiveOfficerAttributes, getOfficerEquipment, getOfficerEquipmentIds } from './equipment';
+import { applyBayeExperience, calculateBayeBattleExperience } from '../compat/baye/tacticalGrowth';
 
 export type AttackOrder = {
   sourceCityId: string;
@@ -43,6 +44,7 @@ export type BattleParticipantSnapshot = {
   intelligence: number;
   leadership: number;
   level: number;
+  experience: number;
   armsTypeId: string;
   equipmentKey: string;
   armsAttackModifier: number;
@@ -85,6 +87,7 @@ export type BattleResult = {
   attackerScore: number;
   defenderScore: number;
   casualties: Record<string, number>;
+  experienceGains?: Record<string, number>;
   defenderReserveLosses: number;
   cityCaptured: boolean;
   guard: BattleStateGuard;
@@ -137,6 +140,26 @@ export function resolveBattle(state: GameState, order: AttackOrder, config = bat
     Math.round(context.target.reserveTroops * defenderLossRate),
   );
   const cityCaptured = winner === 'attacker';
+  const attackerDamage = defenders.reduce((sum, officer) => sum + (casualties[officer.id] ?? 0), 0)
+    + defenderReserveLosses;
+  const defenderDamage = context.attackers.reduce((sum, officer) => sum + (casualties[officer.id] ?? 0), 0);
+  const experienceGains: Record<string, number> = {};
+  const defenderLevel = defenders[0]?.level ?? 1;
+  const attackerLevel = context.attackers[0]?.level ?? 1;
+  for (const officer of context.attackers) {
+    experienceGains[officer.id] = calculateBayeBattleExperience(
+      Math.floor(attackerDamage / Math.max(1, context.attackers.length)),
+      officer.level ?? 1,
+      defenderLevel,
+    );
+  }
+  for (const officer of defenders) {
+    experienceGains[officer.id] = calculateBayeBattleExperience(
+      Math.floor(defenderDamage / Math.max(1, defenders.length)),
+      officer.level ?? 1,
+      attackerLevel,
+    );
+  }
   const ratio = defenderScore === 0 ? '∞' : (attackerScore / defenderScore).toFixed(2);
   const logs = [
     `${context.source.name}向${context.target.name}发起进攻。`,
@@ -159,6 +182,7 @@ export function resolveBattle(state: GameState, order: AttackOrder, config = bat
     attackerScore,
     defenderScore,
     casualties,
+    experienceGains,
     defenderReserveLosses,
     cityCaptured,
     guard: createBattleStateGuard(state, context),
@@ -183,6 +207,14 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
     if (!officer) throw new Error(`Unknown battle officer: ${officerId}`);
     officers[officerId] = { ...officer, troops: Math.max(0, officer.troops - losses), stamina: 0 };
   }
+  const growthLogs: string[] = [];
+  for (const [officerId, gained] of Object.entries(result.experienceGains ?? {})) {
+    const officer = officers[officerId];
+    if (!officer || gained <= 0) continue;
+    const growth = applyBayeExperience(officer.level ?? 1, officer.experience ?? 0, gained);
+    officers[officerId] = { ...officer, level: growth.level, experience: growth.experience };
+    growthLogs.push(`${officer.name}获得 ${gained} 点经验${growth.levelsGained > 0 ? `，升至 ${growth.level} 级` : ''}。`);
+  }
 
   const cities = {
     ...state.cities,
@@ -197,7 +229,7 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
     },
   };
 
-  const additionalLogs: string[] = [];
+  const additionalLogs: string[] = [...growthLogs];
   const neutralFactionId = Object.values(state.factions).find((faction) => faction.isNeutral)?.id;
   let captureSeed = result.nextRngSeed;
   const shouldCapture = (officer: Officer) => {
@@ -417,6 +449,7 @@ function createParticipantSnapshot(state: GameState, officer: Officer): BattlePa
     intelligence: officer.intelligence,
     leadership: officer.leadership,
     level: officer.level ?? 1,
+    experience: officer.experience ?? 0,
     armsTypeId: officer.armsTypeId,
     equipmentKey: getOfficerEquipmentIds(officer).join('\0'),
     armsAttackModifier: armsType.attackModifier,

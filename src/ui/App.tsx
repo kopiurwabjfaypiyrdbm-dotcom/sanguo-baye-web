@@ -38,9 +38,11 @@ import {
   getReachableTiles,
   moveTacticalUnit,
   runBasicTacticalAi,
+  useTacticalSkill,
   waitTacticalUnit,
   type TacticalBattleState,
   type TacticalPosition,
+  type TacticalSkillId,
 } from '../core/tacticalBattle';
 import {
   createBundledScenario,
@@ -333,7 +335,6 @@ export function App() {
     try {
       const next = attackTacticalUnit(tacticalBattle, selectedTacticalUnitId, unitId);
       setTacticalBattle(next);
-      setSelectedTacticalUnitId(undefined);
       setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '攻击完成。' });
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '攻击失败。' });
@@ -356,10 +357,20 @@ export function App() {
     try {
       const next = waitTacticalUnit(tacticalBattle, selectedTacticalUnitId);
       setTacticalBattle(next);
-      setSelectedTacticalUnitId(undefined);
       setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '单位已待命。' });
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '待命失败。' });
+    }
+  }
+
+  function useSelectedTacticalSkill(skillId: TacticalSkillId, targetUnitId: string) {
+    if (!tacticalBattle || !selectedTacticalUnitId || isResolving) return;
+    try {
+      const next = useTacticalSkill(tacticalBattle, selectedTacticalUnitId, skillId, targetUnitId);
+      setTacticalBattle(next);
+      setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '计谋执行完成。' });
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '计谋执行失败。' });
     }
   }
 
@@ -472,6 +483,7 @@ export function App() {
         onUnitSelected={selectTacticalUnit}
         onTileSelected={moveSelectedTacticalUnit}
         onWait={waitSelectedTacticalUnit}
+        onUseSkill={useSelectedTacticalSkill}
         onEndSide={endPlayerTacticalSide}
         onFinish={finishManualBattle}
       />

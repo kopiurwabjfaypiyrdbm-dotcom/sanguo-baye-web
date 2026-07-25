@@ -105,6 +105,16 @@ describe('versioned saves', () => {
     });
   });
 
+  it('preserves officer level and experience through a save round-trip', () => {
+    const state = createSampleState();
+    state.officers['cao-cao'].level = 7;
+    state.officers['cao-cao'].experience = 63;
+
+    const loaded = parseSave(serializeSave(state)).state;
+
+    expect(loaded.officers['cao-cao']).toMatchObject({ level: 7, experience: 63 });
+  });
+
   it('migrates early named equipment slots into the ordered two-slot model', () => {
     const legacy = createSampleState();
     delete legacy.officers['guan-yu'].equipmentItemIds;
