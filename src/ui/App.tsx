@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { applyBattleResult, executeAttack, type AttackOrder } from '../core/battle';
 import { developFarming, distributeTroops, recruitTroops } from '../core/cityCommands';
 import { createSampleState } from '../core/sampleState';
+import { recruitCaptive, releaseCaptive } from '../core/captiveCommands';
 import {
   appointSatrap,
   giveItemToOfficer,
@@ -574,6 +575,12 @@ export function App() {
         )}
         onUnequipItem={(cityId, officerId, itemId) => applyPlayerAction(
           (current) => unequipOfficerItem(current, { cityId, officerId, itemId }),
+        )}
+        onRecruitCaptive={(cityId, executorOfficerId, captiveOfficerId) => applyPlayerAction(
+          (current) => recruitCaptive(current, { cityId, executorOfficerId, captiveOfficerId }),
+        )}
+        onReleaseCaptive={(cityId, captiveOfficerId) => applyPlayerAction(
+          (current) => releaseCaptive(current, { cityId, captiveOfficerId }),
         )}
         onMove={(sourceCityId, targetCityId, officerId) => applyPlayerAction(
           (current) => moveOfficer(current, { sourceCityId, targetCityId, officerId }),

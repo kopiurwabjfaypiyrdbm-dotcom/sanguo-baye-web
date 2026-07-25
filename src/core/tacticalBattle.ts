@@ -101,9 +101,10 @@ export const TACTICAL_SIDE_UNIT_LIMIT = 10;
 
 export function createTacticalBattle(state: GameState, order: AttackOrder): TacticalBattleState {
   const context = validateAttackOrder(state, order);
-  if (context.attackers.length > TACTICAL_SIDE_UNIT_LIMIT || context.defenders.length > TACTICAL_SIDE_UNIT_LIMIT) {
+  if (context.attackers.length > TACTICAL_SIDE_UNIT_LIMIT) {
     throw new Error(`手动战场每方最多可部署 ${TACTICAL_SIDE_UNIT_LIMIT} 名武将`);
   }
+  const defenders = context.defenders.slice(0, TACTICAL_SIDE_UNIT_LIMIT);
   const approach = resolveApproach(context.source.x, context.source.y, context.target.x, context.target.y);
   const battlefieldTemplate = ((context.target.sourceIndex ?? hashString(context.target.id)) % 2 === 0)
     ? 'river-crossing'
@@ -111,14 +112,14 @@ export function createTacticalBattle(state: GameState, order: AttackOrder): Tact
   const tiles = createStructuredBattlefield(DEFAULT_WIDTH, DEFAULT_HEIGHT, approach, battlefieldTemplate);
   const units: Record<string, TacticalUnit> = {};
   const attackerPositions = deploymentPositions(context.attackers.length, approach, 'attacker', DEFAULT_WIDTH, DEFAULT_HEIGHT);
-  const defenderPositions = deploymentPositions(context.defenders.length, approach, 'defender', DEFAULT_WIDTH, DEFAULT_HEIGHT);
+  const defenderPositions = deploymentPositions(defenders.length, approach, 'defender', DEFAULT_WIDTH, DEFAULT_HEIGHT);
 
   context.attackers.forEach((officer, index) => {
     const position = attackerPositions[index];
     const unit = unitFromOfficer(state, officer, 'attacker', position.x, position.y);
     units[unit.id] = unit;
   });
-  context.defenders.forEach((officer, index) => {
+  defenders.forEach((officer, index) => {
     const position = defenderPositions[index];
     const unit = unitFromOfficer(state, officer, 'defender', position.x, position.y);
     units[unit.id] = unit;
@@ -157,7 +158,7 @@ export function createTacticalBattle(state: GameState, order: AttackOrder): Tact
     attackerFactionId: context.source.ownerId,
     defenderFactionId: context.target.ownerId,
     attackerOfficerIds: context.attackers.map((officer) => officer.id),
-    defenderOfficerIds: context.defenders.map((officer) => officer.id),
+    defenderOfficerIds: defenders.map((officer) => officer.id),
     provisionsCommitted: order.provisions,
     attackerFood: order.provisions,
     defenderFood: context.target.food,

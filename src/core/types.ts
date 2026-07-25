@@ -8,7 +8,7 @@ export type GamePhase = 'player' | 'ai' | 'ended';
 
 export type GameOutcome = 'victory' | 'defeat';
 
-export type OfficerStatus = 'serving' | 'free' | 'hidden';
+export type OfficerStatus = 'serving' | 'free' | 'hidden' | 'captive';
 
 export type Faction = {
   id: string;
@@ -86,6 +86,10 @@ export type Officer = {
   mountItemId?: string;
   status: OfficerStatus;
   factionId: string;
+  /** Captives are neutral records held in a city owned by this faction. */
+  captorFactionId?: string;
+  /** Faction served immediately before capture; retained for logs and later diplomacy. */
+  formerFactionId?: string;
   cityId?: string;
   troops: number;
   loyalty: number;

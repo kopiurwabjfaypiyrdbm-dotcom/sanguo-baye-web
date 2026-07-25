@@ -21,6 +21,7 @@ const INTERFACE_ITEM = {
 } as const;
 
 const legacyGlyphs: Record<string, string> = {
+  '€': '傕',
   '\ue76d': '彧',
   '\ue76e': '惇',
   '\ue77d': '祎',

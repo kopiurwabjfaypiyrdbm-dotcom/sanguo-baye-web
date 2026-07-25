@@ -70,5 +70,6 @@ describe('Baye legacy scenario records', () => {
 
   it('maps the four custom glyph slots used by the original name table', () => {
     expect(decodeBayeLegacyString(new Uint8Array([0xcf, 0xc4, 0xba, 0xee, 0xa2, 0xef, 0]))).toBe('夏侯惇');
+    expect(decodeBayeLegacyString(new Uint8Array([0xc0, 0xee, 0x80, 0]))).toBe('李傕');
   });
 });

@@ -4,7 +4,7 @@ import type { GameState, Officer } from './types';
 import { assertValidGameState } from './validation';
 import { updateCitySatraps } from './administration';
 import { evaluateOutcome } from './outcome';
-import { getOfficerEquipment, getOfficerEquipmentIds } from './equipment';
+import { getEffectiveOfficerAttributes, getOfficerEquipment, getOfficerEquipmentIds } from './equipment';
 
 export type AttackOrder = {
   sourceCityId: string;
@@ -12,6 +12,8 @@ export type AttackOrder = {
   officerIds: string[];
   provisions: number;
 };
+
+export const BATTLE_SIDE_LIMIT = 10;
 
 export type BattleConfig = {
   troopWeight: number;
@@ -103,18 +105,20 @@ export const battleConfig: BattleConfig = {
 
 export function estimateBattle(state: GameState, order: AttackOrder, config = battleConfig): BattleEstimate {
   const context = validateAttackOrder(state, order);
+  const defenders = context.defenders.slice(0, BATTLE_SIDE_LIMIT);
   return {
     attacker: scoreOfficers(state, context.attackers, 'attacker', config),
     defender:
-      scoreOfficers(state, context.defenders, 'defender', config) +
+      scoreOfficers(state, defenders, 'defender', config) +
       context.target.reserveTroops * config.reserveTroopWeight +
       context.target.defense * config.defenseWeight,
-    defenderOfficerIds: context.defenders.map((officer) => officer.id),
+    defenderOfficerIds: defenders.map((officer) => officer.id),
   };
 }
 
 export function resolveBattle(state: GameState, order: AttackOrder, config = battleConfig): BattleResult {
   const context = validateAttackOrder(state, order);
+  const defenders = context.defenders.slice(0, BATTLE_SIDE_LIMIT);
   const estimate = estimateBattle(state, order, config);
   const attackerRandom = nextRandom(state.rngSeed);
   const defenderRandom = nextRandom(attackerRandom.seed);
@@ -126,7 +130,7 @@ export function resolveBattle(state: GameState, order: AttackOrder, config = bat
   const casualties: Record<string, number> = {};
 
   for (const officer of context.attackers) casualties[officer.id] = casualtiesFor(officer, attackerLossRate);
-  for (const officer of context.defenders) casualties[officer.id] = casualtiesFor(officer, defenderLossRate);
+  for (const officer of defenders) casualties[officer.id] = casualtiesFor(officer, defenderLossRate);
 
   const defenderReserveLosses = Math.min(
     context.target.reserveTroops,
@@ -149,7 +153,7 @@ export function resolveBattle(state: GameState, order: AttackOrder, config = bat
     attackerFactionId: context.source.ownerId,
     defenderFactionId: context.target.ownerId,
     attackerOfficerIds: context.attackers.map((officer) => officer.id),
-    defenderOfficerIds: context.defenders.map((officer) => officer.id),
+    defenderOfficerIds: defenders.map((officer) => officer.id),
     provisions: order.provisions,
     winner,
     attackerScore,
@@ -194,23 +198,70 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
   };
 
   const additionalLogs: string[] = [];
+  const neutralFactionId = Object.values(state.factions).find((faction) => faction.isNeutral)?.id;
+  let captureSeed = result.nextRngSeed;
+  const shouldCapture = (officer: Officer) => {
+    const random = nextRandom(captureSeed);
+    captureSeed = random.seed;
+    return Math.floor(random.value * 100) > getEffectiveOfficerAttributes(state, officer).intelligence;
+  };
+  const holdCaptive = (officer: Officer, captorFactionId: string) => {
+    if (!neutralFactionId) throw new Error('Captives require a neutral faction');
+    officers[officer.id] = {
+      ...officer,
+      status: 'captive',
+      factionId: neutralFactionId,
+      captorFactionId,
+      formerFactionId: officer.factionId,
+      cityId: target.id,
+      troops: 0,
+      stamina: 0,
+    };
+    additionalLogs.push(`${officer.name}兵败被俘，暂押于${target.name}。`);
+  };
   if (result.cityCaptured) {
     cities[target.id] = { ...cities[target.id], ownerId: result.attackerFactionId };
+    for (const [officerId, officer] of Object.entries(officers)) {
+      if (officer.status !== 'captive' || officer.cityId !== target.id) continue;
+      if (officer.formerFactionId === result.attackerFactionId) {
+        officers[officerId] = {
+          ...officer,
+          status: 'serving',
+          factionId: result.attackerFactionId,
+          captorFactionId: undefined,
+          formerFactionId: undefined,
+          cityId: target.id,
+          troops: 0,
+          stamina: 0,
+        };
+        additionalLogs.push(`${officer.name}随${target.name}被收复，重归${state.factions[result.attackerFactionId].name}。`);
+      } else {
+        officers[officerId] = { ...officer, captorFactionId: result.attackerFactionId };
+        additionalLogs.push(`${officer.name}随${target.name}易手，改由${state.factions[result.attackerFactionId].name}羁押。`);
+      }
+    }
     for (const officerId of result.attackerOfficerIds) {
       officers[officerId] = { ...officers[officerId], cityId: target.id };
     }
 
     const retreatCity = findRetreatCity(state, target.id, result.defenderFactionId);
-    const neutralFactionId = Object.values(state.factions).find((faction) => faction.isNeutral)?.id;
+    const defenderRulerId = state.factions[result.defenderFactionId].rulerOfficerId;
+    const participantIds = new Set(result.defenderOfficerIds);
     const retreatingOfficerIds = Object.values(officers)
       .filter((officer) => officer.status === 'serving'
         && officer.factionId === result.defenderFactionId
         && officer.cityId === target.id)
       .map((officer) => officer.id);
     for (const officerId of retreatingOfficerIds) {
-      officers[officerId] = retreatCity
-        ? { ...officers[officerId], cityId: retreatCity }
-        : {
+      const officer = officers[officerId];
+      const isParticipant = participantIds.has(officerId);
+      const captured = isParticipant && (!retreatCity || (officerId !== defenderRulerId && shouldCapture(officer)));
+      if (captured) {
+        holdCaptive(officer, result.attackerFactionId);
+      } else if (retreatCity) {
+        officers[officerId] = { ...officer, cityId: retreatCity };
+      } else {
+        officers[officerId] = {
             ...officers[officerId],
             status: 'free',
             factionId: neutralFactionId ?? officers[officerId].factionId,
@@ -218,6 +269,7 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
             troops: 0,
             stamina: 0,
           };
+      }
     }
 
     const defenderEliminated = !Object.values(cities).some((city) => city.ownerId === result.defenderFactionId);
@@ -236,6 +288,15 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
       }
       additionalLogs.push(`${state.factions[result.defenderFactionId].name}失去最后一座城池，所属武将转为在野。`);
     }
+  } else {
+    const attackerRulerId = state.factions[result.attackerFactionId].rulerOfficerId;
+    const defenderCanHoldCaptives = !state.factions[result.defenderFactionId].isNeutral;
+    if (defenderCanHoldCaptives) {
+      for (const officerId of result.attackerOfficerIds) {
+        const officer = officers[officerId];
+        if (officerId !== attackerRulerId && shouldCapture(officer)) holdCaptive(officer, result.defenderFactionId);
+      }
+    }
   }
 
   let next: GameState = {
@@ -243,7 +304,7 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
     campaignStarted: true,
     cities,
     officers,
-    rngSeed: result.nextRngSeed,
+    rngSeed: captureSeed,
     actedOfficerIds: [...state.actedOfficerIds, ...result.attackerOfficerIds],
   };
   next = updateCitySatraps(next);
@@ -269,6 +330,7 @@ export function validateAttackOrder(state: GameState, order: AttackOrder): Attac
     throw new Error('Cities are not adjacent');
   }
   if (order.officerIds.length === 0) throw new Error('At least one attacking officer is required');
+  if (order.officerIds.length > BATTLE_SIDE_LIMIT) throw new Error(`At most ${BATTLE_SIDE_LIMIT} attacking officers are allowed`);
   if (new Set(order.officerIds).size !== order.officerIds.length) throw new Error('Attacking officers must be unique');
   if (!Number.isInteger(order.provisions) || order.provisions <= 0) throw new Error('Campaign provisions must be a positive integer');
   if (source.food < order.provisions) throw new Error('Source city does not have enough provisions');
@@ -286,7 +348,7 @@ export function validateAttackOrder(state: GameState, order: AttackOrder): Attac
   });
   const defenders = Object.values(state.officers)
     .filter((officer) => officer.status === 'serving' && officer.factionId === target.ownerId && officer.cityId === target.id && officer.troops > 0)
-    .sort((a, b) => a.id.localeCompare(b.id));
+    .sort((a, b) => b.troops - a.troops || b.leadership - a.leadership || a.id.localeCompare(b.id));
 
   return { source, target, attackers, defenders };
 }

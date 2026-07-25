@@ -60,4 +60,25 @@ describe('game state validation', () => {
       message: 'must contain at most 2 items',
     }));
   });
+
+  it('rejects armed captives and captives held by their former faction', () => {
+    const state = createSampleState();
+    state.officers['chen-gong'] = {
+      ...state.officers['chen-gong'],
+      status: 'captive',
+      cityId: 'luoyang',
+      captorFactionId: 'cao-cao',
+      formerFactionId: 'cao-cao',
+      troops: 100,
+      stamina: 5,
+    };
+
+    expect(validateGameState(state)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'officers.chen-gong.troops', message: 'captive officer must have zero troops' }),
+      expect.objectContaining({ path: 'officers.chen-gong.stamina', message: 'captive officer must have zero stamina' }),
+      expect.objectContaining({
+        path: 'officers.chen-gong.formerFactionId', message: 'captive officer cannot be held by their former faction',
+      }),
+    ]));
+  });
 });

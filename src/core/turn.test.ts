@@ -38,6 +38,24 @@ describe('turn progression', () => {
     expect(validateGameState(next)).toEqual([]);
   });
 
+  it('finishes a month while an unresolved captive remains in prison', () => {
+    const state = createSampleState();
+    state.officers['chen-gong'] = {
+      ...state.officers['chen-gong'],
+      status: 'captive',
+      cityId: 'luoyang',
+      captorFactionId: 'cao-cao',
+      formerFactionId: 'liu-bei',
+      troops: 0,
+      stamina: 0,
+    };
+
+    const next = finishTurn(beginAiPhase(state));
+
+    expect(next.officers['chen-gong']).toMatchObject({ status: 'captive', stamina: 0, troops: 0 });
+    expect(validateGameState(next)).toEqual([]);
+  });
+
   it('pauses AI progression before an attack against the player', () => {
     const state = createSampleState();
     state.officers['guan-yu'].troops = 100_000;

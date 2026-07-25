@@ -86,6 +86,25 @@ describe('versioned saves', () => {
     expect(loaded.actedOfficerIds).toEqual(equipped.actedOfficerIds);
   });
 
+  it('preserves captive ownership metadata through a save round-trip', () => {
+    const state = createSampleState();
+    state.officers['chen-gong'] = {
+      ...state.officers['chen-gong'],
+      status: 'captive',
+      cityId: 'luoyang',
+      captorFactionId: 'cao-cao',
+      formerFactionId: 'liu-bei',
+      troops: 0,
+      stamina: 0,
+    };
+
+    const loaded = parseSave(serializeSave(state)).state;
+
+    expect(loaded.officers['chen-gong']).toMatchObject({
+      status: 'captive', captorFactionId: 'cao-cao', formerFactionId: 'liu-bei', cityId: 'luoyang',
+    });
+  });
+
   it('migrates early named equipment slots into the ordered two-slot model', () => {
     const legacy = createSampleState();
     delete legacy.officers['guan-yu'].equipmentItemIds;

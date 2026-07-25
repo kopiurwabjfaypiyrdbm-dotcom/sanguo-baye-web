@@ -19,6 +19,7 @@ import {
   searchCity,
 } from './personnelCommands';
 import type { AiProfile, GameState } from './types';
+import { recruitCaptive, SURRENDER_STAMINA_COST } from './captiveCommands';
 
 export const AI_MAX_ACTIONS = 5;
 const AI_MIN_ATTACK_PROVISIONS = 200;
@@ -136,7 +137,7 @@ function prepareAiFactionTurn(state: GameState): { state: GameState; order?: Att
   let next = state;
   let actionCount = 0;
 
-  for (const operation of [useCityItem, balanceTroops, recruitReserves, developWeakCity, searchLocalTalent, reinforceFrontier]) {
+  for (const operation of [recruitLocalCaptive, useCityItem, balanceTroops, recruitReserves, developWeakCity, searchLocalTalent, reinforceFrontier]) {
     if (actionCount >= AI_MAX_ACTIONS - 1 || next.phase === 'ended') break;
     const operated = operation(next, faction.id);
     if (operated) {
@@ -157,6 +158,24 @@ function prepareAiFactionTurn(state: GameState): { state: GameState; order?: Att
     `${faction.name}完成 ${actionCount} 项经营行动后，决定从${source.name}进攻${target.name}：${decision.reason}`,
   ]);
   return { state: announced, order: decision.order };
+}
+
+function recruitLocalCaptive(state: GameState, factionId: string): GameState | undefined {
+  const candidates = Object.values(state.officers)
+    .filter((officer) => officer.status === 'captive' && officer.captorFactionId === factionId && officer.cityId)
+    .sort((a, b) => a.loyalty - b.loyalty || b.intelligence - a.intelligence || a.id.localeCompare(b.id));
+  for (const captive of candidates) {
+    const executor = Object.values(state.officers)
+      .filter((officer) => officer.status === 'serving' && officer.factionId === factionId && officer.cityId === captive.cityId)
+      .filter((officer) => officer.stamina >= SURRENDER_STAMINA_COST && !state.actedOfficerIds.includes(officer.id))
+      .sort((a, b) => b.intelligence - a.intelligence || a.id.localeCompare(b.id))[0];
+    if (executor) return recruitCaptive(state, {
+      cityId: captive.cityId!,
+      executorOfficerId: executor.id,
+      captiveOfficerId: captive.id,
+    });
+  }
+  return undefined;
 }
 
 function useCityItem(state: GameState, factionId: string): GameState | undefined {
@@ -190,7 +209,7 @@ function balanceTroops(state: GameState, factionId: string): GameState | undefin
     .flatMap((city) => Object.values(state.officers)
       .filter((officer) => officer.status === 'serving' && officer.factionId === factionId && officer.cityId === city.id)
       .map((officer) => ({ city, officer, capacity: calculateOfficerTroopCapacity(officer) })))
-    .filter(({ officer, capacity }) => officer.troops < capacity)
+    .filter(({ officer, capacity }) => officer.troops < capacity && !state.actedOfficerIds.includes(officer.id))
     .sort((a, b) =>
       (a.officer.troops / a.capacity) - (b.officer.troops / b.capacity)
       || b.officer.leadership - a.officer.leadership

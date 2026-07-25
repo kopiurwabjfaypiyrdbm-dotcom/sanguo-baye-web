@@ -138,4 +138,23 @@ describe('basic AI', () => {
 
     expect(next.cities.hanzhong.itemIds).toEqual(['navy-token']);
   });
+
+  it('attempts to recruit a local captive before routine development', () => {
+    const state = beginAiPhase(createSampleState());
+    state.officers['chen-gong'] = {
+      ...state.officers['chen-gong'],
+      status: 'captive',
+      factionId: 'neutral',
+      cityId: 'hanzhong',
+      captorFactionId: 'liu-bei',
+      formerFactionId: 'cao-cao',
+      loyalty: 0,
+      troops: 0,
+    };
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.officers['chen-gong']).toMatchObject({ status: 'serving', factionId: 'liu-bei', cityId: 'hanzhong' });
+    expect(next.logs.some((log) => log.message.includes('说服陈宫归顺'))).toBe(true);
+  });
 });

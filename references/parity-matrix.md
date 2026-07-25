@@ -12,12 +12,13 @@
 | 模块 | 上游事实源 | 当前实现 | 状态 | 下一验证 |
 |---|---|---|---|---|
 | 游戏主循环 | `gamEng.c`、`GamBaYeEng` | `turn.ts` | 临时实现 | 记录一个完整原版月份的阶段顺序 |
-| 剧本加载 | `tactic.c:LoadPeriod`、`.lib` | `compat/baye/legacyScenario.ts`；`data/legacyScenario.ts`；`generated/baye-periods.json` | 差异验证 | 接入未出仕人物出现条件，并继续核对时期 2–4 的初始差异 |
+| 剧本加载 | `tactic.c:LoadPeriod`、`.lib` | `compat/baye/legacyScenario.ts`；`data/legacyScenario.ts`；`generated/baye-periods.json` | 差异验证 | 已处理原版名字表自定义字形（含李傕）；接入未出仕人物出现条件，并继续核对时期 2–4 的初始差异 |
 | 开局兵力 | 时期人物记录兵力字段为 0；原版另有初始化流程待定位 | `data/legacyScenario.ts:DEFAULT_STARTING_TROOPS`，所有在职势力对称初始为 400 | 临时实现 | 定位原版选君主后的兵力/粮草初始化；不再使用玩家 100、AI 800 的人为不对称 |
 | 城池、人物与道具结构 | `dictsys.h`、`attribute.h`、`bind-objects.c`、时期结构夹具 | `types.ts`；`core/equipment.ts`；`data/itemCatalog.ts`；`data/legacyScenario.ts`；`data-structure-map.md` | 已取样 | 城池隐藏/发现队列、两个有序通用装备位和初始装备已接入；33 项道具内容仍来自早期整理表，固定上游与内容哈希重新关联前按临时数据处理 |
-| 城池命令 | `citycmd*.c` | `cityCommands.ts`（开垦、征兵、分配）；`personnelCommands.ts`（搜寻、登用、赏金、道具赏赐/卸装、调动、任命） | 临时实现 | 分配消耗武将月行动；道具赏赐采用原版忠诚和消耗语义，赏金为并列现代规则；接入搜寻伯乐条件，移动改为按道路距离进入命令队列 |
+| 城池命令 | `citycmd*.c` | `cityCommands.ts`（开垦、征兵、分配）；`personnelCommands.ts`（搜寻、登用、赏金、道具赏赐/卸装、调动、任命）；`captiveCommands.ts`（招降、释放） | 临时实现 | 招降保留智力、忠诚、性格与体力分支但立即结算；释放为现代选项；接入搜寻伯乐条件，移动与命令队列仍待实现 |
 | 月度结算 | `tactic.c`、阶段钩子 | `economy.ts` | 临时实现 | 固定城池数据对照一个月结果 |
 | 战场进入 | `citycmdd.c`、`Fight.c`、`g_FgtParam`、`fight.h:FIGHT_ORDER_MAX` | `core/tacticalBattle.ts:createTacticalBattle`；`ui/App.tsx` | 临时实现 | 已按固定参考限制每方最多 10 人；继续对照原版战场编号、进攻方向与部署位置；当前结构化战场为现代临时地图 |
+| 战败俘虏与招降 | `citycmdd.c:FightResultDeal/TheLoserDeal/HoldCaptive/LostEscape/KingOverDeal`；`citycmd.c:SurrenderDrv` | `core/battle.ts`；`core/captiveCommands.ts`；`ui/CityPanel.tsx` | 临时实现 | 已接入确定性捕获、羁押、招降、释放和 AI；战死、装备缴获、君主继承选择与原版 U8 概率回绕后置 |
 | 攻防属性 | `FgtCount.c:BuiltAtkAttr`、`.lib:dFgtLandF` | `compat/baye/tacticalBattle.ts`；`core/tacticalBattle.ts:attackTacticalUnit` | 差异验证 | 扩大端到端地形和装备兵种样本 |
 | 普通攻击伤害 | `FgtCount.c:CountAtkHurt` | `compat/baye/tacticalBattle.ts`；`core/tacticalBattle.ts:attackTacticalUnit` | 差异验证 | 兼容公式继续使用原版 U16 攻击兵力输入，战术会话保留现代战略层完整兵力以避免截断写回；继续复核原版兵力上限和战后经验值 |
 | 兵种克制 | `FgtCount.c:SubduModu`、文档默认钩子 | `BAYE_SUBDUE_MATRIX` | 差异验证 | 锁定提交检出后重生成 C oracle |

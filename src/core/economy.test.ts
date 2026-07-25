@@ -39,4 +39,21 @@ describe('monthly economy', () => {
     expect(next.officers['cao-cao'].troops).toBe(Math.floor(state.officers['cao-cao'].troops / 2));
     expect(next.logs.at(-1)?.message).toContain('粮草不足');
   });
+
+  it('keeps captives at zero stamina during monthly recovery', () => {
+    const state = createSampleState();
+    state.officers['chen-gong'] = {
+      ...state.officers['chen-gong'],
+      status: 'captive',
+      cityId: 'luoyang',
+      captorFactionId: 'cao-cao',
+      formerFactionId: 'liu-bei',
+      troops: 0,
+      stamina: 0,
+    };
+
+    const next = applyMonthlyGrowth(state);
+
+    expect(next.officers['chen-gong'].stamina).toBe(0);
+  });
 });

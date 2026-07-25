@@ -6,6 +6,7 @@ import {
 } from '../compat/baye/tacticalBattle';
 import { applyBattleResult } from './battle';
 import { createSampleState } from './sampleState';
+import { createBundledScenario, getScenarioRulers } from '../data/bundledScenarios';
 import {
   attackTacticalUnit,
   createTacticalBattle,
@@ -60,7 +61,7 @@ describe('manual tactical battle core', () => {
     ));
   });
 
-  it('rejects deployments above the original ten-officer side limit', () => {
+  it('selects the first ten defenders when a city has more than the side limit', () => {
     const { state, order } = battleFixture();
     const defender = state.officers['guan-yu'];
     for (let index = 0; index < 10; index += 1) {
@@ -68,7 +69,41 @@ describe('manual tactical battle core', () => {
       state.officers[id] = { ...defender, id, name: `守将${index}` };
     }
 
-    expect(() => createTacticalBattle(state, order)).toThrow('每方最多可部署 10 名武将');
+    const battle = createTacticalBattle(state, order);
+
+    expect(battle.defenderOfficerIds).toHaveLength(10);
+    expect(Object.values(battle.units).filter((unit) => unit.side === 'defender' && unit.id.startsWith('officer:')))
+      .toHaveLength(10);
+  });
+
+  it('opens a manual battle against an over-capacity city in bundled period 2', () => {
+    const state = createBundledScenario(2, getScenarioRulers(2)[0].sourceIndex);
+    const serving = Object.values(state.officers).filter((officer) => officer.status === 'serving');
+    const target = Object.values(state.cities).find((city) => {
+      const defenderCount = serving.filter((officer) => officer.cityId === city.id && officer.troops > 0).length;
+      return defenderCount > 10 && city.neighbors.some((neighborId) => {
+        const neighbor = state.cities[neighborId];
+        return neighbor.ownerId !== city.ownerId
+          && serving.some((officer) => officer.cityId === neighbor.id && officer.troops > 0);
+      });
+    });
+    expect(target).toBeDefined();
+    const source = target!.neighbors
+      .map((cityId) => state.cities[cityId])
+      .find((city) => city.ownerId !== target!.ownerId
+        && serving.some((officer) => officer.cityId === city.id && officer.troops > 0))!;
+    const attacker = serving.find((officer) => officer.cityId === source.id && officer.troops > 0)!;
+    state.playerFactionId = source.ownerId;
+    state.activeFactionId = source.ownerId;
+
+    const battle = createTacticalBattle(state, {
+      sourceCityId: source.id,
+      targetCityId: target!.id,
+      officerIds: [attacker.id],
+      provisions: 1,
+    });
+
+    expect(battle.defenderOfficerIds).toHaveLength(10);
   });
 
   it('calculates deterministic reachable tiles and rejects occupied destinations', () => {
@@ -195,6 +230,7 @@ describe('manual tactical battle core', () => {
     const { state, order } = battleFixture();
     state.cities.hanzhong.reserveTroops = 0;
     state.officers['guan-yu'].troops = 1;
+    state.officers['guan-yu'].intelligence = 0;
     state.officers['liu-bei'].cityId = 'hanzhong';
     state.officers['liu-bei'].troops = 0;
     let battle = createTacticalBattle(state, order);
@@ -216,6 +252,9 @@ describe('manual tactical battle core', () => {
     expect(next.cities.hanzhong.ownerId).toBe('cao-cao');
     expect(next.officers['cao-cao'].cityId).toBe('hanzhong');
     expect(next.officers['liu-bei'].cityId).toBe('chengdu');
+    expect(next.officers['guan-yu']).toMatchObject({
+      status: 'captive', captorFactionId: 'cao-cao', formerFactionId: 'liu-bei', cityId: 'hanzhong',
+    });
     expect(next.cities.hanzhong.food).toBe(finished.attackerFood + finished.defenderFood);
     expect(validateGameState(next)).toEqual([]);
     expect(() => applyBattleResult(next, result)).toThrow();

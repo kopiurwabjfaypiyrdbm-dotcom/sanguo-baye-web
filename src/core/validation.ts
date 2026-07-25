@@ -123,7 +123,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
   for (const [key, officer] of Object.entries(state.officers)) {
     const path = `officers.${key}`;
     if (key !== officer.id) add(`${path}.id`, `must match record key: ${key}`);
-    if (!['serving', 'free', 'hidden'].includes(officer.status)) add(`${path}.status`, `unknown status: ${officer.status}`);
+    if (!['serving', 'free', 'hidden', 'captive'].includes(officer.status)) add(`${path}.status`, `unknown status: ${officer.status}`);
     if (!state.factions[officer.factionId]) add(`${path}.factionId`, `unknown faction: ${officer.factionId}`);
     if (officer.status === 'hidden') {
       if (officer.cityId !== undefined) add(`${path}.cityId`, 'hidden officer must not be assigned to a city');
@@ -133,6 +133,25 @@ export function validateGameState(state: GameState): ValidationIssue[] {
     }
     if (officer.status === 'free' && !state.factions[officer.factionId]?.isNeutral) {
       add(`${path}.factionId`, 'free officer must belong to the neutral faction');
+    }
+    if (officer.status === 'captive') {
+      if (!state.factions[officer.factionId]?.isNeutral) add(`${path}.factionId`, 'captive officer must be neutral');
+      if (officer.troops !== 0) add(`${path}.troops`, 'captive officer must have zero troops');
+      if (officer.stamina !== 0) add(`${path}.stamina`, 'captive officer must have zero stamina');
+      if (!officer.cityId || !state.cities[officer.cityId]) add(`${path}.cityId`, 'captive officer must be held in a city');
+      if (!officer.captorFactionId || state.factions[officer.captorFactionId]?.isNeutral) {
+        add(`${path}.captorFactionId`, 'captive officer must name a playable captor faction');
+      } else if (officer.cityId && state.cities[officer.cityId]?.ownerId !== officer.captorFactionId) {
+        add(`${path}.cityId`, 'captive officer must be held in a city owned by the captor');
+      }
+      if (!officer.formerFactionId || !state.factions[officer.formerFactionId]
+        || state.factions[officer.formerFactionId]?.isNeutral) {
+        add(`${path}.formerFactionId`, 'captive officer must retain a known playable former faction');
+      } else if (officer.formerFactionId === officer.captorFactionId) {
+        add(`${path}.formerFactionId`, 'captive officer cannot be held by their former faction');
+      }
+    } else if (officer.captorFactionId || officer.formerFactionId) {
+      add(`${path}.captorFactionId`, 'capture metadata is only valid for captive officers');
     }
     if (officer.status === 'serving' && state.factions[officer.factionId]?.isNeutral) {
       add(`${path}.factionId`, 'serving officer must belong to a playable faction');

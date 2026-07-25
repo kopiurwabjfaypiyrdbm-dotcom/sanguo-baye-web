@@ -13,8 +13,9 @@ import {
   SEARCH_STAMINA_COST,
   getGiveItemAvailability,
 } from '../core/personnelCommands';
-import { getCityFreeOfficers, getCityOfficers, getNeighborCities } from '../core/selectors';
+import { getCityCaptives, getCityFreeOfficers, getCityOfficers, getNeighborCities } from '../core/selectors';
 import { getEffectiveOfficerAttributes, getOfficerEquipmentIds } from '../core/equipment';
+import { SURRENDER_STAMINA_COST } from '../core/captiveCommands';
 
 type CityPanelProps = {
   state: GameState;
@@ -27,6 +28,8 @@ type CityPanelProps = {
   onReward: (cityId: string, officerId: string) => void;
   onGiveItem: (cityId: string, officerId: string, itemId: string) => void;
   onUnequipItem: (cityId: string, officerId: string, itemId: string) => void;
+  onRecruitCaptive: (cityId: string, executorOfficerId: string, captiveOfficerId: string) => void;
+  onReleaseCaptive: (cityId: string, captiveOfficerId: string) => void;
   onMove: (sourceCityId: string, targetCityId: string, officerId: string) => void;
   onAppoint: (cityId: string, officerId: string) => void;
   onDistribute: (cityId: string, officerId: string, targetTroops: number) => void;
@@ -46,6 +49,8 @@ export function CityPanel({
   onReward,
   onGiveItem,
   onUnequipItem,
+  onRecruitCaptive,
+  onReleaseCaptive,
   onMove,
   onAppoint,
   onDistribute,
@@ -61,6 +66,7 @@ export function CityPanel({
     () => getCityFreeOfficers(state, cityId).filter((officer) => state.discoveredOfficerIds.includes(officer.id)),
     [state, cityId],
   );
+  const captives = useMemo(() => getCityCaptives(state, cityId), [state, cityId]);
   const hostileNeighbors = useMemo(
     () => getNeighborCities(state, cityId).filter((neighbor) => city && neighbor.ownerId !== city.ownerId),
     [state, cityId, city],
@@ -75,6 +81,7 @@ export function CityPanel({
   const [selectedRecruitTargetId, setSelectedRecruitTargetId] = useState('');
   const [distributionTarget, setDistributionTarget] = useState('0');
   const [selectedItemId, setSelectedItemId] = useState('');
+  const [selectedCaptiveId, setSelectedCaptiveId] = useState('');
   const [selectedAttackerIds, setSelectedAttackerIds] = useState<string[]>([]);
   const [provisions, setProvisions] = useState('100');
 
@@ -116,9 +123,14 @@ export function CityPanel({
     if (!cityItems.some((item) => item.id === selectedItemId)) setSelectedItemId(cityItems[0]?.id ?? '');
   }, [cityItems, selectedItemId]);
 
+  useEffect(() => {
+    if (!captives.some((officer) => officer.id === selectedCaptiveId)) setSelectedCaptiveId(captives[0]?.id ?? '');
+  }, [captives, selectedCaptiveId]);
+
   const faction = state.factions[city.ownerId];
   const satrap = city.satrapOfficerId ? state.officers[city.satrapOfficerId] : undefined;
-  const selectedOfficer = state.officers[selectedOfficerId];
+  const selectedOfficer = eligibleOfficers.find((officer) => officer.id === selectedOfficerId);
+  const selectedCaptive = captives.find((captive) => captive.id === selectedCaptiveId);
   const selectedItem = state.items[selectedItemId];
   const selectedEquipmentIds = selectedOfficer ? getOfficerEquipmentIds(selectedOfficer) : [];
   const isOwned = city.ownerId === state.playerFactionId && state.phase === 'player';
@@ -130,22 +142,35 @@ export function CityPanel({
   const distributionCapacity = selectedOfficer ? calculateOfficerTroopCapacity(selectedOfficer) : 0;
   const distributionDelta = selectedOfficer ? distributionValue - selectedOfficer.troops : 0;
   const provisionValue = Number(provisions);
-  const canDevelop = isOwned && Boolean(selectedOfficer) && selectedOfficer.stamina >= DEVELOP_STAMINA_COST
+  const canDevelop = isOwned && selectedOfficer !== undefined && selectedOfficer.stamina >= DEVELOP_STAMINA_COST
     && !selectedOfficerActed && city.money >= DEVELOP_MONEY_COST
     && (city.farmingLimit === undefined || city.farming < city.farmingLimit);
-  const canRecruit = isOwned && Boolean(selectedOfficer) && selectedOfficer.stamina >= RECRUIT_STAMINA_COST
+  const canRecruit = isOwned && selectedOfficer !== undefined && selectedOfficer.stamina >= RECRUIT_STAMINA_COST
     && !selectedOfficerActed && calculateRecruitCapacity(city) > 0;
-  const canSearch = isOwned && Boolean(selectedOfficer) && selectedOfficer.stamina >= SEARCH_STAMINA_COST
+  const canSearch = isOwned && selectedOfficer !== undefined && selectedOfficer.stamina >= SEARCH_STAMINA_COST
     && !selectedOfficerActed;
-  const canRecruitOfficer = isOwned && Boolean(selectedOfficer) && !selectedOfficerActed
+  const canRecruitOfficer = isOwned && selectedOfficer !== undefined && !selectedOfficerActed
     && selectedOfficer.stamina >= RECRUIT_OFFICER_STAMINA_COST && Boolean(selectedRecruitTargetId);
-  const canReward = isOwned && Boolean(selectedOfficer)
+  const canReward = isOwned && selectedOfficer !== undefined
     && selectedOfficer.id !== state.factions[state.playerFactionId].rulerOfficerId
     && selectedOfficer.loyalty < 100 && city.money >= REWARD_MONEY_COST;
   const itemAvailability = selectedOfficer && selectedItem
     ? getGiveItemAvailability(state, { cityId: city.id, officerId: selectedOfficer.id, itemId: selectedItem.id })
     : { allowed: false as const, reason: cityItems.length === 0 ? '城中没有已发现道具' : '请选择受赏武将和道具' };
   const canGiveItem = isOwned && itemAvailability.allowed;
+  const canRecruitCaptive = isOwned && selectedOfficer !== undefined && selectedCaptive !== undefined
+    && !selectedOfficerActed && selectedOfficer.stamina >= SURRENDER_STAMINA_COST;
+  const captiveRecruitReason = disabled
+    ? '当前有待处理操作，暂时不能执行城池命令'
+    : !selectedCaptive
+      ? '请选择仍在本城的俘虏'
+      : !selectedOfficer
+        ? '本城没有可执行招降的己方武将'
+        : selectedOfficerActed
+          ? `${selectedOfficer.name}本月已经行动`
+          : selectedOfficer.stamina < SURRENDER_STAMINA_COST
+            ? `${selectedOfficer.name}体力不足，需要 ${SURRENDER_STAMINA_COST} 点`
+            : `消耗 ${selectedOfficer.name} ${SURRENDER_STAMINA_COST} 点体力和本月行动；失败会削弱俘虏忠诚`;
   const canMove = isOwned && Boolean(selectedOfficer) && !selectedOfficerActed && Boolean(selectedMoveTargetId);
   const canAppoint = isOwned && Boolean(selectedOfficer) && city.satrapOfficerId !== selectedOfficerId;
   const canDistribute = isOwned && Boolean(selectedOfficer) && Number.isInteger(distributionValue)
@@ -229,19 +254,23 @@ export function CityPanel({
           <span>{isOwned ? '玩家阶段' : '仅可查看'}</span>
         </div>
 
-        {isOwned && eligibleOfficers.length > 0 ? (
+        {isOwned && (eligibleOfficers.length > 0 || captives.length > 0) ? (
           <>
-            <label className="command-field">
-              <span>执行武将</span>
-              <select value={selectedOfficerId} onChange={(event) => setSelectedOfficerId(event.target.value)}>
-                {eligibleOfficers.map((officer) => (
-                  <option value={officer.id} key={officer.id}>
-                    {officer.name} · 体力 {officer.stamina} · 兵 {number.format(officer.troops)}
-                    {state.actedOfficerIds.includes(officer.id) ? ' · 已行动' : ''}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {eligibleOfficers.length > 0 ? (
+              <label className="command-field">
+                <span>执行武将</span>
+                <select value={selectedOfficerId} onChange={(event) => setSelectedOfficerId(event.target.value)}>
+                  {eligibleOfficers.map((officer) => (
+                    <option value={officer.id} key={officer.id}>
+                      {officer.name} · 体力 {officer.stamina} · 兵 {number.format(officer.troops)}
+                      {state.actedOfficerIds.includes(officer.id) ? ' · 已行动' : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <p className="command-hint">本城没有可下令的己方武将；仍可释放俘虏。</p>
+            )}
 
             <p className="command-group-title">内政</p>
             <div className="city-command-buttons">
@@ -326,7 +355,7 @@ export function CityPanel({
               className="reward-command"
               disabled={disabled || !canReward}
               onClick={() => onReward(city.id, selectedOfficerId)}
-              title={selectedOfficer?.loyalty >= 100
+              title={(selectedOfficer?.loyalty ?? 0) >= 100
                 ? '该武将忠诚已经达到上限'
                 : `消耗城中金钱 ${REWARD_MONEY_COST}，不占用武将本月行动`}
             >
@@ -376,6 +405,43 @@ export function CityPanel({
                     卸下 {state.items[itemId].name}
                   </button>
                 ))}
+              </div>
+            )}
+            {captives.length > 0 && (
+              <div className="captive-command-block">
+                <p className="command-group-title">俘虏</p>
+                <label className="command-field">
+                  <span>本城俘虏</span>
+                  <select value={selectedCaptiveId} onChange={(event) => setSelectedCaptiveId(event.target.value)}>
+                    {captives.map((captive) => (
+                      <option value={captive.id} key={captive.id}>
+                        {captive.name} · 智 {getEffectiveOfficerAttributes(state, captive).intelligence} · 忠 {captive.loyalty}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="city-command-buttons">
+                  <button
+                    type="button"
+                    disabled={disabled || !canRecruitCaptive}
+                    onClick={() => selectedCaptive && onRecruitCaptive(city.id, selectedOfficerId, selectedCaptive.id)}
+                    title={captiveRecruitReason}
+                    aria-describedby="captive-recruit-hint"
+                  >
+                    招降
+                  </button>
+                  <button
+                    type="button"
+                    disabled={disabled || !isOwned || !selectedCaptive}
+                    onClick={() => selectedCaptive && onReleaseCaptive(city.id, selectedCaptive.id)}
+                    title="现代化人道选项：不消耗行动，俘虏转为本城在野人物"
+                  >
+                    释放
+                  </button>
+                </div>
+                {(disabled || !canRecruitCaptive) && (
+                  <p className="command-hint" id="captive-recruit-hint">暂不可招降：{captiveRecruitReason}</p>
+                )}
               </div>
             )}
 
