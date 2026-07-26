@@ -42,6 +42,8 @@ describe('versioned saves', () => {
     expect(loaded.state.intelReports).toEqual({});
     expect(loaded.state.strategicOrders).toEqual({});
     expect(loaded.state.nextStrategicOrderSerial).toBe(1);
+    expect(loaded.state.diplomaticOrders).toEqual({});
+    expect(loaded.state.nextDiplomaticOrderSerial).toBe(1);
   });
 
   it('migrates schema-two saves with an empty intelligence report layer', () => {
@@ -54,6 +56,7 @@ describe('versioned saves', () => {
     expect(loaded.state.schemaVersion).toBe(4);
     expect(loaded.state.intelReports).toEqual({});
     expect(loaded.state.strategicOrders).toEqual({});
+    expect(loaded.state.diplomaticOrders).toEqual({});
   });
 
   it('migrates schema-three saves with an empty strategic order layer', () => {
@@ -61,12 +64,16 @@ describe('versioned saves', () => {
     legacy.schemaVersion = 3;
     delete legacy.strategicOrders;
     delete legacy.nextStrategicOrderSerial;
+    delete legacy.diplomaticOrders;
+    delete legacy.nextDiplomaticOrderSerial;
 
     const loaded = parseSave(legacy);
 
     expect(loaded.state.schemaVersion).toBe(4);
     expect(loaded.state.strategicOrders).toEqual({});
     expect(loaded.state.nextStrategicOrderSerial).toBe(1);
+    expect(loaded.state.diplomaticOrders).toEqual({});
+    expect(loaded.state.nextDiplomaticOrderSerial).toBe(1);
   });
 
   it('repairs landless serving officers produced by older schema-two battles', () => {

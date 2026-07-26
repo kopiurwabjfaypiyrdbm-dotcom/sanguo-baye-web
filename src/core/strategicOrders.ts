@@ -9,6 +9,7 @@ import {
 } from './strategicOrderCargo';
 import type { City, GameState, StrategicOrder } from './types';
 import { assertValidGameState } from './validation';
+import { hasActiveCampaignOrder } from './diplomaticOrders';
 
 export const MOVE_STAMINA_COST = 4;
 export const TRANSPORT_STAMINA_COST = 4;
@@ -135,7 +136,7 @@ function getRoadOrderAvailability(
     || officer.factionId !== state.activeFactionId || officer.cityId !== source.id) {
     return { allowed: false, reason: `执行${actionName}的武将不在出发城` };
   }
-  if (getOfficerStrategicOrder(state, officer.id)) return { allowed: false, reason: '该武将已有执行中的战略命令' };
+  if (hasActiveCampaignOrder(state, officer.id)) return { allowed: false, reason: '该武将已有执行中的命令' };
   if (state.actedOfficerIds.includes(officer.id)) return { allowed: false, reason: '该武将本月已经执行过命令' };
   if (officer.stamina < staminaCost) {
     return { allowed: false, reason: `武将体力不足，需要 ${staminaCost}` };

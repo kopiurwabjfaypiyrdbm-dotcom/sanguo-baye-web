@@ -41,6 +41,13 @@ import {
   findOwnedCityRoute,
   issueTransportOrder,
 } from './strategicOrders';
+import {
+  DIPLOMACY_MONEY_COST,
+  getDiplomacyTargets,
+  getDiplomaticOrderAvailability,
+  issueDiplomaticOrder,
+} from './diplomaticOrders';
+import type { DiplomaticOrderKind } from './types';
 
 export const AI_MAX_ACTIONS = 5;
 const AI_MIN_ATTACK_PROVISIONS = 200;
@@ -161,6 +168,7 @@ function prepareAiFactionTurn(state: GameState): { state: GameState; order?: Att
   for (const operation of [
     stabilizeFood,
     recruitLocalCaptive,
+    useDiplomaticOpportunity,
     useCityItem,
     balanceTroops,
     recruitReserves,
@@ -189,6 +197,47 @@ function prepareAiFactionTurn(state: GameState): { state: GameState; order?: Att
     `${faction.name}完成 ${actionCount} 项经营行动后，决定从${source.name}进攻${target.name}：${decision.reason}`,
   ]);
   return { state: announced, order: decision.order };
+}
+
+export function useDiplomaticOpportunity(state: GameState, factionId: string): GameState | undefined {
+  const ownedCities = Object.values(state.cities)
+    .filter((city) => city.ownerId === factionId && city.money >= DIPLOMACY_MONEY_COST)
+    .sort((left, right) => left.id.localeCompare(right.id));
+  const candidates: Array<{ kind: DiplomaticOrderKind; maximumLoyalty: number }> = [
+    { kind: 'induce', maximumLoyalty: 100 },
+    { kind: 'counterespionage', maximumLoyalty: 30 },
+    { kind: 'canvass', maximumLoyalty: 25 },
+    { kind: 'alienate', maximumLoyalty: 65 },
+  ];
+
+  for (const { kind, maximumLoyalty } of candidates) {
+    const targets = getDiplomacyTargets(state, kind, factionId)
+      .filter((target) => target.loyalty <= maximumLoyalty)
+      .sort((left, right) =>
+        left.loyalty - right.loyalty
+        || right.intelligence - left.intelligence
+        || left.id.localeCompare(right.id));
+    for (const target of targets) {
+      for (const city of ownedCities) {
+        const executors = availableOfficers(state, factionId, city.id, 4)
+          .filter((officer) =>
+            officer.id !== state.factions[factionId].rulerOfficerId
+            && (!isExposedSoleGarrison(state, city.id, factionId) || officer.id !== city.satrapOfficerId))
+          .sort((left, right) => right.intelligence - left.intelligence || left.id.localeCompare(right.id));
+        for (const executor of executors) {
+          const input = {
+            kind,
+            sourceCityId: city.id,
+            officerId: executor.id,
+            targetOfficerId: target.id,
+          };
+          if (!getDiplomaticOrderAvailability(state, input).allowed) continue;
+          return issueDiplomaticOrder(state, input);
+        }
+      }
+    }
+  }
+  return undefined;
 }
 
 function stabilizeFood(state: GameState, factionId: string): GameState | undefined {

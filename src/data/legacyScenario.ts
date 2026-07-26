@@ -199,6 +199,8 @@ export function createGameStateFromLegacyPeriod(
     actedOfficerIds: [],
     strategicOrders: {},
     nextStrategicOrderSerial: 1,
+    diplomaticOrders: {},
+    nextDiplomaticOrderSerial: 1,
     discoveredOfficerIds: [],
     intelReports: {},
     factions,

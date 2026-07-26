@@ -160,8 +160,100 @@ export function validateGameState(state: GameState): ValidationIssue[] {
   } else if (state.nextStrategicOrderSerial <= maxStrategicOrderSerial) {
     add('nextStrategicOrderSerial', 'must be greater than every existing strategic order serial');
   }
+  let maxDiplomaticOrderSerial = 0;
+  const rawDiplomaticOrders = (state as { diplomaticOrders?: unknown }).diplomaticOrders;
+  if (!isRecord(rawDiplomaticOrders)) {
+    add('diplomaticOrders', 'must be a record');
+  } else {
+    for (const [key, rawOrder] of Object.entries(rawDiplomaticOrders)) {
+      const path = `diplomaticOrders.${key}`;
+      if (!isRecord(rawOrder)) {
+        add(path, 'must be an object');
+        continue;
+      }
+      if (rawOrder.id !== key) add(`${path}.id`, 'must match record key');
+      const idMatch = /^diplomatic-order-([1-9]\d*)$/.exec(key);
+      if (!idMatch) add(`${path}.id`, 'must use the diplomatic-order-N format');
+      else {
+        const serial = Number(idMatch[1]);
+        if (!Number.isSafeInteger(serial)) add(`${path}.id`, 'serial must be a safe integer');
+        else maxDiplomaticOrderSerial = Math.max(maxDiplomaticOrderSerial, serial);
+      }
+      if (!['alienate', 'canvass', 'counterespionage', 'induce'].includes(String(rawOrder.kind))) {
+        add(`${path}.kind`, 'must be a supported diplomatic order');
+      }
+      if (typeof rawOrder.factionId !== 'string' || !state.factions[rawOrder.factionId]) {
+        add(`${path}.factionId`, `unknown faction: ${String(rawOrder.factionId)}`);
+      }
+      if (typeof rawOrder.targetFactionId !== 'string' || !state.factions[rawOrder.targetFactionId]) {
+        add(`${path}.targetFactionId`, `unknown faction: ${String(rawOrder.targetFactionId)}`);
+      } else if (rawOrder.targetFactionId === rawOrder.factionId) {
+        add(`${path}.targetFactionId`, 'must differ from the issuing faction');
+      }
+      if (typeof rawOrder.officerId !== 'string' || !state.officers[rawOrder.officerId]) {
+        add(`${path}.officerId`, `unknown officer: ${String(rawOrder.officerId)}`);
+      } else {
+        const previousOrderId = activeOrderByOfficerId.get(rawOrder.officerId);
+        if (previousOrderId) add(`${path}.officerId`, `officer already has active order: ${previousOrderId}`);
+        activeOrderByOfficerId.set(rawOrder.officerId, key);
+      }
+      if (typeof rawOrder.targetOfficerId !== 'string' || !state.officers[rawOrder.targetOfficerId]) {
+        add(`${path}.targetOfficerId`, `unknown officer: ${String(rawOrder.targetOfficerId)}`);
+      } else if (rawOrder.targetOfficerId === rawOrder.officerId) {
+        add(`${path}.targetOfficerId`, 'must differ from the executing officer');
+      }
+      for (const field of ['sourceCityId', 'targetCityId'] as const) {
+        const cityId = rawOrder[field];
+        if (typeof cityId !== 'string' || !state.cities[cityId]) {
+          add(`${path}.${field}`, `unknown city: ${String(cityId)}`);
+        }
+      }
+      for (const field of ['createdTurn', 'createdYear', 'createdMonth', 'durationMonths', 'remainingMonths'] as const) {
+        const value = rawOrder[field];
+        if (!Number.isInteger(value) || (value as number) < 1) add(`${path}.${field}`, 'must be a positive integer');
+      }
+      if (Number.isInteger(rawOrder.createdMonth)
+        && ((rawOrder.createdMonth as number) < 1 || (rawOrder.createdMonth as number) > 12)) {
+        add(`${path}.createdMonth`, 'must be from 1 to 12');
+      }
+      if (Number.isInteger(rawOrder.remainingMonths) && Number.isInteger(rawOrder.durationMonths)
+        && (rawOrder.remainingMonths as number) > (rawOrder.durationMonths as number)) {
+        add(`${path}.remainingMonths`, 'must not exceed durationMonths');
+      }
+      if (!Number.isSafeInteger(rawOrder.moneyCost) || (rawOrder.moneyCost as number) < 0) {
+        add(`${path}.moneyCost`, 'must be a non-negative safe integer');
+      }
+      if (Number.isInteger(rawOrder.createdTurn) && (rawOrder.createdTurn as number) > state.turn) {
+        add(`${path}.createdTurn`, 'must not be later than the current turn');
+      }
+      if (Number.isInteger(rawOrder.createdYear) && Number.isInteger(rawOrder.createdMonth)
+        && (rawOrder.createdYear as number) * 12 + (rawOrder.createdMonth as number)
+          > state.calendar.year * 12 + state.calendar.month) {
+        add(`${path}.createdYear`, 'creation date must not be later than the current calendar');
+      }
+      if (Number.isInteger(rawOrder.createdTurn) && Number.isInteger(rawOrder.durationMonths)
+        && Number.isInteger(rawOrder.remainingMonths)) {
+        const elapsedTurns = state.turn - (rawOrder.createdTurn as number);
+        if ((rawOrder.remainingMonths as number) !== (rawOrder.durationMonths as number) - elapsedTurns) {
+          add(`${path}.remainingMonths`, 'must agree with durationMonths and elapsed campaign turns');
+        }
+        if (Number.isInteger(rawOrder.createdYear) && Number.isInteger(rawOrder.createdMonth)) {
+          const createdCalendarIndex = (rawOrder.createdYear as number) * 12 + (rawOrder.createdMonth as number) - 1;
+          const currentCalendarIndex = state.calendar.year * 12 + state.calendar.month - 1;
+          if (currentCalendarIndex - createdCalendarIndex !== elapsedTurns) {
+            add(`${path}.createdYear`, 'creation date must agree with createdTurn and the current calendar');
+          }
+        }
+      }
+    }
+  }
+  if (!Number.isSafeInteger(state.nextDiplomaticOrderSerial) || state.nextDiplomaticOrderSerial < 1) {
+    add('nextDiplomaticOrderSerial', 'must be a positive safe integer');
+  } else if (state.nextDiplomaticOrderSerial <= maxDiplomaticOrderSerial) {
+    add('nextDiplomaticOrderSerial', 'must be greater than every existing diplomatic order serial');
+  }
   if (state.phase === 'ended' && activeOrderByOfficerId.size > 0) {
-    add('strategicOrders', 'must be empty when the campaign has ended');
+    add('strategicOrders', 'all active campaign orders must be empty when the campaign has ended');
   }
 
   const rawIntelReports = (state as { intelReports?: unknown }).intelReports;
@@ -203,6 +295,21 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       }
       if (rawReport.satrapName !== undefined && typeof rawReport.satrapName !== 'string') {
         add(`${path}.satrapName`, 'must be a string when present');
+      }
+      if (rawReport.officerIds !== undefined) {
+        if (!Array.isArray(rawReport.officerIds)) {
+          add(`${path}.officerIds`, 'must be an array when present');
+        } else {
+          const officerIds = rawReport.officerIds.filter((officerId): officerId is string => typeof officerId === 'string');
+          if (officerIds.length !== rawReport.officerIds.length) add(`${path}.officerIds`, 'must contain only strings');
+          if (new Set(officerIds).size !== officerIds.length) add(`${path}.officerIds`, 'contains duplicate officer ids');
+          for (const officerId of officerIds) {
+            if (!state.officers[officerId]) add(`${path}.officerIds`, `unknown officer: ${officerId}`);
+          }
+          if (Number.isInteger(rawReport.officerCount) && officerIds.length !== rawReport.officerCount) {
+            add(`${path}.officerIds`, 'must agree with officerCount');
+          }
+        }
       }
     }
   }
@@ -348,10 +455,12 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       add(`${path}.cityId`, 'serving officer must be either stationed or assigned exactly one active strategic order');
     }
     if (activeOrderId) {
-      const order = isRecord(rawStrategicOrders) ? rawStrategicOrders[activeOrderId] : undefined;
-      if (officer.status !== 'serving') add(`${path}.status`, 'only serving officers may have active strategic orders');
+      const strategicOrder = isRecord(rawStrategicOrders) ? rawStrategicOrders[activeOrderId] : undefined;
+      const diplomaticOrder = isRecord(rawDiplomaticOrders) ? rawDiplomaticOrders[activeOrderId] : undefined;
+      const order = strategicOrder ?? diplomaticOrder;
+      if (officer.status !== 'serving') add(`${path}.status`, 'only serving officers may have active campaign orders');
       if (isRecord(order) && order.factionId !== officer.factionId) {
-        add(`${path}.factionId`, 'must match the active strategic order faction');
+        add(`${path}.factionId`, 'must match the active campaign order faction');
       }
     }
     if (officer.status === 'serving' && officer.cityId && state.cities[officer.cityId]?.ownerId !== officer.factionId) {

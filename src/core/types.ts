@@ -131,6 +131,8 @@ export type CityIntelReport = {
   defense: number;
   publicLoyalty?: number;
   satrapName?: string;
+  /** Officer identities observed at the time of reconnaissance. */
+  officerIds?: string[];
   officerCount: number;
   totalTroops: number;
 };
@@ -157,6 +159,26 @@ export type StrategicOrder = {
   };
 };
 
+export type DiplomaticOrderKind = 'alienate' | 'canvass' | 'counterespionage' | 'induce';
+
+export type DiplomaticOrder = {
+  id: string;
+  kind: DiplomaticOrderKind;
+  factionId: string;
+  officerId: string;
+  sourceCityId: string;
+  targetOfficerId: string;
+  targetFactionId: string;
+  /** Target location when issued; used for intelligence evidence and invalidation logs. */
+  targetCityId: string;
+  createdTurn: number;
+  createdYear: number;
+  createdMonth: number;
+  durationMonths: number;
+  remainingMonths: number;
+  moneyCost: number;
+};
+
 export type GameState = {
   schemaVersion: 4;
   scenario?: {
@@ -180,6 +202,9 @@ export type GameState = {
   /** Active multi-month strategic orders. Their officers are serving but not stationed in a city. */
   strategicOrders: Record<string, StrategicOrder>;
   nextStrategicOrderSerial: number;
+  /** Active multi-month diplomacy orders. Their executors are serving but temporarily away from a city. */
+  diplomaticOrders: Record<string, DiplomaticOrder>;
+  nextDiplomaticOrderSerial: number;
   /** Free officers whose whereabouts are known to the player. */
   discoveredOfficerIds: string[];
   /** Player intelligence snapshots keyed by target city id. */

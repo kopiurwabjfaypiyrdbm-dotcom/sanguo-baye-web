@@ -75,22 +75,22 @@ export function parseSave(input: string | unknown): SaveEnvelope {
 export function migrateGameState(input: unknown): GameState {
   if (!isRecord(input)) throw new Error('存档中的游戏状态无效');
   if (input.schemaVersion === 4) {
-    return restoreLegacyAppearanceSchedules(normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(
+    return restoreLegacyAppearanceSchedules(normalizeDiplomaticOrderLayer(normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(
       releaseLandlessFactionOfficers(structuredClone(input) as GameState),
-    ))));
+    )))));
   }
   if (input.schemaVersion === 3) {
-    return restoreLegacyAppearanceSchedules(normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(
+    return restoreLegacyAppearanceSchedules(normalizeDiplomaticOrderLayer(normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(
       releaseLandlessFactionOfficers({
         ...structuredClone(input),
         schemaVersion: 4,
         strategicOrders: {},
         nextStrategicOrderSerial: 1,
       } as GameState),
-    ))));
+    )))));
   }
   if (input.schemaVersion === 2) {
-    return restoreLegacyAppearanceSchedules(normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(
+    return restoreLegacyAppearanceSchedules(normalizeDiplomaticOrderLayer(normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(
       releaseLandlessFactionOfficers({
         ...structuredClone(input),
         schemaVersion: 4,
@@ -98,19 +98,35 @@ export function migrateGameState(input: unknown): GameState {
         strategicOrders: {},
         nextStrategicOrderSerial: 1,
       } as GameState),
-    ))));
+    )))));
   }
   if (input.schemaVersion === 1) {
-    return restoreLegacyAppearanceSchedules(normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(releaseLandlessFactionOfficers({
+    return restoreLegacyAppearanceSchedules(normalizeDiplomaticOrderLayer(normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(releaseLandlessFactionOfficers({
       ...structuredClone(input),
       schemaVersion: 4,
       discoveredOfficerIds: Array.isArray(input.discoveredOfficerIds) ? [...input.discoveredOfficerIds] : [],
       intelReports: {},
       strategicOrders: {},
       nextStrategicOrderSerial: 1,
-    } as GameState)))));
+    } as GameState))))));
   }
   throw new Error(`不支持的游戏状态版本：${String(input.schemaVersion)}`);
+}
+
+function normalizeDiplomaticOrderLayer(state: GameState): GameState {
+  const raw = state as GameState & {
+    diplomaticOrders?: unknown;
+    nextDiplomaticOrderSerial?: unknown;
+  };
+  return {
+    ...state,
+    diplomaticOrders: raw.diplomaticOrders === undefined
+      ? {}
+      : raw.diplomaticOrders as GameState['diplomaticOrders'],
+    nextDiplomaticOrderSerial: raw.nextDiplomaticOrderSerial === undefined
+      ? 1
+      : raw.nextDiplomaticOrderSerial as number,
+  };
 }
 
 function restoreLegacyAppearanceSchedules(state: GameState): GameState {

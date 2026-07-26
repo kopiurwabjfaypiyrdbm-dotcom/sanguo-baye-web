@@ -68,6 +68,7 @@ import { RulerScreen, ScenarioScreen, TitleScreen } from './CampaignSetup';
 import { CityPanel } from './CityPanel';
 import { TacticalBattleScreen } from './TacticalBattleScreen';
 import { getFactionStrategicOrders, issueTransportOrder } from '../core/strategicOrders';
+import { getFactionDiplomaticOrders, issueDiplomaticOrder } from '../core/diplomaticOrders';
 
 type AppScreen = 'title' | 'scenario' | 'ruler' | 'game' | 'battle';
 const scenarioOptions = getScenarioOptions();
@@ -111,6 +112,10 @@ export function App() {
   }, [tacticalBattle, selectedTacticalUnitId]);
   const playerStrategicOrders = useMemo(
     () => getFactionStrategicOrders(state, state.playerFactionId),
+    [state],
+  );
+  const playerDiplomaticOrders = useMemo(
+    () => getFactionDiplomaticOrders(state, state.playerFactionId),
     [state],
   );
 
@@ -587,6 +592,24 @@ export function App() {
             )}
           </div>
         )}
+        {playerDiplomaticOrders.length > 0 && (
+          <div className="strategic-order-strip" aria-label="执行中的谋略命令">
+            <strong>谋略</strong>
+            {playerDiplomaticOrders.slice(0, 3).map((order) => (
+              <span key={order.id}>{describeDiplomaticOrder(state, order)}</span>
+            ))}
+            {playerDiplomaticOrders.length > 3 && (
+              <details className="strategic-order-overflow">
+                <summary>另有 {playerDiplomaticOrders.length - 3} 项谋略</summary>
+                <div>
+                  {playerDiplomaticOrders.slice(3).map((order) => (
+                    <span key={order.id}>{describeDiplomaticOrder(state, order)}</span>
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
+        )}
         <div className="map-host" ref={mapHost} />
         {feedback && (
           <div className={`action-feedback ${feedback.kind}`} role={feedback.kind === 'error' ? 'alert' : 'status'}>
@@ -666,6 +689,10 @@ export function App() {
         onRecon={(sourceCityId, targetCityId, officerId) => applyPlayerAction(
           (current) => reconnoitreCity(current, { sourceCityId, targetCityId, officerId }),
           targetCityId,
+        )}
+        onDiplomacy={(kind, sourceCityId, officerId, targetOfficerId) => applyPlayerAction(
+          (current) => issueDiplomaticOrder(current, { kind, sourceCityId, officerId, targetOfficerId }),
+          sourceCityId,
         )}
         onAttack={(sourceCityId, targetCityId, officerIds, provisions) => requestAttack({
           sourceCityId,
@@ -814,4 +841,20 @@ function describeStrategicOrder(
   const timing = `预计 ${formatFutureMonth(state.calendar, order.remainingMonths)}${order.kind === 'transport' ? '完成' : '抵达'}`;
   const cargo = order.kind === 'transport' ? ` · ${formatOrderCargo(order.cargo)}` : '';
   return `${kind} · ${officer} · ${source} → ${target} · ${formatRouteWaypoints(state, order.routeCityIds)} · ${timing}${cargo}`;
+}
+
+function describeDiplomaticOrder(
+  state: GameState,
+  order: GameState['diplomaticOrders'][string],
+): string {
+  const labels = {
+    alienate: '离间',
+    canvass: '招揽',
+    counterespionage: '策反',
+    induce: '劝降',
+  } as const;
+  const officer = state.officers[order.officerId]?.name ?? order.officerId;
+  const target = state.officers[order.targetOfficerId]?.name ?? order.targetOfficerId;
+  const source = state.cities[order.sourceCityId]?.name ?? order.sourceCityId;
+  return `${labels[order.kind]} · ${officer} · ${source} → ${target} · 已付 ${order.moneyCost} 金 · 预计 ${formatFutureMonth(state.calendar, order.remainingMonths)}回报`;
 }

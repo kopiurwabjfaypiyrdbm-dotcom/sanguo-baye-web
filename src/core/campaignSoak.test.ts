@@ -4,11 +4,13 @@ import { parseSave, serializeSave } from './saveGame';
 import { advanceTurn, finishTurn } from './turn';
 import type { GameState } from './types';
 import { validateGameState } from './validation';
+import { createSampleState } from './sampleState';
+import { updateCitySatraps } from './administration';
 
-function runCampaign(state: GameState, months: number): GameState {
+function runCampaign(state: GameState, months: number, reloadEverySixMonths = true): GameState {
   let next = state;
   for (let month = 0; month < months && next.phase !== 'ended'; month += 1) {
-    if (month > 0 && month % 6 === 0) {
+    if (reloadEverySixMonths && month > 0 && month % 6 === 0) {
       next = parseSave(serializeSave(next, `长期回归第 ${month} 月`)).state;
     }
     next = advanceTurn(next);
@@ -77,5 +79,22 @@ describe('long campaign soak', () => {
 
     expect(first).toEqual(second);
     expect(first.phase === 'ended' || first.turn === 49).toBe(true);
+  });
+
+  it('keeps a full AI diplomacy campaign identical across periodic reloads', () => {
+    const create = () => {
+      const state = createSampleState();
+      state.officers['xiahou-dun'].loyalty = 0;
+      state.officers['zhuge-liang'].cityId = 'chengdu';
+      return updateCitySatraps(state);
+    };
+
+    const uninterrupted = runCampaign(create(), 24, false);
+    const reloaded = runCampaign(create(), 24, true);
+
+    expect(reloaded).toEqual(uninterrupted);
+    expect(reloaded.logs.some((log) =>
+      ['离间', '招揽', '策反', '劝降'].some((keyword) => log.message.includes(keyword)))).toBe(true);
+    expect(validateGameState(reloaded)).toEqual([]);
   });
 });

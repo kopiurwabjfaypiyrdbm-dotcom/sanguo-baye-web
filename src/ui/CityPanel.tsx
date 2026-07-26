@@ -26,7 +26,7 @@ import {
   getPlunderAvailability,
   getTradeAvailability,
 } from '../core/cityCommands';
-import type { GameState } from '../core/types';
+import type { DiplomaticOrderKind, GameState } from '../core/types';
 import {
   RECRUIT_OFFICER_STAMINA_COST,
   REWARD_MONEY_COST,
@@ -50,6 +50,12 @@ import {
   getTransportAvailability,
 } from '../core/strategicOrders';
 import { CITY_CONDITION_LABELS } from '../core/cityEvents';
+import {
+  DIPLOMACY_MONEY_COST,
+  DIPLOMACY_STAMINA_COST,
+  getDiplomacyTargets,
+  getDiplomaticOrderAvailability,
+} from '../core/diplomaticOrders';
 
 type CityPanelProps = {
   state: GameState;
@@ -80,6 +86,12 @@ type CityPanelProps = {
   onAppoint: (cityId: string, officerId: string) => void;
   onDistribute: (cityId: string, officerId: string, targetTroops: number) => void;
   onRecon: (sourceCityId: string, targetCityId: string, officerId: string) => void;
+  onDiplomacy: (
+    kind: DiplomaticOrderKind,
+    sourceCityId: string,
+    officerId: string,
+    targetOfficerId: string,
+  ) => void;
   onAttack: (sourceCityId: string, targetCityId: string, officerIds: string[], provisions: number) => void;
 };
 
@@ -115,6 +127,7 @@ export function CityPanel({
   onAppoint,
   onDistribute,
   onRecon,
+  onDiplomacy,
   onAttack,
 }: CityPanelProps) {
   const city = state.cities[cityId] ?? Object.values(state.cities)[0];
@@ -137,6 +150,11 @@ export function CityPanel({
     [state, cityId],
   );
   const reconTargets = useMemo(() => getReconTargets(state, city.id), [state, city.id]);
+  const [selectedDiplomacyKind, setSelectedDiplomacyKind] = useState<DiplomaticOrderKind>('alienate');
+  const diplomacyTargets = useMemo(
+    () => getDiplomacyTargets(state, selectedDiplomacyKind, state.playerFactionId),
+    [state, selectedDiplomacyKind],
+  );
   const [selectedOfficerId, setSelectedOfficerId] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
   const [selectedMoveTargetId, setSelectedMoveTargetId] = useState('');
@@ -145,6 +163,7 @@ export function CityPanel({
   const [transportReserveTroops, setTransportReserveTroops] = useState('0');
   const [selectedRecruitTargetId, setSelectedRecruitTargetId] = useState('');
   const [selectedReconTargetId, setSelectedReconTargetId] = useState('');
+  const [selectedDiplomacyTargetId, setSelectedDiplomacyTargetId] = useState('');
   const [distributionTarget, setDistributionTarget] = useState('0');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [selectedCaptiveId, setSelectedCaptiveId] = useState('');
@@ -193,6 +212,12 @@ export function CityPanel({
       setSelectedReconTargetId(reconTargets[0]?.id ?? '');
     }
   }, [reconTargets, selectedReconTargetId]);
+
+  useEffect(() => {
+    if (!diplomacyTargets.some((target) => target.id === selectedDiplomacyTargetId)) {
+      setSelectedDiplomacyTargetId(diplomacyTargets[0]?.id ?? '');
+    }
+  }, [diplomacyTargets, selectedDiplomacyTargetId]);
 
   useEffect(() => {
     if (!discoveredFreeOfficers.some((officer) => officer.id === selectedRecruitTargetId)) {
@@ -365,6 +390,20 @@ export function CityPanel({
   const displayedReconAvailability = disabled
     ? { allowed: false as const, reason: '当前有待处理操作，暂时不能执行城池命令' }
     : reconAvailability;
+  const diplomacyAvailability = selectedOfficer && selectedDiplomacyTargetId
+    ? getDiplomaticOrderAvailability(state, {
+      kind: selectedDiplomacyKind,
+      sourceCityId: city.id,
+      officerId: selectedOfficer.id,
+      targetOfficerId: selectedDiplomacyTargetId,
+    })
+    : {
+      allowed: false as const,
+      reason: diplomacyTargets.length === 0 ? '没有基于本月情报可选择的合法目标' : '请选择执行武将',
+    };
+  const displayedDiplomacyAvailability = disabled
+    ? { allowed: false as const, reason: '当前有待处理操作，暂时不能执行城池命令' }
+    : diplomacyAvailability;
 
   useEffect(() => {
     const availableIds = new Set(availableAttackers.map((officer) => officer.id));
@@ -912,6 +951,61 @@ export function CityPanel({
               </div>
             )}
 
+            <p className="command-group-title">谋略</p>
+            <div className="diplomacy-command-card">
+              <label className="command-field">
+                <span>谋略类型</span>
+                <select
+                  value={selectedDiplomacyKind}
+                  onChange={(event) => setSelectedDiplomacyKind(event.target.value as DiplomaticOrderKind)}
+                >
+                  <option value="alienate">离间 · 降低敌将忠诚</option>
+                  <option value="canvass">招揽 · 争取敌方普通武将</option>
+                  <option value="counterespionage">策反 · 促使敌方太守自立</option>
+                  <option value="induce">劝降 · 接收弱小敌对势力</option>
+                </select>
+              </label>
+              <label className="command-field">
+                <span>本月侦察确认的目标</span>
+                <select
+                  value={selectedDiplomacyTargetId}
+                  onChange={(event) => setSelectedDiplomacyTargetId(event.target.value)}
+                  disabled={diplomacyTargets.length === 0}
+                >
+                  {diplomacyTargets.length === 0 && <option value="">暂无本月情报支持的合法目标</option>}
+                  {diplomacyTargets.map((target) => (
+                    <option value={target.id} key={target.id}>
+                      {target.name}
+                      {' · '}
+                      {state.factions[target.factionId]?.name ?? '未知势力'}
+                      {' · '}
+                      {target.cityId ? state.cities[target.cityId]?.name : '行踪不明'}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="command-hint" id="diplomacy-command-hint">
+                {displayedDiplomacyAvailability.allowed
+                  ? `耗时 1 个月，消耗 ${DIPLOMACY_MONEY_COST} 金、${DIPLOMACY_STAMINA_COST} 体力和本月行动；${diplomacyFactors(selectedDiplomacyKind)}`
+                  : `暂不可执行：${displayedDiplomacyAvailability.reason}`}
+                {' '}
+                不显示精确成功率；旧情报不能继续锁定人物。
+              </p>
+              <button
+                type="button"
+                disabled={!displayedDiplomacyAvailability.allowed}
+                aria-describedby="diplomacy-command-hint"
+                onClick={() => onDiplomacy(
+                  selectedDiplomacyKind,
+                  city.id,
+                  selectedOfficerId,
+                  selectedDiplomacyTargetId,
+                )}
+              >
+                发起{diplomacyLabel(selectedDiplomacyKind)}
+              </button>
+            </div>
+
             <p className="command-group-title">军事</p>
             <div className="recon-command-row">
               <label className="command-field">
@@ -1039,6 +1133,21 @@ function describeItem(item: GameState['items'][string]): string {
     item.moveBonus > 0 ? `移动 +${item.moveBonus}` : '',
   ].filter(Boolean);
   return bonuses.join(' · ') || '无属性';
+}
+
+function diplomacyLabel(kind: DiplomaticOrderKind): string {
+  return {
+    alienate: '离间',
+    canvass: '招揽',
+    counterespionage: '策反',
+    induce: '劝降',
+  }[kind];
+}
+
+function diplomacyFactors(kind: DiplomaticOrderKind): string {
+  return kind === 'induce'
+    ? '结果受双方智力、目标性格与势力城池差距影响。'
+    : '结果受双方智力、目标忠诚与性格影响。';
 }
 
 function intelValue(isCurrent: boolean, current: number, observed: number | undefined): string {

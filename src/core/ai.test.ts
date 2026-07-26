@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planAiAction, runAiFactionTurn } from './ai';
+import { planAiAction, runAiFactionTurn, useDiplomaticOpportunity } from './ai';
 import { createSampleState } from './sampleState';
 import { beginAiPhase } from './turn';
 import { validateGameState } from './validation';
@@ -11,6 +11,42 @@ import {
 } from './strategicOrders';
 
 describe('basic AI', () => {
+  it('uses a bounded diplomacy opportunity against a low-loyalty ordinary officer', () => {
+    const state = createSampleState();
+    state.phase = 'ai';
+    state.activeFactionId = 'liu-bei';
+    state.officers['xiahou-dun'].loyalty = 0;
+    state.officers['zhuge-liang'].cityId = 'chengdu';
+
+    const next = useDiplomaticOpportunity(state, 'liu-bei');
+
+    expect(next).toBeDefined();
+    expect(Object.values(next!.diplomaticOrders)).toHaveLength(1);
+    expect(Object.values(next!.diplomaticOrders)[0]).toMatchObject({
+      factionId: 'liu-bei',
+      targetOfficerId: 'xiahou-dun',
+    });
+  });
+
+  it('reaches diplomacy through the normal bounded AI turn pipeline', () => {
+    const state = createSampleState();
+    state.phase = 'ai';
+    state.activeFactionId = 'liu-bei';
+    state.officers['xiahou-dun'].loyalty = 0;
+    state.officers['zhuge-liang'].cityId = 'chengdu';
+
+    const next = runAiFactionTurn(state);
+
+    expect(Object.values(next.diplomaticOrders)).toEqual([
+      expect.objectContaining({
+        factionId: 'liu-bei',
+        targetOfficerId: 'xiahou-dun',
+      }),
+    ]);
+    expect(next.logs.some((log) => log.message.includes('奉命对夏侯惇执行'))).toBe(true);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
   it('skips when no stationed officer can attack', () => {
     const state = beginAiPhase(createSampleState());
     for (const officer of Object.values(state.officers)) {

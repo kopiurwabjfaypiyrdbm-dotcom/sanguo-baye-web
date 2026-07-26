@@ -1,13 +1,14 @@
 import { appendLogs } from './logs';
 import type { GameState } from './types';
 import { releaseLandlessFactionOfficers, terminateAllStrategicOrders } from './administration';
+import { terminateAllDiplomaticOrders } from './diplomaticOrders';
 
 export function evaluateOutcome(state: GameState): GameState {
   if (state.phase === 'ended') return state;
   const normalized = releaseLandlessFactionOfficers(state);
   const playerHasCity = Object.values(normalized.cities).some((city) => city.ownerId === normalized.playerFactionId);
   if (!playerHasCity) {
-    const settled = terminateAllStrategicOrders(normalized);
+    const settled = terminateAllDiplomaticOrders(terminateAllStrategicOrders(normalized));
     return appendLogs(
       { ...settled, campaignStarted: true, phase: 'ended', activeFactionId: settled.playerFactionId, outcome: 'defeat' },
       'system',
@@ -20,7 +21,7 @@ export function evaluateOutcome(state: GameState): GameState {
     return city.ownerId !== normalized.playerFactionId && faction && !faction.isNeutral;
   });
   if (!enemyHasCity) {
-    const settled = terminateAllStrategicOrders(normalized);
+    const settled = terminateAllDiplomaticOrders(terminateAllStrategicOrders(normalized));
     return appendLogs(
       { ...settled, campaignStarted: true, phase: 'ended', activeFactionId: settled.playerFactionId, outcome: 'victory' },
       'system',

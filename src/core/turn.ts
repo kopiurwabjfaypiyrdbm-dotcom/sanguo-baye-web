@@ -9,6 +9,7 @@ import { evaluateOutcome } from './outcome';
 import { advanceStrategicOrders } from './strategicOrders';
 import { settleCityEvents } from './cityEvents';
 import { settleAnnualProgression } from './annualProgression';
+import { advanceDiplomaticOrders } from './diplomaticOrders';
 
 export type InteractiveTurnProgress = {
   state: GameState;
@@ -47,7 +48,8 @@ export function finishTurn(state: GameState): GameState {
     actedOfficerIds: [],
   };
   const afterOrders = advanceStrategicOrders(settling, { deferValidation: true });
-  const afterAnnualProgression = settleAnnualProgression(afterOrders, state.calendar);
+  const afterDiplomacy = advanceDiplomaticOrders(afterOrders, { deferValidation: true });
+  const afterAnnualProgression = settleAnnualProgression(afterDiplomacy, state.calendar);
   const grown = applyMonthlyGrowth(afterAnnualProgression);
   const afterEvents = settleCityEvents(grown);
   const next = evaluateOutcome(updateCitySatraps(afterEvents));

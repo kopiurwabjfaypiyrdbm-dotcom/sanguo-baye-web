@@ -734,6 +734,35 @@ select:focus-visible,
   border-color: rgba(48, 66, 57, 0.18);
 }
 
+.diplomacy-command-card {
+  display: grid;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 10px;
+  background: linear-gradient(135deg, rgba(116, 91, 55, .12), rgba(75, 101, 82, .08));
+  border: 1px solid rgba(119, 91, 53, .3);
+  border-radius: 4px;
+}
+
+.diplomacy-command-card .command-field,
+.diplomacy-command-card .command-hint { margin-top: 0; }
+
+.diplomacy-command-card > button {
+  min-height: 35px;
+  color: #fff1d4;
+  font-weight: 800;
+  background: #765737;
+  border: 1px solid #947348;
+  border-radius: 4px;
+}
+
+.diplomacy-command-card > button:hover { background: #866540; }
+.diplomacy-command-card > button:disabled {
+  color: #918d80;
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(48, 66, 57, 0.18);
+}
+
 .recon-command-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 72px;

@@ -5,7 +5,7 @@ import {
   creditStrategicCargoAcrossCities,
   formatStrategicCargo,
 } from './strategicOrderCargo';
-import type { City, GameState, Officer, StrategicOrder } from './types';
+import type { City, DiplomaticOrder, GameState, Officer, StrategicOrder } from './types';
 
 export function updateCitySatraps(state: GameState): GameState {
   const cities = Object.fromEntries(
@@ -37,14 +37,21 @@ export function updateCitySatraps(state: GameState): GameState {
 export function releaseLandlessFactionOfficers(state: GameState): GameState {
   const landholdingFactionIds = new Set(Object.values(state.cities).map((city) => city.ownerId));
   const neutralFactionId = Object.values(state.factions).find((faction) => faction.isNeutral)?.id;
+  const diplomaticOrders = state.diplomaticOrders ?? {};
   const hasLandlessServingOfficer = Object.values(state.officers).some((officer) =>
     officer.status === 'serving' && !landholdingFactionIds.has(officer.factionId),
   );
-  const orderByOfficerId = new Map(Object.values(state.strategicOrders).map((order) => [order.officerId, order]));
+  const orderByOfficerId = new Map<string, StrategicOrder | DiplomaticOrder>([
+    ...Object.values(state.strategicOrders).map((order) => [order.officerId, order] as const),
+    ...Object.values(diplomaticOrders).map((order) => [order.officerId, order] as const),
+  ]);
   const landlessOrderIds = new Set(Object.values(state.strategicOrders)
     .filter((order) => !landholdingFactionIds.has(order.factionId))
     .map((order) => order.id));
-  if (!hasLandlessServingOfficer && landlessOrderIds.size === 0) return state;
+  const landlessDiplomaticOrderIds = new Set(Object.values(diplomaticOrders)
+    .filter((order) => !landholdingFactionIds.has(order.factionId))
+    .map((order) => order.id));
+  if (!hasLandlessServingOfficer && landlessOrderIds.size === 0 && landlessDiplomaticOrderIds.size === 0) return state;
   if (!neutralFactionId) throw new Error('Landless factions cannot release officers without a neutral faction');
 
   const cities = { ...state.cities };
@@ -58,6 +65,14 @@ export function releaseLandlessFactionOfficers(state: GameState): GameState {
   const strategicOrders = Object.fromEntries(Object.values(state.strategicOrders)
     .filter((order) => !landlessOrderIds.has(order.id))
     .map((order) => [order.id, order]));
+  const remainingDiplomaticOrders = Object.fromEntries(Object.values(diplomaticOrders)
+    .filter((order) => !landlessDiplomaticOrderIds.has(order.id))
+    .map((order) => [order.id, order]));
+  for (const order of Object.values(diplomaticOrders).filter(
+    (candidate) => landlessDiplomaticOrderIds.has(candidate.id),
+  )) {
+    messages.push(`${order.id}随所属势力灭亡而失效。`);
+  }
   const officers = Object.fromEntries(Object.values(state.officers).map((officer) => [
     officer.id,
     (() => {
@@ -78,7 +93,13 @@ export function releaseLandlessFactionOfficers(state: GameState): GameState {
       };
     })(),
   ]));
-  const next = { ...state, cities, officers, strategicOrders };
+  const next = {
+    ...state,
+    cities,
+    officers,
+    strategicOrders,
+    diplomaticOrders: remainingDiplomaticOrders,
+  };
   return messages.length > 0 ? appendLogs(next, 'turn', messages) : next;
 }
 

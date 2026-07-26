@@ -101,6 +101,7 @@ export function createCityIntelReport(state: GameState, cityId: string): CityInt
     defense: city.defense,
     publicLoyalty: city.publicLoyalty,
     satrapName: satrap?.name,
+    officerIds: officers.map((candidate) => candidate.id).sort((left, right) => left.localeCompare(right)),
     officerCount: officers.length,
     totalTroops: officers.reduce((sum, candidate) => sum + candidate.troops, 0),
   };

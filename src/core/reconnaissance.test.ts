@@ -36,6 +36,7 @@ describe('strategic reconnaissance', () => {
       reserveTroops: state.cities.hanzhong.reserveTroops,
     });
     expect(report.officerCount).toBeGreaterThan(0);
+    expect(report.officerIds).toContain('guan-yu');
     expect(report.totalTroops).toBeGreaterThan(0);
     expect(next.cities.luoyang.money).toBe(sourceMoney - RECON_MONEY_COST);
     expect(next.officers['cao-cao'].stamina).toBe(stamina - RECON_STAMINA_COST);

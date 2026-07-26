@@ -19,6 +19,7 @@
 | 月度结算与城市事件 | `tactic.c:ConditionUpdate`、`infdeal.c:CitiesUpDataDate/EventStateDeal/RandEvents/PersonUpDatadate/GoodsUpDatadate` | `economy.ts`、`cityEvents.ts`、`annualProgression.ts` | 已取样 | 已接入季度防灾衰减、军粮前驻军损失、四类状态、固定比较方向、年度全员年龄和严格相等的人物登场；四时期无未来道具日程，合成状态覆盖道具年度入库。移植版扩大 `SearchCondition` 后的异常索引不作为原设备 ABI |
 | 战场进入 | `citycmdd.c`、`Fight.c`、`g_FgtParam`、`fight.h:FIGHT_ORDER_MAX` | `core/tacticalBattle.ts:createTacticalBattle`；`ui/App.tsx` | 临时实现 | 已按固定参考限制每方最多 10 人；继续对照原版战场编号、进攻方向与部署位置；当前结构化战场为现代临时地图 |
 | 战败俘虏与招降 | `citycmdd.c:FightResultDeal/TheLoserDeal/HoldCaptive/LostEscape/KingOverDeal`；`citycmd.c:SurrenderDrv` | `core/battle.ts`；`core/captiveCommands.ts`；`ui/CityPanel.tsx` | 临时实现 | 已接入确定性捕获、羁押、招降、释放和 AI；战死、装备缴获、君主继承选择与原版 U8 概率回绕后置 |
+| 外交谋略 | `citycmd.c:AlienateDrv/CanvassDrv/CounterespiongeDrv/InduceDrv`；`citycmdc.c:*Make`；`tactic.c:ComputerTacticDiplomatism`；`attribute.h` | `compat/baye/diplomacy.ts`；`core/diplomaticOrders.ts`；`ui/CityPanel.tsx` | 已定位 | 已接入离间、招揽、策反和劝降的固定比较顺序、整数宽度、性格阈值、隐藏对话随机调用与主要归属结果；一月耗时、4 体力、50 金、情报锁定和失效/失地闭包为现代规则。反间、朝贡、联盟与婚姻不在范围 |
 | 攻防属性 | `FgtCount.c:BuiltAtkAttr`、`.lib:dFgtLandF` | `compat/baye/tacticalBattle.ts`；`core/tacticalBattle.ts:attackTacticalUnit` | 差异验证 | 扩大端到端地形和装备兵种样本 |
 | 普通攻击伤害 | `FgtCount.c:CountAtkHurt` | `compat/baye/tacticalBattle.ts`；`core/tacticalBattle.ts:attackTacticalUnit` | 差异验证 | 兼容公式继续使用原版 U16 攻击兵力输入，战术会话保留现代战略层完整兵力以避免截断写回；继续复核原版兵力上限和战后经验值 |
 | 战术计谋、天气与状态 | `fight.h`；`Fight.c:FgtDealBout`；`FightSub.c:FgtJNAction/FgtChgWeather`；`FgtCount.c:CountSklHurt/CountBaseAttr` | `core/tacticalBattle.ts`；`ui/TacticalBattleScreen.tsx` | 临时实现 | 已接入五天气、火计/扰乱/激励、混乱和 AI；原版技能资源表、完整状态、地形与兵种倍率后置 |
@@ -30,8 +31,8 @@
 | 战场部署与目标 | `citycmdd.c:g_FgtParam`、`Fight.c:FgtDealMan/FgtDealCmp` | 按战略城市方位布阵、两类结构化战场、占城后结束攻方阶段判胜 | 有意变化 | 原版在进攻单位进入城格后立即判胜；Web 版增加一次阶段确认，并等待可再分发的战场编号/部署证据 |
 | 战术状态与反馈 | `Fight.c:FgtChkEnd`、`FightSub.c`战斗日与地形接口 | `core/tacticalBattle.ts`（普通攻击、计谋、天气、混乱、待命、阶段、粮草、胜因）；`ui/TacticalBattleScreen.tsx` | 临时实现 | 核对主将败退、战斗日/粮草与攻守方阶段语义 |
 | 战斗 AI | `FgtPkAi.c:FgtGetMCmd/FgtCmpMove/FgtAtkCmd` | `core/tacticalBattle.ts:runBasicTacticalAi`（击破优先、可攻击位置、攻城/守点与粮草紧迫度） | 临时实现 | 录制固定战场 AI 决策并替换当前确定性启发式 |
-| 战略 AI | `gamEng.c`、城市命令流程 | `ai.ts`（兵力均衡、征兵、开垦、搜寻、边境支援、出征） | 临时实现 | 定位电脑月度命令顺序并逐项替换临时优先级 |
-| 存档格式 | `fsys.c`、数据管理代码 | `saveGame.ts`、`saveStorage.ts`（schema 4、情报快照、在途战略命令、现代 Web 存档及 AI 守城战前检查点） | 有意变化 | schema 1/2/3 迁移已覆盖；识别原版头部、版本和数据段；保持与现代存档隔离；当前不保存战中战术局面 |
+| 战略 AI | `gamEng.c`、`tactic.c:ComputerTacticDiplomatism`、城市命令流程 | `ai.ts`（兵力均衡、征兵、开垦、搜寻、谋略、边境支援、出征） | 临时实现 | AI 只在低忠诚机会且不抽空前线唯一太守时使用谋略；继续定位电脑月度命令顺序并逐项替换临时优先级 |
+| 存档格式 | `fsys.c`、数据管理代码 | `saveGame.ts`、`saveStorage.ts`（schema 4、人物名单情报快照、在途战略/谋略命令、现代 Web 存档及 AI 守城战前检查点） | 有意变化 | schema 1/2/3 与阶段前 schema 4 默认层迁移已覆盖；识别原版头部、版本和数据段；保持与现代存档隔离；当前不保存战中战术局面 |
 | 随机数（Web 移植） | `comIn.c:rand_r`、WASM `bayeRand` | `compat/baye/rng.ts` | 差异验证 | 从锁定提交重生成 WASM 样本 |
 | 随机数（BBK 设备） | `fsys.h:SysRand` | 无 | 已定位 | 非阻塞考据；取得可信实现或设备序列后再新增参考模式 |
 | 经典 LCD 表现 | `gamEng.c`、`exportjs.c`、LCD 缓冲 | React 开局流程与面板；Phaser 战略地图 | 有意变化 | 采集城市命令界面，约束下一阶段操作顺序 |

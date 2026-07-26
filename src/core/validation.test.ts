@@ -203,4 +203,71 @@ describe('game state validation', () => {
       }),
     ]));
   });
+
+  it('rejects corrupt diplomacy executors and intelligence officer snapshots', () => {
+    const state = createSampleState();
+    state.diplomaticOrders['diplomatic-order-1'] = {
+      id: 'diplomatic-order-1',
+      kind: 'alienate',
+      factionId: 'cao-cao',
+      officerId: 'xun-yu',
+      sourceCityId: 'xuchang',
+      targetOfficerId: 'zhang-fei',
+      targetFactionId: 'liu-bei',
+      targetCityId: 'jiangzhou',
+      createdTurn: state.turn,
+      createdYear: state.calendar.year,
+      createdMonth: state.calendar.month,
+      durationMonths: 1,
+      remainingMonths: 1,
+      moneyCost: 50,
+    };
+    state.nextDiplomaticOrderSerial = 2;
+    state.officers['xun-yu'] = {
+      ...state.officers['xun-yu'],
+      factionId: 'liu-bei',
+      cityId: undefined,
+    };
+    state.intelReports.jiangzhou = {
+      cityId: 'jiangzhou',
+      observedTurn: state.turn,
+      observedYear: state.calendar.year,
+      observedMonth: state.calendar.month,
+      population: 1,
+      money: 1,
+      food: 1,
+      reserveTroops: 1,
+      farming: 1,
+      commerce: 1,
+      defense: 1,
+      officerIds: ['zhang-fei', 'missing-officer'],
+      officerCount: 1,
+      totalTroops: 1,
+    };
+
+    expect(validateGameState(state)).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        path: 'officers.xun-yu.factionId',
+        message: 'must match the active campaign order faction',
+      }),
+      expect.objectContaining({
+        path: 'intelReports.jiangzhou.officerIds',
+        message: 'unknown officer: missing-officer',
+      }),
+      expect.objectContaining({
+        path: 'intelReports.jiangzhou.officerIds',
+        message: 'must agree with officerCount',
+      }),
+    ]));
+  });
+
+  it('rejects diplomatic serials outside the safe integer range', () => {
+    const state = createSampleState();
+    state.nextDiplomaticOrderSerial = Number.MAX_SAFE_INTEGER + 1;
+
+    expect(validateGameState(state)).toContainEqual(expect.objectContaining({
+      path: 'nextDiplomaticOrderSerial',
+      message: 'must be a positive safe integer',
+    }));
+  });
 });
