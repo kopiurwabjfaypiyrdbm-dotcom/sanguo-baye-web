@@ -24,8 +24,10 @@ import {
 } from '../core/reconnaissance';
 import {
   MOVE_STAMINA_COST,
+  TRANSPORT_STAMINA_COST,
   getMoveAvailability,
   getStrategicDestinations,
+  getTransportAvailability,
 } from '../core/strategicOrders';
 
 type CityPanelProps = {
@@ -42,6 +44,12 @@ type CityPanelProps = {
   onRecruitCaptive: (cityId: string, executorOfficerId: string, captiveOfficerId: string) => void;
   onReleaseCaptive: (cityId: string, captiveOfficerId: string) => void;
   onMove: (sourceCityId: string, targetCityId: string, officerId: string) => void;
+  onTransport: (
+    sourceCityId: string,
+    targetCityId: string,
+    officerId: string,
+    cargo: { money: number; food: number; reserveTroops: number },
+  ) => boolean;
   onAppoint: (cityId: string, officerId: string) => void;
   onDistribute: (cityId: string, officerId: string, targetTroops: number) => void;
   onRecon: (sourceCityId: string, targetCityId: string, officerId: string) => void;
@@ -64,6 +72,7 @@ export function CityPanel({
   onRecruitCaptive,
   onReleaseCaptive,
   onMove,
+  onTransport,
   onAppoint,
   onDistribute,
   onRecon,
@@ -92,6 +101,9 @@ export function CityPanel({
   const [selectedOfficerId, setSelectedOfficerId] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
   const [selectedMoveTargetId, setSelectedMoveTargetId] = useState('');
+  const [transportMoney, setTransportMoney] = useState('0');
+  const [transportFood, setTransportFood] = useState('0');
+  const [transportReserveTroops, setTransportReserveTroops] = useState('0');
   const [selectedRecruitTargetId, setSelectedRecruitTargetId] = useState('');
   const [selectedReconTargetId, setSelectedReconTargetId] = useState('');
   const [distributionTarget, setDistributionTarget] = useState('0');
@@ -122,6 +134,12 @@ export function CityPanel({
       setSelectedMoveTargetId(strategicDestinations[0]?.city.id ?? '');
     }
   }, [strategicDestinations, selectedMoveTargetId]);
+
+  useEffect(() => {
+    setTransportMoney('0');
+    setTransportFood('0');
+    setTransportReserveTroops('0');
+  }, [city.id, selectedMoveTargetId]);
 
   useEffect(() => {
     if (!reconTargets.some((target) => target.id === selectedReconTargetId)) {
@@ -208,6 +226,26 @@ export function CityPanel({
     ? { allowed: false as const, reason: '当前有待处理操作，暂时不能执行城池命令' }
     : moveAvailability;
   const canMove = isOwned && displayedMoveAvailability.allowed;
+  const transportCargo = {
+    money: Number(transportMoney),
+    food: Number(transportFood),
+    reserveTroops: Number(transportReserveTroops),
+  };
+  const transportAvailability = selectedOfficer && selectedMoveTargetId
+    ? getTransportAvailability(state, {
+      sourceCityId: city.id,
+      targetCityId: selectedMoveTargetId,
+      officerId: selectedOfficer.id,
+      cargo: transportCargo,
+    })
+    : {
+      allowed: false as const,
+      reason: strategicDestinations.length === 0 ? '没有道路连通的己方目标城池' : '请选择执行武将',
+    };
+  const displayedTransportAvailability = disabled
+    ? { allowed: false as const, reason: '当前有待处理操作，暂时不能执行城池命令' }
+    : transportAvailability;
+  const canTransport = isOwned && displayedTransportAvailability.allowed;
   const canAppoint = isOwned && Boolean(selectedOfficer) && city.satrapOfficerId !== selectedOfficerId;
   const canDistribute = isOwned && Boolean(selectedOfficer) && Number.isInteger(distributionValue)
     && distributionValue >= 0 && distributionValue <= distributionCapacity
@@ -391,7 +429,7 @@ export function CityPanel({
             )}
             <div className="personnel-command-row">
               <label className="command-field">
-                <span>道路调动（每段道路 1 个月）</span>
+                <span>道路目标城池（调动/输送共用，每段道路 1 个月）</span>
                 <select
                   value={selectedMoveTargetId}
                   onChange={(event) => setSelectedMoveTargetId(event.target.value)}
@@ -429,6 +467,80 @@ export function CityPanel({
                 暂不可调动：{displayedMoveAvailability.reason}
               </p>
             )}
+            <div className="transport-command-card">
+              <div className="transport-command-heading">
+                <strong>
+                  输送至
+                  {' '}
+                  {state.cities[selectedMoveTargetId]?.name ?? '未选择目标'}
+                </strong>
+                <span>执行者完成后返回出发城 · 体力 {TRANSPORT_STAMINA_COST}</span>
+              </div>
+              <p className="transport-risk" id="transport-command-risk">
+                成功率 79%；失败时本批货物全部损失，执行者仍会返回。
+              </p>
+              <div className="transport-resource-grid">
+                <label className="command-field">
+                  <span>金钱（{number.format(city.money)}）</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max={city.money}
+                    step="1"
+                    value={transportMoney}
+                    onChange={(event) => setTransportMoney(event.target.value)}
+                  />
+                </label>
+                <label className="command-field">
+                  <span>粮草（{number.format(city.food)}）</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max={city.food}
+                    step="1"
+                    value={transportFood}
+                    onChange={(event) => setTransportFood(event.target.value)}
+                  />
+                </label>
+                <label className="command-field">
+                  <span>后备兵（{number.format(city.reserveTroops)}）</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max={city.reserveTroops}
+                    step="1"
+                    value={transportReserveTroops}
+                    onChange={(event) => setTransportReserveTroops(event.target.value)}
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                disabled={!canTransport}
+                aria-describedby={!displayedTransportAvailability.allowed
+                  ? 'transport-command-risk transport-command-hint'
+                  : 'transport-command-risk'}
+                onClick={() => {
+                  if (onTransport(
+                    city.id,
+                    selectedMoveTargetId,
+                    selectedOfficerId,
+                    transportCargo,
+                  )) {
+                    setTransportMoney('0');
+                    setTransportFood('0');
+                    setTransportReserveTroops('0');
+                  }
+                }}
+              >
+                发起输送
+              </button>
+              {!displayedTransportAvailability.allowed && (
+                <p className="command-hint" id="transport-command-hint">
+                  暂不可输送：{displayedTransportAvailability.reason}
+                </p>
+              )}
+            </div>
             <button
               type="button"
               className="reward-command"

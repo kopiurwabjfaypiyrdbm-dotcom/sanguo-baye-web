@@ -59,7 +59,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       const idMatch = /^strategic-order-([1-9]\d*)$/.exec(key);
       if (!idMatch) add(`${path}.id`, 'must use the strategic-order-N format');
       else maxStrategicOrderSerial = Math.max(maxStrategicOrderSerial, Number(idMatch[1]));
-      if (rawOrder.kind !== 'move') add(`${path}.kind`, 'must be move until transport orders are implemented');
+      if (!['move', 'transport'].includes(String(rawOrder.kind))) add(`${path}.kind`, 'must be move or transport');
       if (typeof rawOrder.factionId !== 'string' || !state.factions[rawOrder.factionId]) {
         add(`${path}.factionId`, `unknown faction: ${String(rawOrder.factionId)}`);
       }
@@ -110,7 +110,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
         && (rawOrder.remainingMonths as number) > (rawOrder.durationMonths as number)) {
         add(`${path}.remainingMonths`, 'must not exceed durationMonths');
       }
-      if (rawOrder.kind === 'move' && Array.isArray(rawOrder.routeCityIds)
+      if (['move', 'transport'].includes(String(rawOrder.kind)) && Array.isArray(rawOrder.routeCityIds)
         && Number.isInteger(rawOrder.durationMonths)
         && rawOrder.durationMonths !== rawOrder.routeCityIds.length - 1) {
         add(`${path}.durationMonths`, 'must equal the number of road segments for move orders');
@@ -140,10 +140,17 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       if (!isRecord(rawOrder.cargo)) {
         add(`${path}.cargo`, 'must be an object');
       } else {
+        let cargoTotal = 0;
         for (const field of ['money', 'food', 'reserveTroops'] as const) {
           const value = rawOrder.cargo[field];
-          if (!Number.isInteger(value) || (value as number) < 0) add(`${path}.cargo.${field}`, 'must be a non-negative integer');
+          if (!Number.isSafeInteger(value) || (value as number) < 0) {
+            add(`${path}.cargo.${field}`, 'must be a non-negative safe integer');
+          }
+          else cargoTotal += value as number;
           if (rawOrder.kind === 'move' && value !== 0) add(`${path}.cargo.${field}`, 'move orders cannot carry cargo');
+        }
+        if (rawOrder.kind === 'transport' && cargoTotal === 0) {
+          add(`${path}.cargo`, 'transport orders must carry at least one resource');
         }
       }
     }
@@ -254,7 +261,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       reserveTroops: city.reserveTroops,
     })) {
       if (!Number.isFinite(value)) add(`${path}.${field}`, 'must be a finite number');
-      else if (!['x', 'y'].includes(field) && !Number.isInteger(value)) add(`${path}.${field}`, 'must be an integer');
+      else if (!['x', 'y'].includes(field) && !Number.isSafeInteger(value)) add(`${path}.${field}`, 'must be a safe integer');
       else if (!['x', 'y'].includes(field) && value < 0) add(`${path}.${field}`, 'must not be negative');
     }
     for (const [field, value] of Object.entries({
@@ -264,7 +271,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       ...(city.publicLoyalty === undefined ? {} : { publicLoyalty: city.publicLoyalty }),
       ...(city.disasterPrevention === undefined ? {} : { disasterPrevention: city.disasterPrevention }),
     })) {
-      if (!Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
+      if (!Number.isFinite(value) || !Number.isSafeInteger(value) || value < 0) {
         add(`${path}.${field}`, 'must be a non-negative integer');
       }
     }

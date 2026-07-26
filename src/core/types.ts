@@ -125,7 +125,7 @@ export type CityIntelReport = {
   totalTroops: number;
 };
 
-export type StrategicOrderKind = 'move';
+export type StrategicOrderKind = 'move' | 'transport';
 
 export type StrategicOrder = {
   id: string;

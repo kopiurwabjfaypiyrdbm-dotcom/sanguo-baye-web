@@ -51,9 +51,19 @@ describe('game state validation', () => {
     state.cities.hanzhong.publicLoyalty = 20.5;
 
     expect(validateGameState(state)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ path: 'cities.hanzhong.food', message: 'must be an integer' }),
+      expect.objectContaining({ path: 'cities.hanzhong.food', message: 'must be a safe integer' }),
       expect.objectContaining({ path: 'cities.hanzhong.publicLoyalty', message: 'must be a non-negative integer' }),
     ]));
+  });
+
+  it('rejects strategic resources beyond the safe integer range', () => {
+    const state = createSampleState();
+    state.cities.hanzhong.money = Number.MAX_SAFE_INTEGER + 1;
+
+    expect(validateGameState(state)).toContainEqual(expect.objectContaining({
+      path: 'cities.hanzhong.money',
+      message: 'must be a safe integer',
+    }));
   });
 
   it('rejects unknown or over-capacity equipment references', () => {

@@ -1,4 +1,11 @@
-import type { GameState, Officer } from './types';
+import { appendLogs } from './logs';
+import {
+  canCreditStrategicCargo,
+  creditStrategicCargo,
+  creditStrategicCargoAcrossCities,
+  formatStrategicCargo,
+} from './strategicOrderCargo';
+import type { City, GameState, Officer, StrategicOrder } from './types';
 
 export function updateCitySatraps(state: GameState): GameState {
   const cities = Object.fromEntries(
@@ -40,6 +47,14 @@ export function releaseLandlessFactionOfficers(state: GameState): GameState {
   if (!hasLandlessServingOfficer && landlessOrderIds.size === 0) return state;
   if (!neutralFactionId) throw new Error('Landless factions cannot release officers without a neutral faction');
 
+  const cities = { ...state.cities };
+  const messages: string[] = [];
+  for (const order of Object.values(state.strategicOrders)
+    .filter((candidate) => landlessOrderIds.has(candidate.id) && candidate.kind === 'transport')) {
+    const destinationIds = settleCargoAcrossCities(cities, order);
+    const destinationNames = destinationIds.map((cityId) => cities[cityId].name).join('、');
+    messages.push(`${order.id}随所属势力灭亡而失效，${formatStrategicCargo(order.cargo)}由${destinationNames}接收。`);
+  }
   const strategicOrders = Object.fromEntries(Object.values(state.strategicOrders)
     .filter((order) => !landlessOrderIds.has(order.id))
     .map((order) => [order.id, order]));
@@ -63,22 +78,34 @@ export function releaseLandlessFactionOfficers(state: GameState): GameState {
       };
     })(),
   ]));
-  return { ...state, officers, strategicOrders };
+  const next = { ...state, cities, officers, strategicOrders };
+  return messages.length > 0 ? appendLogs(next, 'turn', messages) : next;
 }
 
 export function terminateAllStrategicOrders(state: GameState): GameState {
   if (Object.keys(state.strategicOrders).length === 0) return state;
   const neutralFactionId = Object.values(state.factions).find((faction) => faction.isNeutral)?.id;
   const officers = { ...state.officers };
+  const cities = { ...state.cities };
 
   for (const order of Object.values(state.strategicOrders)) {
     const officer = officers[order.officerId];
-    if (!officer || officer.status !== 'serving' || officer.cityId) continue;
-    const destination = [state.cities[order.targetCityId], state.cities[order.sourceCityId]]
-      .find((city) => city?.ownerId === officer.factionId)
+    const preferredCities = order.kind === 'transport'
+      ? [state.cities[order.sourceCityId], state.cities[order.targetCityId]]
+      : [state.cities[order.targetCityId], state.cities[order.sourceCityId]];
+    const destination = preferredCities
+      .find((city) => city?.ownerId === order.factionId)
       ?? Object.values(state.cities)
-        .filter((city) => city.ownerId === officer.factionId)
+        .filter((city) => city.ownerId === order.factionId)
         .sort((a, b) => a.id.localeCompare(b.id))[0];
+    if (order.kind === 'transport') {
+      if (destination && canCreditStrategicCargo(cities[destination.id], order.cargo)) {
+        cities[destination.id] = creditStrategicCargo(cities[destination.id], order.cargo);
+      } else {
+        settleCargoAcrossCities(cities, order);
+      }
+    }
+    if (!officer || officer.status !== 'serving' || officer.cityId) continue;
     if (destination) {
       officers[officer.id] = { ...officer, cityId: destination.id };
       continue;
@@ -96,7 +123,21 @@ export function terminateAllStrategicOrders(state: GameState): GameState {
     };
   }
 
-  return updateCitySatraps({ ...state, officers, strategicOrders: {} });
+  return updateCitySatraps({ ...state, cities, officers, strategicOrders: {} });
+}
+
+function settleCargoAcrossCities(
+  cities: GameState['cities'],
+  order: StrategicOrder,
+): string[] {
+  const source = cities[order.sourceCityId];
+  const target = cities[order.targetCityId];
+  const ownCities = Object.values(cities)
+    .filter((city) => city.ownerId === order.factionId)
+    .sort((a, b) => a.id.localeCompare(b.id));
+  const candidates = [source, target, ...ownCities, ...Object.values(cities).sort((a, b) => a.id.localeCompare(b.id))]
+    .filter((city): city is City => city !== undefined);
+  return creditStrategicCargoAcrossCities(cities, candidates, order.cargo);
 }
 
 function compareSatrapCandidates(a: Officer, b: Officer): number {

@@ -20,7 +20,12 @@ import {
 } from './personnelCommands';
 import type { AiProfile, GameState } from './types';
 import { recruitCaptive, SURRENDER_STAMINA_COST } from './captiveCommands';
-import { MOVE_STAMINA_COST } from './strategicOrders';
+import {
+  MOVE_STAMINA_COST,
+  TRANSPORT_STAMINA_COST,
+  findOwnedCityRoute,
+  issueTransportOrder,
+} from './strategicOrders';
 
 export const AI_MAX_ACTIONS = 5;
 const AI_MIN_ATTACK_PROVISIONS = 200;
@@ -138,7 +143,16 @@ function prepareAiFactionTurn(state: GameState): { state: GameState; order?: Att
   let next = state;
   let actionCount = 0;
 
-  for (const operation of [recruitLocalCaptive, useCityItem, balanceTroops, recruitReserves, developWeakCity, searchLocalTalent, reinforceFrontier]) {
+  for (const operation of [
+    recruitLocalCaptive,
+    useCityItem,
+    balanceTroops,
+    recruitReserves,
+    developWeakCity,
+    searchLocalTalent,
+    supplyFrontier,
+    reinforceFrontier,
+  ]) {
     if (actionCount >= AI_MAX_ACTIONS - 1 || next.phase === 'ended') break;
     const operated = operation(next, faction.id);
     if (operated) {
@@ -270,6 +284,77 @@ function reinforceFrontier(state: GameState, factionId: string): GameState | und
         .filter((candidate) => candidate.id !== faction.rulerOfficerId && candidate.id !== source.satrapOfficerId)
         .sort((a, b) => b.leadership - a.leadership || a.id.localeCompare(b.id))[0];
       if (officer) return moveOfficer(state, { sourceCityId: source.id, targetCityId: target.id, officerId: officer.id });
+    }
+  }
+  return undefined;
+}
+
+function supplyFrontier(state: GameState, factionId: string): GameState | undefined {
+  const projected = new Map(Object.values(state.cities)
+    .filter((city) => city.ownerId === factionId)
+    .map((city) => {
+      const inbound = Object.values(state.strategicOrders)
+        .filter((order) =>
+          order.kind === 'transport'
+          && order.factionId === factionId
+          && order.targetCityId === city.id)
+        .reduce((cargo, order) => ({
+          money: cargo.money + order.cargo.money,
+          food: cargo.food + order.cargo.food,
+          reserveTroops: cargo.reserveTroops + order.cargo.reserveTroops,
+        }), { money: 0, food: 0, reserveTroops: 0 });
+      return [city.id, {
+        money: city.money + inbound.money,
+        food: city.food + inbound.food,
+        reserveTroops: city.reserveTroops + inbound.reserveTroops,
+      }];
+    }));
+  const targets = Object.values(state.cities)
+    .filter((city) => city.ownerId === factionId)
+    .filter((city) => city.neighbors.some((id) => state.cities[id]?.ownerId !== factionId))
+    .filter((city) => {
+      const supply = projected.get(city.id) ?? city;
+      return supply.food < 400 || supply.reserveTroops < 300 || supply.money < 100;
+    })
+    .sort((a, b) => {
+      const aSupply = projected.get(a.id) ?? a;
+      const bSupply = projected.get(b.id) ?? b;
+      return aSupply.food - bSupply.food
+      || aSupply.reserveTroops - bSupply.reserveTroops
+      || aSupply.money - bSupply.money
+      || a.id.localeCompare(b.id);
+    });
+  for (const target of targets) {
+    const targetSupply = projected.get(target.id) ?? target;
+    const sources = Object.values(state.cities)
+      .filter((city) => city.ownerId === factionId && city.id !== target.id)
+      .map((city) => ({ city, route: findOwnedCityRoute(state, factionId, city.id, target.id) }))
+      .filter((candidate) => candidate.route !== undefined)
+      .filter(({ city }) => city.food > 900 || city.reserveTroops > 700 || city.money > 300)
+      .sort((a, b) =>
+        a.route!.length - b.route!.length
+        || b.city.food - a.city.food
+        || a.city.id.localeCompare(b.city.id));
+    for (const { city: source } of sources) {
+      const faction = state.factions[factionId];
+      const officer = availableOfficers(state, factionId, source.id, TRANSPORT_STAMINA_COST)
+        .filter((candidate) => candidate.id !== faction.rulerOfficerId && candidate.id !== source.satrapOfficerId)
+        .sort((a, b) => b.intelligence - a.intelligence || a.id.localeCompare(b.id))[0];
+      if (!officer) continue;
+      const cargo = {
+        money: targetSupply.money < 100 ? Math.min(100, Math.max(0, source.money - 200)) : 0,
+        food: targetSupply.food < 400 ? Math.min(400, Math.max(0, source.food - 600)) : 0,
+        reserveTroops: targetSupply.reserveTroops < 300
+          ? Math.min(300, Math.max(0, source.reserveTroops - 500))
+          : 0,
+      };
+      if (cargo.money + cargo.food + cargo.reserveTroops === 0) continue;
+      return issueTransportOrder(state, {
+        sourceCityId: source.id,
+        targetCityId: target.id,
+        officerId: officer.id,
+        cargo,
+      });
     }
   }
   return undefined;

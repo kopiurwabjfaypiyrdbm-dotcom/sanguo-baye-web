@@ -112,11 +112,17 @@ export function searchCity(state: GameState, order: SearchOrder): GameState {
     }
   } else if (resultType === 2) {
     const amount = 10 + draw(Math.max(1, officer.intelligence * 2));
-    nextCity = { ...city, money: Math.min(MAX_CITY_RESOURCE, city.money + amount) };
+    nextCity = {
+      ...city,
+      money: city.money >= MAX_CITY_RESOURCE ? city.money : Math.min(MAX_CITY_RESOURCE, city.money + amount),
+    };
     message = `${officer.name}在${city.name}搜得金钱 ${amount}。`;
   } else if (resultType === 3) {
     const amount = 10 + draw(Math.max(1, officer.intelligence * 2));
-    nextCity = { ...city, food: Math.min(MAX_CITY_RESOURCE, city.food + amount) };
+    nextCity = {
+      ...city,
+      food: city.food >= MAX_CITY_RESOURCE ? city.food : Math.min(MAX_CITY_RESOURCE, city.food + amount),
+    };
     message = `${officer.name}在${city.name}搜得粮草 ${amount}。`;
   }
 

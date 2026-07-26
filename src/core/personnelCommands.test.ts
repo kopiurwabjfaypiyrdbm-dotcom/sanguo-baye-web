@@ -52,6 +52,19 @@ describe('personnel commands', () => {
       .toThrow('本月已经执行过命令');
   });
 
+  it('does not truncate transport-created stockpiles above the soft resource cap', () => {
+    const state = createSampleState();
+    state.rngSeed = 682;
+    state.cities.chenliu.money = 40_000;
+    state.cities.chenliu.food = 40_000;
+
+    const searched = searchCity(state, { cityId: 'chenliu', officerId: 'zhang-liao' });
+
+    expect(searched.cities.chenliu.money).toBe(40_000);
+    expect(searched.cities.chenliu.food).toBe(40_000);
+    expect(validateGameState(searched)).toEqual([]);
+  });
+
   it('reveals a hidden city item through the original-shaped odd search branch', () => {
     const state = createSampleState();
     state.rngSeed = 42;

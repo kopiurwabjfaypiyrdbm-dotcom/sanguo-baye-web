@@ -3,7 +3,7 @@ import { planAiAction, runAiFactionTurn } from './ai';
 import { createSampleState } from './sampleState';
 import { beginAiPhase } from './turn';
 import { validateGameState } from './validation';
-import { MOVE_STAMINA_COST } from './strategicOrders';
+import { MOVE_STAMINA_COST, TRANSPORT_STAMINA_COST, issueTransportOrder } from './strategicOrders';
 
 describe('basic AI', () => {
   it('skips when no stationed officer can attack', () => {
@@ -91,6 +91,68 @@ describe('basic AI', () => {
     expect(next.actedOfficerIds).toContain('zhang-fei');
     expect(Object.values(next.officers).filter((officer) => officer.cityId === 'chengdu' && officer.factionId === 'liu-bei'))
       .toHaveLength(1);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('sends deterministic food transport to a depleted frontier', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.food = 500;
+      city.money = 0;
+      city.reserveTroops = 0;
+      city.farmingLimit = city.farming;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+    state.cities.chengdu.food = 2_000;
+    state.cities.hanzhong.food = 100;
+    state.officers['zhang-fei'].cityId = 'chengdu';
+    state.cities.jiangzhou.satrapOfficerId = undefined;
+
+    const next = runAiFactionTurn(state);
+    const transport = Object.values(next.strategicOrders).find((order) => order.kind === 'transport');
+
+    expect(transport).toMatchObject({
+      officerId: 'zhang-fei',
+      sourceCityId: 'chengdu',
+      targetCityId: 'hanzhong',
+      cargo: { money: 0, food: 400, reserveTroops: 0 },
+    });
+    expect(next.officers['zhang-fei'].stamina).toBe(100 - TRANSPORT_STAMINA_COST);
+    expect(next.officers['zhang-fei'].cityId).toBeUndefined();
+    expect(next.cities.chengdu.food).toBe(1_600);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('does not queue duplicate supply while enough cargo is already inbound', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.food = 500;
+      city.money = 200;
+      city.reserveTroops = 300;
+      city.farmingLimit = city.farming;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+    state.cities.chengdu.food = 2_000;
+    state.cities.hanzhong.food = 100;
+    state.officers['zhang-fei'].cityId = 'chengdu';
+    state.cities.jiangzhou.satrapOfficerId = undefined;
+    const withInbound = issueTransportOrder(state, {
+      sourceCityId: 'chengdu',
+      targetCityId: 'hanzhong',
+      officerId: 'zhang-fei',
+      cargo: { money: 0, food: 400, reserveTroops: 0 },
+    });
+
+    const next = runAiFactionTurn(withInbound);
+    const transports = Object.values(next.strategicOrders)
+      .filter((order) => order.kind === 'transport' && order.targetCityId === 'hanzhong');
+
+    expect(transports).toHaveLength(1);
+    expect(transports[0].officerId).toBe('zhang-fei');
     expect(validateGameState(next)).toEqual([]);
   });
 

@@ -61,7 +61,7 @@ export function applyMonthlyGrowth(state: GameState): GameState {
         .map((officerId) => officers[officerId]);
       const supportedTroops = [...stationed, ...supportedTransit].reduce((sum, officer) => sum + officer.troops, 0);
       const growth = calculateCityGrowth(city, state.calendar, supportedTroops);
-      const availableFood = city.food + growth.food;
+      const availableFood = city.food + (city.food >= MAX_CITY_RESOURCE ? 0 : growth.food);
       const hasShortage = availableFood <= growth.upkeep;
       if (hasShortage) {
         shortageCities.push(city.name);
@@ -73,8 +73,14 @@ export function applyMonthlyGrowth(state: GameState): GameState {
         city.id,
         {
           ...city,
-          money: Math.min(MAX_CITY_RESOURCE, city.money + growth.money),
-          food: hasShortage ? 0 : Math.min(MAX_CITY_RESOURCE, availableFood - growth.upkeep),
+          money: city.money >= MAX_CITY_RESOURCE
+            ? city.money
+            : Math.min(MAX_CITY_RESOURCE, city.money + growth.money),
+          food: hasShortage
+            ? 0
+            : city.food >= MAX_CITY_RESOURCE
+              ? availableFood - growth.upkeep
+              : Math.min(MAX_CITY_RESOURCE, availableFood - growth.upkeep),
           population: city.population + growth.population,
         },
       ];

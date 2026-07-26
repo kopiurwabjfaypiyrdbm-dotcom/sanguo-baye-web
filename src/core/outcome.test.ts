@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { evaluateOutcome } from './outcome';
 import { createSampleState } from './sampleState';
 import { validateGameState } from './validation';
-import { issueMoveOrder } from './strategicOrders';
+import { issueMoveOrder, issueTransportOrder } from './strategicOrders';
 
 describe('campaign outcome', () => {
   it('ends in defeat when the player owns no city', () => {
@@ -42,6 +42,33 @@ describe('campaign outcome', () => {
     expect(next.logs.at(-1)?.message).toContain('战役胜利');
     expect(next.strategicOrders).toEqual({});
     expect(next.officers['cao-cao'].cityId).toBe('chang-an');
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('refunds escrowed transport cargo before ending a victorious campaign', () => {
+    const initial = createSampleState();
+    const sourceBefore = structuredClone(initial.cities.chenliu);
+    const state = issueTransportOrder(initial, {
+      sourceCityId: 'chenliu',
+      targetCityId: 'luoyang',
+      officerId: 'zhang-liao',
+      cargo: { money: 40, food: 80, reserveTroops: 120 },
+    });
+    for (const city of Object.values(state.cities)) {
+      city.ownerId = state.playerFactionId;
+      city.satrapOfficerId = undefined;
+    }
+
+    const next = evaluateOutcome(state);
+
+    expect(next.outcome).toBe('victory');
+    expect(next.strategicOrders).toEqual({});
+    expect(next.officers['zhang-liao'].cityId).toBe('chenliu');
+    expect(next.cities.chenliu).toMatchObject({
+      money: sourceBefore.money,
+      food: sourceBefore.food,
+      reserveTroops: sourceBefore.reserveTroops,
+    });
     expect(validateGameState(next)).toEqual([]);
   });
 });

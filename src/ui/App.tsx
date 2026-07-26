@@ -56,7 +56,7 @@ import { createStrategyMap, type StrategyMapController } from '../game/createGam
 import { RulerScreen, ScenarioScreen, TitleScreen } from './CampaignSetup';
 import { CityPanel } from './CityPanel';
 import { TacticalBattleScreen } from './TacticalBattleScreen';
-import { getFactionStrategicOrders } from '../core/strategicOrders';
+import { getFactionStrategicOrders, issueTransportOrder } from '../core/strategicOrders';
 
 type AppScreen = 'title' | 'scenario' | 'ruler' | 'game' | 'battle';
 const scenarioOptions = getScenarioOptions();
@@ -264,7 +264,7 @@ export function App() {
   function applyPlayerAction(
     transform: (current: GameState) => GameState,
     selectedAfter?: string | ((next: GameState) => string),
-  ) {
+  ): boolean {
     try {
       const next = transform(state);
       setState(next);
@@ -272,8 +272,10 @@ export function App() {
         setSelectedCityId(typeof selectedAfter === 'function' ? selectedAfter(next) : selectedAfter);
       }
       setFeedback({ kind: 'success', message: next.logs.at(-1)?.message ?? '命令已执行。' });
+      return true;
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '命令执行失败。' });
+      return false;
     }
   }
 
@@ -559,19 +561,19 @@ export function App() {
         {playerStrategicOrders.length > 0 && (
           <div className="strategic-order-strip" aria-label="执行中的战略命令">
             <strong>在途</strong>
-            {playerStrategicOrders.map((order) => (
-              <span key={order.id}>
-                {state.officers[order.officerId]?.name ?? order.officerId}
-                {' · '}
-                {state.cities[order.sourceCityId]?.name ?? order.sourceCityId}
-                {' → '}
-                {state.cities[order.targetCityId]?.name ?? order.targetCityId}
-                {' · '}
-                {formatRouteWaypoints(state, order.routeCityIds)}
-                {' · '}
-                预计 {formatFutureMonth(state.calendar, order.remainingMonths)}抵达
-              </span>
+            {playerStrategicOrders.slice(0, 3).map((order) => (
+              <span key={order.id}>{describeStrategicOrder(state, order)}</span>
             ))}
+            {playerStrategicOrders.length > 3 && (
+              <details className="strategic-order-overflow">
+                <summary>另有 {playerStrategicOrders.length - 3} 项在途命令</summary>
+                <div>
+                  {playerStrategicOrders.slice(3).map((order) => (
+                    <span key={order.id}>{describeStrategicOrder(state, order)}</span>
+                  ))}
+                </div>
+              </details>
+            )}
           </div>
         )}
         <div className="map-host" ref={mapHost} />
@@ -620,6 +622,10 @@ export function App() {
         )}
         onMove={(sourceCityId, targetCityId, officerId) => applyPlayerAction(
           (current) => moveOfficer(current, { sourceCityId, targetCityId, officerId }),
+          sourceCityId,
+        )}
+        onTransport={(sourceCityId, targetCityId, officerId, cargo) => applyPlayerAction(
+          (current) => issueTransportOrder(current, { sourceCityId, targetCityId, officerId, cargo }),
           sourceCityId,
         )}
         onAppoint={(cityId, officerId) => applyPlayerAction(
@@ -758,7 +764,8 @@ function summarizeMonth(logs: GameLog[]): string[] {
       || log.message.includes('抵达')
       || log.message.includes('目标易主')
       || log.message.includes('失效')
-      || log.message.includes('流落'))
+      || log.message.includes('流落')
+      || log.message.includes('输送'))
     .map((log) => log.message);
   if (important.length > 0) return [...new Set(important)].slice(0, 5);
   return ['各势力本月没有发生重大事件。'];
@@ -773,4 +780,25 @@ function formatRouteWaypoints(state: GameState, routeCityIds: string[]): string 
 function formatFutureMonth(calendar: GameState['calendar'], offsetMonths: number): string {
   const zeroBased = calendar.year * 12 + calendar.month - 1 + offsetMonths;
   return `${Math.floor(zeroBased / 12)} 年 ${(zeroBased % 12) + 1} 月`;
+}
+
+function formatOrderCargo(cargo: GameState['strategicOrders'][string]['cargo']): string {
+  return [
+    cargo.money > 0 ? `${cargo.money} 金` : '',
+    cargo.food > 0 ? `${cargo.food} 粮` : '',
+    cargo.reserveTroops > 0 ? `${cargo.reserveTroops} 后备兵` : '',
+  ].filter(Boolean).join('、');
+}
+
+function describeStrategicOrder(
+  state: GameState,
+  order: GameState['strategicOrders'][string],
+): string {
+  const kind = order.kind === 'transport' ? '输送' : '调动';
+  const officer = state.officers[order.officerId]?.name ?? order.officerId;
+  const source = state.cities[order.sourceCityId]?.name ?? order.sourceCityId;
+  const target = state.cities[order.targetCityId]?.name ?? order.targetCityId;
+  const timing = `预计 ${formatFutureMonth(state.calendar, order.remainingMonths)}${order.kind === 'transport' ? '完成' : '抵达'}`;
+  const cargo = order.kind === 'transport' ? ` · ${formatOrderCargo(order.cargo)}` : '';
+  return `${kind} · ${officer} · ${source} → ${target} · ${formatRouteWaypoints(state, order.routeCityIds)} · ${timing}${cargo}`;
 }

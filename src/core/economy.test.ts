@@ -72,4 +72,17 @@ describe('monthly economy', () => {
     expect(next.officers['zhang-liao'].troops).toBe(Math.floor(state.officers['zhang-liao'].troops / 2));
     expect(next.logs.at(-1)?.message).toContain('在途部队兵力减半');
   });
+
+  it('does not truncate transport-created resources above the normal production cap', () => {
+    const state = createSampleState();
+    state.calendar.month = 2;
+    state.cities.luoyang.money = 40_000;
+    state.cities.luoyang.food = 40_000;
+
+    const next = applyMonthlyGrowth(state);
+
+    expect(next.cities.luoyang.money).toBe(40_000);
+    expect(next.cities.luoyang.food).toBeGreaterThan(30_000);
+    expect(next.cities.luoyang.food).toBeLessThan(40_000);
+  });
 });
