@@ -88,6 +88,15 @@ describe('game state validation', () => {
     ]));
   });
 
+  it('rejects an unknown city condition', () => {
+    const state = createSampleState();
+    (state.cities.luoyang as { condition?: string }).condition = 'earthquake';
+    expect(validateGameState(state)).toContainEqual(expect.objectContaining({
+      path: 'cities.luoyang.condition',
+      message: 'must be a known city condition',
+    }));
+  });
+
   it('rejects unknown or over-capacity equipment references', () => {
     const unknown = createSampleState();
     unknown.officers['cao-cao'].equipmentItemIds = ['missing-item'];

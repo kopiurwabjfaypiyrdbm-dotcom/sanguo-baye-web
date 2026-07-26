@@ -357,6 +357,29 @@ describe('basic AI', () => {
     expect(next.logs.some((log) => log.message.includes('治理汉中'))).toBe(false);
   });
 
+  it('governs an active city disaster before routine development', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.reserveTroops = 0;
+      city.food = 0;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+    state.officers['guan-yu'].troops = 0;
+    state.officers['zhang-fei'].cityId = 'hanzhong';
+    state.cities.jiangzhou.satrapOfficerId = undefined;
+    state.cities.hanzhong.condition = 'flood';
+    state.cities.hanzhong.disasterPrevention = 100;
+    state.cities.hanzhong.money = 1_000;
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.cities.hanzhong.condition).toBe('normal');
+    expect(next.logs.some((log) => log.message.includes('完成灾害治理'))).toBe(true);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
   it('does not consume the only officer in an exposed border city for civic work', () => {
     const state = beginAiPhase(createSampleState());
     for (const city of Object.values(state.cities)) {
@@ -376,6 +399,42 @@ describe('basic AI', () => {
       log.message.includes('治理汉中') || log.message.includes('出巡汉中') || log.message.includes('汉中主持招商'),
     )).toBe(false);
     expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('does not use the only exposed border officer for urgent disaster governance', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.reserveTroops = 1_000;
+      city.food = 30_000;
+      city.farmingLimit = city.farming;
+      city.commerceLimit = city.commerce;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+    state.cities.hanzhong.condition = 'flood';
+    state.cities.hanzhong.disasterPrevention = 100;
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.cities.hanzhong.condition).toBe('flood');
+    expect(next.logs.some((log) => log.message.includes('完成灾害治理'))).toBe(false);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('does not reveal an AI disaster city in the governance summary', () => {
+    const state = beginAiPhase(createSampleState());
+    state.officers['zhang-fei'].cityId = 'hanzhong';
+    state.cities.jiangzhou.satrapOfficerId = undefined;
+    state.cities.hanzhong.condition = 'flood';
+    state.cities.hanzhong.food = 30_000;
+    state.cities.hanzhong.money = 1_000;
+    const next = runAiFactionTurn(state);
+    const summary = next.logs.find((log) => log.message.includes('完成灾害治理'))?.message;
+
+    expect(summary).toBe(`${state.factions['liu-bei'].name}完成灾害治理。`);
+    expect(summary).not.toContain('汉中');
+    expect(summary).not.toContain('关羽');
   });
 
   it('does not attempt development when unlimited industries reached the safe integer ceiling', () => {

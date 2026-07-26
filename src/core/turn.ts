@@ -7,6 +7,7 @@ import { assertValidGameState } from './validation';
 import { updateCitySatraps } from './administration';
 import { evaluateOutcome } from './outcome';
 import { advanceStrategicOrders } from './strategicOrders';
+import { settleCityEvents } from './cityEvents';
 
 export type InteractiveTurnProgress = {
   state: GameState;
@@ -46,7 +47,8 @@ export function finishTurn(state: GameState): GameState {
   };
   const afterOrders = advanceStrategicOrders(settling);
   const grown = applyMonthlyGrowth(afterOrders);
-  const next = evaluateOutcome(updateCitySatraps(grown));
+  const afterEvents = settleCityEvents(grown);
+  const next = evaluateOutcome(updateCitySatraps(afterEvents));
   const withLog = appendLogs(next, 'turn', [`进入 ${next.calendar.year} 年 ${next.calendar.month} 月。`]);
   assertValidGameState(withLog);
   return withLog;

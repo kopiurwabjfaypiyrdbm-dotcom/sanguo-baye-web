@@ -49,6 +49,7 @@ import {
   getStrategicDestinations,
   getTransportAvailability,
 } from '../core/strategicOrders';
+import { CITY_CONDITION_LABELS } from '../core/cityEvents';
 
 type CityPanelProps = {
   state: GameState;
@@ -83,6 +84,12 @@ type CityPanelProps = {
 };
 
 const number = new Intl.NumberFormat('zh-CN');
+const conditionGuidance = {
+  famine: '饥荒：农业、商业和民忠每月约 -5%，人口 -25%，后备兵减半；补足粮草可在月末自然恢复，治理可立即解除。',
+  drought: '旱灾：农业与粮草每月约 -5%，人口和后备兵 -25%，驻军兵力 -25%；防灾可促使月末恢复，治理可立即解除。',
+  flood: '水灾：农业/粮草约 -5%，商业/金钱 -10%，人口/后备兵/驻军 -25%；防灾可促使月末恢复，治理可立即解除。',
+  rebellion: '暴动：农业/粮草/商业/金钱约 -5%，民忠 -10%，后备兵与驻军减半；民忠可促使月末恢复，治理可立即解除。',
+} as const;
 
 export function CityPanel({
   state,
@@ -262,6 +269,7 @@ export function CityPanel({
   const plunderGains = selectedOfficer
     ? calculatePlunderGains(state, city, selectedOfficer)
     : { money: 0, food: 0 };
+  const governMaxGain = Math.min(4, 100 - (city.disasterPrevention ?? 0));
   const canDevelop = farmingAvailability.allowed;
   const commerceAvailability = selectedOfficer
     ? getDevelopCommerceAvailability(state, { cityId: city.id, officerId: selectedOfficer.id })
@@ -405,6 +413,7 @@ export function CityPanel({
           : intelValue(false, city.publicLoyalty ?? 0, intelReport?.publicLoyalty)} />
         <Stat label="城防" value={intelValue(isPlayerCity, city.defense, intelReport?.defense)} />
         <Stat label="防灾" value={isPlayerCity ? String(city.disasterPrevention ?? 0) : '未知'} />
+        <Stat label="状态" value={isPlayerCity ? CITY_CONDITION_LABELS[city.condition ?? 'normal'] : '未知'} />
         <Stat label="太守" value={isPlayerCity ? satrap?.name ?? '空缺' : intelReport?.satrapName ?? '未知'} />
       </dl>
 
@@ -449,6 +458,9 @@ export function CityPanel({
           </div>
         ) : <p className="command-hint">驻城武将与兵力未知。</p>}
       </div>
+      {isPlayerCity && city.condition && city.condition !== 'normal' && (
+        <p className="city-condition-warning" role="status">{conditionGuidance[city.condition]}</p>
+      )}
 
       <div className="command-panel" aria-label="城池命令">
         <div className="section-title">
@@ -554,7 +566,9 @@ export function CityPanel({
               <span>
                 治理：
                 {displayedGovernAvailability.allowed
-                  ? `防灾 +1～4；${GOVERN_MONEY_COST} 金、${GOVERN_STAMINA_COST} 体力、占用本月行动。灾害效果将在 v0.5 接入。`
+                  ? `${(city.condition ?? 'normal') === 'normal' ? '' : '城池恢复正常，'}`
+                    + `${governMaxGain > 0 ? `防灾最多 +${governMaxGain}` : '防灾已满，仅解除灾害'}；`
+                    + `${GOVERN_MONEY_COST} 金、${GOVERN_STAMINA_COST} 体力、占用本月行动。`
                   : `不可用——${displayedGovernAvailability.reason}`}
               </span>
               <span>

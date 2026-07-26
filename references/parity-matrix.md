@@ -16,7 +16,7 @@
 | 开局兵力 | 时期人物记录兵力字段为 0；原版另有初始化流程待定位 | `data/legacyScenario.ts:DEFAULT_STARTING_TROOPS`，所有在职势力对称初始为 400 | 临时实现 | 定位原版选君主后的兵力/粮草初始化；不再使用玩家 100、AI 800 的人为不对称 |
 | 城池、人物与道具结构 | `dictsys.h`、`attribute.h`、`bind-objects.c`、时期结构夹具 | `types.ts`；`core/equipment.ts`；`data/itemCatalog.ts`；`data/legacyScenario.ts`；`data-structure-map.md` | 已取样 | 城池隐藏/发现队列、两个有序通用装备位和初始装备已接入；33 项道具内容仍来自早期整理表，固定上游与内容哈希重新关联前按临时数据处理 |
 | 城池命令 | `citycmd*.c` | `cityCommands.ts`（开垦、招商、治理、出巡、交易、宴请、掠夺、征兵、分配）；`personnelCommands.ts`（搜寻、登用、赏金、道具赏赐/卸装、道路调动、任命）；`strategicOrders.ts`（schema 4 调动/输送在途命令）；`reconnaissance.ts`（侦察快照）；`captiveCommands.ts`（招降、释放） | 临时实现 | 招商/治理/出巡保留固定增量形状与上限；交易保留 5 金买 1 粮、1 粮卖 2 金；宴请保留恢复 50 体力与非君主忠诚 +1；掠夺保留三项折半及有效智武收益。30,000 软上限、无收益拒绝、交易/掠夺 4 体力、宴请 50 金均为现代安全或临时规则。调动/输送为可保存跨月道路命令；排序 BFS、每段 1 月及易主闭包均为现代规则 |
-| 月度结算 | `tactic.c`、阶段钩子 | `economy.ts` | 临时实现 | 固定城池数据对照一个月结果 |
+| 月度结算与城市事件 | `tactic.c:ConditionUpdate`、`infdeal.c:CitiesUpDataDate/EventStateDeal/RandEvents` | `economy.ts`、`cityEvents.ts` | 已取样 | 已接入季度防灾衰减、军粮前驻军损失、饥荒/旱灾/水灾/暴动损失和固定比较方向；在途供养与日志可见性为现代规则。继续补年度人物/道具更新及固定 RNG 边界夹具 |
 | 战场进入 | `citycmdd.c`、`Fight.c`、`g_FgtParam`、`fight.h:FIGHT_ORDER_MAX` | `core/tacticalBattle.ts:createTacticalBattle`；`ui/App.tsx` | 临时实现 | 已按固定参考限制每方最多 10 人；继续对照原版战场编号、进攻方向与部署位置；当前结构化战场为现代临时地图 |
 | 战败俘虏与招降 | `citycmdd.c:FightResultDeal/TheLoserDeal/HoldCaptive/LostEscape/KingOverDeal`；`citycmd.c:SurrenderDrv` | `core/battle.ts`；`core/captiveCommands.ts`；`ui/CityPanel.tsx` | 临时实现 | 已接入确定性捕获、羁押、招降、释放和 AI；战死、装备缴获、君主继承选择与原版 U8 概率回绕后置 |
 | 攻防属性 | `FgtCount.c:BuiltAtkAttr`、`.lib:dFgtLandF` | `compat/baye/tacticalBattle.ts`；`core/tacticalBattle.ts:attackTacticalUnit` | 差异验证 | 扩大端到端地形和装备兵种样本 |

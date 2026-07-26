@@ -150,7 +150,8 @@ export function getGovernAvailability(
 ): CityCommandAvailability {
   const base = getCityCommandAvailability(state, order, GOVERN_STAMINA_COST, GOVERN_MONEY_COST);
   if (!base.allowed) return base;
-  if ((state.cities[order.cityId].disasterPrevention ?? 0) >= 100) {
+  const city = state.cities[order.cityId];
+  if ((city.condition ?? 'normal') === 'normal' && (city.disasterPrevention ?? 0) >= 100) {
     return { allowed: false, reason: '该城防灾已经达到上限' };
   }
   return { allowed: true };
@@ -166,6 +167,7 @@ export function governCity(state: GameState, order: CityCommandOrder): GameState
     { ...state, rngSeed: random.seed },
     {
       ...city,
+      condition: 'normal',
       disasterPrevention: (city.disasterPrevention ?? 0) + gain,
       money: city.money - GOVERN_MONEY_COST,
     },
@@ -173,7 +175,11 @@ export function governCity(state: GameState, order: CityCommandOrder): GameState
     true,
   );
   return appendLogs(next, 'map', [
-    `${officer.name}治理${city.name}，防灾提高 ${gain}，消耗金钱 ${GOVERN_MONEY_COST}、体力 ${GOVERN_STAMINA_COST}。`,
+    state.activeFactionId !== state.playerFactionId && (city.condition ?? 'normal') !== 'normal'
+      ? `${state.factions[state.activeFactionId].name}完成灾害治理。`
+      : `${officer.name}治理${city.name}，防灾提高 ${gain}，`
+        + `${(city.condition ?? 'normal') === 'normal' ? '' : '城池恢复正常，'}`
+        + `消耗金钱 ${GOVERN_MONEY_COST}、体力 ${GOVERN_STAMINA_COST}。`,
   ]);
 }
 

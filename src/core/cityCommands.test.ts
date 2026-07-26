@@ -113,10 +113,12 @@ describe('city commands', () => {
   it('governs disaster prevention with the original 1-to-4 gain band', () => {
     const state = createSampleState();
     state.cities.luoyang.disasterPrevention = 98;
+    state.cities.luoyang.condition = 'flood';
     const next = governCity(state, { cityId: 'luoyang', officerId: 'cao-cao' });
 
     expect(next.cities.luoyang.disasterPrevention).toBeGreaterThanOrEqual(99);
     expect(next.cities.luoyang.disasterPrevention).toBeLessThanOrEqual(100);
+    expect(next.cities.luoyang.condition).toBe('normal');
     expect(next.cities.luoyang.money).toBe(state.cities.luoyang.money - GOVERN_MONEY_COST);
     expect(next.officers['cao-cao'].stamina).toBe(100 - GOVERN_STAMINA_COST);
     expect(validateGameState(next)).toEqual([]);

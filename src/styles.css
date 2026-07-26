@@ -598,6 +598,16 @@ select:focus-visible,
   line-height: 1.4;
 }
 
+.city-condition-warning {
+  margin: 8px 0 0;
+  padding: 8px 9px;
+  color: #713d2d;
+  background: rgba(167, 79, 49, .12);
+  border-left: 3px solid #a4513d;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
 .civic-command-card {
   display: grid;
   gap: 8px;

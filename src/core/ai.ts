@@ -303,6 +303,19 @@ function recruitReserves(state: GameState, factionId: string): GameState | undef
 }
 
 function improveCity(state: GameState, factionId: string): GameState | undefined {
+  const troubledCities = Object.values(state.cities)
+    .filter((city) =>
+      city.ownerId === factionId
+      && (city.condition ?? 'normal') !== 'normal'
+      && !isExposedSoleGarrison(state, city.id, factionId)
+      && city.money >= GOVERN_MONEY_COST)
+    .sort((a, b) => a.id.localeCompare(b.id));
+  for (const city of troubledCities) {
+    const officer = availableOfficers(state, factionId, city.id, GOVERN_STAMINA_COST)
+      .sort((a, b) => b.intelligence - a.intelligence || a.id.localeCompare(b.id))[0];
+    if (officer) return governCity(state, { cityId: city.id, officerId: officer.id });
+  }
+
   const inspectionCandidates = Object.values(state.cities)
     .filter((city) =>
       city.ownerId === factionId

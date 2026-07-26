@@ -9,6 +9,7 @@ export type GamePhase = 'player' | 'ai' | 'ended';
 export type GameOutcome = 'victory' | 'defeat';
 
 export type OfficerStatus = 'serving' | 'free' | 'hidden' | 'captive';
+export type CityCondition = 'normal' | 'famine' | 'drought' | 'flood' | 'rebellion';
 
 export type Faction = {
   id: string;
@@ -44,6 +45,8 @@ export type City = {
   populationLimit?: number;
   publicLoyalty?: number;
   disasterPrevention?: number;
+  /** Persistent monthly condition; absent values from older saves mean normal. */
+  condition?: CityCondition;
   /** Discovered items available for use in this city. */
   itemIds?: string[];
   /** Scenario items that may be revealed by search. */

@@ -279,6 +279,10 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       const value = city[field];
       if (value !== undefined && value > 100) add(`${path}.${field}`, 'must not exceed 100');
     }
+    if (city.condition !== undefined
+      && !['normal', 'famine', 'drought', 'flood', 'rebellion'].includes(city.condition)) {
+      add(`${path}.condition`, 'must be a known city condition');
+    }
     for (const field of ['itemIds', 'hiddenItemIds'] as const) {
       const itemIds = city[field];
       if (itemIds !== undefined && !Array.isArray(itemIds)) {
