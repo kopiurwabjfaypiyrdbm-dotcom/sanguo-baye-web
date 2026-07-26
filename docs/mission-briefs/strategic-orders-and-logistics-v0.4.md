@@ -7,7 +7,7 @@
 ## Context
 
 - 本仓库是步步高电子词典版《三国霸业》的现代 Web 重写；当前功能完整 Alpha 的能力、验证基线和缺口以 `docs/HANDOFF.md`、`README.md` 与 `references/parity-matrix.md` 为准。
-- 当前武将以 `actedOfficerIds` 表示月内占用，调动仅限相邻己城且即时完成；原版 `references/vendor/baye-c-core/src/baye/order.h` 的 `OrderType`、`citycmd*.c` 与 `PublicFun.c:SearchRoad` 表明部分命令具有队列、目标和时间语义。
+- 委托建立时武将只以 `actedOfficerIds` 表示月内占用，调动限相邻己城且即时完成。固定 C 参考的 `order.h:OrderType` 与 `citycmdc.c:MoveMake/TransportationMake` 会保存目标、`TimeCount` 并让武将离城，但当前数组队列版 `citycmd.c:PolicyExec` 同月执行所有非空命令且忽略 `TimeCount`；只有已注释的旧链表分支递减该字段。`SearchRoad` 的实现也不在固定 allowlist 内。因此跨月调度是借用原版数据意图、修复当前移植运行路径后形成的现代产品规则，不宣称等同原版现行运行时。
 - 当前已有开垦、征兵、分配、搜寻、赏赐、侦察、调动和出征；招商、治理、出巡、交易、宴请、输送与掠夺尚未形成可玩闭环。
 - 兼容声明、代码分层、参考与许可证边界由 `AGENTS.md`、`CONTRIBUTING.md` 和 `docs/design/compatibility-policy.md` 约束。
 
@@ -47,7 +47,7 @@
 ## Delegated Decisions and Unknowns
 
 - 执行者可根据现有状态不变量选择命令、位置和在途状态的具体建模方式；优先保证人物唯一归属、战斗可恢复性和未来外交复用。
-- 原版 `TimeCount` 的时间单位、队列阶段和资源扣除时点应先用固定 C 参考和可重复夹具确定；证据不足且阻塞产品增量时，采用小而显式的现代规则并记录替换点。
+- 原版当前固定 C 运行路径已经确认不会递减 `TimeCount`；跨月结算必须明确标为现代修复。道路每段一个月是可替换的临时规则，因为 `SearchRoad` 实现尚不可用。输送资源在 `TransportationMake` 创建命令时扣除、武将离城，目标结算与失败概率则继续按固定源码建立测试。
 - 是否允许取消、何时退款、路线如何展示以及相同距离的路径选择由执行者依据确定性、玩家可理解性和未来兼容成本决定。
 - 存档 schema 版本号与增量拆分由执行者按实际兼容影响决定，不预设实现顺序。
 

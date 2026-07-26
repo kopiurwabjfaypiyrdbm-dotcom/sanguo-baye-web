@@ -2,9 +2,9 @@ import { MAX_CITY_RESOURCE } from './economy';
 import { appendLogs } from './logs';
 import { nextRandom } from './random';
 import { getCityFreeOfficers } from './selectors';
-import { updateCitySatraps } from './administration';
 import type { City, GameState, Officer } from './types';
 import { assertValidGameState } from './validation';
+import { issueMoveOrder } from './strategicOrders';
 import {
   OFFICER_EQUIPMENT_LIMIT,
   getEffectiveOfficerAttributes,
@@ -304,31 +304,7 @@ export function unequipOfficerItem(state: GameState, order: UnequipItemOrder): G
 }
 
 export function moveOfficer(state: GameState, order: MoveOfficerOrder): GameState {
-  const source = state.cities[order.sourceCityId];
-  const target = state.cities[order.targetCityId];
-  if (state.phase === 'ended') throw new Error('战役已经结束');
-  if (!source || !target) throw new Error('调动的出发城或目标城不存在');
-  if (source.ownerId !== state.activeFactionId || target.ownerId !== state.activeFactionId) {
-    throw new Error('只能在己方城池之间调动武将');
-  }
-  if (!source.neighbors.includes(target.id) || !target.neighbors.includes(source.id)) {
-    throw new Error('当前只能调动到相邻己方城池');
-  }
-  const officer = state.officers[order.officerId];
-  if (!officer || officer.status !== 'serving' || officer.factionId !== state.activeFactionId || officer.cityId !== source.id) {
-    throw new Error('待调武将不在出发城');
-  }
-  if (state.actedOfficerIds.includes(officer.id)) throw new Error('该武将本月已经执行过命令');
-
-  let next = updateCitySatraps({
-    ...state,
-    campaignStarted: true,
-    officers: { ...state.officers, [officer.id]: { ...officer, cityId: target.id } },
-    actedOfficerIds: [...state.actedOfficerIds, officer.id],
-  });
-  next = appendLogs(next, 'map', [`${officer.name}从${source.name}调动至${target.name}。`]);
-  assertValidGameState(next);
-  return next;
+  return issueMoveOrder(state, order);
 }
 
 export function appointSatrap(state: GameState, order: AppointSatrapOrder): GameState {

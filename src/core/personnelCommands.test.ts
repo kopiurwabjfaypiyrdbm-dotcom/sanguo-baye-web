@@ -15,6 +15,7 @@ import {
 } from './personnelCommands';
 import { getCityFreeOfficers, getCityOfficers } from './selectors';
 import { validateGameState } from './validation';
+import { beginAiPhase, finishTurn } from './turn';
 
 describe('personnel commands', () => {
   it('keeps free officers out of the serving roster', () => {
@@ -143,7 +144,7 @@ describe('personnel commands', () => {
     })).toThrow('2 个装备位置已经占满');
   });
 
-  it('moves an officer to an adjacent friendly city and repairs the satrap', () => {
+  it('queues an officer move, repairs the source satrap, and arrives after one month', () => {
     const state = createSampleState();
     const next = moveOfficer(state, {
       sourceCityId: 'luoyang',
@@ -151,16 +152,29 @@ describe('personnel commands', () => {
       officerId: 'cao-cao',
     });
 
-    expect(next.officers['cao-cao'].cityId).toBe('chang-an');
+    expect(next.officers['cao-cao'].cityId).toBeUndefined();
     expect(next.cities.luoyang.satrapOfficerId).toBe('xiahou-dun');
-    expect(next.cities['chang-an'].satrapOfficerId).toBe('cao-cao');
+    expect(Object.values(next.strategicOrders)).toMatchObject([{
+      officerId: 'cao-cao',
+      sourceCityId: 'luoyang',
+      targetCityId: 'chang-an',
+      durationMonths: 1,
+      remainingMonths: 1,
+    }]);
     expect(next.actedOfficerIds).toContain('cao-cao');
     expect(validateGameState(next)).toEqual([]);
+
+    const arrived = finishTurn(beginAiPhase(next));
+    expect(arrived.officers['cao-cao'].cityId).toBe('chang-an');
+    expect(arrived.cities['chang-an'].satrapOfficerId).toBe('cao-cao');
+    expect(arrived.strategicOrders).toEqual({});
+    expect(validateGameState(arrived)).toEqual([]);
+
     expect(() => moveOfficer(state, {
       sourceCityId: 'chenliu',
-      targetCityId: 'chang-an',
+      targetCityId: 'chengdu',
       officerId: 'zhang-liao',
-    })).toThrow('相邻己方城池');
+    })).toThrow('己方城池之间');
   });
 
   it('appoints a stationed officer without consuming their monthly action', () => {

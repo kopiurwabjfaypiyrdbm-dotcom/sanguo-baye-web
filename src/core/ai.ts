@@ -20,6 +20,7 @@ import {
 } from './personnelCommands';
 import type { AiProfile, GameState } from './types';
 import { recruitCaptive, SURRENDER_STAMINA_COST } from './captiveCommands';
+import { MOVE_STAMINA_COST } from './strategicOrders';
 
 export const AI_MAX_ACTIONS = 5;
 const AI_MIN_ATTACK_PROVISIONS = 200;
@@ -265,7 +266,7 @@ function reinforceFrontier(state: GameState, factionId: string): GameState | und
       .sort((a, b) => stationedCount(state, b.id, factionId) - stationedCount(state, a.id, factionId) || a.id.localeCompare(b.id));
     for (const source of sources) {
       const faction = state.factions[factionId];
-      const officer = availableOfficers(state, factionId, source.id, 0)
+      const officer = availableOfficers(state, factionId, source.id, MOVE_STAMINA_COST)
         .filter((candidate) => candidate.id !== faction.rulerOfficerId && candidate.id !== source.satrapOfficerId)
         .sort((a, b) => b.leadership - a.leadership || a.id.localeCompare(b.id))[0];
       if (officer) return moveOfficer(state, { sourceCityId: source.id, targetCityId: target.id, officerId: officer.id });

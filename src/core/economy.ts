@@ -34,6 +34,21 @@ export function applyMonthlyGrowth(state: GameState): GameState {
   const officers = Object.fromEntries(
     Object.values(state.officers).map((officer) => [officer.id, { ...officer }]),
   );
+  const transitOfficersBySupportCity = new Map<string, string[]>();
+  for (const order of Object.values(state.strategicOrders)) {
+    const officer = officers[order.officerId];
+    if (!officer || officer.status !== 'serving' || officer.cityId) continue;
+    const supportCity = [state.cities[order.sourceCityId], state.cities[order.targetCityId]]
+      .find((city) => city?.ownerId === order.factionId)
+      ?? Object.values(state.cities)
+        .filter((city) => city.ownerId === order.factionId)
+        .sort((a, b) => a.id.localeCompare(b.id))[0];
+    if (!supportCity) continue;
+    transitOfficersBySupportCity.set(supportCity.id, [
+      ...(transitOfficersBySupportCity.get(supportCity.id) ?? []),
+      officer.id,
+    ]);
+  }
   const shortageCities: string[] = [];
   const cities = Object.fromEntries(
     Object.values(state.cities).map((city) => {
@@ -42,13 +57,15 @@ export function applyMonthlyGrowth(state: GameState): GameState {
       const stationed = Object.values(officers).filter(
         (officer) => officer.status === 'serving' && officer.cityId === city.id && officer.factionId === city.ownerId,
       );
-      const stationedTroops = stationed.reduce((sum, officer) => sum + officer.troops, 0);
-      const growth = calculateCityGrowth(city, state.calendar, stationedTroops);
+      const supportedTransit = (transitOfficersBySupportCity.get(city.id) ?? [])
+        .map((officerId) => officers[officerId]);
+      const supportedTroops = [...stationed, ...supportedTransit].reduce((sum, officer) => sum + officer.troops, 0);
+      const growth = calculateCityGrowth(city, state.calendar, supportedTroops);
       const availableFood = city.food + growth.food;
       const hasShortage = availableFood <= growth.upkeep;
       if (hasShortage) {
         shortageCities.push(city.name);
-        for (const officer of stationed) {
+        for (const officer of [...stationed, ...supportedTransit]) {
           officers[officer.id] = { ...officers[officer.id], troops: Math.floor(officer.troops / 2) };
         }
       }
@@ -78,7 +95,7 @@ export function applyMonthlyGrowth(state: GameState): GameState {
     : '本月没有季节性税收或粮食收获。';
   next = appendLogs(next, 'turn', [`各城完成军粮、人口和体力结算。${seasonal}`]);
   if (shortageCities.length > 0) {
-    next = appendLogs(next, 'turn', [`${shortageCities.join('、')}粮草不足，驻军兵力减半。`]);
+    next = appendLogs(next, 'turn', [`${shortageCities.join('、')}粮草不足，所属驻军与在途部队兵力减半。`]);
   }
   return next;
 }

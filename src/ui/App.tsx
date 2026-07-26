@@ -56,6 +56,7 @@ import { createStrategyMap, type StrategyMapController } from '../game/createGam
 import { RulerScreen, ScenarioScreen, TitleScreen } from './CampaignSetup';
 import { CityPanel } from './CityPanel';
 import { TacticalBattleScreen } from './TacticalBattleScreen';
+import { getFactionStrategicOrders } from '../core/strategicOrders';
 
 type AppScreen = 'title' | 'scenario' | 'ruler' | 'game' | 'battle';
 const scenarioOptions = getScenarioOptions();
@@ -97,6 +98,10 @@ export function App() {
       return [];
     }
   }, [tacticalBattle, selectedTacticalUnitId]);
+  const playerStrategicOrders = useMemo(
+    () => getFactionStrategicOrders(state, state.playerFactionId),
+    [state],
+  );
 
   useEffect(() => bridge.on('city:selected', ({ cityId }) => setSelectedCityId(cityId)), [bridge]);
 
@@ -551,6 +556,24 @@ export function App() {
           <span>拖动地图 · 滚轮缩放 · 点击城池</span>
           <span>{Object.keys(state.cities).length} 城 / {countCurrentOfficers(state)} 名当前人物</span>
         </div>
+        {playerStrategicOrders.length > 0 && (
+          <div className="strategic-order-strip" aria-label="执行中的战略命令">
+            <strong>在途</strong>
+            {playerStrategicOrders.map((order) => (
+              <span key={order.id}>
+                {state.officers[order.officerId]?.name ?? order.officerId}
+                {' · '}
+                {state.cities[order.sourceCityId]?.name ?? order.sourceCityId}
+                {' → '}
+                {state.cities[order.targetCityId]?.name ?? order.targetCityId}
+                {' · '}
+                {formatRouteWaypoints(state, order.routeCityIds)}
+                {' · '}
+                预计 {formatFutureMonth(state.calendar, order.remainingMonths)}抵达
+              </span>
+            ))}
+          </div>
+        )}
         <div className="map-host" ref={mapHost} />
         {feedback && (
           <div className={`action-feedback ${feedback.kind}`} role={feedback.kind === 'error' ? 'alert' : 'status'}>
@@ -597,7 +620,7 @@ export function App() {
         )}
         onMove={(sourceCityId, targetCityId, officerId) => applyPlayerAction(
           (current) => moveOfficer(current, { sourceCityId, targetCityId, officerId }),
-          targetCityId,
+          sourceCityId,
         )}
         onAppoint={(cityId, officerId) => applyPlayerAction(
           (current) => appointSatrap(current, { cityId, officerId }),
@@ -731,8 +754,23 @@ function summarizeMonth(logs: GameLog[]): string[] {
     .filter((log) =>
       log.kind === 'ai'
       || (log.kind === 'battle' && (log.message.includes('占领') || log.message.includes('击退')))
-      || log.message.includes('粮草不足'))
+      || log.message.includes('粮草不足')
+      || log.message.includes('抵达')
+      || log.message.includes('目标易主')
+      || log.message.includes('失效')
+      || log.message.includes('流落'))
     .map((log) => log.message);
   if (important.length > 0) return [...new Set(important)].slice(0, 5);
   return ['各势力本月没有发生重大事件。'];
+}
+
+function formatRouteWaypoints(state: GameState, routeCityIds: string[]): string {
+  const waypoints = routeCityIds.slice(1, -1)
+    .map((cityId) => state.cities[cityId]?.name ?? cityId);
+  return waypoints.length > 0 ? `途经 ${waypoints.join('、')}` : '直达';
+}
+
+function formatFutureMonth(calendar: GameState['calendar'], offsetMonths: number): string {
+  const zeroBased = calendar.year * 12 + calendar.month - 1 + offsetMonths;
+  return `${Math.floor(zeroBased / 12)} 年 ${(zeroBased % 12) + 1} 月`;
 }

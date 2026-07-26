@@ -10,7 +10,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const add = (path: string, message: string) => issues.push({ path, message });
 
-  if (state.schemaVersion !== 3) add('schemaVersion', 'must be 3');
+  if (state.schemaVersion !== 4) add('schemaVersion', 'must be 4');
   if (typeof state.campaignStarted !== 'boolean') add('campaignStarted', 'must be a boolean');
   if (!Number.isInteger(state.turn) || state.turn < 1) add('turn', 'must be a positive integer');
   if (!Number.isInteger(state.rngSeed) || state.rngSeed < 0) add('rngSeed', 'must be a non-negative integer');
@@ -41,6 +41,120 @@ export function validateGameState(state: GameState): ValidationIssue[] {
     const officer = state.officers[officerId];
     if (!officer) add('discoveredOfficerIds', `unknown officer: ${officerId}`);
     else if (officer.status !== 'free') add('discoveredOfficerIds', `officer is not free: ${officerId}`);
+  }
+
+  const activeOrderByOfficerId = new Map<string, string>();
+  let maxStrategicOrderSerial = 0;
+  const rawStrategicOrders = (state as { strategicOrders?: unknown }).strategicOrders;
+  if (!isRecord(rawStrategicOrders)) {
+    add('strategicOrders', 'must be a record');
+  } else {
+    for (const [key, rawOrder] of Object.entries(rawStrategicOrders)) {
+      const path = `strategicOrders.${key}`;
+      if (!isRecord(rawOrder)) {
+        add(path, 'must be an object');
+        continue;
+      }
+      if (rawOrder.id !== key) add(`${path}.id`, 'must match record key');
+      const idMatch = /^strategic-order-([1-9]\d*)$/.exec(key);
+      if (!idMatch) add(`${path}.id`, 'must use the strategic-order-N format');
+      else maxStrategicOrderSerial = Math.max(maxStrategicOrderSerial, Number(idMatch[1]));
+      if (rawOrder.kind !== 'move') add(`${path}.kind`, 'must be move until transport orders are implemented');
+      if (typeof rawOrder.factionId !== 'string' || !state.factions[rawOrder.factionId]) {
+        add(`${path}.factionId`, `unknown faction: ${String(rawOrder.factionId)}`);
+      }
+      if (typeof rawOrder.officerId !== 'string' || !state.officers[rawOrder.officerId]) {
+        add(`${path}.officerId`, `unknown officer: ${String(rawOrder.officerId)}`);
+      } else {
+        const previousOrderId = activeOrderByOfficerId.get(rawOrder.officerId);
+        if (previousOrderId) add(`${path}.officerId`, `officer already has active order: ${previousOrderId}`);
+        activeOrderByOfficerId.set(rawOrder.officerId, key);
+      }
+      for (const field of ['sourceCityId', 'targetCityId'] as const) {
+        const cityId = rawOrder[field];
+        if (typeof cityId !== 'string' || !state.cities[cityId]) {
+          add(`${path}.${field}`, `unknown city: ${String(cityId)}`);
+        }
+      }
+      if (rawOrder.sourceCityId === rawOrder.targetCityId) add(`${path}.targetCityId`, 'must differ from sourceCityId');
+
+      if (!Array.isArray(rawOrder.routeCityIds) || rawOrder.routeCityIds.length < 2) {
+        add(`${path}.routeCityIds`, 'must contain at least source and target cities');
+      } else {
+        if (new Set(rawOrder.routeCityIds).size !== rawOrder.routeCityIds.length) {
+          add(`${path}.routeCityIds`, 'must not contain repeated cities');
+        }
+        if (rawOrder.routeCityIds[0] !== rawOrder.sourceCityId) add(`${path}.routeCityIds`, 'must start at sourceCityId');
+        if (rawOrder.routeCityIds.at(-1) !== rawOrder.targetCityId) add(`${path}.routeCityIds`, 'must end at targetCityId');
+        for (let index = 0; index < rawOrder.routeCityIds.length; index += 1) {
+          const cityId = rawOrder.routeCityIds[index];
+          if (typeof cityId !== 'string' || !state.cities[cityId]) {
+            add(`${path}.routeCityIds.${index}`, `unknown city: ${String(cityId)}`);
+            continue;
+          }
+          const nextCityId = rawOrder.routeCityIds[index + 1];
+          if (nextCityId !== undefined && !state.cities[cityId].neighbors.includes(nextCityId)) {
+            add(`${path}.routeCityIds.${index + 1}`, `not connected to previous city: ${String(nextCityId)}`);
+          }
+        }
+      }
+      for (const field of ['createdTurn', 'createdYear', 'createdMonth', 'durationMonths', 'remainingMonths'] as const) {
+        const value = rawOrder[field];
+        if (!Number.isInteger(value) || (value as number) < 1) add(`${path}.${field}`, 'must be a positive integer');
+      }
+      if (Number.isInteger(rawOrder.createdMonth)
+        && ((rawOrder.createdMonth as number) < 1 || (rawOrder.createdMonth as number) > 12)) {
+        add(`${path}.createdMonth`, 'must be from 1 to 12');
+      }
+      if (Number.isInteger(rawOrder.remainingMonths) && Number.isInteger(rawOrder.durationMonths)
+        && (rawOrder.remainingMonths as number) > (rawOrder.durationMonths as number)) {
+        add(`${path}.remainingMonths`, 'must not exceed durationMonths');
+      }
+      if (rawOrder.kind === 'move' && Array.isArray(rawOrder.routeCityIds)
+        && Number.isInteger(rawOrder.durationMonths)
+        && rawOrder.durationMonths !== rawOrder.routeCityIds.length - 1) {
+        add(`${path}.durationMonths`, 'must equal the number of road segments for move orders');
+      }
+      if (Number.isInteger(rawOrder.createdTurn) && (rawOrder.createdTurn as number) > state.turn) {
+        add(`${path}.createdTurn`, 'must not be later than the current turn');
+      }
+      if (Number.isInteger(rawOrder.createdYear) && Number.isInteger(rawOrder.createdMonth)
+        && (rawOrder.createdYear as number) * 12 + (rawOrder.createdMonth as number)
+          > state.calendar.year * 12 + state.calendar.month) {
+        add(`${path}.createdYear`, 'creation date must not be later than the current calendar');
+      }
+      if (Number.isInteger(rawOrder.createdTurn) && Number.isInteger(rawOrder.durationMonths)
+        && Number.isInteger(rawOrder.remainingMonths)) {
+        const elapsedTurns = state.turn - (rawOrder.createdTurn as number);
+        if ((rawOrder.remainingMonths as number) !== (rawOrder.durationMonths as number) - elapsedTurns) {
+          add(`${path}.remainingMonths`, 'must agree with durationMonths and elapsed campaign turns');
+        }
+        if (Number.isInteger(rawOrder.createdYear) && Number.isInteger(rawOrder.createdMonth)) {
+          const createdCalendarIndex = (rawOrder.createdYear as number) * 12 + (rawOrder.createdMonth as number) - 1;
+          const currentCalendarIndex = state.calendar.year * 12 + state.calendar.month - 1;
+          if (currentCalendarIndex - createdCalendarIndex !== elapsedTurns) {
+            add(`${path}.createdYear`, 'creation date must agree with createdTurn and the current calendar');
+          }
+        }
+      }
+      if (!isRecord(rawOrder.cargo)) {
+        add(`${path}.cargo`, 'must be an object');
+      } else {
+        for (const field of ['money', 'food', 'reserveTroops'] as const) {
+          const value = rawOrder.cargo[field];
+          if (!Number.isInteger(value) || (value as number) < 0) add(`${path}.cargo.${field}`, 'must be a non-negative integer');
+          if (rawOrder.kind === 'move' && value !== 0) add(`${path}.cargo.${field}`, 'move orders cannot carry cargo');
+        }
+      }
+    }
+  }
+  if (!Number.isInteger(state.nextStrategicOrderSerial) || state.nextStrategicOrderSerial < 1) {
+    add('nextStrategicOrderSerial', 'must be a positive integer');
+  } else if (state.nextStrategicOrderSerial <= maxStrategicOrderSerial) {
+    add('nextStrategicOrderSerial', 'must be greater than every existing strategic order serial');
+  }
+  if (state.phase === 'ended' && activeOrderByOfficerId.size > 0) {
+    add('strategicOrders', 'must be empty when the campaign has ended');
   }
 
   const rawIntelReports = (state as { intelReports?: unknown }).intelReports;
@@ -177,13 +291,15 @@ export function validateGameState(state: GameState): ValidationIssue[] {
 
   for (const [key, officer] of Object.entries(state.officers)) {
     const path = `officers.${key}`;
+    const activeOrderId = activeOrderByOfficerId.get(officer.id);
     if (key !== officer.id) add(`${path}.id`, `must match record key: ${key}`);
     if (!['serving', 'free', 'hidden', 'captive'].includes(officer.status)) add(`${path}.status`, `unknown status: ${officer.status}`);
     if (!state.factions[officer.factionId]) add(`${path}.factionId`, `unknown faction: ${officer.factionId}`);
     if (officer.status === 'hidden') {
       if (officer.cityId !== undefined) add(`${path}.cityId`, 'hidden officer must not be assigned to a city');
       if (!state.factions[officer.factionId]?.isNeutral) add(`${path}.factionId`, 'hidden officer must be neutral');
-    } else {
+      if (activeOrderId) add(`${path}.cityId`, 'hidden officer cannot have an active strategic order');
+    } else if (officer.status !== 'serving' || !activeOrderId) {
       if (!officer.cityId || !state.cities[officer.cityId]) add(`${path}.cityId`, `unknown city: ${officer.cityId}`);
     }
     if (officer.status === 'free' && !state.factions[officer.factionId]?.isNeutral) {
@@ -210,6 +326,16 @@ export function validateGameState(state: GameState): ValidationIssue[] {
     }
     if (officer.status === 'serving' && state.factions[officer.factionId]?.isNeutral) {
       add(`${path}.factionId`, 'serving officer must belong to a playable faction');
+    }
+    if (officer.status === 'serving' && Boolean(officer.cityId) === Boolean(activeOrderId)) {
+      add(`${path}.cityId`, 'serving officer must be either stationed or assigned exactly one active strategic order');
+    }
+    if (activeOrderId) {
+      const order = isRecord(rawStrategicOrders) ? rawStrategicOrders[activeOrderId] : undefined;
+      if (officer.status !== 'serving') add(`${path}.status`, 'only serving officers may have active strategic orders');
+      if (isRecord(order) && order.factionId !== officer.factionId) {
+        add(`${path}.factionId`, 'must match the active strategic order faction');
+      }
     }
     if (officer.status === 'serving' && officer.cityId && state.cities[officer.cityId]?.ownerId !== officer.factionId) {
       add(`${path}.cityId`, 'serving officer must be stationed in a city owned by their faction');

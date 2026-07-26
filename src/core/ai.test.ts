@@ -3,6 +3,7 @@ import { planAiAction, runAiFactionTurn } from './ai';
 import { createSampleState } from './sampleState';
 import { beginAiPhase } from './turn';
 import { validateGameState } from './validation';
+import { MOVE_STAMINA_COST } from './strategicOrders';
 
 describe('basic AI', () => {
   it('skips when no stationed officer can attack', () => {
@@ -73,13 +74,21 @@ describe('basic AI', () => {
     expect(validateGameState(next)).toEqual([]);
   });
 
-  it('reinforces an adjacent frontier without emptying the source city', () => {
+  it('queues an adjacent frontier reinforcement without emptying the source city', () => {
     const state = beginAiPhase(createSampleState());
     state.officers['zhang-fei'].cityId = 'chengdu';
     state.cities.jiangzhou.satrapOfficerId = undefined;
     const next = runAiFactionTurn(state);
 
-    expect(next.officers['zhang-fei'].cityId).toBe('jiangzhou');
+    expect(next.officers['zhang-fei'].cityId).toBeUndefined();
+    expect(Object.values(next.strategicOrders)).toMatchObject([{
+      officerId: 'zhang-fei',
+      sourceCityId: 'chengdu',
+      targetCityId: 'jiangzhou',
+      remainingMonths: 1,
+    }]);
+    expect(next.officers['zhang-fei'].stamina).toBe(100 - MOVE_STAMINA_COST);
+    expect(next.actedOfficerIds).toContain('zhang-fei');
     expect(Object.values(next.officers).filter((officer) => officer.cityId === 'chengdu' && officer.factionId === 'liu-bei'))
       .toHaveLength(1);
     expect(validateGameState(next)).toEqual([]);

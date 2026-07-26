@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { updateCitySatraps } from './administration';
 import { applyBattleResult } from './battle';
 import { createSampleState } from './sampleState';
-import { advanceCalendar, advanceTurnUntilPlayerDefense, beginAiPhase, finishTurn } from './turn';
+import {
+  advanceCalendar,
+  advanceTurnUntilPlayerDefense,
+  beginAiPhase,
+  continueTurnUntilPlayerDefense,
+  finishTurn,
+} from './turn';
 import {
   attackTacticalUnit,
   createTacticalBattle,
@@ -10,6 +16,8 @@ import {
   endTacticalSide,
 } from './tacticalBattle';
 import { validateGameState } from './validation';
+import { issueMoveOrder } from './strategicOrders';
+import { parseSave, serializeSave } from './saveGame';
 
 describe('turn progression', () => {
   it('rolls December into January of the next year', () => {
@@ -36,6 +44,23 @@ describe('turn progression', () => {
     expect(next.cities.luoyang.population).toBeGreaterThan(state.cities.luoyang.population);
     expect(next.actedOfficerIds).toEqual([]);
     expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('advances a saved multi-month move exactly once during real month settlement', () => {
+    const moving = issueMoveOrder(createSampleState(), {
+      sourceCityId: 'chenliu',
+      targetCityId: 'chang-an',
+      officerId: 'zhang-liao',
+    });
+    const reloaded = parseSave(serializeSave(moving)).state;
+
+    const afterOneMonth = finishTurn(beginAiPhase(reloaded));
+
+    expect(afterOneMonth.calendar).toEqual({ year: 190, month: 2 });
+    expect(afterOneMonth.officers['zhang-liao'].cityId).toBeUndefined();
+    expect(Object.values(afterOneMonth.strategicOrders)[0].remainingMonths).toBe(1);
+    expect(afterOneMonth.actedOfficerIds).toEqual([]);
+    expect(validateGameState(afterOneMonth)).toEqual([]);
   });
 
   it('finishes a month while an unresolved captive remains in prison', () => {
@@ -72,7 +97,11 @@ describe('turn progression', () => {
   });
 
   it('can resolve a paused player defence and return a valid AI-phase state', () => {
-    let state = createSampleState();
+    let state = issueMoveOrder(createSampleState(), {
+      sourceCityId: 'chenliu',
+      targetCityId: 'chang-an',
+      officerId: 'zhang-liao',
+    });
     state.officers['guan-yu'].troops = 100_000;
     state.officers['cao-cao'].cityId = 'chang-an';
     state.cities['chang-an'].reserveTroops = 0;
@@ -96,7 +125,14 @@ describe('turn progression', () => {
 
     expect(finished.status).toBe('defender-won');
     expect(resumed.phase).toBe('ai');
+    expect(Object.values(progress.state.strategicOrders)[0].remainingMonths).toBe(2);
+    expect(Object.values(resumed.strategicOrders)[0].remainingMonths).toBe(2);
     expect(resumed.cities[pending.order.targetCityId].ownerId).toBe(state.playerFactionId);
     expect(validateGameState(resumed)).toEqual([]);
+
+    const completed = continueTurnUntilPlayerDefense(resumed, pending.nextFactionIndex);
+    expect(completed.completed).toBe(true);
+    expect(Object.values(completed.state.strategicOrders)[0].remainingMonths).toBe(1);
+    expect(completed.state.calendar).toEqual({ year: 190, month: 2 });
   });
 });

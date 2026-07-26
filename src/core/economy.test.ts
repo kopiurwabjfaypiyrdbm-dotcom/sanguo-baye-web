@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MONTHLY_STAMINA_RECOVERY, applyMonthlyGrowth, calculateCityGrowth } from './economy';
 import { createSampleState } from './sampleState';
+import { issueMoveOrder } from './strategicOrders';
 
 describe('monthly economy', () => {
   it('uses quarterly taxes, seasonal harvests, and troop upkeep', () => {
@@ -55,5 +56,20 @@ describe('monthly economy', () => {
     const next = applyMonthlyGrowth(state);
 
     expect(next.officers['chen-gong'].stamina).toBe(0);
+  });
+
+  it('charges and applies shortages to troops supported from an order source city', () => {
+    const state = issueMoveOrder(createSampleState(), {
+      sourceCityId: 'chenliu',
+      targetCityId: 'chang-an',
+      officerId: 'zhang-liao',
+    });
+    state.cities.chenliu.food = 0;
+
+    const next = applyMonthlyGrowth(state);
+
+    expect(next.officers['zhang-liao'].cityId).toBeUndefined();
+    expect(next.officers['zhang-liao'].troops).toBe(Math.floor(state.officers['zhang-liao'].troops / 2));
+    expect(next.logs.at(-1)?.message).toContain('在途部队兵力减半');
   });
 });

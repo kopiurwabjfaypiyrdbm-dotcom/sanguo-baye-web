@@ -71,26 +71,40 @@ export function parseSave(input: string | unknown): SaveEnvelope {
 
 export function migrateGameState(input: unknown): GameState {
   if (!isRecord(input)) throw new Error('存档中的游戏状态无效');
-  if (input.schemaVersion === 3) {
+  if (input.schemaVersion === 4) {
     return normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(
       releaseLandlessFactionOfficers(structuredClone(input) as GameState),
+    )));
+  }
+  if (input.schemaVersion === 3) {
+    return normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(
+      releaseLandlessFactionOfficers({
+        ...structuredClone(input),
+        schemaVersion: 4,
+        strategicOrders: {},
+        nextStrategicOrderSerial: 1,
+      } as GameState),
     )));
   }
   if (input.schemaVersion === 2) {
     return normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(
       releaseLandlessFactionOfficers({
         ...structuredClone(input),
-        schemaVersion: 3,
+        schemaVersion: 4,
         intelReports: {},
+        strategicOrders: {},
+        nextStrategicOrderSerial: 1,
       } as GameState),
     )));
   }
   if (input.schemaVersion === 1) {
     return normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(releaseLandlessFactionOfficers({
       ...structuredClone(input),
-      schemaVersion: 3,
+      schemaVersion: 4,
       discoveredOfficerIds: Array.isArray(input.discoveredOfficerIds) ? [...input.discoveredOfficerIds] : [],
       intelReports: {},
+      strategicOrders: {},
+      nextStrategicOrderSerial: 1,
     } as GameState))));
   }
   throw new Error(`不支持的游戏状态版本：${String(input.schemaVersion)}`);

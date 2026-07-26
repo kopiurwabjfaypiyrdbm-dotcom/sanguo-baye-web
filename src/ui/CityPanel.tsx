@@ -22,6 +22,11 @@ import {
   getReconAvailability,
   getReconTargets,
 } from '../core/reconnaissance';
+import {
+  MOVE_STAMINA_COST,
+  getMoveAvailability,
+  getStrategicDestinations,
+} from '../core/strategicOrders';
 
 type CityPanelProps = {
   state: GameState;
@@ -79,9 +84,9 @@ export function CityPanel({
     () => getNeighborCities(state, cityId).filter((neighbor) => city && neighbor.ownerId !== city.ownerId),
     [state, cityId, city],
   );
-  const friendlyNeighbors = useMemo(
-    () => getNeighborCities(state, cityId).filter((neighbor) => city && neighbor.ownerId === city.ownerId),
-    [state, cityId, city],
+  const strategicDestinations = useMemo(
+    () => getStrategicDestinations(state, cityId, state.playerFactionId),
+    [state, cityId],
   );
   const reconTargets = useMemo(() => getReconTargets(state, city.id), [state, city.id]);
   const [selectedOfficerId, setSelectedOfficerId] = useState('');
@@ -113,10 +118,10 @@ export function CityPanel({
   }, [hostileNeighbors, selectedTargetId]);
 
   useEffect(() => {
-    if (!friendlyNeighbors.some((neighbor) => neighbor.id === selectedMoveTargetId)) {
-      setSelectedMoveTargetId(friendlyNeighbors[0]?.id ?? '');
+    if (!strategicDestinations.some((destination) => destination.city.id === selectedMoveTargetId)) {
+      setSelectedMoveTargetId(strategicDestinations[0]?.city.id ?? '');
     }
-  }, [friendlyNeighbors, selectedMoveTargetId]);
+  }, [strategicDestinations, selectedMoveTargetId]);
 
   useEffect(() => {
     if (!reconTargets.some((target) => target.id === selectedReconTargetId)) {
@@ -189,7 +194,20 @@ export function CityPanel({
           : selectedOfficer.stamina < SURRENDER_STAMINA_COST
             ? `${selectedOfficer.name}体力不足，需要 ${SURRENDER_STAMINA_COST} 点`
             : `消耗 ${selectedOfficer.name} ${SURRENDER_STAMINA_COST} 点体力和本月行动；失败会削弱俘虏忠诚`;
-  const canMove = isOwned && Boolean(selectedOfficer) && !selectedOfficerActed && Boolean(selectedMoveTargetId);
+  const moveAvailability = selectedOfficer && selectedMoveTargetId
+    ? getMoveAvailability(state, {
+      sourceCityId: city.id,
+      targetCityId: selectedMoveTargetId,
+      officerId: selectedOfficer.id,
+    })
+    : {
+      allowed: false as const,
+      reason: strategicDestinations.length === 0 ? '没有道路连通的己方目标城池' : '请选择执行武将',
+    };
+  const displayedMoveAvailability = disabled
+    ? { allowed: false as const, reason: '当前有待处理操作，暂时不能执行城池命令' }
+    : moveAvailability;
+  const canMove = isOwned && displayedMoveAvailability.allowed;
   const canAppoint = isOwned && Boolean(selectedOfficer) && city.satrapOfficerId !== selectedOfficerId;
   const canDistribute = isOwned && Boolean(selectedOfficer) && Number.isInteger(distributionValue)
     && distributionValue >= 0 && distributionValue <= distributionCapacity
@@ -373,15 +391,17 @@ export function CityPanel({
             )}
             <div className="personnel-command-row">
               <label className="command-field">
-                <span>调动到相邻己方城池</span>
+                <span>道路调动（每段道路 1 个月）</span>
                 <select
                   value={selectedMoveTargetId}
                   onChange={(event) => setSelectedMoveTargetId(event.target.value)}
-                  disabled={friendlyNeighbors.length === 0}
+                  disabled={strategicDestinations.length === 0}
                 >
-                  {friendlyNeighbors.length === 0 && <option value="">没有可调动城池</option>}
-                  {friendlyNeighbors.map((neighbor) => (
-                    <option value={neighbor.id} key={neighbor.id}>{neighbor.name}</option>
+                  {strategicDestinations.length === 0 && <option value="">没有可调动城池</option>}
+                  {strategicDestinations.map((destination) => (
+                    <option value={destination.city.id} key={destination.city.id}>
+                      {destination.city.name} · {destination.durationMonths} 个月
+                    </option>
                   ))}
                 </select>
               </label>
@@ -389,8 +409,12 @@ export function CityPanel({
                 type="button"
                 disabled={disabled || !canMove}
                 onClick={() => onMove(city.id, selectedMoveTargetId, selectedOfficerId)}
+                aria-describedby={!displayedMoveAvailability.allowed ? 'move-command-hint' : undefined}
+                title={displayedMoveAvailability.allowed
+                  ? `消耗体力 ${MOVE_STAMINA_COST}，预计 ${displayedMoveAvailability.durationMonths} 个月`
+                  : displayedMoveAvailability.reason}
               >
-                调动
+                启程
               </button>
               <button
                 type="button"
@@ -400,6 +424,11 @@ export function CityPanel({
                 任太守
               </button>
             </div>
+            {!displayedMoveAvailability.allowed && (
+              <p className="command-hint" id="move-command-hint">
+                暂不可调动：{displayedMoveAvailability.reason}
+              </p>
+            )}
             <button
               type="button"
               className="reward-command"

@@ -1,14 +1,15 @@
 import { appendLogs } from './logs';
 import type { GameState } from './types';
-import { releaseLandlessFactionOfficers } from './administration';
+import { releaseLandlessFactionOfficers, terminateAllStrategicOrders } from './administration';
 
 export function evaluateOutcome(state: GameState): GameState {
   if (state.phase === 'ended') return state;
   const normalized = releaseLandlessFactionOfficers(state);
   const playerHasCity = Object.values(normalized.cities).some((city) => city.ownerId === normalized.playerFactionId);
   if (!playerHasCity) {
+    const settled = terminateAllStrategicOrders(normalized);
     return appendLogs(
-      { ...normalized, campaignStarted: true, phase: 'ended', activeFactionId: normalized.playerFactionId, outcome: 'defeat' },
+      { ...settled, campaignStarted: true, phase: 'ended', activeFactionId: settled.playerFactionId, outcome: 'defeat' },
       'system',
       ['我方已失去全部城池，战役失败。'],
     );
@@ -19,8 +20,9 @@ export function evaluateOutcome(state: GameState): GameState {
     return city.ownerId !== normalized.playerFactionId && faction && !faction.isNeutral;
   });
   if (!enemyHasCity) {
+    const settled = terminateAllStrategicOrders(normalized);
     return appendLogs(
-      { ...normalized, campaignStarted: true, phase: 'ended', activeFactionId: normalized.playerFactionId, outcome: 'victory' },
+      { ...settled, campaignStarted: true, phase: 'ended', activeFactionId: settled.playerFactionId, outcome: 'victory' },
       'system',
       ['天下再无敌对诸侯，战役胜利。'],
     );

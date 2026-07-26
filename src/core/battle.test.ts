@@ -3,6 +3,7 @@ import { applyBattleResult, estimateBattle, resolveBattle } from './battle';
 import { updateCitySatraps } from './administration';
 import { createSampleState } from './sampleState';
 import { validateGameState } from './validation';
+import { issueMoveOrder } from './strategicOrders';
 
 describe('automatic battle', () => {
   it('rejects attacks against non-adjacent cities', () => {
@@ -246,12 +247,21 @@ describe('automatic battle', () => {
 
   it('turns all serving officers free when their faction loses its last city', () => {
     let state = createSampleState();
+    state.phase = 'ai';
+    state.activeFactionId = 'liu-bei';
+    state = issueMoveOrder(state, {
+      sourceCityId: 'chengdu',
+      targetCityId: 'hanzhong',
+      officerId: 'liu-bei',
+    });
     for (const city of Object.values(state.cities)) {
       if (city.ownerId === 'liu-bei' && city.id !== 'hanzhong') city.ownerId = 'neutral';
     }
     for (const officer of Object.values(state.officers)) {
-      if (officer.factionId === 'liu-bei') officer.cityId = 'hanzhong';
+      if (officer.factionId === 'liu-bei' && officer.cityId) officer.cityId = 'hanzhong';
     }
+    state.phase = 'player';
+    state.activeFactionId = 'cao-cao';
     state.officers['cao-cao'].cityId = 'chang-an';
     state.officers['cao-cao'].troops = 100_000;
     state.cities.hanzhong.reserveTroops = 0;
@@ -280,6 +290,10 @@ describe('automatic battle', () => {
       officer.status === 'captive' && officer.captorFactionId === 'cao-cao' && officer.cityId === 'hanzhong',
     )).toBe(true);
     expect(next.logs.some((log) => log.message.includes('失去最后一座城池'))).toBe(true);
+    expect(next.strategicOrders).toEqual({});
+    expect(next.officers['liu-bei']).toMatchObject({
+      status: 'free', factionId: 'neutral', cityId: 'hanzhong',
+    });
     expect(validateGameState(next)).toEqual([]);
   });
 });

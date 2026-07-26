@@ -382,6 +382,27 @@ select:focus-visible,
 
 .map-host canvas { display: block; }
 
+.strategic-order-strip {
+  position: absolute;
+  top: 48px;
+  right: 24px;
+  z-index: 2;
+  display: flex;
+  max-width: calc(100% - 48px);
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 6px 8px;
+  color: #d8e4d8;
+  background: rgba(15, 38, 32, 0.9);
+  border: 1px solid rgba(222, 195, 120, 0.34);
+  border-radius: 4px;
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.strategic-order-strip strong { color: #edce79; }
+.strategic-order-strip span { padding-left: 6px; border-left: 1px solid rgba(222, 195, 120, 0.22); }
+
 .load-error,
 .action-feedback {
   position: absolute;

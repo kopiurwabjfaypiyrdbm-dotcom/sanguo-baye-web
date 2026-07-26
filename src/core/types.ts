@@ -125,8 +125,30 @@ export type CityIntelReport = {
   totalTroops: number;
 };
 
+export type StrategicOrderKind = 'move';
+
+export type StrategicOrder = {
+  id: string;
+  kind: StrategicOrderKind;
+  factionId: string;
+  officerId: string;
+  sourceCityId: string;
+  targetCityId: string;
+  routeCityIds: string[];
+  createdTurn: number;
+  createdYear: number;
+  createdMonth: number;
+  durationMonths: number;
+  remainingMonths: number;
+  cargo: {
+    money: number;
+    food: number;
+    reserveTroops: number;
+  };
+};
+
 export type GameState = {
-  schemaVersion: 3;
+  schemaVersion: 4;
   scenario?: {
     id: string;
     source: 'sample' | 'baye-legacy';
@@ -145,6 +167,9 @@ export type GameState = {
   campaignStarted: boolean;
   playerFactionId: string;
   actedOfficerIds: string[];
+  /** Active multi-month strategic orders. Their officers are serving but not stationed in a city. */
+  strategicOrders: Record<string, StrategicOrder>;
+  nextStrategicOrderSerial: number;
   /** Free officers whose whereabouts are known to the player. */
   discoveredOfficerIds: string[];
   /** Player intelligence snapshots keyed by target city id. */
