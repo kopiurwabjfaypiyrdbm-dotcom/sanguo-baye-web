@@ -16,8 +16,9 @@ import {
   endTacticalSide,
 } from './tacticalBattle';
 import { validateGameState } from './validation';
-import { issueMoveOrder } from './strategicOrders';
+import { issueMoveOrder, issueTransportOrder } from './strategicOrders';
 import { parseSave, serializeSave } from './saveGame';
+import { nextRandom } from './random';
 
 describe('turn progression', () => {
   it('rolls December into January of the next year', () => {
@@ -34,6 +35,9 @@ describe('turn progression', () => {
   it('settles resources and returns to a new player turn', () => {
     const state = createSampleState();
     state.calendar = { year: 190, month: 12 };
+    const previousAges = Object.fromEntries(
+      Object.values(state.officers).map((officer) => [officer.id, officer.age]),
+    );
     const aiState = beginAiPhase(state);
     const next = finishTurn(aiState);
 
@@ -43,6 +47,87 @@ describe('turn progression', () => {
     expect(next.activeFactionId).toBe('cao-cao');
     expect(next.cities.luoyang.population).toBeGreaterThan(state.cities.luoyang.population);
     expect(next.actedOfficerIds).toEqual([]);
+    expect(Object.values(next.officers).every(
+      (officer) => officer.age === previousAges[officer.id] + 1,
+    )).toBe(true);
+    expect(next.logs.some((log) => log.message.includes('人物年龄增长 1 岁'))).toBe(true);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('ages serving, free, hidden, captive, and travelling officers exactly once at year rollover', () => {
+    let state = createSampleState();
+    state.calendar = { year: 190, month: 12 };
+    state.officers['chen-gong'] = {
+      ...state.officers['chen-gong'],
+      status: 'free',
+      factionId: 'neutral',
+      cityId: 'hanzhong',
+    };
+    state.officers['xun-yu'] = {
+      ...state.officers['xun-yu'],
+      status: 'hidden',
+      factionId: 'neutral',
+      cityId: undefined,
+    };
+    state.officers['guan-yu'] = {
+      ...state.officers['guan-yu'],
+      status: 'captive',
+      factionId: 'neutral',
+      captorFactionId: 'cao-cao',
+      formerFactionId: 'liu-bei',
+      cityId: 'luoyang',
+      troops: 0,
+      stamina: 0,
+    };
+    state = issueMoveOrder(state, {
+      sourceCityId: 'chenliu',
+      targetCityId: 'chang-an',
+      officerId: 'zhang-liao',
+    });
+    const previousAges = Object.fromEntries(
+      Object.values(state.officers).map((officer) => [officer.id, officer.age]),
+    );
+
+    const january = finishTurn(beginAiPhase(state));
+    const february = finishTurn(beginAiPhase(january));
+
+    for (const officer of Object.values(january.officers)) {
+      expect(officer.age).toBe(previousAges[officer.id] + 1);
+      expect(february.officers[officer.id].age).toBe(officer.age);
+    }
+    expect(validateGameState(february)).toEqual([]);
+  });
+
+  it('consumes transport randomness before random-city annual appearance', () => {
+    const state = createSampleState();
+    state.calendar = { year: 190, month: 12 };
+    state.rngSeed = 1972;
+    state.officers['chen-gong'] = {
+      ...state.officers['chen-gong'],
+      status: 'hidden',
+      cityId: undefined,
+      appearanceYear: 191,
+      appearanceCityId: undefined,
+    };
+    const moving = issueTransportOrder(state, {
+      sourceCityId: 'chenliu',
+      targetCityId: 'luoyang',
+      officerId: 'zhang-liao',
+      cargo: { money: 40, food: 80, reserveTroops: 120 },
+    });
+    const transportDraw = nextRandom(moving.rngSeed);
+    const appearanceDraw = nextRandom(transportDraw.seed);
+    const orderedCityIds = Object.values(moving.cities)
+      .sort((left, right) => left.id.localeCompare(right.id))
+      .map((city) => city.id);
+
+    const next = finishTurn({ ...moving, phase: 'ai', activeFactionId: 'liu-bei' });
+
+    expect(next.rngSeed).not.toBe(appearanceDraw.seed);
+    expect(next.officers['chen-gong'].cityId).toBe(
+      orderedCityIds[Math.floor(appearanceDraw.value * orderedCityIds.length)],
+    );
+    expect(next.logs.some((log) => log.message.includes('输送途中受损'))).toBe(true);
     expect(validateGameState(next)).toEqual([]);
   });
 

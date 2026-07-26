@@ -33,4 +33,38 @@ describe('month summary', () => {
 
     expect(summarizeMonth(logs)[0]).toBe('张飞掠夺汉中。');
   });
+
+  it('keeps annual progression visible ahead of routine AI reports', () => {
+    const logs: GameLog[] = Array.from({ length: 6 }, (_, index) => ({
+      id: `routine-${index}`,
+      kind: 'ai',
+      message: `例行经营 ${index}`,
+      turn: 12,
+    }));
+    logs.push({
+      id: 'annual',
+      kind: 'turn',
+      message: '年度更新：人物年龄增长 1 岁；各地传来新人才出仕前的活动消息。',
+      turn: 12,
+    });
+
+    expect(summarizeMonth(logs)[0]).toContain('年度更新');
+  });
+
+  it('reserves the first summary slot for annual progression in a critical month', () => {
+    const annual: GameLog = {
+      id: 'annual',
+      kind: 'turn',
+      message: '年度更新：人物年龄增长 1 岁。',
+      turn: 12,
+    };
+    const critical: GameLog[] = Array.from({ length: 6 }, (_, index) => ({
+      id: `battle-${index}`,
+      kind: 'battle',
+      message: `城池 ${index} 被占领。`,
+      turn: 12,
+    }));
+
+    expect(summarizeMonth([...critical, annual])[0]).toBe(annual.message);
+  });
 });

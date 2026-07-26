@@ -236,6 +236,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
   }
   if (playerFlags !== 1) add('factions', 'must contain exactly one player faction');
 
+  const placedItemIds = new Set<string>();
   for (const [key, city] of Object.entries(state.cities)) {
     const path = `cities.${key}`;
     if (key !== city.id) add(`${path}.id`, `must match record key: ${key}`);
@@ -291,6 +292,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       }
       for (const itemId of itemIds ?? []) {
         if (!state.items[itemId]) add(`${path}.${field}`, `unknown item: ${itemId}`);
+        placedItemIds.add(itemId);
       }
     }
     const neighbors = new Set<string>();
@@ -366,6 +368,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       }
       for (const itemId of equipmentItemIds) {
         if (!state.items[itemId]) add(`${path}.equipmentItemIds`, `unknown item: ${itemId}`);
+        placedItemIds.add(itemId);
       }
     }
     for (const [field, value] of Object.entries({
@@ -388,6 +391,26 @@ export function validateGameState(state: GameState): ValidationIssue[] {
     if ((officer.experience ?? 0) >= 100) add(`${path}.experience`, 'must be below 100');
     if (officer.loyalty > 100) add(`${path}.loyalty`, 'must not exceed 100');
     if (officer.stamina > 100) add(`${path}.stamina`, 'must not exceed 100');
+    if (officer.appearanceYear !== undefined
+      && (!Number.isSafeInteger(officer.appearanceYear) || officer.appearanceYear < 1)) {
+      add(`${path}.appearanceYear`, 'must be a positive safe integer');
+    }
+    if (officer.appearanceCityId !== undefined && !state.cities[officer.appearanceCityId]) {
+      add(`${path}.appearanceCityId`, `unknown city: ${officer.appearanceCityId}`);
+    }
+    if (officer.appearanceCityId !== undefined && officer.appearanceYear === undefined) {
+      add(`${path}.appearanceCityId`, 'requires appearanceYear');
+    }
+    if (officer.appearanceYear !== undefined
+      && officer.appearanceYear > state.calendar.year
+      && officer.status !== 'hidden') {
+      add(`${path}.status`, 'officer cannot appear before appearanceYear');
+    }
+    if (officer.appearanceYear !== undefined
+      && officer.appearanceYear <= state.calendar.year
+      && officer.status === 'hidden') {
+      add(`${path}.status`, 'hidden officer is overdue for appearance');
+    }
   }
 
   for (const [key, item] of Object.entries(state.items)) {
@@ -404,6 +427,22 @@ export function validateGameState(state: GameState): ValidationIssue[] {
     }
     if (item.armsTypeOverride && !state.armsTypes[item.armsTypeOverride]) {
       add(`items.${key}.armsTypeOverride`, `unknown arms type: ${item.armsTypeOverride}`);
+    }
+    if (item.appearanceYear !== undefined
+      && (!Number.isSafeInteger(item.appearanceYear) || item.appearanceYear < 1)) {
+      add(`items.${key}.appearanceYear`, 'must be a positive safe integer');
+    }
+    if (item.appearanceCityId !== undefined && !state.cities[item.appearanceCityId]) {
+      add(`items.${key}.appearanceCityId`, `unknown city: ${item.appearanceCityId}`);
+    }
+    if (item.appearanceYear !== undefined && item.appearanceCityId === undefined) {
+      add(`items.${key}.appearanceCityId`, 'is required for annual appearance');
+    }
+    if (item.appearanceCityId !== undefined && item.appearanceYear === undefined) {
+      add(`items.${key}.appearanceCityId`, 'requires appearanceYear');
+    }
+    if (item.appearanceYear !== undefined && item.appearanceYear > state.calendar.year && placedItemIds.has(item.id)) {
+      add(`items.${key}.appearanceYear`, 'item cannot be placed before appearanceYear');
     }
   }
   for (const [key, armsType] of Object.entries(state.armsTypes)) {

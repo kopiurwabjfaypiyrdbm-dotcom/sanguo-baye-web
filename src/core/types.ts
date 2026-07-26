@@ -61,6 +61,9 @@ export type Item = {
   intelligenceBonus: number;
   moveBonus: number;
   armsTypeOverride?: string;
+  /** Optional annual appearance rule for scenario items not yet placed in a city. */
+  appearanceYear?: number;
+  appearanceCityId?: string;
 };
 
 export type ArmsType = {
@@ -101,6 +104,10 @@ export type Officer = {
   level?: number;
   character?: number;
   experience?: number;
+  /** Original scenario year in which a hidden officer becomes free. */
+  appearanceYear?: number;
+  /** Missing target means the original rule selects a deterministic random city. */
+  appearanceCityId?: string;
 };
 
 export type GameLog = {

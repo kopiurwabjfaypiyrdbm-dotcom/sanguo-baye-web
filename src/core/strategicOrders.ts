@@ -230,7 +230,10 @@ function issueRoadOrder(
   return next;
 }
 
-export function advanceStrategicOrders(state: GameState): GameState {
+export function advanceStrategicOrders(
+  state: GameState,
+  options: { deferValidation?: boolean } = {},
+): GameState {
   if (Object.keys(state.strategicOrders).length === 0) return state;
   const strategicOrders = { ...state.strategicOrders };
   const officers = { ...state.officers };
@@ -315,7 +318,7 @@ export function advanceStrategicOrders(state: GameState): GameState {
 
   let next = updateCitySatraps({ ...state, strategicOrders, officers, cities, rngSeed });
   if (messages.length > 0) next = appendLogs(next, 'turn', messages);
-  assertValidGameState(next);
+  if (!options.deferValidation) assertValidGameState(next);
   return next;
 }
 

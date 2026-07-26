@@ -12,7 +12,9 @@ const RESOURCE = {
   cityLinks: 59,
   persons: 61,
   personNames: [62, 70, 71, 72],
+  personConditions: 63,
   personQueue: 65,
+  itemConditions: 67,
   goodsQueue: 68,
 } as const;
 
@@ -77,6 +79,23 @@ export type BayeLegacyCity = BayeLegacyCityRecord & {
 
 export type BayeLegacyPerson = BayeLegacyPersonRecord & {
   name: string;
+  /** Only retained when the person has not reached the original appearance year. */
+  appearanceYear?: number;
+  /** A null city means the original rule chooses a deterministic random city. */
+  appearanceCityIndex?: number | null;
+};
+
+export type BayeLegacySearchCondition = {
+  birthYear: number;
+  preferredOfficerIndex: number | null;
+  /** Raw zero means no fixed city for person appearance. */
+  cityIndex: number | null;
+};
+
+export type BayeLegacyItemAppearance = {
+  sourceIndex: number;
+  appearanceYear: number;
+  appearanceCityIndex: number;
 };
 
 export type BayeLegacyPeriod = {
@@ -84,6 +103,7 @@ export type BayeLegacyPeriod = {
   year: number;
   cities: BayeLegacyCity[];
   persons: BayeLegacyPerson[];
+  itemAppearances?: BayeLegacyItemAppearance[];
   rulerIndexes: number[];
 };
 
@@ -93,6 +113,14 @@ export function parseBayeLegacyPeriod(bytes: Uint8Array, period: 1 | 2 | 3 | 4 =
   const personBytes = archive.getItem(RESOURCE.persons, period);
   const personQueue = archive.getItem(RESOURCE.personQueue, period);
   const goodsQueue = archive.getItem(RESOURCE.goodsQueue, period);
+  const personConditions = parseBayeLegacySearchConditions(
+    archive.getItem(RESOURCE.personConditions, period),
+    PERSON_COUNT,
+  );
+  const itemConditions = parseBayeLegacySearchConditions(
+    archive.getItem(RESOURCE.itemConditions, period),
+    goodsQueue.length,
+  );
   const positions = archive.getItem(RESOURCE.interfaceConstants, INTERFACE_ITEM.cityPositions);
   const links = archive.getItem(RESOURCE.cityLinks, 1);
 
@@ -102,10 +130,33 @@ export function parseBayeLegacyPeriod(bytes: Uint8Array, period: 1 | 2 | 3 | 4 =
   assertMinimumLength(positions, CITY_COUNT * 2, 'city positions');
   assertMinimumLength(links, CITY_COUNT * 16, 'city links');
 
-  const persons = Array.from({ length: PERSON_COUNT }, (_, sourceIndex) => ({
-    ...parseBayeLegacyPersonRecord(personBytes.subarray(sourceIndex * LEGACY_PERSON_LENGTH), sourceIndex),
-    name: decodeBayeLegacyString(archive.getItem(RESOURCE.personNames[period - 1], sourceIndex + 1)),
-  }));
+  const year = new DataView(cityBytes.buffer, cityBytes.byteOffset, cityBytes.byteLength).getUint16(
+    CITY_COUNT * LEGACY_CITY_LENGTH,
+    true,
+  );
+  const persons = Array.from({ length: PERSON_COUNT }, (_, sourceIndex) => {
+    const appearanceYear = personConditions[sourceIndex].birthYear + 16;
+    return {
+      ...parseBayeLegacyPersonRecord(personBytes.subarray(sourceIndex * LEGACY_PERSON_LENGTH), sourceIndex),
+      name: decodeBayeLegacyString(archive.getItem(RESOURCE.personNames[period - 1], sourceIndex + 1)),
+      ...(appearanceYear > year
+        ? {
+            appearanceYear,
+            appearanceCityIndex: personConditions[sourceIndex].cityIndex,
+          }
+        : {}),
+    };
+  });
+  const itemAppearances = itemConditions.flatMap((condition, sourceIndex) =>
+    condition.birthYear > year
+      ? [{
+          sourceIndex,
+          appearanceYear: condition.birthYear,
+          // The locked four periods contain no future goods. Keep raw zero as
+          // city zero for future compatible archives until a non-zero sample exists.
+          appearanceCityIndex: condition.cityIndex ?? 0,
+        }]
+      : []);
   const cities = Array.from({ length: CITY_COUNT }, (_, sourceIndex) => {
     const record = parseBayeLegacyCityRecord(cityBytes.subarray(sourceIndex * LEGACY_CITY_LENGTH), sourceIndex);
     return {
@@ -120,20 +171,31 @@ export function parseBayeLegacyPeriod(bytes: Uint8Array, period: 1 | 2 | 3 | 4 =
       goodsIndexes: [...goodsQueue.subarray(record.goodsQueueOffset, record.goodsQueueOffset + record.goodsCount)],
     };
   });
-  validateQueueReferences(cities, persons.length, goodsQueue.length);
+  validateQueueReferences(cities, persons.length, itemConditions.length);
 
   return {
     period,
-    year: new DataView(cityBytes.buffer, cityBytes.byteOffset, cityBytes.byteLength).getUint16(
-      CITY_COUNT * LEGACY_CITY_LENGTH,
-      true,
-    ),
+    year,
     cities,
     persons,
+    itemAppearances,
     rulerIndexes: persons
       .filter((person) => person.rulerIndex === person.sourceIndex)
       .map((person) => person.sourceIndex),
   };
+}
+
+export function parseBayeLegacySearchConditions(
+  bytes: Uint8Array,
+  expectedCount: number,
+): BayeLegacySearchCondition[] {
+  const recordLength = 3;
+  assertLength(bytes, expectedCount * recordLength, 'legacy search conditions');
+  return Array.from({ length: expectedCount }, (_, index) => ({
+    birthYear: bytes[index * recordLength],
+    preferredOfficerIndex: fromOneBased(bytes[index * recordLength + 1]),
+    cityIndex: fromOneBased(bytes[index * recordLength + 2]),
+  }));
 }
 
 export function parseBayeLegacyCityRecord(bytes: Uint8Array, expectedIndex: number): BayeLegacyCityRecord {

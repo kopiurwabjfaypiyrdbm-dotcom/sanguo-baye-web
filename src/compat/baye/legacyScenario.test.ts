@@ -3,6 +3,7 @@ import {
   decodeBayeLegacyString,
   parseBayeLegacyCityRecord,
   parseBayeLegacyPersonRecord,
+  parseBayeLegacySearchConditions,
 } from './legacyScenario';
 
 describe('Baye legacy scenario records', () => {
@@ -42,6 +43,16 @@ describe('Baye legacy scenario records', () => {
       goodsQueueOffset: 2,
       goodsCount: 1,
     });
+  });
+
+  it('parses compact birth, preferred officer, and one-based city conditions', () => {
+    expect(parseBayeLegacySearchConditions(new Uint8Array([
+      175, 0, 23,
+      180, 9, 0,
+    ]), 2)).toEqual([
+      { birthYear: 175, preferredOfficerIndex: null, cityIndex: 22 },
+      { birthYear: 180, preferredOfficerIndex: 8, cityIndex: null },
+    ]);
   });
 
   it('decodes the 15-byte person record and empty equipment sentinel', () => {

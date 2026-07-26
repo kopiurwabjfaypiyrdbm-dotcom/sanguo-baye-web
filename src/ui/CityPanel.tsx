@@ -442,7 +442,7 @@ export function CityPanel({
                 <strong>{officer.name}</strong>
                 <span>武 {attributes.force} · 智 {attributes.intelligence}</span>
                 <span>兵 {number.format(officer.troops)}</span>
-                <span>忠 {officer.loyalty}</span>
+                <span>忠 {officer.loyalty} · 年龄 {officer.age}</span>
                 <span>等级 {officer.level ?? 1} · 经验 {officer.experience ?? 0}/100</span>
                 <span>装备 {equipmentNames || '无'}</span>
                 <span>{city.satrapOfficerId === officer.id ? '太守' : '在职'} · {state.actedOfficerIds.includes(officer.id) ? '已行动' : '待命'}</span>

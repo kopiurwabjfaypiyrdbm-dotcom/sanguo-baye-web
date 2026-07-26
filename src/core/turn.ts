@@ -8,6 +8,7 @@ import { updateCitySatraps } from './administration';
 import { evaluateOutcome } from './outcome';
 import { advanceStrategicOrders } from './strategicOrders';
 import { settleCityEvents } from './cityEvents';
+import { settleAnnualProgression } from './annualProgression';
 
 export type InteractiveTurnProgress = {
   state: GameState;
@@ -45,8 +46,9 @@ export function finishTurn(state: GameState): GameState {
     activeFactionId: state.playerFactionId,
     actedOfficerIds: [],
   };
-  const afterOrders = advanceStrategicOrders(settling);
-  const grown = applyMonthlyGrowth(afterOrders);
+  const afterOrders = advanceStrategicOrders(settling, { deferValidation: true });
+  const afterAnnualProgression = settleAnnualProgression(afterOrders, state.calendar);
+  const grown = applyMonthlyGrowth(afterAnnualProgression);
   const afterEvents = settleCityEvents(grown);
   const next = evaluateOutcome(updateCitySatraps(afterEvents));
   const withLog = appendLogs(next, 'turn', [`进入 ${next.calendar.year} 年 ${next.calendar.month} 月。`]);

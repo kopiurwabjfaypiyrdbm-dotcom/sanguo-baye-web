@@ -16,12 +16,12 @@ if (actualHash !== EXPECTED_ARCHIVE_SHA256) {
 
 const outputPath = resolve('src/data/generated/baye-periods.json');
 const payload = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   source: {
     repository: 'https://github.com/erduoniba/baye-fmj-app.git',
     commit: '60c41ea2d9932b295833ece7004394497610596a',
     archiveSha256: actualHash,
-    note: 'Parsed scenario records only. The original resource archive and visual assets are not bundled.',
+    note: 'Parsed scenario records plus sparse future officer appearance fields only. The original resource archive, full condition tables, and visual assets are not bundled.',
   },
   periods: ([1, 2, 3, 4] as const).map((period) => parseBayeLegacyPeriod(bytes, period)),
 };

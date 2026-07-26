@@ -70,6 +70,15 @@ export function createGameStateFromLegacyPeriod(
     aiProfile: 'defensive',
   };
   const items = createItemCatalog();
+  for (const appearance of period.itemAppearances ?? []) {
+    const id = itemId(appearance.sourceIndex);
+    if (!items[id]) throw new Error(`legacy appearance references unknown item ${appearance.sourceIndex}`);
+    items[id] = {
+      ...items[id],
+      appearanceYear: appearance.appearanceYear,
+      appearanceCityId: cityId(appearance.appearanceCityIndex),
+    };
+  }
 
   const officers: Record<string, Officer> = Object.fromEntries(
     period.persons.map((person) => {
@@ -118,6 +127,14 @@ export function createGameStateFromLegacyPeriod(
           level: person.level,
           character: person.character,
           experience: person.experience,
+          ...(status === 'hidden' && person.appearanceYear !== undefined
+            ? {
+                appearanceYear: person.appearanceYear,
+                ...(person.appearanceCityIndex == null
+                  ? {}
+                  : { appearanceCityId: cityId(person.appearanceCityIndex) }),
+              }
+            : {}),
         },
       ];
     }),

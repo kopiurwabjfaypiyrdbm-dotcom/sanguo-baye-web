@@ -97,6 +97,35 @@ describe('game state validation', () => {
     }));
   });
 
+  it('rejects premature or overdue annual appearance states', () => {
+    const futureOfficer = createSampleState();
+    futureOfficer.officers['chen-gong'].appearanceYear = 191;
+    expect(validateGameState(futureOfficer)).toContainEqual(expect.objectContaining({
+      path: 'officers.chen-gong.status',
+      message: 'officer cannot appear before appearanceYear',
+    }));
+
+    const overdueOfficer = createSampleState();
+    overdueOfficer.officers['chen-gong'] = {
+      ...overdueOfficer.officers['chen-gong'],
+      status: 'hidden',
+      cityId: undefined,
+      appearanceYear: 190,
+    };
+    expect(validateGameState(overdueOfficer)).toContainEqual(expect.objectContaining({
+      path: 'officers.chen-gong.status',
+      message: 'hidden officer is overdue for appearance',
+    }));
+
+    const prematureItem = createSampleState();
+    prematureItem.items['sunzi-manual'].appearanceYear = 191;
+    prematureItem.items['sunzi-manual'].appearanceCityId = 'luoyang';
+    expect(validateGameState(prematureItem)).toContainEqual(expect.objectContaining({
+      path: 'items.sunzi-manual.appearanceYear',
+      message: 'item cannot be placed before appearanceYear',
+    }));
+  });
+
   it('rejects unknown or over-capacity equipment references', () => {
     const unknown = createSampleState();
     unknown.officers['cao-cao'].equipmentItemIds = ['missing-item'];

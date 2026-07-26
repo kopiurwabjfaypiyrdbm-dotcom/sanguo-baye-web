@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "source": {
     "repository": "https://github.com/erduoniba/baye-fmj-app.git",
     "commit": "60c41ea2d9932b295833ece7004394497610596a",
     "archiveSha256": "c5b33922146e1631b5ab1c8429ca3c6cb3b80b26152747e391438409ec0f82ab",
-    "note": "Parsed scenario records only. The original resource archive and visual assets are not bundled."
+    "note": "Parsed scenario records plus sparse future officer appearance fields only. The original resource archive, full condition tables, and visual assets are not bundled."
   },
   "periods": [
     {
@@ -1955,7 +1955,9 @@
             null
           ],
           "age": 40,
-          "name": "徐荣"
+          "name": "徐荣",
+          "appearanceYear": 196,
+          "appearanceCityIndex": 20
         },
         {
           "sourceIndex": 29,
@@ -2355,7 +2357,9 @@
             null
           ],
           "age": 44,
-          "name": "雷薄"
+          "name": "雷薄",
+          "appearanceYear": 192,
+          "appearanceCityIndex": 21
         },
         {
           "sourceIndex": 49,
@@ -2475,7 +2479,9 @@
             null
           ],
           "age": 45,
-          "name": "孙策"
+          "name": "孙策",
+          "appearanceYear": 191,
+          "appearanceCityIndex": 33
         },
         {
           "sourceIndex": 55,
@@ -2495,7 +2501,9 @@
             null
           ],
           "age": 38,
-          "name": "孙权"
+          "name": "孙权",
+          "appearanceYear": 198,
+          "appearanceCityIndex": 33
         },
         {
           "sourceIndex": 56,
@@ -2575,7 +2583,9 @@
             null
           ],
           "age": 44,
-          "name": "侯选"
+          "name": "侯选",
+          "appearanceYear": 192,
+          "appearanceCityIndex": 3
         },
         {
           "sourceIndex": 60,
@@ -2775,7 +2785,9 @@
             null
           ],
           "age": 23,
-          "name": "孙乾"
+          "name": "孙乾",
+          "appearanceYear": 213,
+          "appearanceCityIndex": 13
         },
         {
           "sourceIndex": 70,
@@ -3575,7 +3587,9 @@
             null
           ],
           "age": 31,
-          "name": "凌统"
+          "name": "凌统",
+          "appearanceYear": 205,
+          "appearanceCityIndex": 28
         },
         {
           "sourceIndex": 110,
@@ -3615,7 +3629,9 @@
             null
           ],
           "age": 45,
-          "name": "刘晔"
+          "name": "刘晔",
+          "appearanceYear": 191,
+          "appearanceCityIndex": 12
         },
         {
           "sourceIndex": 112,
@@ -3675,7 +3691,9 @@
             null
           ],
           "age": 44,
-          "name": "陈武"
+          "name": "陈武",
+          "appearanceYear": 192,
+          "appearanceCityIndex": 23
         },
         {
           "sourceIndex": 115,
@@ -3695,7 +3713,9 @@
             null
           ],
           "age": 37,
-          "name": "陆逊"
+          "name": "陆逊",
+          "appearanceYear": 199,
+          "appearanceCityIndex": 22
         },
         {
           "sourceIndex": 116,
@@ -3755,7 +3775,9 @@
             null
           ],
           "age": 42,
-          "name": "吕蒙"
+          "name": "吕蒙",
+          "appearanceYear": 194,
+          "appearanceCityIndex": 28
         },
         {
           "sourceIndex": 119,
@@ -3775,7 +3797,9 @@
             null
           ],
           "age": 27,
-          "name": "费祎"
+          "name": "费祎",
+          "appearanceYear": 209,
+          "appearanceCityIndex": 25
         },
         {
           "sourceIndex": 120,
@@ -3795,7 +3819,9 @@
             null
           ],
           "age": 28,
-          "name": "董允"
+          "name": "董允",
+          "appearanceYear": 208,
+          "appearanceCityIndex": 31
         },
         {
           "sourceIndex": 121,
@@ -3815,7 +3841,9 @@
             null
           ],
           "age": 33,
-          "name": "马良"
+          "name": "马良",
+          "appearanceYear": 203,
+          "appearanceCityIndex": 26
         },
         {
           "sourceIndex": 122,
@@ -3835,7 +3863,9 @@
             null
           ],
           "age": 30,
-          "name": "马谡"
+          "name": "马谡",
+          "appearanceYear": 206,
+          "appearanceCityIndex": 26
         },
         {
           "sourceIndex": 123,
@@ -3875,7 +3905,9 @@
             null
           ],
           "age": 41,
-          "name": "庞统"
+          "name": "庞统",
+          "appearanceYear": 195,
+          "appearanceCityIndex": 26
         },
         {
           "sourceIndex": 125,
@@ -3895,7 +3927,9 @@
             null
           ],
           "age": 33,
-          "name": "关平"
+          "name": "关平",
+          "appearanceYear": 203,
+          "appearanceCityIndex": 5
         },
         {
           "sourceIndex": 126,
@@ -4015,7 +4049,9 @@
             null
           ],
           "age": 42,
-          "name": "文聘"
+          "name": "文聘",
+          "appearanceYear": 194,
+          "appearanceCityIndex": 26
         },
         {
           "sourceIndex": 132,
@@ -4095,7 +4131,9 @@
             null
           ],
           "age": 40,
-          "name": "徐庶"
+          "name": "徐庶",
+          "appearanceYear": 196,
+          "appearanceCityIndex": 26
         },
         {
           "sourceIndex": 136,
@@ -4175,7 +4213,9 @@
             null
           ],
           "age": 44,
-          "name": "法正"
+          "name": "法正",
+          "appearanceYear": 192,
+          "appearanceCityIndex": 37
         },
         {
           "sourceIndex": 140,
@@ -4295,7 +4335,9 @@
             null
           ],
           "age": 45,
-          "name": "杨修"
+          "name": "杨修",
+          "appearanceYear": 191,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 146,
@@ -4355,7 +4397,9 @@
             null
           ],
           "age": 41,
-          "name": "袁尚"
+          "name": "袁尚",
+          "appearanceYear": 195,
+          "appearanceCityIndex": 6
         },
         {
           "sourceIndex": 149,
@@ -4395,7 +4439,9 @@
             null
           ],
           "age": 44,
-          "name": "袁熙"
+          "name": "袁熙",
+          "appearanceYear": 192,
+          "appearanceCityIndex": 6
         },
         {
           "sourceIndex": 151,
@@ -4535,7 +4581,9 @@
             null
           ],
           "age": 39,
-          "name": "诸葛亮"
+          "name": "诸葛亮",
+          "appearanceYear": 197,
+          "appearanceCityIndex": 26
         },
         {
           "sourceIndex": 158,
@@ -4575,7 +4623,9 @@
             null
           ],
           "age": 30,
-          "name": "张南"
+          "name": "张南",
+          "appearanceYear": 206,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 160,
@@ -4595,7 +4645,9 @@
             null
           ],
           "age": 43,
-          "name": "朱桓"
+          "name": "朱桓",
+          "appearanceYear": 193,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 161,
@@ -4755,7 +4807,9 @@
             null
           ],
           "age": 28,
-          "name": "王平"
+          "name": "王平",
+          "appearanceYear": 208,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 169,
@@ -4775,7 +4829,9 @@
             null
           ],
           "age": 45,
-          "name": "魏延"
+          "name": "魏延",
+          "appearanceYear": 191,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 170,
@@ -4795,7 +4851,9 @@
             null
           ],
           "age": 43,
-          "name": "王粲"
+          "name": "王粲",
+          "appearanceYear": 193,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 171,
@@ -4955,7 +5013,9 @@
             null
           ],
           "age": 42,
-          "name": "阚泽"
+          "name": "阚泽",
+          "appearanceYear": 194,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 179,
@@ -5378,6 +5438,7 @@
           "name": ""
         }
       ],
+      "itemAppearances": [],
       "rulerIndexes": [
         0,
         1,
@@ -7529,7 +7590,9 @@
             null
           ],
           "age": 27,
-          "name": "孙乾"
+          "name": "孙乾",
+          "appearanceYear": 213,
+          "appearanceCityIndex": 18
         },
         {
           "sourceIndex": 37,
@@ -7729,7 +7792,9 @@
             null
           ],
           "age": 20,
-          "name": "郭淮"
+          "name": "郭淮",
+          "appearanceYear": 206,
+          "appearanceCityIndex": 4
         },
         {
           "sourceIndex": 47,
@@ -7809,7 +7874,9 @@
             null
           ],
           "age": 24,
-          "name": "张燕"
+          "name": "张燕",
+          "appearanceYear": 203,
+          "appearanceCityIndex": 6
         },
         {
           "sourceIndex": 51,
@@ -8329,7 +8396,9 @@
             null
           ],
           "age": 28,
-          "name": "朱治"
+          "name": "朱治",
+          "appearanceYear": 210,
+          "appearanceCityIndex": 23
         },
         {
           "sourceIndex": 77,
@@ -8809,7 +8878,9 @@
             null
           ],
           "age": 24,
-          "name": "马岱"
+          "name": "马岱",
+          "appearanceYear": 199,
+          "appearanceCityIndex": 8
         },
         {
           "sourceIndex": 101,
@@ -9049,7 +9120,9 @@
             null
           ],
           "age": 25,
-          "name": "韩嵩"
+          "name": "韩嵩",
+          "appearanceYear": 211,
+          "appearanceCityIndex": 26
         },
         {
           "sourceIndex": 113,
@@ -9349,7 +9422,9 @@
             null
           ],
           "age": 27,
-          "name": "吴班"
+          "name": "吴班",
+          "appearanceYear": 206,
+          "appearanceCityIndex": 25
         },
         {
           "sourceIndex": 128,
@@ -9869,7 +9944,9 @@
             null
           ],
           "age": 28,
-          "name": "董允"
+          "name": "董允",
+          "appearanceYear": 208,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 154,
@@ -9889,7 +9966,9 @@
             null
           ],
           "age": 27,
-          "name": "费祎"
+          "name": "费祎",
+          "appearanceYear": 209,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 155,
@@ -9929,7 +10008,9 @@
             null
           ],
           "age": 0,
-          "name": "郭攸之"
+          "name": "郭攸之",
+          "appearanceYear": 206,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 157,
@@ -9969,7 +10050,9 @@
             null
           ],
           "age": 0,
-          "name": "泠苞"
+          "name": "泠苞",
+          "appearanceYear": 207,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 159,
@@ -10009,7 +10092,9 @@
             null
           ],
           "age": 33,
-          "name": "马良"
+          "name": "马良",
+          "appearanceYear": 203,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 161,
@@ -10029,7 +10114,9 @@
             null
           ],
           "age": 30,
-          "name": "马谡"
+          "name": "马谡",
+          "appearanceYear": 206,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 162,
@@ -10089,7 +10176,9 @@
             null
           ],
           "age": 33,
-          "name": "关平"
+          "name": "关平",
+          "appearanceYear": 203,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 165,
@@ -10249,7 +10338,9 @@
             null
           ],
           "age": 0,
-          "name": "刘琮"
+          "name": "刘琮",
+          "appearanceYear": 211,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 173,
@@ -10792,6 +10883,7 @@
           "name": ""
         }
       ],
+      "itemAppearances": [],
       "rulerIndexes": [
         0,
         1,
@@ -12719,7 +12811,9 @@
             null
           ],
           "age": 27,
-          "name": "夏侯霸"
+          "name": "夏侯霸",
+          "appearanceYear": 218,
+          "appearanceCityIndex": 5
         },
         {
           "sourceIndex": 26,
@@ -13639,7 +13733,9 @@
             null
           ],
           "age": 23,
-          "name": "韩嵩"
+          "name": "韩嵩",
+          "appearanceYear": 211,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 72,
@@ -13879,7 +13975,9 @@
             null
           ],
           "age": 22,
-          "name": "刘封"
+          "name": "刘封",
+          "appearanceYear": 216,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 84,
@@ -13959,7 +14057,9 @@
             null
           ],
           "age": 29,
-          "name": "孙乾"
+          "name": "孙乾",
+          "appearanceYear": 213,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 88,
@@ -14359,7 +14459,9 @@
             null
           ],
           "age": 23,
-          "name": "朱治"
+          "name": "朱治",
+          "appearanceYear": 210,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 108,
@@ -14519,7 +14621,9 @@
             null
           ],
           "age": 27,
-          "name": "孙尚香"
+          "name": "孙尚香",
+          "appearanceYear": 209,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 116,
@@ -15299,7 +15403,9 @@
             null
           ],
           "age": 27,
-          "name": "费祎"
+          "name": "费祎",
+          "appearanceYear": 209,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 155,
@@ -15399,7 +15505,9 @@
             null
           ],
           "age": 0,
-          "name": "公孙渊"
+          "name": "公孙渊",
+          "appearanceYear": 221,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 160,
@@ -15559,7 +15667,9 @@
             null
           ],
           "age": 0,
-          "name": "邓艾"
+          "name": "邓艾",
+          "appearanceYear": 213,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 168,
@@ -15579,7 +15689,9 @@
             null
           ],
           "age": 0,
-          "name": "钟会"
+          "name": "钟会",
+          "appearanceYear": 241,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 169,
@@ -15619,7 +15731,9 @@
             null
           ],
           "age": 0,
-          "name": "姜维"
+          "name": "姜维",
+          "appearanceYear": 222,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 171,
@@ -15699,7 +15813,9 @@
             null
           ],
           "age": 0,
-          "name": "陆抗"
+          "name": "陆抗",
+          "appearanceYear": 242,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 175,
@@ -15719,7 +15835,9 @@
             null
           ],
           "age": 0,
-          "name": "贾华"
+          "name": "贾华",
+          "appearanceYear": 228,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 176,
@@ -15739,7 +15857,9 @@
             null
           ],
           "age": 0,
-          "name": "博士仁"
+          "name": "博士仁",
+          "appearanceYear": 221,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 177,
@@ -15759,7 +15879,9 @@
             null
           ],
           "age": 0,
-          "name": "董和"
+          "name": "董和",
+          "appearanceYear": 210,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 178,
@@ -15799,7 +15921,9 @@
             null
           ],
           "age": 0,
-          "name": "庞仪"
+          "name": "庞仪",
+          "appearanceYear": 210,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 180,
@@ -16202,6 +16326,7 @@
           "name": ""
         }
       ],
+      "itemAppearances": [],
       "rulerIndexes": [
         0,
         1,
@@ -18918,7 +19043,9 @@
             null
           ],
           "age": 25,
-          "name": "司马昭"
+          "name": "司马昭",
+          "appearanceYear": 227,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 66,
@@ -20298,7 +20425,9 @@
             null
           ],
           "age": 20,
-          "name": "孙浩"
+          "name": "孙浩",
+          "appearanceYear": 258,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 135,
@@ -20318,7 +20447,9 @@
             null
           ],
           "age": 27,
-          "name": "陆抗"
+          "name": "陆抗",
+          "appearanceYear": 242,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 136,
@@ -20338,7 +20469,9 @@
             null
           ],
           "age": 22,
-          "name": "贾华"
+          "name": "贾华",
+          "appearanceYear": 228,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 137,
@@ -20378,7 +20511,9 @@
             null
           ],
           "age": 24,
-          "name": "诸葛恪"
+          "name": "诸葛恪",
+          "appearanceYear": 228,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 139,
@@ -20638,7 +20773,9 @@
             null
           ],
           "age": 0,
-          "name": "钟会"
+          "name": "钟会",
+          "appearanceYear": 241,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 152,
@@ -20698,7 +20835,9 @@
             null
           ],
           "age": 0,
-          "name": "羊祜"
+          "name": "羊祜",
+          "appearanceYear": 237,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 155,
@@ -20918,7 +21057,9 @@
             null
           ],
           "age": 0,
-          "name": "杨仪"
+          "name": "杨仪",
+          "appearanceYear": 228,
+          "appearanceCityIndex": null
         },
         {
           "sourceIndex": 166,
@@ -21601,6 +21742,7 @@
           "name": ""
         }
       ],
+      "itemAppearances": [],
       "rulerIndexes": [
         0,
         1,
