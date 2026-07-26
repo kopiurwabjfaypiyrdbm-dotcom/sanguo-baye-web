@@ -386,4 +386,23 @@ describe('automatic battle', () => {
     });
     expect(validateGameState(next)).toEqual([]);
   });
+
+  it('applies source-backed post-battle city losses through the shared adapter', () => {
+    const state = createSampleState();
+    state.officers['cao-cao'].cityId = 'chang-an';
+    state.cities.hanzhong.publicLoyalty = 75;
+    const before = structuredClone(state.cities.hanzhong);
+    const result = resolveBattle(state, {
+      sourceCityId: 'chang-an',
+      targetCityId: 'hanzhong',
+      officerIds: ['cao-cao'],
+      provisions: 100,
+    });
+    const city = applyBattleResult(state, result).cities.hanzhong;
+
+    expect(city.farming).toBe(before.farming - Math.floor(before.farming / 20));
+    expect(city.commerce).toBe(before.commerce - Math.floor(before.commerce / 20));
+    expect(city.money).toBe(before.money - Math.floor(before.money / 20));
+    expect(city.publicLoyalty).toBe(75 - Math.floor(75 / 10));
+  });
 });

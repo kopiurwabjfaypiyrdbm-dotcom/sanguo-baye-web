@@ -28,6 +28,7 @@ export function createTacticalMap(
     backgroundColor: '#10211f',
     antialias: true,
     audio: { noAudio: true },
+    fps: { target: 30 },
     render: { transparent: false },
     input: { touch: { capture: false } },
     scale: {

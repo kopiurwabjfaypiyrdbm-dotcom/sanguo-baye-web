@@ -1,6 +1,11 @@
 import type { GameState } from './types';
 import { parseSave, serializeSave, type SaveEnvelope } from './saveGame';
-import { validateAttackOrder, type AttackOrder } from './battle';
+import type { AttackOrder } from './battle';
+import {
+  deleteBattleRecovery,
+  loadBattleRecovery,
+  savePendingBattleRecovery,
+} from './battleRecovery';
 
 export const SAVE_SLOT_IDS = ['auto', '1', '2', '3'] as const;
 export type SaveSlotId = typeof SAVE_SLOT_IDS[number];
@@ -8,8 +13,6 @@ export type SaveSlotId = typeof SAVE_SLOT_IDS[number];
 export type SaveStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 const KEY_PREFIX = 'sanguo-baye-web:save:';
-const BATTLE_CHECKPOINT_KEY = 'sanguo-baye-web:battle-checkpoint';
-
 export type BattleCheckpoint = {
   state: GameState;
   order: AttackOrder;
@@ -63,74 +66,21 @@ export function saveBattleCheckpoint(
   nextFactionIndex: number,
   label?: string,
 ): BattleCheckpoint {
-  validateBattleCheckpoint(state, order, nextFactionIndex);
-  const strategicSave = JSON.parse(serializeSave(state, label)) as unknown;
-  storage.setItem(BATTLE_CHECKPOINT_KEY, JSON.stringify({
-    format: 'sanguo-baye-web:battle-checkpoint',
-    version: 1,
-    strategicSave,
-    order,
-    nextFactionIndex,
-  }));
+  savePendingBattleRecovery(storage, state, order, { kind: 'ai-phase', nextFactionIndex }, label);
   return { state: structuredClone(state), order: { ...order, officerIds: [...order.officerIds] }, nextFactionIndex, label };
 }
 
 export function loadBattleCheckpoint(storage: SaveStorage): BattleCheckpoint | undefined {
-  const serialized = storage.getItem(BATTLE_CHECKPOINT_KEY);
-  if (serialized === null) return undefined;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(serialized);
-  } catch {
-    throw new Error('战前检查点不是有效的 JSON');
-  }
-  if (!isRecord(parsed)
-    || parsed.format !== 'sanguo-baye-web:battle-checkpoint'
-    || parsed.version !== 1
-    || !isAttackOrder(parsed.order)
-    || !Number.isInteger(parsed.nextFactionIndex)) {
-    throw new Error('无法识别战前检查点');
-  }
-  const envelope = parseSave(parsed.strategicSave);
-  const nextFactionIndex = parsed.nextFactionIndex as number;
-  validateBattleCheckpoint(envelope.state, parsed.order, nextFactionIndex);
+  const recovery = loadBattleRecovery(storage);
+  if (!recovery || recovery.status !== 'pending' || recovery.resume.kind !== 'ai-phase') return undefined;
   return {
-    state: envelope.state,
-    order: parsed.order,
-    nextFactionIndex,
-    label: envelope.label,
+    state: recovery.state,
+    order: recovery.order,
+    nextFactionIndex: recovery.resume.nextFactionIndex,
+    label: recovery.label,
   };
 }
 
 export function deleteBattleCheckpoint(storage: SaveStorage): void {
-  storage.removeItem(BATTLE_CHECKPOINT_KEY);
-}
-
-function validateBattleCheckpoint(state: GameState, order: AttackOrder, nextFactionIndex: number): void {
-  if (state.phase !== 'ai') throw new Error('战前检查点必须位于 AI 阶段');
-  const expectedNextFactionIndex = state.factionOrder.indexOf(state.activeFactionId) + 1;
-  if (
-    expectedNextFactionIndex <= 0
-    || nextFactionIndex !== expectedNextFactionIndex
-    || nextFactionIndex > state.factionOrder.length
-  ) {
-    throw new Error('战前检查点的 AI 恢复位置无效');
-  }
-  validateAttackOrder(state, order);
-  if (state.cities[order.targetCityId].ownerId !== state.playerFactionId) {
-    throw new Error('战前检查点不是玩家守城战');
-  }
-}
-
-function isAttackOrder(value: unknown): value is AttackOrder {
-  return isRecord(value)
-    && typeof value.sourceCityId === 'string'
-    && typeof value.targetCityId === 'string'
-    && Array.isArray(value.officerIds)
-    && value.officerIds.every((officerId) => typeof officerId === 'string')
-    && typeof value.provisions === 'number';
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  deleteBattleRecovery(storage);
 }

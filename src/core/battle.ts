@@ -58,6 +58,8 @@ export type BattleParticipantSnapshot = {
 };
 
 export type BattleStateGuard = {
+  version: 2;
+  strategicFingerprint: string;
   sourceCityId: string;
   targetCityId: string;
   sourceFood: number;
@@ -75,6 +77,7 @@ export type AttackContext = {
 };
 
 export type BattleResult = {
+  battleId: string;
   turn: number;
   seedBefore: number;
   nextRngSeed: number;
@@ -170,6 +173,7 @@ export function resolveBattle(state: GameState, order: AttackOrder, config = bat
   ];
 
   return {
+    battleId: createBattleId(state, order),
     turn: state.turn,
     seedBefore: state.rngSeed,
     nextRngSeed: defenderRandom.seed,
@@ -193,8 +197,17 @@ export function resolveBattle(state: GameState, order: AttackOrder, config = bat
 }
 
 export function applyBattleResult(state: GameState, result: BattleResult): GameState {
+  assertBattleResultConsistency(result);
   if (state.turn !== result.turn || state.rngSeed !== result.seedBefore) {
     throw new Error('Battle result does not match the current state');
+  }
+  if (result.battleId !== createBattleId(state, {
+    sourceCityId: result.sourceCityId,
+    targetCityId: result.targetCityId,
+    officerIds: result.attackerOfficerIds,
+    provisions: result.provisions,
+  })) {
+    throw new Error('Battle result identity does not match the current campaign');
   }
   const source = state.cities[result.sourceCityId];
   const target = state.cities[result.targetCityId];
@@ -226,12 +239,21 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
     },
     [target.id]: {
       ...target,
+      farming: target.farming - Math.floor(target.farming / 20),
+      commerce: target.commerce - Math.floor(target.commerce / 20),
+      money: target.money - Math.floor(target.money / 20),
+      publicLoyalty: target.publicLoyalty === undefined
+        ? undefined
+        : target.publicLoyalty - Math.floor(target.publicLoyalty / 10),
       reserveTroops: Math.max(0, target.reserveTroops - result.defenderReserveLosses),
       food: result.targetFoodAfter ?? target.food,
     },
   };
 
-  const additionalLogs: string[] = [...growthLogs];
+  const additionalLogs: string[] = [
+    ...growthLogs,
+    `${target.name}经此战农业、商业与金钱各损耗二十分之一，民忠损耗十分之一。`,
+  ];
   const neutralFactionId = Object.values(state.factions).find((faction) => faction.isNeutral)?.id;
   let captureSeed = result.nextRngSeed;
   const lifecycleResults: Array<{
@@ -390,6 +412,17 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
   return next;
 }
 
+export function createBattleId(state: GameState, order: AttackOrder): string {
+  return [
+    state.turn,
+    state.rngSeed,
+    order.sourceCityId,
+    order.targetCityId,
+    [...order.officerIds].join(','),
+    order.provisions,
+  ].join(':');
+}
+
 export function executeAttack(state: GameState, order: AttackOrder, config = battleConfig): GameState {
   return applyBattleResult(state, resolveBattle(state, order, config));
 }
@@ -436,6 +469,8 @@ export function createBattleStateGuard(state: GameState, context: AttackContext)
       && (officer.cityId === context.source.id || officer.cityId === context.target.id),
   );
   return {
+    version: 2,
+    strategicFingerprint: createBattleStrategicFingerprint(state),
     sourceCityId: context.source.id,
     targetCityId: context.target.id,
     sourceFood: context.source.food,
@@ -477,6 +512,18 @@ export function assertBattleStateGuard(state: GameState, guard: BattleStateGuard
   ) {
     throw new Error('Battle result references stale target resources');
   }
+  if (guard.version !== 2 || guard.strategicFingerprint !== createBattleStrategicFingerprint(state)) {
+    throw new Error('Battle result references stale strategic state');
+  }
+}
+
+export function createBattleStrategicFingerprint(state: GameState): string {
+  // A tactical session freezes the strategic layer. Hashing the complete
+  // canonical state except presentation-only logs closes gaps around captives,
+  // rulers, equipment, policies and in-flight orders without maintaining an
+  // error-prone second allowlist.
+  const { logs: _logs, ...guardedState } = state;
+  return fnv1a(stableSerialize(guardedState));
 }
 
 function createParticipantSnapshot(state: GameState, officer: Officer): BattleParticipantSnapshot {
@@ -513,6 +560,67 @@ function participantSnapshotsMatch(
   return Object.keys(guarded).every((key) => (
     current[key as keyof BattleParticipantSnapshot] === guarded[key as keyof BattleParticipantSnapshot]
   ));
+}
+
+function assertBattleResultConsistency(result: BattleResult): void {
+  if (result.battleId.length === 0) throw new Error('Battle result is missing its identity');
+  if (result.cityCaptured !== (result.winner === 'attacker')) {
+    throw new Error('Battle result winner and city ownership disagree');
+  }
+  if (!Number.isSafeInteger(result.provisions) || result.provisions <= 0) {
+    throw new Error('Battle result provisions are invalid');
+  }
+  if (
+    !Number.isSafeInteger(result.defenderReserveLosses)
+    || result.defenderReserveLosses < 0
+    || result.defenderReserveLosses > result.guard.targetReserveTroops
+  ) {
+    throw new Error('Battle result reserve losses are invalid');
+  }
+  const participantIds = new Set([
+    ...result.attackerOfficerIds,
+    ...result.defenderOfficerIds,
+  ]);
+  if (
+    new Set(result.attackerOfficerIds).size !== result.attackerOfficerIds.length
+    || new Set(result.defenderOfficerIds).size !== result.defenderOfficerIds.length
+  ) {
+    throw new Error('Battle result contains duplicate participants');
+  }
+  for (const officerId of participantIds) {
+    const losses = result.casualties[officerId];
+    const snapshot = result.guard.participants.find((participant) => participant.officerId === officerId);
+    if (!snapshot || !Number.isSafeInteger(losses) || losses < 0 || losses > snapshot.troops) {
+      throw new Error(`Battle result casualties are invalid for ${officerId}`);
+    }
+  }
+  for (const officerId of Object.keys(result.casualties)) {
+    if (!participantIds.has(officerId)) throw new Error(`Battle result contains an unknown casualty: ${officerId}`);
+  }
+  if (
+    result.targetFoodAfter !== undefined
+    && (!Number.isSafeInteger(result.targetFoodAfter) || result.targetFoodAfter < 0)
+  ) {
+    throw new Error('Battle result target food is invalid');
+  }
+}
+
+function stableSerialize(value: unknown): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableSerialize).join(',')}]`;
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, item]) => item !== undefined)
+    .sort(([left], [right]) => left.localeCompare(right));
+  return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${stableSerialize(item)}`).join(',')}}`;
+}
+
+function fnv1a(value: string): string {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
 function scoreOfficers(

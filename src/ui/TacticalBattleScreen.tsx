@@ -3,11 +3,16 @@ import { BAYE_ARMS_LABELS, BAYE_TERRAIN_LABELS } from '../compat/baye/tacticalBa
 import {
   getTacticalPathCost,
   getTacticalAttackRange,
+  getTacticalProvisionUse,
   getTacticalSkillTargetIds,
   getTacticalTile,
+  getTacticalUnitMobility,
   previewTacticalAttack,
   previewTacticalSkill,
+  TACTICAL_APPROACH_LABELS,
+  TACTICAL_BATTLEFIELD_LABELS,
   TACTICAL_SKILLS,
+  TACTICAL_STATUS_LABELS,
   TACTICAL_WEATHER_LABELS,
   type TacticalSkillId,
   type TacticalBattleState,
@@ -24,11 +29,13 @@ type TacticalBattleScreenProps = {
   battle: TacticalBattleState;
   bridge: GameBridge;
   selectedUnitId?: string;
+  pendingTargetUnitId?: string;
   reachable: TacticalPosition[];
   attackableUnitIds: string[];
   feedback?: { kind: 'success' | 'error'; message: string };
   isResolving: boolean;
   onUnitSelected: (unitId: string) => void;
+  onConfirmAttack: () => void;
   onTileSelected: (position: TacticalPosition) => void;
   onWait: () => void;
   onUseSkill: (skillId: TacticalSkillId, targetUnitId: string) => void;
@@ -43,11 +50,13 @@ export function TacticalBattleScreen({
   battle,
   bridge,
   selectedUnitId,
+  pendingTargetUnitId,
   reachable,
   attackableUnitIds,
   feedback,
   isResolving,
   onUnitSelected,
+  onConfirmAttack,
   onTileSelected,
   onWait,
   onUseSkill,
@@ -58,6 +67,10 @@ export function TacticalBattleScreen({
   const controller = useRef<TacticalMapController | null>(null);
   const playerSide = battle.attackerFactionId === campaign.playerFactionId ? 'attacker' : 'defender';
   const selectedUnit = selectedUnitId ? battle.units[selectedUnitId] : undefined;
+  const pendingTarget = pendingTargetUnitId ? battle.units[pendingTargetUnitId] : undefined;
+  const pendingAttackPreview = selectedUnit && pendingTarget
+    ? previewTacticalAttack(battle, selectedUnit.id, pendingTarget.id)
+    : undefined;
 
   useEffect(() => bridge.on('tactical:unit-selected', ({ unitId }) => onUnitSelected(unitId)), [bridge, onUnitSelected]);
   useEffect(() => bridge.on('tactical:tile-selected', onTileSelected), [bridge, onTileSelected]);
@@ -100,6 +113,8 @@ export function TacticalBattleScreen({
       .filter(Boolean)
     : [];
   const selectedSkills = selectedUnit?.officerId ? Object.values(TACTICAL_SKILLS) : [];
+  const attackerUse = getTacticalProvisionUse(battle, 'attacker');
+  const defenderUse = getTacticalProvisionUse(battle, 'defender');
 
   return (
     <main className="battle-shell">
@@ -110,9 +125,12 @@ export function TacticalBattleScreen({
         </div>
         <div className="battle-status-strip">
           <span>第 {battle.day} 日</span>
+          <span>期限 {battle.maxDays} 日</span>
           <span>天气 {TACTICAL_WEATHER_LABELS[battle.weather]}</span>
-          <span>攻粮 {number.format(battle.attackerFood)}</span>
-          <span>守粮 {number.format(battle.defenderFood)}</span>
+          <span>攻粮 {number.format(battle.attackerFood)}（日耗 {attackerUse} / 约 {Math.ceil(battle.attackerFood / attackerUse)} 日）</span>
+          <span>守粮 {number.format(battle.defenderFood)}（日耗 {defenderUse} / 约 {Math.ceil(battle.defenderFood / defenderUse)} 日）</span>
+          <span>玩家为{playerSide === 'attacker' ? '攻方' : '守方'}</span>
+          <span>战场 {TACTICAL_BATTLEFIELD_LABELS[battle.battlefieldTemplate]} · {TACTICAL_APPROACH_LABELS[battle.approach]}</span>
           <span>{battle.status === 'ongoing' ? `${activeName ?? battle.activeSide}行动` : '战斗结束'}</span>
           {battle.status === 'ongoing' && <span>未行动 {unactedCount} 队</span>}
         </div>
@@ -147,13 +165,18 @@ export function TacticalBattleScreen({
       </section>
 
       <section className="battle-command-bar">
+        {feedback && (
+          <div className={`battle-feedback ${feedback.kind}`} role={feedback.kind === 'error' ? 'alert' : 'status'}>
+            {feedback.message}
+          </div>
+        )}
         <div className="battle-selection">
           {selectedUnit ? (
             <>
               <strong>{selectedUnit.name}</strong>
               <span>
                 {BAYE_ARMS_LABELS[selectedUnit.armsType]} · 兵 {number.format(selectedUnit.troops)} ·
-                等级 {selectedUnit.level} · 移动 {selectedUnit.mobility} · 射程 {getTacticalAttackRange(selectedUnit.armsType)}
+                等级 {selectedUnit.level} · 移动 {getTacticalUnitMobility(selectedUnit)} · 射程 {getTacticalAttackRange(selectedUnit.armsType)}
               </span>
               <span>计谋点 {selectedUnit.skillPoints} / {selectedUnit.maxSkillPoints} · 状态 {statusLabel(selectedUnit.status)}</span>
               {selectedUnit.officerId && (battle.experienceGains[selectedUnit.officerId] ?? 0) > 0 && (
@@ -161,6 +184,7 @@ export function TacticalBattleScreen({
               )}
               {selectedTerrain !== undefined && <span>所在地形：{BAYE_TERRAIN_LABELS[selectedTerrain]}</span>}
               {selectedEquipment.length > 0 && <span>装备：{selectedEquipment.join('、')}</span>}
+              {battle.commanderUnitIds[selectedUnit.side] === selectedUnit.id && <span>身份：本方主将（败退即战败）</span>}
               <span>{selectedUnit.acted ? '本阶段已行动' : selectedUnit.moved ? '已移动，可攻击或待命' : '等待命令'}</span>
             </>
           ) : (
@@ -180,7 +204,7 @@ export function TacticalBattleScreen({
               ))}
               {attackableUnitIds.map((unitId) => (
                 <button type="button" key={`attack:${unitId}`} onClick={() => onUnitSelected(unitId)}>
-                  攻击 {battle.units[unitId].name}
+                  预览攻击 {battle.units[unitId].name}
                   （预计 {previewTacticalAttack(battle, selectedUnit.id, unitId).damage}）
                 </button>
               ))}
@@ -190,7 +214,9 @@ export function TacticalBattleScreen({
             <div className="battle-skill-list" aria-label="计谋列表">
               {selectedUnit.officerId ? selectedSkills.map((skill) => {
                 const targetIds = getTacticalSkillTargetIds(battle, selectedUnit.id, skill.id);
-                const unavailableReason = selectedUnit.intelligence < skill.minimumIntelligence
+                const unavailableReason = selectedUnit.status === 'silenced'
+                  ? '禁咒状态下无法施展计谋'
+                  : selectedUnit.intelligence < skill.minimumIntelligence
                   ? `智力不足（${selectedUnit.intelligence}/${skill.minimumIntelligence}）`
                   : selectedUnit.skillPoints < skill.cost
                     ? `计谋点不足（${selectedUnit.skillPoints}/${skill.cost}）`
@@ -212,6 +238,12 @@ export function TacticalBattleScreen({
                       const change = preview.expectedTroopChange === 0
                         ? ''
                         : ` · ${preview.expectedTroopChange > 0 ? '恢复' : '伤害'} ${Math.abs(preview.expectedTroopChange)}`;
+                      const foodChange = preview.expectedFoodChange === 0
+                        ? ''
+                        : ` · 粮草伤害 ${Math.abs(preview.expectedFoodChange)}`;
+                      const status = preview.resultingStatus
+                        ? ` · 状态 ${TACTICAL_STATUS_LABELS[preview.resultingStatus]}`
+                        : '';
                       return (
                         <button
                           type="button"
@@ -219,7 +251,11 @@ export function TacticalBattleScreen({
                           disabled={!canCommand}
                           onClick={() => onUseSkill(skill.id, unitId)}
                         >
-                          对 {battle.units[unitId].name}（{preview.successChance}%{change}）
+                          对 {battle.units[unitId].name}
+                          （{preview.successChance}%{change}{foodChange}{status} ·
+                          天候×{preview.weatherMultiplier.toFixed(2)} ·
+                          地形×{preview.terrainMultiplier.toFixed(2)} ·
+                          兵种×{preview.armsMultiplier.toFixed(2)}）
                         </button>
                       );
                     })}
@@ -229,6 +265,19 @@ export function TacticalBattleScreen({
             </div>
           )}
         </div>
+        {pendingTarget && pendingAttackPreview && (
+          <div className="battle-attack-confirm" role="status">
+            <strong>攻击预览：{selectedUnit?.name} → {pendingTarget.name}</strong>
+            <span>
+              预计伤害 {pendingAttackPreview.damage}，目标剩余 {pendingAttackPreview.targetTroopsAfter}；
+              攻方地形修正 {pendingAttackPreview.attackerTerrainShift}，
+              守方地形修正 {pendingAttackPreview.defenderTerrainShift}。
+            </span>
+            <button type="button" className="primary-action" disabled={!canCommand} onClick={onConfirmAttack}>
+              确认攻击
+            </button>
+          </div>
+        )}
         <div className="battle-command-actions">
           <button
             type="button"
@@ -244,18 +293,13 @@ export function TacticalBattleScreen({
         </div>
       </section>
 
-      <details className="battle-log" open>
+      <details className="battle-log">
         <summary>战场纪录（最近 {Math.min(10, battle.logs.length)} 条）</summary>
         <ol>
           {battle.logs.slice(-10).map((message, index) => <li key={`${battle.logs.length - 10 + index}:${message}`}>{message}</li>)}
         </ol>
       </details>
 
-      {feedback && (
-        <div className={`battle-feedback ${feedback.kind}`} role={feedback.kind === 'error' ? 'alert' : 'status'}>
-          {feedback.message}
-        </div>
-      )}
       {battle.status !== 'ongoing' && (
         <div className={`battle-outcome ${battle.status}`} role="status" aria-live="assertive">
           <strong>{battle.status === 'attacker-won' ? '攻方胜利' : '守方胜利'}</strong>
@@ -267,6 +311,8 @@ export function TacticalBattleScreen({
 }
 
 function victoryReasonLabel(reason?: TacticalVictoryReason): string {
+  if (reason === 'attacker-commander-defeated') return '攻方主将败退。';
+  if (reason === 'defender-commander-defeated') return '守方主将败退。';
   if (reason === 'objective-held') return '攻方占领城池并坚持到阶段结束。';
   if (reason === 'attacker-food-exhausted') return '攻方粮草耗尽，被迫撤军。';
   if (reason === 'defender-food-exhausted') return '守方粮草耗尽，城池失守。';
@@ -311,6 +357,7 @@ function UnitRoster({
             onClick={() => onUnitSelected(unit.id)}
           >
             <strong>{unit.name}</strong>
+            {battle.commanderUnitIds[side] === unit.id && <span>主将</span>}
             <span>{BAYE_ARMS_LABELS[unit.armsType]}</span>
             <span>Lv {unit.level}</span>
             <span>{number.format(unit.troops)} 兵</span>
@@ -323,5 +370,5 @@ function UnitRoster({
 }
 
 function statusLabel(status: TacticalBattleState['units'][string]['status']): string {
-  return status === 'confused' ? '混乱' : '正常';
+  return TACTICAL_STATUS_LABELS[status];
 }

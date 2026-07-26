@@ -42,14 +42,17 @@ export type BayeStrategicBattleInput = {
 
 export type BayeStrategicBattleResult = 1 | 2;
 
-/** Six arms types × eight terrains, extracted from IFACE_CONID/dFgtLandF. */
-export const BAYE_TERRAIN_SHIFTS = [
-  [0, 0, 2, 1, 0, 0, 0, 3],
-  [0, 0, 0, 0, 0, 0, 0, 2],
-  [0, 0, 0, 0, 0, 0, 0, 2],
-  [1, 1, 3, 2, 0, 0, 0, 0],
-  [0, 0, 1, 1, 0, 0, 0, 1],
-  [0, 0, 0, 0, 0, 0, 0, 1],
+/**
+ * Modern six-arms × eight-terrain substitute. The original dFgtLandF lives
+ * in a restricted resource library and is intentionally not embedded.
+ */
+export const MODERN_TERRAIN_SHIFTS = [
+  [1, 2, -1, -2, 0, -1, 0, -3],
+  [0, 1, 1, 2, 1, 2, 1, -2],
+  [0, 1, 2, 1, 1, 2, 1, -2],
+  [-1, -1, -2, -2, 0, 0, 0, 3],
+  [1, 1, 1, 1, 1, 1, 1, 0],
+  [0, 0, 0, 0, 1, 1, 1, 1],
 ] as const;
 
 export const BAYE_SUBDUE_MATRIX = [
@@ -61,10 +64,10 @@ export const BAYE_SUBDUE_MATRIX = [
   [0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
 ] as const;
 
-export function getBayeTerrainShift(armsType: BayeArmsType, terrain: BayeTerrain): number {
+export function getModernTerrainShift(armsType: BayeArmsType, terrain: BayeTerrain): number {
   assertIndex(armsType, BAYE_ARMS_TYPES.length, 'armsType');
   assertIndex(terrain, BAYE_TERRAINS.length, 'terrain');
-  return BAYE_TERRAIN_SHIFTS[armsType][terrain];
+  return MODERN_TERRAIN_SHIFTS[armsType][terrain];
 }
 
 const attackModulus = [1, 0.8, 0.9, 0.8, 1.3, 0.4] as const;

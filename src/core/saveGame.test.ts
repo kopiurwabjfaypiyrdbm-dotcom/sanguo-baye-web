@@ -477,8 +477,8 @@ describe('versioned saves', () => {
     expect(loadBattleCheckpoint(storage)).toEqual({ state, order, nextFactionIndex: 2, label: '连续守城检查点' });
 
     const checkpointKey = [...values.keys()].find((key) => key.includes('battle-checkpoint'))!;
-    const damaged = JSON.parse(values.get(checkpointKey)!) as { nextFactionIndex: number };
-    damaged.nextFactionIndex = 0;
+    const damaged = JSON.parse(values.get(checkpointKey)!) as { resume: { nextFactionIndex: number } };
+    damaged.resume.nextFactionIndex = 0;
     values.set(checkpointKey, JSON.stringify(damaged));
     expect(() => loadBattleCheckpoint(storage)).toThrow('AI 恢复位置无效');
 

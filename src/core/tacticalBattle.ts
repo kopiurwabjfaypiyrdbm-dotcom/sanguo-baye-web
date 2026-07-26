@@ -1,14 +1,14 @@
 import {
   BAYE_ARMS_TYPES,
-  BAYE_TERRAINS,
   buildBayeAttackAttributes,
   countBayeAttackDamage,
-  getBayeTerrainShift,
+  getModernTerrainShift,
   type BayeArmsType,
   type BayeTerrain,
 } from '../compat/baye/tacticalBattle';
 import {
   createBattleStateGuard,
+  createBattleId,
   validateAttackOrder,
   type AttackOrder,
   type BattleResult,
@@ -18,30 +18,68 @@ import type { GameState, Officer } from './types';
 import { getEffectiveOfficerAttributes } from './equipment';
 import { nextRandom } from './random';
 import { calculateBayeBattleExperience, calculateBayeSkillPoints } from '../compat/baye/tacticalGrowth';
+import {
+  BAYE_TACTICAL_STATUS_LABELS,
+  bayeStatusAllowsSkill,
+  bayeStatusSkipsAction,
+  getBayeStatusMobility,
+  getBayeStoneArrayLoss,
+  getModernAttackRange,
+  getModernTerrainMoveCost,
+  shouldRecoverBayeStatus,
+  type BayeTacticalStatus,
+} from '../compat/baye/tacticalState';
 
 export type TacticalSide = 'attacker' | 'defender';
 export type TacticalBattleStatus = 'ongoing' | 'attacker-won' | 'defender-won';
 export type TacticalVictoryReason =
   | 'annihilation'
+  | 'attacker-commander-defeated'
+  | 'defender-commander-defeated'
   | 'objective-held'
   | 'attacker-food-exhausted'
   | 'defender-food-exhausted'
   | 'day-limit';
 export type TacticalApproach = 'east' | 'west' | 'north' | 'south';
 export type TacticalWeather = 'fine' | 'cloudy' | 'wind' | 'rain' | 'hail';
-export type TacticalUnitStatus = 'normal' | 'confused';
-export type TacticalSkillId = 'fire' | 'confuse' | 'rally';
+export type TacticalUnitStatus = BayeTacticalStatus;
+export type TacticalSkillId =
+  | 'fire'
+  | 'confuse'
+  | 'rally'
+  | 'silence'
+  | 'root'
+  | 'qimen'
+  | 'dunjia'
+  | 'stone-array'
+  | 'hide'
+  | 'raid-provisions';
 export type TacticalSkillTarget = 'enemy' | 'ally';
+export type TacticalSkillEffect = 'troop-damage' | 'troop-recovery' | 'status' | 'food-damage';
+export type TacticalBattlefieldTemplate =
+  | 'river-crossing'
+  | 'highland-pass'
+  | 'forest-road'
+  | 'twin-villages'
+  | 'open-plain'
+  | 'marsh-fords';
 
 export type TacticalSkillDefinition = {
   id: TacticalSkillId;
   name: string;
   target: TacticalSkillTarget;
   range: number;
+  rangeShape: 'diamond' | 'cross';
   cost: number;
   minimumIntelligence: number;
   description: string;
+  effect: TacticalSkillEffect;
+  basePower: number;
+  appliesStatus?: TacticalUnitStatus;
+  clearsStatus?: boolean;
   weatherPower: Record<TacticalWeather, number>;
+  terrainPower: readonly number[];
+  armsPower: readonly number[];
 };
 
 export type TacticalTile = {
@@ -98,9 +136,12 @@ export type TacticalBattleState = {
   status: TacticalBattleStatus;
   victoryReason?: TacticalVictoryReason;
   approach: TacticalApproach;
-  battlefieldTemplate: 'river-crossing' | 'highland-pass';
+  battlefieldVersion: 1;
+  battlefieldKey: string;
+  battlefieldTemplate: TacticalBattlefieldTemplate;
   tiles: TacticalTile[];
   units: Record<string, TacticalUnit>;
+  commanderUnitIds: Partial<Record<TacticalSide, string>>;
   experienceGains: Record<string, number>;
   guard: BattleStateGuard;
   logs: string[];
@@ -121,31 +162,111 @@ export type TacticalSkillPreview = {
   skill: TacticalSkillDefinition;
   successChance: number;
   expectedTroopChange: number;
+  expectedFoodChange: number;
+  resultingStatus?: TacticalUnitStatus;
+  weatherMultiplier: number;
+  terrainMultiplier: number;
+  armsMultiplier: number;
 };
 
 const DEFAULT_WIDTH = 12;
 const DEFAULT_HEIGHT = 8;
 const DEFAULT_MAX_DAYS = 30;
+const BATTLEFIELD_TEMPLATES: readonly TacticalBattlefieldTemplate[] = [
+  'river-crossing',
+  'highland-pass',
+  'forest-road',
+  'twin-villages',
+  'open-plain',
+  'marsh-fords',
+];
 export const TACTICAL_SIDE_UNIT_LIMIT = 10;
 export const TACTICAL_WEATHERS: readonly TacticalWeather[] = ['fine', 'cloudy', 'wind', 'rain', 'hail'];
 export const TACTICAL_WEATHER_LABELS: Record<TacticalWeather, string> = {
   fine: '晴', cloudy: '阴', wind: '风', rain: '雨', hail: '冰雹',
 };
+export const TACTICAL_BATTLEFIELD_LABELS: Record<TacticalBattlefieldTemplate, string> = {
+  'river-crossing': '河川渡口',
+  'highland-pass': '山岭关隘',
+  'forest-road': '林间驿道',
+  'twin-villages': '双村要冲',
+  'open-plain': '平原旷野',
+  'marsh-fords': '泽地浅滩',
+};
+export const TACTICAL_APPROACH_LABELS: Record<TacticalApproach, string> = {
+  east: '由西向东',
+  west: '由东向西',
+  south: '由北向南',
+  north: '由南向北',
+};
+export { BAYE_TACTICAL_STATUS_LABELS as TACTICAL_STATUS_LABELS };
+
+const NEUTRAL_WEATHER = { fine: 1, cloudy: 1, wind: 1, rain: 1, hail: 1 } as const;
+const NEUTRAL_TERRAIN = [1, 1, 1, 1, 1, 1, 1, 1] as const;
+const NEUTRAL_ARMS = [1, 1, 1, 1, 1, 1] as const;
 export const TACTICAL_SKILLS: Record<TacticalSkillId, TacticalSkillDefinition> = {
   fire: {
-    id: 'fire', name: '火计', target: 'enemy', range: 3, cost: 18, minimumIntelligence: 55,
+    id: 'fire', name: '火计', target: 'enemy', range: 3, rangeShape: 'diamond',
+    cost: 18, minimumIntelligence: 55, effect: 'troop-damage', basePower: 30,
     description: '受天气影响的兵力伤害。',
     weatherPower: { fine: 1, cloudy: 0.9, wind: 1.25, rain: 0.5, hail: 0.75 },
+    terrainPower: [1, 1, 0.75, 1.25, 1.1, 0.9, 1.15, 0.4],
+    armsPower: [1, 1, 1, 0.7, 1, 1.15],
   },
   confuse: {
-    id: 'confuse', name: '扰乱', target: 'enemy', range: 3, cost: 22, minimumIntelligence: 70,
-    description: '成功后使目标跳过下一次行动。',
-    weatherPower: { fine: 1, cloudy: 1, wind: 1, rain: 1, hail: 1 },
+    id: 'confuse', name: '扰乱', target: 'enemy', range: 3, rangeShape: 'diamond',
+    cost: 22, minimumIntelligence: 70, effect: 'status', basePower: 0, appliesStatus: 'confused',
+    description: '使目标混乱并跳过行动，按日判定恢复。',
+    weatherPower: NEUTRAL_WEATHER, terrainPower: NEUTRAL_TERRAIN, armsPower: NEUTRAL_ARMS,
   },
   rally: {
-    id: 'rally', name: '激励', target: 'ally', range: 2, cost: 20, minimumIntelligence: 65,
-    description: '恢复友军兵力并解除混乱。',
-    weatherPower: { fine: 1, cloudy: 1, wind: 1, rain: 1, hail: 1 },
+    id: 'rally', name: '激励', target: 'ally', range: 2, rangeShape: 'diamond',
+    cost: 20, minimumIntelligence: 65, effect: 'troop-recovery', basePower: 30, clearsStatus: true,
+    description: '恢复友军兵力并解除异常状态。',
+    weatherPower: NEUTRAL_WEATHER, terrainPower: NEUTRAL_TERRAIN, armsPower: NEUTRAL_ARMS,
+  },
+  silence: {
+    id: 'silence', name: '禁咒', target: 'enemy', range: 3, rangeShape: 'diamond',
+    cost: 24, minimumIntelligence: 78, effect: 'status', basePower: 0, appliesStatus: 'silenced',
+    description: '使目标无法施展计谋，按日判定恢复。',
+    weatherPower: NEUTRAL_WEATHER, terrainPower: NEUTRAL_TERRAIN, armsPower: NEUTRAL_ARMS,
+  },
+  root: {
+    id: 'root', name: '定身', target: 'enemy', range: 2, rangeShape: 'cross',
+    cost: 20, minimumIntelligence: 68, effect: 'status', basePower: 0, appliesStatus: 'rooted',
+    description: '把目标移动力压至 1，按日判定恢复。',
+    weatherPower: NEUTRAL_WEATHER, terrainPower: NEUTRAL_TERRAIN, armsPower: NEUTRAL_ARMS,
+  },
+  qimen: {
+    id: 'qimen', name: '奇门', target: 'ally', range: 2, rangeShape: 'diamond',
+    cost: 28, minimumIntelligence: 82, effect: 'status', basePower: 0, appliesStatus: 'qimen',
+    description: '友军移动时忽略敌方控制区。',
+    weatherPower: NEUTRAL_WEATHER, terrainPower: NEUTRAL_TERRAIN, armsPower: NEUTRAL_ARMS,
+  },
+  dunjia: {
+    id: 'dunjia', name: '遁甲', target: 'ally', range: 2, rangeShape: 'diamond',
+    cost: 30, minimumIntelligence: 88, effect: 'status', basePower: 0, appliesStatus: 'dunjia',
+    description: '友军受到的普通攻击伤害降低。',
+    weatherPower: NEUTRAL_WEATHER, terrainPower: NEUTRAL_TERRAIN, armsPower: NEUTRAL_ARMS,
+  },
+  'stone-array': {
+    id: 'stone-array', name: '石阵', target: 'enemy', range: 2, rangeShape: 'cross',
+    cost: 32, minimumIntelligence: 90, effect: 'status', basePower: 0, appliesStatus: 'stone-array',
+    description: '目标无法行动并在每日承受兵力损失。',
+    weatherPower: NEUTRAL_WEATHER, terrainPower: NEUTRAL_TERRAIN, armsPower: NEUTRAL_ARMS,
+  },
+  hide: {
+    id: 'hide', name: '潜踪', target: 'ally', range: 1, rangeShape: 'diamond',
+    cost: 25, minimumIntelligence: 80, effect: 'status', basePower: 0, appliesStatus: 'hidden',
+    description: '友军仅能被相邻敌军锁定。',
+    weatherPower: NEUTRAL_WEATHER, terrainPower: NEUTRAL_TERRAIN, armsPower: NEUTRAL_ARMS,
+  },
+  'raid-provisions': {
+    id: 'raid-provisions', name: '劫粮', target: 'enemy', range: 3, rangeShape: 'diamond',
+    cost: 26, minimumIntelligence: 75, effect: 'food-damage', basePower: 100,
+    description: '破坏目标阵营粮草。',
+    weatherPower: { fine: 1, cloudy: 1, wind: 1.1, rain: 0.9, hail: 0.9 },
+    terrainPower: NEUTRAL_TERRAIN, armsPower: NEUTRAL_ARMS,
   },
 };
 
@@ -156,9 +277,10 @@ export function createTacticalBattle(state: GameState, order: AttackOrder): Tact
   }
   const defenders = context.defenders.slice(0, TACTICAL_SIDE_UNIT_LIMIT);
   const approach = resolveApproach(context.source.x, context.source.y, context.target.x, context.target.y);
-  const battlefieldTemplate = ((context.target.sourceIndex ?? hashString(context.target.id)) % 2 === 0)
-    ? 'river-crossing'
-    : 'highland-pass';
+  const battlefieldKey = `${state.scenario?.period ?? 0}:${context.target.sourceIndex ?? context.target.id}:${approach}`;
+  const battlefieldTemplate = BATTLEFIELD_TEMPLATES[
+    (context.target.sourceIndex ?? hashString(context.target.id)) % BATTLEFIELD_TEMPLATES.length
+  ];
   const tiles = createStructuredBattlefield(DEFAULT_WIDTH, DEFAULT_HEIGHT, approach, battlefieldTemplate);
   const units: Record<string, TacticalUnit> = {};
   const attackerPositions = deploymentPositions(context.attackers.length, approach, 'attacker', DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -203,7 +325,7 @@ export function createTacticalBattle(state: GameState, order: AttackOrder): Tact
 
   const battle: TacticalBattleState = {
     schemaVersion: 1,
-    id: `${state.turn}:${state.rngSeed}:${context.source.id}:${context.target.id}`,
+    id: createBattleId(state, order),
     strategicTurn: state.turn,
     seedBefore: state.rngSeed,
     rngSeed: state.rngSeed,
@@ -224,14 +346,20 @@ export function createTacticalBattle(state: GameState, order: AttackOrder): Tact
     activeSide: 'attacker',
     status: 'ongoing',
     approach,
+    battlefieldVersion: 1,
+    battlefieldKey,
     battlefieldTemplate,
     tiles,
     units,
+    commanderUnitIds: {
+      attacker: context.attackers[0] ? `officer:${context.attackers[0].id}` : undefined,
+      defender: defenders[0] ? `officer:${defenders[0].id}` : undefined,
+    },
     experienceGains: {},
     guard: createBattleStateGuard(state, context),
     logs: [`${context.source.name}军进入${context.target.name}战场。`],
   };
-  return evaluateTacticalOutcome(battle);
+  return evaluateTacticalOutcome(battle, false, true);
 }
 
 export function getTacticalTile(state: TacticalBattleState, x: number, y: number): TacticalTile | undefined {
@@ -241,18 +369,30 @@ export function getTacticalTile(state: TacticalBattleState, x: number, y: number
 export function getReachableTiles(state: TacticalBattleState, unitId: string): TacticalPosition[] {
   const unit = requireActiveUnit(state, unitId);
   if (unit.moved || unit.acted) return [];
+  // The fixed C keeps STATE_DS power at one, but its path generator does not
+  // expand a path below two points. Preserve that effective immobility here.
+  if (unit.status === 'rooted') return [];
+  const mobility = getBayeStatusMobility(unit.status, unit.mobility);
   const occupied = occupiedPositions(state, unit.id);
+  const enemyOccupied = enemyOccupiedPositions(state, unit);
   const best = new Map<string, number>([[positionKey(unit.x, unit.y), 0]]);
   const frontier: Array<{ x: number; y: number; cost: number }> = [{ x: unit.x, y: unit.y, cost: 0 }];
 
   while (frontier.length > 0) {
     frontier.sort((a, b) => a.cost - b.cost || a.y - b.y || a.x - b.x);
     const current = frontier.shift()!;
+    if (
+      !samePosition(current, unit)
+      && unit.status !== 'qimen'
+      && isEnemyZoneOfControl(state, unit, current)
+    ) {
+      continue;
+    }
     for (const next of neighbors(current.x, current.y)) {
       const tile = getTacticalTile(state, next.x, next.y);
-      if (!tile || occupied.has(positionKey(next.x, next.y))) continue;
+      if (!tile || enemyOccupied.has(positionKey(next.x, next.y))) continue;
       const cost = current.cost + movementCost(unit, tile.terrain);
-      if (cost > unit.mobility) continue;
+      if (cost > mobility) continue;
       const key = positionKey(next.x, next.y);
       if ((best.get(key) ?? Number.POSITIVE_INFINITY) <= cost) continue;
       best.set(key, cost);
@@ -261,7 +401,7 @@ export function getReachableTiles(state: TacticalBattleState, unitId: string): T
   }
 
   return [...best.entries()]
-    .filter(([key]) => key !== positionKey(unit.x, unit.y))
+    .filter(([key]) => key !== positionKey(unit.x, unit.y) && !occupied.has(key))
     .map(([key]) => parsePositionKey(key))
     .sort(positionSort);
 }
@@ -273,9 +413,13 @@ export function getTacticalPath(
 ): TacticalPosition[] {
   const unit = requireActiveUnit(state, unitId);
   if (samePosition(unit, destination)) return [{ x: unit.x, y: unit.y }];
+  if (unit.status === 'rooted') return [];
   const occupied = occupiedPositions(state, unit.id);
+  const enemyOccupied = enemyOccupiedPositions(state, unit);
+  const mobility = getBayeStatusMobility(unit.status, unit.mobility);
   const startKey = positionKey(unit.x, unit.y);
   const destinationKey = positionKey(destination.x, destination.y);
+  if (occupied.has(destinationKey)) return [];
   const best = new Map<string, number>([[startKey, 0]]);
   const previous = new Map<string, string>();
   const frontier: Array<{ x: number; y: number; cost: number }> = [{ x: unit.x, y: unit.y, cost: 0 }];
@@ -286,13 +430,20 @@ export function getTacticalPath(
     const currentKey = positionKey(current.x, current.y);
     if (currentKey === destinationKey) break;
     if (current.cost !== best.get(currentKey)) continue;
+    if (
+      currentKey !== startKey
+      && unit.status !== 'qimen'
+      && isEnemyZoneOfControl(state, unit, current)
+    ) {
+      continue;
+    }
     for (const next of neighbors(current.x, current.y)) {
       const tile = getTacticalTile(state, next.x, next.y);
-      if (!tile || occupied.has(positionKey(next.x, next.y))) continue;
+      if (!tile || enemyOccupied.has(positionKey(next.x, next.y))) continue;
       const stepCost = movementCost(unit, tile.terrain);
       if (!Number.isFinite(stepCost)) continue;
       const cost = current.cost + stepCost;
-      if (cost > unit.mobility) continue;
+      if (cost > mobility) continue;
       const key = positionKey(next.x, next.y);
       if ((best.get(key) ?? Number.POSITIVE_INFINITY) <= cost) continue;
       best.set(key, cost);
@@ -333,7 +484,8 @@ export function getAttackableUnitIds(state: TacticalBattleState, unitId: string)
   const range = getTacticalAttackRange(unit.armsType);
   return Object.values(state.units)
     .filter((target) => target.troops > 0 && target.side !== unit.side)
-    .filter((target) => distance(unit, target) <= range)
+    .filter((target) => isOffsetInRange(unit, target, range, 'diamond'))
+    .filter((target) => target.status !== 'hidden' || distance(unit, target) <= 1)
     .sort((a, b) => a.troops - b.troops || a.id.localeCompare(b.id))
     .map((target) => target.id);
 }
@@ -386,12 +538,15 @@ export function previewTacticalAttack(
   const target = state.units[targetUnitId];
   if (!attacker || attacker.troops <= 0) throw new Error('攻击单位无效');
   if (!target || target.troops <= 0 || target.side === attacker.side) throw new Error('攻击目标无效');
-  if (distance(attacker, target) > getTacticalAttackRange(attacker.armsType)) throw new Error('目标不在攻击范围内');
+  if (!isOffsetInRange(attacker, target, getTacticalAttackRange(attacker.armsType), 'diamond')) {
+    throw new Error('目标不在攻击范围内');
+  }
+  if (target.status === 'hidden' && distance(attacker, target) > 1) throw new Error('潜踪目标必须相邻才能锁定');
 
   const attackerTerrain = getTacticalTile(state, attacker.x, attacker.y)?.terrain ?? 0;
   const targetTerrain = getTacticalTile(state, target.x, target.y)?.terrain ?? 0;
-  const attackerTerrainShift = getBayeTerrainShift(attacker.armsType, attackerTerrain);
-  const defenderTerrainShift = getBayeTerrainShift(target.armsType, targetTerrain);
+  const attackerTerrainShift = getModernTerrainShift(attacker.armsType, attackerTerrain);
+  const defenderTerrainShift = getModernTerrainShift(target.armsType, targetTerrain);
   const attackAttributes = buildBayeAttackAttributes({
     force: clamp(attacker.force, 0, 255),
     intelligence: clamp(attacker.intelligence, 0, 255),
@@ -408,13 +563,17 @@ export function previewTacticalAttack(
     terrain: targetTerrain,
     terrainShift: defenderTerrainShift,
   });
-  const damage = Math.min(target.troops, countBayeAttackDamage({
+  const baseDamage = countBayeAttackDamage({
     attack: attackAttributes.attack,
     defence: Math.max(1, targetAttributes.defence),
     troops: Math.min(attacker.troops, 65_535),
     attackerArmsType: attacker.armsType,
     defenderArmsType: target.armsType,
-  }));
+  });
+  const damage = Math.min(
+    target.troops,
+    target.status === 'dunjia' ? Math.max(1, Math.floor(baseDamage * 0.65)) : baseDamage,
+  );
   return {
     damage,
     targetTroopsAfter: Math.max(0, target.troops - damage),
@@ -426,7 +585,7 @@ export function previewTacticalAttack(
 }
 
 export function getAvailableTacticalSkills(unit: TacticalUnit): TacticalSkillDefinition[] {
-  if (!unit.officerId || unit.troops <= 0) return [];
+  if (!unit.officerId || unit.troops <= 0 || !bayeStatusAllowsSkill(unit.status)) return [];
   return Object.values(TACTICAL_SKILLS)
     .filter((skill) => unit.intelligence >= skill.minimumIntelligence && unit.skillPoints >= skill.cost)
     .sort((a, b) => a.cost - b.cost || a.id.localeCompare(b.id));
@@ -445,8 +604,18 @@ export function getTacticalSkillTargetIds(
   return Object.values(state.units)
     .filter((target) => target.troops > 0)
     .filter((target) => skill.target === 'enemy' ? target.side !== unit.side : target.side === unit.side)
-    .filter((target) => distance(unit, target) <= skill.range)
-    .filter((target) => skill.id !== 'rally' || target.troops < target.originalTroops || target.status !== 'normal')
+    .filter((target) => isOffsetInRange(unit, target, skill.range, skill.rangeShape))
+    .filter((target) => skill.target !== 'enemy' || target.status !== 'hidden' || distance(unit, target) <= 1)
+    .filter((target) => {
+      if (skill.effect === 'troop-recovery') {
+        return target.troops < target.originalTroops || (skill.clearsStatus && target.status !== 'normal');
+      }
+      if (skill.effect === 'status') {
+        return target.status !== skill.appliesStatus
+          && (skill.target === 'enemy' || target.status === 'normal');
+      }
+      return true;
+    })
     .sort((a, b) => a.troops - b.troops || a.id.localeCompare(b.id))
     .map((target) => target.id);
 }
@@ -465,15 +634,36 @@ export function previewTacticalSkill(
   const successChance = skill.target === 'ally'
     ? 100
     : clamp(Math.round(55 + (unit.intelligence - target.intelligence) / 2), 15, 95);
-  const basePower = 30 + unit.intelligence * 0.8 + unit.level * 5;
-  const weatherPower = skill.weatherPower[state.weather];
-  const rawChange = Math.max(1, Math.round(basePower * weatherPower));
-  const expectedTroopChange = skill.id === 'fire'
-    ? -Math.min(target.troops, rawChange)
-    : skill.id === 'rally'
-      ? Math.min(target.originalTroops - target.troops, rawChange)
+  const actorTerrain = getTacticalTile(state, unit.x, unit.y)?.terrain ?? 0;
+  const targetTerrain = getTacticalTile(state, target.x, target.y)?.terrain ?? 0;
+  const weatherMultiplier = skill.weatherPower[state.weather];
+  const terrainMultiplier = (
+    (skill.terrainPower[actorTerrain] ?? 1)
+    * (skill.terrainPower[targetTerrain] ?? 1)
+  );
+  const armsMultiplier = skill.armsPower[target.armsType] ?? 1;
+  const rawPower = Math.max(
+    1,
+    Math.round((skill.basePower + unit.intelligence * 0.8 + unit.level * 5)
+      * weatherMultiplier * terrainMultiplier * armsMultiplier),
+  );
+  const expectedTroopChange = skill.effect === 'troop-damage'
+    ? -Math.min(target.troops, rawPower)
+    : skill.effect === 'troop-recovery'
+      ? Math.min(target.originalTroops - target.troops, rawPower)
       : 0;
-  return { skill, successChance, expectedTroopChange };
+  const targetFood = target.side === 'attacker' ? state.attackerFood : state.defenderFood;
+  const expectedFoodChange = skill.effect === 'food-damage' ? -Math.min(targetFood, rawPower) : 0;
+  return {
+    skill,
+    successChance,
+    expectedTroopChange,
+    expectedFoodChange,
+    resultingStatus: skill.appliesStatus,
+    weatherMultiplier,
+    terrainMultiplier,
+    armsMultiplier,
+  };
 }
 
 export function useTacticalSkill(
@@ -495,29 +685,35 @@ export function useTacticalSkill(
   });
   let detail = '未能奏效';
   let experience = 0;
-  if (succeeded && preview.skill.id === 'fire') {
+  if (succeeded && preview.skill.effect === 'troop-damage') {
     const damage = Math.abs(preview.expectedTroopChange);
     next = updateUnit(next, target.id, { troops: Math.max(0, target.troops - damage) });
     detail = `造成 ${damage} 兵力损失${target.troops - damage <= 0 ? '，目标溃退' : ''}`;
     experience = calculateBayeBattleExperience(damage, actor.level, target.level);
-  } else if (succeeded && preview.skill.id === 'confuse') {
-    next = updateUnit(next, target.id, { status: 'confused', statusTurns: 1 });
-    detail = '目标陷入混乱，将跳过下一次行动';
+  } else if (succeeded && preview.skill.effect === 'status' && preview.resultingStatus) {
+    next = updateUnit(next, target.id, { status: preview.resultingStatus, statusTurns: 1 });
+    detail = `目标进入${BAYE_TACTICAL_STATUS_LABELS[preview.resultingStatus]}状态`;
     experience = 8;
-  } else if (succeeded && preview.skill.id === 'rally') {
+  } else if (succeeded && preview.skill.effect === 'troop-recovery') {
     const recovery = Math.max(0, preview.expectedTroopChange);
     const restoresSkippedAction = target.id !== actor.id
       && target.side === state.activeSide
-      && target.status === 'confused'
-      && target.statusTurns === 0;
+      && bayeStatusSkipsAction(target.status)
+      && target.acted;
     next = updateUnit(next, target.id, {
       troops: Math.min(target.originalTroops, target.troops + recovery),
-      status: 'normal',
-      statusTurns: 0,
+      ...(preview.skill.clearsStatus ? { status: 'normal' as const, statusTurns: 0 } : {}),
       ...(restoresSkippedAction ? { moved: false, acted: false } : {}),
     });
     detail = `恢复 ${recovery} 兵力并解除异常状态${restoresSkippedAction ? '，目标可以重新行动' : ''}`;
     experience = 6;
+  } else if (succeeded && preview.skill.effect === 'food-damage') {
+    const damage = Math.abs(preview.expectedFoodChange);
+    next = target.side === 'attacker'
+      ? { ...next, attackerFood: Math.max(0, next.attackerFood - damage) }
+      : { ...next, defenderFood: Math.max(0, next.defenderFood - damage) };
+    detail = `破坏 ${damage} 粮草`;
+    experience = damage > 0 ? 8 : 0;
   }
   if (actor.officerId && experience > 0) next = addTacticalExperience(next, actor.officerId, experience);
   next = { ...next, logs: [...next.logs, `${actor.name}对${target.name}施展${preview.skill.name}，${detail}。`] };
@@ -526,8 +722,12 @@ export function useTacticalSkill(
 
 export function waitTacticalUnit(state: TacticalBattleState, unitId: string): TacticalBattleState {
   const unit = requireActiveUnit(state, unitId);
-  const next = updateUnit(state, unit.id, { moved: true, acted: true });
-  return { ...next, logs: [...next.logs, `${unit.name}原地待命。`] };
+  const recovered = Math.min(unit.maxSkillPoints, unit.skillPoints + 1);
+  const next = updateUnit(state, unit.id, { moved: true, acted: true, skillPoints: recovered });
+  return {
+    ...next,
+    logs: [...next.logs, `${unit.name}原地休整${recovered > unit.skillPoints ? '，恢复 1 点计谋点' : ''}。`],
+  };
 }
 
 export function endTacticalSide(state: TacticalBattleState): TacticalBattleState {
@@ -549,17 +749,21 @@ export function endTacticalSide(state: TacticalBattleState): TacticalBattleState
 
   const attackerUse = provisionUse(next, 'attacker');
   const defenderUse = provisionUse(next, 'defender');
-  next = changeTacticalWeather({
+  next = {
     ...next,
     day: next.day + 1,
     attackerFood: Math.max(0, next.attackerFood - attackerUse),
     defenderFood: Math.max(0, next.defenderFood - defenderUse),
-  });
+    logs: [...next.logs, `第 ${next.day + 1} 日开始，攻方耗粮 ${attackerUse}，守方耗粮 ${defenderUse}。`],
+  };
+  next = evaluateTacticalOutcome(next, false, true);
+  if (next.status !== 'ongoing') return next;
+  next = changeTacticalWeather(next);
+  next = driveTacticalStatuses(next);
   next = beginTacticalSide(next, 'attacker');
   next = {
     ...next,
     activeSide: 'attacker',
-    logs: [...next.logs, `第 ${next.day} 日开始，攻方耗粮 ${attackerUse}，守方耗粮 ${defenderUse}。`],
   };
   return evaluateTacticalOutcome(next);
 }
@@ -568,9 +772,17 @@ export function runBasicTacticalAi(state: TacticalBattleState): TacticalBattleSt
   if (state.status !== 'ongoing') return state;
   let next = state;
   const side = state.activeSide;
+  const objective = state.tiles.find((tile) => tile.objective === 'city');
+  const enemyCommanderId = side === 'attacker'
+    ? state.commanderUnitIds.defender
+    : state.commanderUnitIds.attacker;
+  const enemyCommander = enemyCommanderId ? state.units[enemyCommanderId] : undefined;
   const unitIds = Object.values(state.units)
     .filter((unit) => unit.side === side && unit.troops > 0)
-    .sort((a, b) => a.id.localeCompare(b.id))
+    .sort((a, b) => {
+      const target = side === 'attacker' ? objective : enemyCommander;
+      return (target ? distance(a, target) - distance(b, target) : 0) || a.id.localeCompare(b.id);
+    })
     .map((unit) => unit.id);
 
   while (next.status === 'ongoing') {
@@ -621,6 +833,7 @@ export function createTacticalBattleResult(state: TacticalBattleState): BattleRe
     winner === 'attacker' ? '攻方赢得战斗并占领目标城池。' : '守方赢得战斗并击退进攻。',
   ];
   return {
+    battleId: state.id,
     turn: state.strategicTurn,
     seedBefore: state.seedBefore,
     nextRngSeed: state.rngSeed,
@@ -650,6 +863,14 @@ export function isSideComplete(state: TacticalBattleState, side = state.activeSi
     .every((unit) => unit.acted);
 }
 
+export function getTacticalProvisionUse(state: TacticalBattleState, side: TacticalSide): number {
+  return provisionUse(state, side);
+}
+
+export function getTacticalUnitMobility(unit: TacticalUnit): number {
+  return getBayeStatusMobility(unit.status, unit.mobility);
+}
+
 function createStructuredBattlefield(
   width: number,
   height: number,
@@ -669,8 +890,21 @@ function createStructuredBattlefield(
       if (template === 'river-crossing' && across === acrossMiddle && Math.abs(along - alongMiddle) > 1) terrain = 7;
       else if (template === 'highland-pass' && across >= acrossMiddle - 1 && across <= acrossMiddle + 1
         && Math.abs(along - alongMiddle) > 1) terrain = 2;
+      else if (template === 'forest-road' && along !== alongMiddle && (x + y) % 3 !== 0) terrain = 3;
+      else if (template === 'twin-villages' && (
+        (across === acrossMiddle - 2 || across === acrossMiddle + 2)
+        && Math.abs(along - alongMiddle) <= 1
+      )) terrain = 4;
+      else if (template === 'marsh-fords' && across >= acrossMiddle - 1 && across <= acrossMiddle + 1
+        && (along + across) % 3 !== 0) terrain = 7;
+      else if (template === 'open-plain') terrain = (x + y) % 5 === 0 ? 1 : 0;
       else if ((x + y * 3) % 17 === 7) terrain = 3;
       else if ((x * 5 + y) % 23 === 11) terrain = 4;
+      if (
+        template !== 'open-plain'
+        && terrain === 0
+        && (x * 7 + y * 11 + acrossMiddle) % 29 === 9
+      ) terrain = 6;
       if (x === objective.x && y === objective.y) terrain = 5;
       tiles.push({
         x,
@@ -722,20 +956,36 @@ function unitFromOfficer(
   };
 }
 
-function evaluateTacticalOutcome(state: TacticalBattleState, allowObjectiveVictory = false): TacticalBattleState {
+function evaluateTacticalOutcome(
+  state: TacticalBattleState,
+  allowObjectiveVictory = false,
+  allowFoodExhaustion = false,
+): TacticalBattleState {
   if (state.status !== 'ongoing') return state;
   const attackerAlive = sideTroops(state, 'attacker') > 0;
   const defenderAlive = sideTroops(state, 'defender') > 0;
+  const attackerCommander = state.commanderUnitIds.attacker
+    ? state.units[state.commanderUnitIds.attacker]
+    : undefined;
+  const defenderCommander = state.commanderUnitIds.defender
+    ? state.units[state.commanderUnitIds.defender]
+    : undefined;
   const attackerOnObjective = Object.values(state.units).some((unit) => {
     if (unit.side !== 'attacker' || unit.troops <= 0) return false;
     return getTacticalTile(state, unit.x, unit.y)?.objective === 'city';
   });
   let status: TacticalBattleStatus = 'ongoing';
   let victoryReason: TacticalVictoryReason | undefined;
-  if (!attackerAlive) {
+  if (attackerCommander && attackerCommander.troops <= 0) {
+    status = 'defender-won';
+    victoryReason = 'attacker-commander-defeated';
+  } else if (defenderCommander && defenderCommander.troops <= 0) {
+    status = 'attacker-won';
+    victoryReason = 'defender-commander-defeated';
+  } else if (!attackerAlive) {
     status = 'defender-won';
     victoryReason = 'annihilation';
-  } else if (state.attackerFood <= 0) {
+  } else if (allowFoodExhaustion && state.attackerFood <= 0) {
     status = 'defender-won';
     victoryReason = 'attacker-food-exhausted';
   } else if (state.day > state.maxDays) {
@@ -744,7 +994,7 @@ function evaluateTacticalOutcome(state: TacticalBattleState, allowObjectiveVicto
   } else if (!defenderAlive) {
     status = 'attacker-won';
     victoryReason = 'annihilation';
-  } else if (state.defenderFood <= 0) {
+  } else if (allowFoodExhaustion && state.defenderFood <= 0) {
     status = 'attacker-won';
     victoryReason = 'defender-food-exhausted';
   } else if (allowObjectiveVictory && attackerOnObjective) {
@@ -788,32 +1038,25 @@ function beginTacticalSide(state: TacticalBattleState, side: TacticalSide): Tact
   const reset = resetSide(state, side);
   const skipped: string[] = [];
   const units = Object.fromEntries(Object.entries(reset.units).map(([id, unit]) => {
-    if (unit.side !== side || unit.troops <= 0 || unit.status !== 'confused' || unit.statusTurns <= 0) return [id, unit];
+    if (unit.side !== side || unit.troops <= 0 || !bayeStatusSkipsAction(unit.status)) return [id, unit];
     skipped.push(unit.name);
-    const remaining = unit.statusTurns - 1;
     return [id, {
       ...unit,
       moved: true,
       acted: true,
-      status: 'confused' as const,
-      statusTurns: remaining,
+      statusTurns: Math.max(0, unit.statusTurns - 1),
     }];
   }));
   return skipped.length === 0
     ? { ...reset, units }
-    : { ...reset, units, logs: [...reset.logs, `${skipped.join('、')}受混乱影响，跳过本阶段行动。`] };
+    : { ...reset, units, logs: [...reset.logs, `${skipped.join('、')}受异常状态影响，跳过本阶段行动。`] };
 }
 
 function clearExpiredStatuses(state: TacticalBattleState, side: TacticalSide): TacticalBattleState {
-  return {
-    ...state,
-    units: Object.fromEntries(Object.entries(state.units).map(([id, unit]) => [
-      id,
-      unit.side === side && unit.status === 'confused' && unit.statusTurns === 0
-        ? { ...unit, status: 'normal' as const }
-        : unit,
-    ])),
-  };
+  // Status recovery is driven once per battle day. Keeping this phase boundary
+  // function makes the attacker/defender state machine explicit.
+  void side;
+  return state;
 }
 
 function changeTacticalWeather(state: TacticalBattleState): TacticalBattleState {
@@ -825,6 +1068,33 @@ function changeTacticalWeather(state: TacticalBattleState): TacticalBattleState 
     weather,
     logs: [...state.logs, `天气转为${TACTICAL_WEATHER_LABELS[weather]}。`],
   };
+}
+
+function driveTacticalStatuses(state: TacticalBattleState): TacticalBattleState {
+  let next = state;
+  const logs: string[] = [];
+  for (const unitId of Object.keys(next.units).sort()) {
+    const unit = next.units[unitId];
+    if (unit.troops <= 0) continue;
+    // Fight.c consumes a recovery roll for every live unit before switching on
+    // its state, including normal and persistent dunjia units.
+    const random = nextRandom(next.rngSeed);
+    next = { ...next, rngSeed: random.seed };
+    let troops = unit.troops;
+    if (unit.status === 'stone-array') {
+      const loss = Math.min(troops, getBayeStoneArrayLoss(troops));
+      troops -= loss;
+      if (loss > 0) logs.push(`${unit.name}受石阵侵蚀，损失 ${loss} 兵力。`);
+    }
+    const roll = Math.floor(random.value * 60);
+    const recovered = shouldRecoverBayeStatus(unit.status, unit.intelligence, roll);
+    next = updateUnit(next, unit.id, {
+      troops,
+      ...(recovered ? { status: 'normal' as const, statusTurns: 0 } : {}),
+    });
+    if (recovered) logs.push(`${unit.name}从${BAYE_TACTICAL_STATUS_LABELS[unit.status]}状态恢复。`);
+  }
+  return logs.length === 0 ? next : { ...next, logs: [...next.logs, ...logs] };
 }
 
 function addTacticalExperience(state: TacticalBattleState, officerId: string, gained: number): TacticalBattleState {
@@ -882,20 +1152,11 @@ function aiPositionScore(
 }
 
 function movementCost(unit: TacticalUnit, terrain: BayeTerrain): number {
-  if (terrain === BAYE_TERRAINS.indexOf('river')) {
-    if (unit.armsType === BAYE_ARMS_TYPES.indexOf('navy')) return 1;
-    if (unit.armsType === BAYE_ARMS_TYPES.indexOf('cavalry')) return Number.POSITIVE_INFINITY;
-    return unit.armsType === BAYE_ARMS_TYPES.indexOf('elite') ? 2 : 3;
-  }
-  if (unit.armsType === BAYE_ARMS_TYPES.indexOf('navy')) return 2;
-  if (terrain === BAYE_TERRAINS.indexOf('forest') || terrain === BAYE_TERRAINS.indexOf('hill')) {
-    return unit.armsType === BAYE_ARMS_TYPES.indexOf('cavalry') ? 2 : 1;
-  }
-  return 1;
+  return getModernTerrainMoveCost(unit.armsType, terrain);
 }
 
 export function getTacticalAttackRange(armsType: BayeArmsType): number {
-  return armsType === BAYE_ARMS_TYPES.indexOf('archer') || armsType === BAYE_ARMS_TYPES.indexOf('mystic') ? 2 : 1;
+  return getModernAttackRange(armsType);
 }
 
 function armsTypeIndex(armsTypeId: string): BayeArmsType {
@@ -917,6 +1178,24 @@ function occupiedPositions(state: TacticalBattleState, ignoredUnitId?: string): 
   return new Set(Object.values(state.units)
     .filter((unit) => unit.id !== ignoredUnitId && unit.troops > 0)
     .map((unit) => positionKey(unit.x, unit.y)));
+}
+
+function enemyOccupiedPositions(state: TacticalBattleState, unit: TacticalUnit): Set<string> {
+  return new Set(Object.values(state.units)
+    .filter((candidate) => candidate.troops > 0 && candidate.side !== unit.side)
+    .map((candidate) => positionKey(candidate.x, candidate.y)));
+}
+
+function isEnemyZoneOfControl(
+  state: TacticalBattleState,
+  unit: TacticalUnit,
+  position: TacticalPosition,
+): boolean {
+  return Object.values(state.units).some((candidate) => (
+    candidate.troops > 0
+    && candidate.side !== unit.side
+    && distance(candidate, position) === 1
+  ));
 }
 
 function deploymentPositions(
@@ -943,10 +1222,15 @@ function deploymentPositions(
 }
 
 function chooseAiTarget(state: TacticalBattleState, unitId: string): string | undefined {
+  const unit = state.units[unitId];
+  const enemyCommanderId = unit.side === 'attacker'
+    ? state.commanderUnitIds.defender
+    : state.commanderUnitIds.attacker;
   return getAttackableUnitIds(state, unitId)
     .map((targetId) => ({ targetId, preview: previewTacticalAttack(state, unitId, targetId) }))
     .sort((a, b) =>
-      Number(b.preview.damage >= state.units[b.targetId].troops)
+      Number(b.targetId === enemyCommanderId) - Number(a.targetId === enemyCommanderId)
+      || Number(b.preview.damage >= state.units[b.targetId].troops)
       - Number(a.preview.damage >= state.units[a.targetId].troops)
       || b.preview.damage - a.preview.damage
       || a.targetId.localeCompare(b.targetId))[0]?.targetId;
@@ -958,29 +1242,39 @@ function chooseAiSkill(
 ): { skillId: TacticalSkillId; targetUnitId: string } | undefined {
   const unit = state.units[unitId];
   if (!unit) return undefined;
-  const skills = getAvailableTacticalSkills(unit);
-  const rally = skills.find((skill) => skill.id === 'rally');
-  if (rally) {
-    const targetUnitId = getTacticalSkillTargetIds(state, unitId, rally.id)
-      .map((id) => state.units[id])
-      .filter((target) => target.status !== 'normal' || target.troops <= target.originalTroops / 2)
-      .sort((a, b) => Number(b.status !== 'normal') - Number(a.status !== 'normal')
-        || a.troops / a.originalTroops - b.troops / b.originalTroops
-        || a.id.localeCompare(b.id))[0]?.id;
-    if (targetUnitId) return { skillId: rally.id, targetUnitId };
-  }
-  if (skills.some((skill) => skill.id === 'confuse')) {
-    const targetUnitId = getTacticalSkillTargetIds(state, unitId, 'confuse')
-      .map((id) => state.units[id])
-      .filter((target) => target.status === 'normal' && target.troops >= target.originalTroops * 0.6)
-      .sort((a, b) => b.troops - a.troops || a.id.localeCompare(b.id))[0]?.id;
-    if (targetUnitId) return { skillId: 'confuse', targetUnitId };
-  }
-  if (skills.some((skill) => skill.id === 'fire')) {
-    const targetUnitId = getTacticalSkillTargetIds(state, unitId, 'fire')[0];
-    if (targetUnitId) return { skillId: 'fire', targetUnitId };
-  }
-  return undefined;
+  const enemyCommanderId = unit.side === 'attacker'
+    ? state.commanderUnitIds.defender
+    : state.commanderUnitIds.attacker;
+  return getAvailableTacticalSkills(unit)
+    .flatMap((skill) => getTacticalSkillTargetIds(state, unitId, skill.id).map((targetUnitId) => {
+      const target = state.units[targetUnitId];
+      const preview = previewTacticalSkill(state, unitId, skill.id, targetUnitId);
+      const chance = preview.successChance / 100;
+      let score = 0;
+      if (skill.effect === 'troop-damage') {
+        score = Math.abs(preview.expectedTroopChange) * chance;
+        if (Math.abs(preview.expectedTroopChange) >= target.troops) score += 5_000;
+      } else if (skill.effect === 'troop-recovery') {
+        score = preview.expectedTroopChange + (target.status !== 'normal' ? 12_000 : 0);
+      } else if (skill.effect === 'food-damage') {
+        const remainingFood = target.side === 'attacker' ? state.attackerFood : state.defenderFood;
+        score = Math.abs(preview.expectedFoodChange) * chance
+          + (Math.abs(preview.expectedFoodChange) >= remainingFood ? 4_000 : 0);
+      } else if (skill.effect === 'status') {
+        score = skill.target === 'ally'
+          ? 150
+          : target.troops * chance * (
+            skill.appliesStatus === 'confused' || skill.appliesStatus === 'stone-array' ? 0.8 : 0.35
+          );
+      }
+      if (targetUnitId === enemyCommanderId && skill.target === 'enemy') score += 2_000;
+      if (skill.target === 'ally' && targetUnitId === state.commanderUnitIds[unit.side]) score += 300;
+      return { skillId: skill.id, targetUnitId, score };
+    }))
+    .filter((candidate) => candidate.score >= 6)
+    .sort((a, b) => b.score - a.score
+      || a.skillId.localeCompare(b.skillId)
+      || a.targetUnitId.localeCompare(b.targetUnitId))[0];
 }
 
 function objectivePosition(approach: TacticalApproach, width: number, height: number): TacticalPosition {
@@ -1002,6 +1296,8 @@ function hashString(value: string): number {
 }
 
 function victoryReasonMessage(status: TacticalBattleStatus, reason?: TacticalVictoryReason): string {
+  if (reason === 'attacker-commander-defeated') return '攻方主将败退，守方获胜。';
+  if (reason === 'defender-commander-defeated') return '守方主将败退，攻方获胜。';
   if (reason === 'objective-held') return '攻方占领城池并坚持到本方阶段结束。';
   if (reason === 'attacker-food-exhausted') return '攻方粮草耗尽，被迫撤军。';
   if (reason === 'defender-food-exhausted') return '守方粮草耗尽，城池失守。';
@@ -1032,6 +1328,20 @@ function positionSort(a: TacticalPosition, b: TacticalPosition): number {
 
 function distance(a: TacticalPosition, b: TacticalPosition): number {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+}
+
+function isOffsetInRange(
+  origin: TacticalPosition,
+  target: TacticalPosition,
+  radius: number,
+  shape: TacticalSkillDefinition['rangeShape'],
+): boolean {
+  const dx = Math.abs(origin.x - target.x);
+  const dy = Math.abs(origin.y - target.y);
+  if (dx === 0 && dy === 0) return true;
+  return shape === 'cross'
+    ? (dx === 0 || dy === 0) && dx + dy <= radius
+    : dx + dy <= radius;
 }
 
 function clamp(value: number, min: number, max: number): number {

@@ -81,6 +81,6 @@
 - 资源目录是按一基资源 ID 索引的绝对 `U32` 小端偏移，`0xffffffff` 表示缺失；资源条目和变长索引内部偏移同样使用一基条目编号。
 - 原版 legacy 头为 12 字节（`ItmLen: U16`），变长 `RIDX` 为 `U16 offset + U16 length`；当前移植 wide 头/索引分别为 14/8 字节。`src/compat/baye/libArchive.ts` 要求显式选择格式并进行全部边界检查。
 - `ResKey` 非零时，每个存储字节减去密钥并按 `U8` 回绕。城市名、人物名和道具名资源已能按 ID/条目定位和解密；字符编码与正式文本导出策略留待下一阶段。
-- `dFgtLandF` 已从资源 2、条目 4 取得 48 个有符号字节，并固化为 `BAYE_TERRAIN_SHIFTS`。资源证据见 `fixtures/lib-original.json`。
+- `dFgtLandF` 的资源位置、长度和哈希已确认，但原始 48 字节内容不进入仓库；产品使用明确命名的现代替代表，本地条件测试可继续核对结构。
 - 本地 `dat.lib.orig` 只作研究输入，未进入版本控制。仓库额外保存由已锁定哈希版本生成的四时期结构化城市、人物和道路记录；不包含资源容器、图片或字体。
 - `compat/baye/legacyScenario.ts` 已能解析四时期容器条目、GBK 名称、自定义字形、城市坐标和道路；`data/legacyScenario.ts` 可将四个时期转换为可玩的 `GameState`。未出仕人物的出现条件尚未接入领域状态。

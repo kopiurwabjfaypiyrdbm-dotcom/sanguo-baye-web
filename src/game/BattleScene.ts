@@ -47,7 +47,10 @@ export class BattleScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.redraw();
     this.fitBattlefield();
-    this.scale.on(Phaser.Scale.Events.RESIZE, () => this.fitBattlefield());
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.handleResize, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off(Phaser.Scale.Events.RESIZE, this.handleResize, this);
+    });
   }
 
   updateBattle(
@@ -81,28 +84,30 @@ export class BattleScene extends Phaser.Scene {
       const isReachable = reachable.has(`${tile.x},${tile.y}`);
       const rect = this.add.rectangle(centerX, centerY, CELL_SIZE - 2, CELL_SIZE - 2, terrainColors[tile.terrain], 0.92);
       rect.setStrokeStyle(isReachable ? 4 : 1, isReachable ? 0x7ed9ed : 0x233c36, isReachable ? 0.95 : 0.65);
-      rect.setInteractive({ useHandCursor: isReachable });
-      rect.on('pointerdown', () => this.bridge.emit('tactical:tile-selected', { x: tile.x, y: tile.y }));
-      rect.on('pointerover', () => {
-        pathPreview.clear();
-        if (!isReachable || !this.selectedUnitId) return;
-        const path = getTacticalPath(this.battle, this.selectedUnitId, tile);
-        if (path.length < 2) return;
-        pathPreview.lineStyle(5, 0x9ae8f5, 0.9);
-        pathPreview.beginPath();
-        pathPreview.moveTo(
-          OFFSET_X + path[0].x * CELL_SIZE + CELL_SIZE / 2,
-          OFFSET_Y + path[0].y * CELL_SIZE + CELL_SIZE / 2,
-        );
-        for (const position of path.slice(1)) {
-          pathPreview.lineTo(
-            OFFSET_X + position.x * CELL_SIZE + CELL_SIZE / 2,
-            OFFSET_Y + position.y * CELL_SIZE + CELL_SIZE / 2,
+      if (isReachable) {
+        rect.setInteractive({ useHandCursor: true });
+        rect.on('pointerdown', () => this.bridge.emit('tactical:tile-selected', { x: tile.x, y: tile.y }));
+        rect.on('pointerover', () => {
+          pathPreview.clear();
+          if (!this.selectedUnitId) return;
+          const path = getTacticalPath(this.battle, this.selectedUnitId, tile);
+          if (path.length < 2) return;
+          pathPreview.lineStyle(5, 0x9ae8f5, 0.9);
+          pathPreview.beginPath();
+          pathPreview.moveTo(
+            OFFSET_X + path[0].x * CELL_SIZE + CELL_SIZE / 2,
+            OFFSET_Y + path[0].y * CELL_SIZE + CELL_SIZE / 2,
           );
-        }
-        pathPreview.strokePath();
-      });
-      rect.on('pointerout', () => pathPreview.clear());
+          for (const position of path.slice(1)) {
+            pathPreview.lineTo(
+              OFFSET_X + position.x * CELL_SIZE + CELL_SIZE / 2,
+              OFFSET_Y + position.y * CELL_SIZE + CELL_SIZE / 2,
+            );
+          }
+          pathPreview.strokePath();
+        });
+        rect.on('pointerout', () => pathPreview.clear());
+      }
       const label = this.add.text(centerX - CELL_SIZE / 2 + 5, centerY - CELL_SIZE / 2 + 3, terrainLabels[tile.terrain], {
         color: tile.terrain === BAYE_TERRAINS.indexOf('river') ? '#d9f5ff' : '#f2ecd8',
         fontFamily: 'Microsoft YaHei, PingFang SC, sans-serif',
@@ -173,5 +178,9 @@ export class BattleScene extends Phaser.Scene {
     );
     camera.setZoom(zoom);
     camera.centerOn(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
+  }
+
+  private handleResize(): void {
+    this.fitBattlefield();
   }
 }

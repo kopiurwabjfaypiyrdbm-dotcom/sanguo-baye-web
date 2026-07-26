@@ -7,6 +7,12 @@ import { validateGameState } from './validation';
 import { createSampleState } from './sampleState';
 import { updateCitySatraps } from './administration';
 import { resolveSuccession } from './officerLifecycle';
+import { applyBattleResult, executeAttack, type AttackOrder } from './battle';
+import {
+  createTacticalBattle,
+  createTacticalBattleResult,
+  runBasicTacticalAi,
+} from './tacticalBattle';
 
 function resolvePendingPlayerSuccession(state: GameState): GameState {
   let next = state;
@@ -35,6 +41,43 @@ function runCampaign(state: GameState, months: number, reloadEverySixMonths = tr
 function strongestRuler(period: BundledPeriodId) {
   return [...getScenarioRulers(period)]
     .sort((a, b) => b.cityCount - a.cityCount || a.sourceIndex - b.sourceIndex)[0];
+}
+
+function findPlayerAttack(state: GameState): AttackOrder {
+  for (const source of Object.values(state.cities)
+    .filter((city) => city.ownerId === state.playerFactionId)
+    .sort((a, b) => (a.sourceIndex ?? 999) - (b.sourceIndex ?? 999))) {
+    const officer = Object.values(state.officers)
+      .filter((candidate) => candidate.status === 'serving'
+        && candidate.factionId === state.playerFactionId
+        && candidate.cityId === source.id
+        && candidate.troops > 0
+        && candidate.stamina > 0)
+      .sort((a, b) => b.troops - a.troops || a.id.localeCompare(b.id))[0];
+    const target = source.neighbors
+      .map((cityId) => state.cities[cityId])
+      .find((candidate) => candidate.ownerId !== source.ownerId);
+    if (officer && target && source.food > 0) {
+      return {
+        sourceCityId: source.id,
+        targetCityId: target.id,
+        officerIds: [officer.id],
+        provisions: Math.min(source.food, Math.max(1, Math.ceil(officer.troops / 100))),
+      };
+    }
+  }
+  throw new Error('scenario has no legal player border attack');
+}
+
+function resolveManualBattle(state: GameState, order: AttackOrder): GameState {
+  let battle = createTacticalBattle(state, order);
+  let steps = 0;
+  while (battle.status === 'ongoing' && steps < 100) {
+    battle = runBasicTacticalAi(battle);
+    steps += 1;
+  }
+  if (battle.status === 'ongoing') throw new Error('manual tactical AI exceeded its step limit');
+  return applyBattleResult(state, createTacticalBattleResult(battle));
 }
 
 function runSettlementCampaign(state: GameState, months: number, reloadEverySixMonths: boolean): GameState {
@@ -139,4 +182,31 @@ describe('long campaign soak', () => {
     expect(deathCount).toBeGreaterThan(0);
     expect(dissolutionCount).toBeGreaterThan(1);
   });
+
+  it.each([1, 2, 3, 4] as const)(
+    'keeps period %s valid after both quick and manual battles, reload, and twelve settlements',
+    (period) => {
+      const ruler = strongestRuler(period);
+      const create = () => createBundledScenario(period, ruler.sourceIndex);
+      const quickStart = create();
+      const manualStart = create();
+      const order = findPlayerAttack(quickStart);
+
+      const quick = runSettlementCampaign(
+        parseSave(serializeSave(resolvePendingPlayerSuccession(executeAttack(quickStart, order)))).state,
+        12,
+        true,
+      );
+      const manual = runSettlementCampaign(
+        parseSave(serializeSave(resolvePendingPlayerSuccession(resolveManualBattle(manualStart, order)))).state,
+        12,
+        true,
+      );
+
+      expect(validateGameState(quick)).toEqual([]);
+      expect(validateGameState(manual)).toEqual([]);
+      expect(quick.phase === 'ended' || quick.turn >= 13).toBe(true);
+      expect(manual.phase === 'ended' || manual.turn >= 13).toBe(true);
+    },
+  );
 });

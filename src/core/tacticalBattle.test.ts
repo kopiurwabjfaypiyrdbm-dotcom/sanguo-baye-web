@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildBayeAttackAttributes,
   countBayeAttackDamage,
-  getBayeTerrainShift,
+  getModernTerrainShift,
 } from '../compat/baye/tacticalBattle';
 import { applyBattleResult } from './battle';
 import { createSampleState } from './sampleState';
@@ -12,11 +12,14 @@ import {
   createTacticalBattle,
   createTacticalBattleResult,
   endTacticalSide,
+  getAttackableUnitIds,
+  getAvailableTacticalSkills,
   getReachableTiles,
   getTacticalPath,
   getTacticalTile,
   moveTacticalUnit,
   previewTacticalAttack,
+  previewTacticalSkill,
   runBasicTacticalAi,
   useTacticalSkill,
 } from './tacticalBattle';
@@ -111,7 +114,8 @@ describe('manual tactical battle core', () => {
     expect(nextDay.day).toBe(2);
     expect(nextDay.rngSeed).not.toBe(defenderPhase.rngSeed);
     expect(nextDay.logs.some((message) => message.includes('天气转为'))).toBe(true);
-    expect(nextDay.units[defender.id].status).toBe('normal');
+    expect(nextDay.units[defender.id].status).toBe('confused');
+    expect(nextDay.units[defender.id].statusTurns).toBe(0);
   });
 
   it('consumes skill points but grants no experience when a tactic fails', () => {
@@ -244,7 +248,7 @@ describe('manual tactical battle core', () => {
       level: attacker.level,
       armsType: attacker.armsType,
       terrain: attackerTerrain,
-      terrainShift: getBayeTerrainShift(attacker.armsType, attackerTerrain),
+      terrainShift: getModernTerrainShift(attacker.armsType, attackerTerrain),
     });
     const defence = buildBayeAttackAttributes({
       force: defender.force,
@@ -252,7 +256,7 @@ describe('manual tactical battle core', () => {
       level: defender.level,
       armsType: defender.armsType,
       terrain: defenderTerrain,
-      terrainShift: getBayeTerrainShift(defender.armsType, defenderTerrain),
+      terrainShift: getModernTerrainShift(defender.armsType, defenderTerrain),
     });
     const expectedDamage = countBayeAttackDamage({
       attack: attack.attack,
@@ -491,6 +495,26 @@ describe('manual tactical battle core', () => {
     expect(() => applyBattleResult(changedDefense, result)).toThrow('stale target resources');
   });
 
+  it('rejects a result when a target-city captive appeared after battle creation', () => {
+    const { state, order } = battleFixture();
+    const battle = { ...createTacticalBattle(state, order), status: 'defender-won' as const };
+    const result = createTacticalBattleResult(battle);
+    const changed = structuredClone(state);
+    changed.cities.luoyang.satrapOfficerId = 'xiahou-dun';
+    changed.officers['chen-gong'] = {
+      ...changed.officers['chen-gong'],
+      status: 'captive',
+      factionId: 'neutral',
+      cityId: 'hanzhong',
+      captorFactionId: 'liu-bei',
+      formerFactionId: 'cao-cao',
+      troops: 0,
+      stamina: 0,
+    };
+    expect(validateGameState(changed)).toEqual([]);
+    expect(() => applyBattleResult(changed, result)).toThrow('stale strategic state');
+  });
+
   it('only writes actual reserve casualties when the attacker wins by food exhaustion', () => {
     const { state, order } = battleFixture();
     const battle = createTacticalBattle(state, order);
@@ -511,5 +535,217 @@ describe('manual tactical battle core', () => {
 
     expect(battle.status).toBe('defender-won');
     expect(createTacticalBattleResult(battle).winner).toBe('defender');
+  });
+
+  it('selects six deterministic modern battlefield templates by city index', () => {
+    const { state, order } = battleFixture();
+    const signatures = new Set<string>();
+    for (let sourceIndex = 0; sourceIndex < 6; sourceIndex += 1) {
+      state.cities.hanzhong.sourceIndex = sourceIndex;
+      const battle = createTacticalBattle(state, order);
+      signatures.add(`${battle.battlefieldTemplate}:${battle.tiles.map((tile) => tile.terrain).join('')}`);
+      expect(battle.battlefieldKey).toContain(String(sourceIndex));
+      expect(battle.tiles.some((tile) => tile.objective === 'city')).toBe(true);
+    }
+    expect(signatures.size).toBe(6);
+  });
+
+  it('lets friendly units be crossed, applies enemy control zones, and lets qimen bypass them', () => {
+    const { state, order } = battleFixture();
+    state.officers['xiahou-dun'].cityId = 'chang-an';
+    order.officerIds.push('xiahou-dun');
+    let battle = createTacticalBattle(state, order);
+    const actor = battle.units['officer:cao-cao'];
+    const ally = battle.units['officer:xiahou-dun'];
+    const enemy = battle.units['officer:guan-yu'];
+    battle = {
+      ...battle,
+      tiles: battle.tiles.map((tile) => ({ ...tile, terrain: 0 })),
+      units: {
+        ...battle.units,
+        [actor.id]: { ...actor, x: 1, y: 4, mobility: 3 },
+        [ally.id]: { ...ally, x: 2, y: 4 },
+        [enemy.id]: { ...enemy, x: 3, y: 3 },
+      },
+    };
+
+    expect(getTacticalPath(battle, actor.id, { x: 3, y: 4 })).toEqual([
+      { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 3, y: 4 },
+    ]);
+    expect(getReachableTiles(battle, actor.id)).not.toContainEqual({ x: 4, y: 4 });
+    const qimen = {
+      ...battle,
+      units: { ...battle.units, [actor.id]: { ...battle.units[actor.id], status: 'qimen' as const } },
+    };
+    expect(getReachableTiles(qimen, actor.id)).toContainEqual({ x: 4, y: 4 });
+    const rooted = {
+      ...qimen,
+      units: { ...qimen.units, [actor.id]: { ...qimen.units[actor.id], status: 'rooted' as const } },
+    };
+    expect(getReachableTiles(rooted, actor.id)).toEqual([]);
+    expect(getTacticalPath(rooted, actor.id, { x: 2, y: 4 })).toEqual([]);
+  });
+
+  it('enforces silence, stealth targeting, and dunjia damage reduction', () => {
+    const { state, order } = battleFixture();
+    let battle = createTacticalBattle(state, order);
+    const attacker = battle.units['officer:cao-cao'];
+    const defender = battle.units['officer:guan-yu'];
+    battle = {
+      ...battle,
+      units: {
+        ...battle.units,
+        [attacker.id]: { ...attacker, x: 4, y: 4, armsType: 2, skillPoints: 255 },
+        [defender.id]: { ...defender, x: 6, y: 4 },
+      },
+    };
+    const silenced = { ...attacker, status: 'silenced' as const };
+    expect(getAvailableTacticalSkills(silenced)).toEqual([]);
+
+    const hidden = {
+      ...battle,
+      units: { ...battle.units, [defender.id]: { ...defender, x: 6, y: 4, status: 'hidden' as const } },
+    };
+    expect(getAttackableUnitIds(hidden, attacker.id)).not.toContain(defender.id);
+
+    const adjacent = {
+      ...battle,
+      units: { ...battle.units, [defender.id]: { ...defender, x: 5, y: 4 } },
+    };
+    const protectedBattle = {
+      ...adjacent,
+      units: { ...adjacent.units, [defender.id]: { ...adjacent.units[defender.id], status: 'dunjia' as const } },
+    };
+    expect(previewTacticalAttack(protectedBattle, attacker.id, defender.id).damage)
+      .toBeLessThan(previewTacticalAttack(adjacent, attacker.id, defender.id).damage);
+  });
+
+  it('drives stone-array damage at day change and resolves commander defeat explicitly', () => {
+    const { state, order } = battleFixture();
+    state.cities.hanzhong.reserveTroops = 0;
+    let battle = createTacticalBattle(state, order);
+    const attacker = battle.units['officer:cao-cao'];
+    const defender = battle.units['officer:guan-yu'];
+    battle = {
+      ...battle,
+      units: {
+        ...battle.units,
+        [attacker.id]: { ...attacker, x: 4, y: 4 },
+        [defender.id]: {
+          ...defender,
+          x: 5,
+          y: 4,
+          troops: 80,
+          intelligence: 0,
+          status: 'stone-array',
+          statusTurns: 1,
+        },
+      },
+    };
+    const defenderPhase = endTacticalSide(battle);
+    const nextDay = endTacticalSide(defenderPhase);
+    expect(nextDay.units[defender.id].troops).toBe(70);
+    expect(nextDay.logs.some((message) => message.includes('石阵侵蚀'))).toBe(true);
+
+    const commanderAtOne = {
+      ...battle,
+      units: {
+        ...battle.units,
+        [defender.id]: { ...battle.units[defender.id], x: 5, y: 4, troops: 1, status: 'normal' as const },
+      },
+    };
+    const finished = attackTacticalUnit(commanderAtOne, attacker.id, defender.id);
+    expect(finished.status).toBe('attacker-won');
+    expect(finished.victoryReason).toBe('defender-commander-defeated');
+  });
+
+  it('uses a data-driven provisions skill and makes preview equal execution', () => {
+    const { state, order } = battleFixture();
+    let battle = createTacticalBattle(state, order);
+    const attacker = battle.units['officer:cao-cao'];
+    const defender = battle.units['officer:guan-yu'];
+    battle = {
+      ...battle,
+      defenderFood: 1,
+      units: {
+        ...battle.units,
+        [attacker.id]: { ...attacker, x: 4, y: 4, intelligence: 255, skillPoints: 255 },
+        [defender.id]: { ...defender, x: 5, y: 4, intelligence: 0 },
+      },
+    };
+    const before = battle.defenderFood;
+    const preview = previewTacticalSkill(battle, attacker.id, 'raid-provisions', defender.id);
+    const next = useTacticalSkill(battle, attacker.id, 'raid-provisions', defender.id);
+    expect(before - next.defenderFood).toBe(Math.abs(preview.expectedFoodChange));
+    expect(next.logs.at(-1)).toContain('劫粮');
+    expect(next.status).toBe('ongoing');
+    const defenderPhase = endTacticalSide(next);
+    expect(defenderPhase.status).toBe('ongoing');
+    expect(endTacticalSide(defenderPhase)).toMatchObject({
+      status: 'attacker-won',
+      victoryReason: 'defender-food-exhausted',
+    });
+  });
+
+  it('covers food, simultaneous food, day-limit, and annihilation victory priorities', () => {
+    const { state, order } = battleFixture();
+    const initial = createTacticalBattle(state, order);
+
+    let defenderStarved = { ...initial, defenderFood: 1 };
+    defenderStarved = endTacticalSide(defenderStarved);
+    defenderStarved = endTacticalSide(defenderStarved);
+    expect(defenderStarved).toMatchObject({
+      status: 'attacker-won',
+      victoryReason: 'defender-food-exhausted',
+    });
+
+    const defender = initial.units['officer:guan-yu'];
+    let terminalBeforeStatuses = {
+      ...initial,
+      defenderFood: 1,
+      units: {
+        ...initial.units,
+        [defender.id]: {
+          ...defender,
+          troops: 80,
+          intelligence: 0,
+          status: 'stone-array' as const,
+          statusTurns: 1,
+        },
+      },
+    };
+    const seedBeforeTerminal = terminalBeforeStatuses.rngSeed;
+    terminalBeforeStatuses = endTacticalSide(terminalBeforeStatuses);
+    terminalBeforeStatuses = endTacticalSide(terminalBeforeStatuses);
+    expect(terminalBeforeStatuses).toMatchObject({
+      status: 'attacker-won',
+      victoryReason: 'defender-food-exhausted',
+      rngSeed: seedBeforeTerminal,
+    });
+    expect(terminalBeforeStatuses.units[defender.id].troops).toBe(80);
+
+    let bothStarved = { ...initial, attackerFood: 1, defenderFood: 1 };
+    bothStarved = endTacticalSide(bothStarved);
+    bothStarved = endTacticalSide(bothStarved);
+    expect(bothStarved).toMatchObject({
+      status: 'defender-won',
+      victoryReason: 'attacker-food-exhausted',
+    });
+
+    let timedOut = { ...initial, day: initial.maxDays };
+    timedOut = endTacticalSide(timedOut);
+    timedOut = endTacticalSide(timedOut);
+    expect(timedOut).toMatchObject({ status: 'defender-won', victoryReason: 'day-limit' });
+
+    const annihilated = {
+      ...initial,
+      commanderUnitIds: { ...initial.commanderUnitIds, defender: undefined },
+      units: Object.fromEntries(Object.entries(initial.units).map(([id, unit]) => [
+        id,
+        unit.side === 'defender' ? { ...unit, troops: 0 } : unit,
+      ])),
+    };
+    const evaluated = endTacticalSide(annihilated);
+    expect(evaluated).toMatchObject({ status: 'attacker-won', victoryReason: 'annihilation' });
   });
 });

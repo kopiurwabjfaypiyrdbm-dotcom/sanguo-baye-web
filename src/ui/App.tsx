@@ -26,14 +26,16 @@ import {
 import { parseSave, serializeSave } from '../core/saveGame';
 import {
   deleteBattleCheckpoint,
-  loadBattleCheckpoint,
   loadFromSlot,
-  saveBattleCheckpoint,
-  savePlayerBattleRollback,
   saveToSlot,
   slotKey,
   type SaveSlotId,
 } from '../core/saveStorage';
+import {
+  loadBattleRecovery,
+  saveCommittedBattleRecovery,
+  savePendingBattleRecovery,
+} from '../core/battleRecovery';
 import {
   advanceTurnUntilPlayerDefense,
   continueTurnUntilPlayerDefense,
@@ -48,6 +50,7 @@ import {
   endTacticalSide,
   getAttackableUnitIds,
   getReachableTiles,
+  previewTacticalAttack,
   moveTacticalUnit,
   runBasicTacticalAi,
   useTacticalSkill,
@@ -100,6 +103,7 @@ export function App() {
   const [pendingAttack, setPendingAttack] = useState<AttackOrder>();
   const [tacticalBattle, setTacticalBattle] = useState<TacticalBattleState>();
   const [selectedTacticalUnitId, setSelectedTacticalUnitId] = useState<string>();
+  const [pendingTacticalTargetId, setPendingTacticalTargetId] = useState<string>();
   const [aiResumeFactionIndex, setAiResumeFactionIndex] = useState<number>();
   const mapHost = useRef<HTMLDivElement>(null);
   const mapController = useRef<StrategyMapController | null>(null);
@@ -194,36 +198,76 @@ export function App() {
     setSelectedCityId(firstOwnedCityId(next));
     setSourceLabel(label);
     setMonthSummary([]);
-    setFeedback({ kind: 'success', message: `已选择${next.factions[next.playerFactionId].name}，霸业由此开始。` });
     try {
       clearBattleCheckpoint();
+    } catch (error) {
+      setFeedback({
+        kind: 'error',
+        message: `旧战斗恢复记录无法安全清理：${error instanceof Error ? error.message : '浏览器存储不可用'}。请修复存储后重试开局。`,
+      });
+      return;
+    }
+    try {
       saveToSlot(window.localStorage, 'auto', next, `${label} · 自动存档`);
       setHasContinue(true);
-    } catch {
-      // Starting a campaign remains possible even if browser storage is unavailable.
+      setFeedback({ kind: 'success', message: `已选择${next.factions[next.playerFactionId].name}，霸业由此开始。` });
+    } catch (error) {
+      setFeedback({
+        kind: 'error',
+        message: `霸业已开始，但自动存档不可用：${error instanceof Error ? error.message : '浏览器存储不可用'}。`,
+      });
     }
     setScreen('game');
   }
 
   function continueCampaign() {
     try {
-      let checkpoint;
+      let recovery;
       try {
-        checkpoint = loadBattleCheckpoint(window.localStorage);
+        recovery = loadBattleRecovery(window.localStorage);
       } catch {
-        clearBattleCheckpoint();
+        clearBattleCheckpointBestEffort();
       }
-      if (checkpoint) {
-        const battle = createTacticalBattle(checkpoint.state, checkpoint.order);
-        setState(checkpoint.state);
-        setSelectedCityId(checkpoint.order.targetCityId);
-        setSourceLabel(sourceLabelForState(checkpoint.state));
+      if (recovery?.status === 'committed') {
+        try {
+          saveToSlot(window.localStorage, 'auto', recovery.state, recovery.label);
+          clearBattleCheckpoint();
+        } catch (error) {
+          setHasContinue(true);
+          setFeedback({
+            kind: 'error',
+            message: `战后恢复记录尚未安全清理：${error instanceof Error ? error.message : '浏览器存储不可用'}。请修复存储后重试。`,
+          });
+          return;
+        }
+        setState(recovery.state);
+        setSelectedCityId(firstOwnedCityId(recovery.state));
+        setSourceLabel(sourceLabelForState(recovery.state));
+        setMonthSummary([]);
+        setScreen('game');
+        setFeedback({
+          kind: 'success',
+          message: recovery.label ? `已载入：${recovery.label}` : '已载入战后存档。',
+        });
+        return;
+      }
+      if (recovery?.status === 'pending') {
+        const battle = createTacticalBattle(recovery.state, recovery.order);
+        setState(recovery.state);
+        setSelectedCityId(recovery.order.targetCityId);
+        setSourceLabel(sourceLabelForState(recovery.state));
         setMonthSummary([]);
         setTacticalBattle(battle);
         setSelectedTacticalUnitId(undefined);
-        setAiResumeFactionIndex(checkpoint.nextFactionIndex);
+        setPendingTacticalTargetId(undefined);
+        setAiResumeFactionIndex(
+          recovery.resume.kind === 'ai-phase' ? recovery.resume.nextFactionIndex : undefined,
+        );
         setScreen('battle');
-        setFeedback({ kind: 'success', message: '已恢复到上一场未完成守城战的战前检查点。' });
+        setFeedback({
+          kind: 'success',
+          message: `已从战前检查点重新展开${recovery.mode === 'ai-defense' ? '守城战' : '进攻战'}。`,
+        });
         return;
       }
       const envelope = loadFromSlot(window.localStorage, 'auto');
@@ -331,16 +375,26 @@ export function App() {
     try {
       const battle = createTacticalBattle(state, pendingAttack);
       clearBattleCheckpoint();
+      let recoveryWarning: string | undefined;
       try {
-        savePlayerBattleRollback(window.localStorage, state, `${sourceLabel} · 战前自动存档`);
+        savePendingBattleRecovery(
+          window.localStorage,
+          state,
+          pendingAttack,
+          { kind: 'player-phase' },
+          `${sourceLabel} · 进攻战前检查点`,
+        );
         setHasContinue(true);
-      } catch {
-        // The battle remains playable when browser storage is unavailable.
+      } catch (error) {
+        recoveryWarning = error instanceof Error ? error.message : '浏览器存储不可用';
       }
       setTacticalBattle(battle);
       setSelectedTacticalUnitId(undefined);
+      setPendingTacticalTargetId(undefined);
       setPendingAttack(undefined);
-      setFeedback({ kind: 'success', message: '战场已经展开，请选择己方单位。' });
+      setFeedback(recoveryWarning
+        ? { kind: 'error', message: `战场已经展开，但刷新恢复不可用：${recoveryWarning}` }
+        : { kind: 'success', message: '战场已经展开；刷新页面会从战前检查点重开。' });
       setScreen('battle');
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '无法进入战场。' });
@@ -363,6 +417,7 @@ export function App() {
         return;
       }
       setSelectedTacticalUnitId(unitId);
+      setPendingTacticalTargetId(undefined);
       setFeedback({ kind: 'success', message: `已选择${unit.name}。青色格可移动，红框单位可攻击。` });
       return;
     }
@@ -370,9 +425,24 @@ export function App() {
       setFeedback({ kind: 'error', message: '请先选择一个己方单位。' });
       return;
     }
+    if (!tacticalAttackable.includes(unitId)) {
+      setFeedback({ kind: 'error', message: '目标不在当前单位的攻击范围内。' });
+      return;
+    }
+    setPendingTacticalTargetId(unitId);
+    const preview = previewTacticalAttack(tacticalBattle, selectedTacticalUnitId, unitId);
+    setFeedback({
+      kind: 'success',
+      message: `已锁定${unit.name}：预计损失 ${preview.damage}，确认后才会执行攻击。`,
+    });
+  }
+
+  function confirmSelectedTacticalAttack() {
+    if (!tacticalBattle || !selectedTacticalUnitId || !pendingTacticalTargetId || isResolving) return;
     try {
-      const next = attackTacticalUnit(tacticalBattle, selectedTacticalUnitId, unitId);
+      const next = attackTacticalUnit(tacticalBattle, selectedTacticalUnitId, pendingTacticalTargetId);
       setTacticalBattle(next);
+      setPendingTacticalTargetId(undefined);
       setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '攻击完成。' });
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '攻击失败。' });
@@ -384,6 +454,7 @@ export function App() {
     try {
       const next = moveTacticalUnit(tacticalBattle, selectedTacticalUnitId, position);
       setTacticalBattle(next);
+      setPendingTacticalTargetId(undefined);
       setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '移动完成。' });
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '移动失败。' });
@@ -395,6 +466,7 @@ export function App() {
     try {
       const next = waitTacticalUnit(tacticalBattle, selectedTacticalUnitId);
       setTacticalBattle(next);
+      setPendingTacticalTargetId(undefined);
       setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '单位已待命。' });
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '待命失败。' });
@@ -406,6 +478,7 @@ export function App() {
     try {
       const next = useTacticalSkill(tacticalBattle, selectedTacticalUnitId, skillId, targetUnitId);
       setTacticalBattle(next);
+      setPendingTacticalTargetId(undefined);
       setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '计谋执行完成。' });
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '计谋执行失败。' });
@@ -418,6 +491,7 @@ export function App() {
       const next = endTacticalSide(tacticalBattle);
       setTacticalBattle(next);
       setSelectedTacticalUnitId(undefined);
+      setPendingTacticalTargetId(undefined);
       setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '本方阶段结束。' });
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '无法结束阶段。' });
@@ -438,14 +512,18 @@ export function App() {
           },
         };
       }
-      setTacticalBattle(undefined);
-      setSelectedTacticalUnitId(undefined);
       if (aiResumeFactionIndex !== undefined && next.phase !== 'ended' && !next.pendingSuccession) {
         const progress = continueTurnUntilPlayerDefense(next, aiResumeFactionIndex);
-        setAiResumeFactionIndex(undefined);
-        applyInteractiveTurnProgress(progress);
+        applyInteractiveTurnProgress(progress, tacticalBattle.id);
       } else {
-        clearBattleCheckpoint();
+        const persistenceError = finalizeBattleRecovery(tacticalBattle.id, next);
+        if (persistenceError) {
+          setFeedback({ kind: 'error', message: `战斗已结算，但持久化失败：${persistenceError}。请重试结算。` });
+          return;
+        }
+        setTacticalBattle(undefined);
+        setSelectedTacticalUnitId(undefined);
+        setPendingTacticalTargetId(undefined);
         setAiResumeFactionIndex(undefined);
         setState(next);
         setSelectedCityId(next.cities[result.targetCityId].ownerId === next.playerFactionId
@@ -459,23 +537,29 @@ export function App() {
     }
   }
 
-  function applyInteractiveTurnProgress(progress: InteractiveTurnProgress) {
-    setState(progress.state);
+  function applyInteractiveTurnProgress(progress: InteractiveTurnProgress, completedBattleId?: string) {
     if (progress.pendingPlayerDefense) {
       try {
-        saveBattleCheckpoint(
+        savePendingBattleRecovery(
           window.localStorage,
           progress.state,
           progress.pendingPlayerDefense.order,
-          progress.pendingPlayerDefense.nextFactionIndex,
+          { kind: 'ai-phase', nextFactionIndex: progress.pendingPlayerDefense.nextFactionIndex },
           `${sourceLabel} · 守城战前检查点`,
         );
-      } catch {
-        // The battle remains playable when browser storage is unavailable.
+      } catch (error) {
+        setIsResolving(false);
+        setFeedback({
+          kind: 'error',
+          message: `下一场守城战的恢复点写入失败：${error instanceof Error ? error.message : '浏览器存储不可用'}。请重试结算。`,
+        });
+        return;
       }
       const battle = createTacticalBattle(progress.state, progress.pendingPlayerDefense.order);
+      setState(progress.state);
       setTacticalBattle(battle);
       setSelectedTacticalUnitId(undefined);
+      setPendingTacticalTargetId(undefined);
       setAiResumeFactionIndex(progress.pendingPlayerDefense.nextFactionIndex);
       setScreen('battle');
       setIsResolving(false);
@@ -486,8 +570,20 @@ export function App() {
       return;
     }
 
+    const persistenceError = completedBattleId
+      ? finalizeBattleRecovery(completedBattleId, progress.state)
+      : undefined;
+    if (persistenceError) {
+      setIsResolving(false);
+      setFeedback({ kind: 'error', message: `月份已推进，但战斗结果持久化失败：${persistenceError}。请重试结算。` });
+      return;
+    }
+    if (!completedBattleId) clearBattleCheckpointBestEffort();
+    setState(progress.state);
+    setTacticalBattle(undefined);
+    setSelectedTacticalUnitId(undefined);
+    setPendingTacticalTargetId(undefined);
     setAiResumeFactionIndex(undefined);
-    clearBattleCheckpoint();
     setMonthSummary(summarizeMonth(progress.state.logs.slice(aiTurnLogStart.current)));
     if (progress.state.cities[selectedCityId]?.ownerId !== progress.state.playerFactionId) {
       setSelectedCityId(firstOwnedCityId(progress.state));
@@ -500,6 +596,23 @@ export function App() {
         ? progress.state.outcome === 'victory' ? '战役已经胜利。' : '战役已经失败。'
         : `已进入 ${progress.state.calendar.year} 年 ${progress.state.calendar.month} 月，武将体力与城池资源完成结算。`,
     });
+  }
+
+  function finalizeBattleRecovery(battleId: string, next: GameState): string | undefined {
+    try {
+      saveCommittedBattleRecovery(
+        window.localStorage,
+        battleId,
+        next,
+        `${sourceLabel} · 战后提交`,
+      );
+      saveToSlot(window.localStorage, 'auto', next, `${sourceLabel} · 自动存档`);
+      clearBattleCheckpoint();
+      setHasContinue(true);
+      return undefined;
+    } catch (error) {
+      return error instanceof Error ? error.message : '浏览器存储不可用';
+    }
   }
 
   async function endMonth() {
@@ -537,11 +650,13 @@ export function App() {
         battle={tacticalBattle}
         bridge={bridge}
         selectedUnitId={selectedTacticalUnitId}
+        pendingTargetUnitId={pendingTacticalTargetId}
         reachable={tacticalReachable}
         attackableUnitIds={tacticalAttackable}
         feedback={feedback}
         isResolving={isResolving}
         onUnitSelected={selectTacticalUnit}
+        onConfirmAttack={confirmSelectedTacticalAttack}
         onTileSelected={moveSelectedTacticalUnit}
         onWait={waitSelectedTacticalUnit}
         onUseSkill={useSelectedTacticalSkill}
@@ -939,16 +1054,16 @@ function describeSuccessionReason(reason: NonNullable<GameState['pendingSuccessi
 
 function loadInitialGame(): { state: GameState; sourceLabel: string; hasAutoSave: boolean } {
   try {
-    const checkpoint = loadBattleCheckpoint(window.localStorage);
-    if (checkpoint) {
+    const recovery = loadBattleRecovery(window.localStorage);
+    if (recovery) {
       return {
-        state: checkpoint.state,
-        sourceLabel: sourceLabelForState(checkpoint.state),
+        state: recovery.state,
+        sourceLabel: sourceLabelForState(recovery.state),
         hasAutoSave: true,
       };
     }
   } catch {
-    clearBattleCheckpoint();
+    clearBattleCheckpointBestEffort();
   }
   try {
     const envelope = loadFromSlot(window.localStorage, 'auto');
@@ -961,10 +1076,14 @@ function loadInitialGame(): { state: GameState; sourceLabel: string; hasAutoSave
 }
 
 function clearBattleCheckpoint(): void {
+  deleteBattleCheckpoint(window.localStorage);
+}
+
+function clearBattleCheckpointBestEffort(): void {
   try {
-    deleteBattleCheckpoint(window.localStorage);
+    clearBattleCheckpoint();
   } catch {
-    // Checkpoint cleanup must never block campaign progress or loading.
+    // Damaged recovery metadata must not prevent a clean fallback from loading.
   }
 }
 
