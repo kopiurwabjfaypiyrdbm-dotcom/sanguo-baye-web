@@ -142,6 +142,48 @@ describe('game state validation', () => {
     }));
   });
 
+  it('rejects duplicate item ownership across cities and officers', () => {
+    const state = createSampleState();
+    state.officers['xiahou-dun'].equipmentItemIds = ['sunzi-manual'];
+
+    expect(validateGameState(state)).toContainEqual({
+      path: 'officers.xiahou-dun.equipmentItemIds',
+      message: 'item is already placed at cities.luoyang.itemIds: sunzi-manual',
+    });
+  });
+
+  it('rejects malformed dead officers and succession decisions', () => {
+    const state = createSampleState();
+    state.officers['cao-cao'] = {
+      ...state.officers['cao-cao'],
+      status: 'dead',
+      factionId: 'neutral',
+      cityId: undefined,
+      troops: 0,
+      stamina: 0,
+      equipmentItemIds: [],
+      death: { cause: 'natural-death', turn: 1, year: 190, month: 1 },
+    };
+    state.phase = 'succession';
+    state.pendingSuccession = {
+      version: 1,
+      factionId: 'cao-cao',
+      formerRulerOfficerId: 'cao-cao',
+      candidateOfficerIds: ['missing-officer'],
+      reason: 'natural-death',
+      createdTurn: 1,
+      createdYear: 190,
+      createdMonth: 1,
+      resumePhase: 'player',
+      resumeActiveFactionId: 'cao-cao',
+    };
+
+    expect(validateGameState(state)).toContainEqual({
+      path: 'pendingSuccession.candidateOfficerIds',
+      message: 'invalid successor candidate: missing-officer',
+    });
+  });
+
   it('rejects armed captives and captives held by their former faction', () => {
     const state = createSampleState();
     state.officers['chen-gong'] = {

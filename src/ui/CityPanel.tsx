@@ -74,8 +74,11 @@ type CityPanelProps = {
   onReward: (cityId: string, officerId: string) => void;
   onGiveItem: (cityId: string, officerId: string, itemId: string) => void;
   onUnequipItem: (cityId: string, officerId: string, itemId: string) => void;
+  onConfiscateItem: (cityId: string, officerId: string, itemId: string) => void;
+  onBanishOfficer: (cityId: string, officerId: string) => void;
   onRecruitCaptive: (cityId: string, executorOfficerId: string, captiveOfficerId: string) => void;
   onReleaseCaptive: (cityId: string, captiveOfficerId: string) => void;
+  onExecuteCaptive: (cityId: string, captiveOfficerId: string) => void;
   onMove: (sourceCityId: string, targetCityId: string, officerId: string) => void;
   onTransport: (
     sourceCityId: string,
@@ -120,8 +123,11 @@ export function CityPanel({
   onReward,
   onGiveItem,
   onUnequipItem,
+  onConfiscateItem,
+  onBanishOfficer,
   onRecruitCaptive,
   onReleaseCaptive,
+  onExecuteCaptive,
   onMove,
   onTransport,
   onAppoint,
@@ -867,6 +873,23 @@ export function CityPanel({
             >
               奖赏所选武将（{REWARD_MONEY_COST} 金）
             </button>
+            <button
+              type="button"
+              className="danger-command"
+              disabled={disabled || !isOwned || !selectedOfficer
+                || selectedOfficer.id === state.factions[state.playerFactionId].rulerOfficerId}
+              onClick={() => {
+                if (!selectedOfficer) return;
+                if (window.confirm(`确认流放${selectedOfficer.name}？其将成为在野人物并随机流落到一座城市。`)) {
+                  onBanishOfficer(city.id, selectedOfficer.id);
+                }
+              }}
+              title={selectedOfficer?.id === state.factions[state.playerFactionId].rulerOfficerId
+                ? '不能流放当前君主'
+                : '流放会清空兵力并让人物成为在野，装备随身保留'}
+            >
+              流放所选武将
+            </button>
             <div className="item-command-row">
               <label className="command-field">
                 <span>城中道具（另有 {city.hiddenItemIds?.length ?? 0} 件未发现）</span>
@@ -906,9 +929,21 @@ export function CityPanel({
                     type="button"
                     key={itemId}
                     disabled={disabled || !isOwned}
-                    onClick={() => onUnequipItem(city.id, selectedOfficerId, itemId)}
+                    onClick={() => {
+                      if (!selectedOfficer) return;
+                      const isRuler = selectedOfficer.id === state.factions[state.playerFactionId].rulerOfficerId;
+                      if (isRuler) {
+                        onUnequipItem(city.id, selectedOfficerId, itemId);
+                        return;
+                      }
+                      if (window.confirm(
+                        `确认没收${selectedOfficer.name}的${state.items[itemId].name}？`
+                        + '装备将收入本城，忠诚降低 20。',
+                      )) onConfiscateItem(city.id, selectedOfficerId, itemId);
+                    }}
                   >
-                    卸下 {state.items[itemId].name}
+                    {selectedOfficer?.id === state.factions[state.playerFactionId].rulerOfficerId ? '卸下' : '没收'}{' '}
+                    {state.items[itemId].name}
                   </button>
                 ))}
               </div>
@@ -943,6 +978,38 @@ export function CityPanel({
                     title="现代化人道选项：不消耗行动，俘虏转为本城在野人物"
                   >
                     释放
+                  </button>
+                  <button
+                    type="button"
+                    disabled={disabled || !isOwned || !selectedCaptive}
+                    onClick={() => {
+                      if (!selectedCaptive) return;
+                      if (window.confirm(`确认流放俘虏${selectedCaptive.name}？其将随机流落到一座城市。`)) {
+                        onBanishOfficer(city.id, selectedCaptive.id);
+                      }
+                    }}
+                    title="流放后成为在野人物，装备随身保留"
+                  >
+                    流放
+                  </button>
+                  <button
+                    type="button"
+                    className="danger-command"
+                    disabled={disabled || !isOwned || !selectedCaptive}
+                    onClick={() => {
+                      if (!selectedCaptive) return;
+                      const equipment = getOfficerEquipmentIds(selectedCaptive)
+                        .map((itemId) => state.items[itemId]?.name)
+                        .filter(Boolean)
+                        .join('、');
+                      if (window.confirm(
+                        `确认处斩${selectedCaptive.name}？此操作不可撤销。`
+                        + `${equipment ? `其装备（${equipment}）将收入${city.name}。` : ''}`,
+                      )) onExecuteCaptive(city.id, selectedCaptive.id);
+                    }}
+                    title="不可逆：人物死亡，全部装备收入本城"
+                  >
+                    处斩
                   </button>
                 </div>
                 {(disabled || !canRecruitCaptive) && (

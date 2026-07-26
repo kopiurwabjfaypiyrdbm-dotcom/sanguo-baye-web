@@ -85,7 +85,7 @@ const armsTypes: Record<string, ArmsType> = {
 
 export function createSampleState(): GameState {
   return updateCitySatraps({
-    schemaVersion: 4,
+    schemaVersion: 5,
     scenario: { id: 'sample-190', source: 'sample' },
     turn: 1,
     phase: 'player',
@@ -94,6 +94,13 @@ export function createSampleState(): GameState {
     rngSeed: 0x190001,
     calendar: { year: 190, month: 1 },
     campaignStarted: false,
+    lifecyclePolicy: {
+      version: 1,
+      ageGrowth: 'enabled',
+      naturalDeath: 'disabled',
+      battleDeath: 'disabled',
+      captiveEscape: 'disabled',
+    },
     playerFactionId: 'cao-cao',
     actedOfficerIds: [],
     strategicOrders: {},

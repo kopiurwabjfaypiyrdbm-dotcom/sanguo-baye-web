@@ -21,6 +21,7 @@ const characterResistanceDivisor = [2, 5, 4, 3, 1] as const;
 
 export function recruitCaptive(state: GameState, order: RecruitCaptiveOrder): GameState {
   if (state.phase === 'ended') throw new Error('战役已经结束');
+  if (state.pendingSuccession) throw new Error('必须先拥立新君');
   const city = state.cities[order.cityId];
   if (!city || city.ownerId !== state.activeFactionId) throw new Error('只能招降己方城池中的俘虏');
   const executor = requireExecutor(state, city.id, order.executorOfficerId);
@@ -85,6 +86,7 @@ export function recruitCaptive(state: GameState, order: RecruitCaptiveOrder): Ga
 /** Modern humane alternative to execution/exile; intentionally costs no action. */
 export function releaseCaptive(state: GameState, order: ReleaseCaptiveOrder): GameState {
   if (state.phase === 'ended') throw new Error('战役已经结束');
+  if (state.pendingSuccession) throw new Error('必须先拥立新君');
   const city = state.cities[order.cityId];
   if (!city || city.ownerId !== state.activeFactionId) throw new Error('只能释放己方城池中的俘虏');
   const captive = requireCaptive(state, city.id, order.captiveOfficerId);

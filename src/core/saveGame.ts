@@ -1,7 +1,7 @@
 import type { GameState } from './types';
 import { assertValidGameState } from './validation';
 import { releaseLandlessFactionOfficers } from './administration';
-import { getOfficerEquipmentIds } from './equipment';
+import { getOfficerEquipmentIds, normalizeUniqueItemPlacements } from './equipment';
 import { appendLogs } from './logs';
 import { nextRandom } from './random';
 import { createBundledScenario, type BundledPeriodId } from '../data/bundledScenarios';
@@ -74,43 +74,93 @@ export function parseSave(input: string | unknown): SaveEnvelope {
 
 export function migrateGameState(input: unknown): GameState {
   if (!isRecord(input)) throw new Error('存档中的游戏状态无效');
+  if (input.schemaVersion === 5) {
+    return normalizeCurrentState(structuredClone(input) as GameState);
+  }
   if (input.schemaVersion === 4) {
-    return restoreLegacyAppearanceSchedules(normalizeDiplomaticOrderLayer(normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(
-      releaseLandlessFactionOfficers(structuredClone(input) as GameState),
-    )))));
+    return normalizeCurrentState({
+      ...structuredClone(input),
+      schemaVersion: 5,
+      lifecyclePolicy: defaultLifecyclePolicy(),
+      pendingSuccession: undefined,
+    } as GameState, true);
   }
   if (input.schemaVersion === 3) {
-    return restoreLegacyAppearanceSchedules(normalizeDiplomaticOrderLayer(normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(
-      releaseLandlessFactionOfficers({
-        ...structuredClone(input),
-        schemaVersion: 4,
-        strategicOrders: {},
-        nextStrategicOrderSerial: 1,
-      } as GameState),
-    )))));
+    return normalizeCurrentState({
+      ...structuredClone(input),
+      schemaVersion: 5,
+      strategicOrders: {},
+      nextStrategicOrderSerial: 1,
+      lifecyclePolicy: defaultLifecyclePolicy(),
+      pendingSuccession: undefined,
+    } as GameState, true);
   }
   if (input.schemaVersion === 2) {
-    return restoreLegacyAppearanceSchedules(normalizeDiplomaticOrderLayer(normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(
-      releaseLandlessFactionOfficers({
-        ...structuredClone(input),
-        schemaVersion: 4,
-        intelReports: {},
-        strategicOrders: {},
-        nextStrategicOrderSerial: 1,
-      } as GameState),
-    )))));
+    return normalizeCurrentState({
+      ...structuredClone(input),
+      schemaVersion: 5,
+      intelReports: {},
+      strategicOrders: {},
+      nextStrategicOrderSerial: 1,
+      lifecyclePolicy: defaultLifecyclePolicy(),
+      pendingSuccession: undefined,
+    } as GameState, true);
   }
   if (input.schemaVersion === 1) {
-    return restoreLegacyAppearanceSchedules(normalizeDiplomaticOrderLayer(normalizeItemInventories(restoreSampleInventories(restoreLegacyScenarioItems(releaseLandlessFactionOfficers({
+    return normalizeCurrentState({
       ...structuredClone(input),
-      schemaVersion: 4,
+      schemaVersion: 5,
       discoveredOfficerIds: Array.isArray(input.discoveredOfficerIds) ? [...input.discoveredOfficerIds] : [],
       intelReports: {},
       strategicOrders: {},
       nextStrategicOrderSerial: 1,
-    } as GameState))))));
+      lifecyclePolicy: defaultLifecyclePolicy(),
+      pendingSuccession: undefined,
+    } as GameState, true);
   }
   throw new Error(`不支持的游戏状态版本：${String(input.schemaVersion)}`);
+}
+
+function normalizeCurrentState(state: GameState, normalizeLegacyCopies = false): GameState {
+  const lifecycleState = normalizeLegacyCopies ? normalizeLifecycleLayer(state) : state;
+  const normalized = restoreLegacyAppearanceSchedules(
+    normalizeDiplomaticOrderLayer(
+      normalizeItemInventories(
+        restoreSampleInventories(
+          restoreLegacyScenarioItems(
+            releaseLandlessFactionOfficers(lifecycleState),
+          ),
+        ),
+      ),
+    ),
+  );
+  return normalizeLegacyCopies ? normalizeUniqueItemPlacements(normalized) : normalized;
+}
+
+function normalizeLifecycleLayer(state: GameState): GameState {
+  const raw = state as GameState & {
+    lifecyclePolicy?: unknown;
+    pendingSuccession?: unknown;
+  };
+  return {
+    ...state,
+    lifecyclePolicy: raw.lifecyclePolicy === undefined
+      ? defaultLifecyclePolicy()
+      : raw.lifecyclePolicy as GameState['lifecyclePolicy'],
+    pendingSuccession: raw.pendingSuccession === undefined
+      ? undefined
+      : raw.pendingSuccession as GameState['pendingSuccession'],
+  };
+}
+
+function defaultLifecyclePolicy(): GameState['lifecyclePolicy'] {
+  return {
+    version: 1,
+    ageGrowth: 'enabled',
+    naturalDeath: 'disabled',
+    battleDeath: 'disabled',
+    captiveEscape: 'disabled',
+  };
 }
 
 function normalizeDiplomaticOrderLayer(state: GameState): GameState {

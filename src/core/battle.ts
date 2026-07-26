@@ -2,10 +2,12 @@ import { appendLogs } from './logs';
 import { nextRandom } from './random';
 import type { GameState, Officer } from './types';
 import { assertValidGameState } from './validation';
-import { updateCitySatraps } from './administration';
+import { releaseLandlessFactionOfficers, updateCitySatraps } from './administration';
 import { evaluateOutcome } from './outcome';
 import { getEffectiveOfficerAttributes, getOfficerEquipment, getOfficerEquipmentIds } from './equipment';
 import { applyBayeExperience, calculateBayeBattleExperience } from '../compat/baye/tacticalGrowth';
+import { rollBayeDefeatedOfficerOutcome } from '../compat/baye/officerLifecycle';
+import { captureOfficer, killOfficer } from './officerLifecycle';
 
 export type AttackOrder = {
   sourceCityId: string;
@@ -232,24 +234,35 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
   const additionalLogs: string[] = [...growthLogs];
   const neutralFactionId = Object.values(state.factions).find((faction) => faction.isNeutral)?.id;
   let captureSeed = result.nextRngSeed;
-  const shouldCapture = (officer: Officer) => {
-    const random = nextRandom(captureSeed);
-    captureSeed = random.seed;
-    return Math.floor(random.value * 100) > getEffectiveOfficerAttributes(state, officer).intelligence;
-  };
-  const holdCaptive = (officer: Officer, captorFactionId: string) => {
-    if (!neutralFactionId) throw new Error('Captives require a neutral faction');
-    officers[officer.id] = {
-      ...officer,
-      status: 'captive',
-      factionId: neutralFactionId,
-      captorFactionId,
+  const lifecycleResults: Array<{
+    kind: 'captured' | 'dead';
+    officerId: string;
+    formerFactionId: string;
+    captorFactionId: string;
+  }> = [];
+  const decideDefeatedOfficer = (
+    officer: Officer,
+    captorFactionId: string,
+    escapeCityIds: string[],
+  ) => {
+    const outcome = rollBayeDefeatedOfficerOutcome(
+      getEffectiveOfficerAttributes({ ...state, cities, officers }, officer).intelligence,
+      escapeCityIds.length,
+      captureSeed,
+      state.lifecyclePolicy.battleDeath,
+    );
+    captureSeed = outcome.seed;
+    if (outcome.kind === 'escaped') {
+      officers[officer.id] = { ...officer, cityId: escapeCityIds[outcome.destinationIndex] };
+      additionalLogs.push(`${officer.name}突围退往${cities[escapeCityIds[outcome.destinationIndex]].name}。`);
+      return;
+    }
+    lifecycleResults.push({
+      kind: outcome.kind,
+      officerId: officer.id,
       formerFactionId: officer.factionId,
-      cityId: target.id,
-      troops: 0,
-      stamina: 0,
-    };
-    additionalLogs.push(`${officer.name}兵败被俘，暂押于${target.name}。`);
+      captorFactionId,
+    });
   };
   if (result.cityCaptured) {
     cities[target.id] = { ...cities[target.id], ownerId: result.attackerFactionId };
@@ -276,57 +289,56 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
       officers[officerId] = { ...officers[officerId], cityId: target.id };
     }
 
-    const retreatCity = findRetreatCity(state, target.id, result.defenderFactionId);
-    const defenderRulerId = state.factions[result.defenderFactionId].rulerOfficerId;
+    const escapeCityIds = Object.values(cities)
+      .filter((city) => city.ownerId === result.defenderFactionId)
+      .sort(compareBattleCities)
+      .map((city) => city.id);
     const participantIds = new Set(result.defenderOfficerIds);
-    const retreatingOfficerIds = Object.values(officers)
+    const stationedOfficerIds = Object.values(officers)
       .filter((officer) => officer.status === 'serving'
         && officer.factionId === result.defenderFactionId
         && officer.cityId === target.id)
       .map((officer) => officer.id);
-    for (const officerId of retreatingOfficerIds) {
+    const stationedOfficerIdSet = new Set(stationedOfficerIds);
+    // TheLoserDeal consumes random draws in the battle queue order, not in
+    // global person-record order.
+    for (const officerId of result.defenderOfficerIds) {
+      if (!stationedOfficerIdSet.has(officerId)) continue;
       const officer = officers[officerId];
-      const isParticipant = participantIds.has(officerId);
-      const captured = isParticipant && (!retreatCity || (officerId !== defenderRulerId && shouldCapture(officer)));
-      if (captured) {
-        holdCaptive(officer, result.attackerFactionId);
-      } else if (retreatCity) {
-        officers[officerId] = { ...officer, cityId: retreatCity };
-      } else {
-        officers[officerId] = {
-            ...officers[officerId],
-            status: 'free',
-            factionId: neutralFactionId ?? officers[officerId].factionId,
-            cityId: target.id,
-            troops: 0,
-            stamina: 0,
-          };
-      }
+      decideDefeatedOfficer(officer, result.attackerFactionId, escapeCityIds);
     }
-
-    const defenderEliminated = !Object.values(cities).some((city) => city.ownerId === result.defenderFactionId);
-    if (defenderEliminated) {
-      if (!neutralFactionId) throw new Error('Captured faction cannot be dissolved without a neutral faction');
-      for (const [officerId, officer] of Object.entries(officers)) {
-        if (officer.status !== 'serving' || officer.factionId !== result.defenderFactionId) continue;
+    for (const officerId of stationedOfficerIds.filter((candidate) => !participantIds.has(candidate))) {
+      const officer = officers[officerId];
+      if (state.factions[result.defenderFactionId].rulerOfficerId === officer.id) {
+        lifecycleResults.push({
+          kind: 'captured',
+          officerId: officer.id,
+          formerFactionId: officer.factionId,
+          captorFactionId: result.attackerFactionId,
+        });
+      } else {
+        if (!neutralFactionId) throw new Error('A fallen city requires a neutral faction');
         officers[officerId] = {
           ...officer,
           status: 'free',
           factionId: neutralFactionId,
-          cityId: officer.cityId ?? target.id,
+          cityId: target.id,
           troops: 0,
           stamina: 0,
         };
+        additionalLogs.push(`${officer.name}在${target.name}陷落后成为在野人物。`);
       }
-      additionalLogs.push(`${state.factions[result.defenderFactionId].name}失去最后一座城池，所属武将转为在野。`);
     }
   } else {
-    const attackerRulerId = state.factions[result.attackerFactionId].rulerOfficerId;
     const defenderCanHoldCaptives = !state.factions[result.defenderFactionId].isNeutral;
     if (defenderCanHoldCaptives) {
+      const escapeCityIds = Object.values(cities)
+        .filter((city) => city.ownerId === result.attackerFactionId)
+        .sort(compareBattleCities)
+        .map((city) => city.id);
       for (const officerId of result.attackerOfficerIds) {
         const officer = officers[officerId];
-        if (officerId !== attackerRulerId && shouldCapture(officer)) holdCaptive(officer, result.defenderFactionId);
+        decideDefeatedOfficer(officer, result.defenderFactionId, escapeCityIds);
       }
     }
   }
@@ -339,6 +351,38 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
     rngSeed: captureSeed,
     actedOfficerIds: [...state.actedOfficerIds, ...result.attackerOfficerIds],
   };
+  lifecycleResults.sort((left, right) => {
+    const leftIsRuler = state.factions[left.formerFactionId]?.rulerOfficerId === left.officerId;
+    const rightIsRuler = state.factions[right.formerFactionId]?.rulerOfficerId === right.officerId;
+    return Number(leftIsRuler) - Number(rightIsRuler)
+      || left.officerId.localeCompare(right.officerId);
+  });
+  for (const lifecycle of lifecycleResults) {
+    const officer = next.officers[lifecycle.officerId];
+    if (!officer || officer.status !== 'serving') continue;
+    if (lifecycle.kind === 'dead') {
+      next = killOfficer(next, {
+        officerId: officer.id,
+        cause: 'battle-death',
+        cityId: target.id,
+        responsibleFactionId: lifecycle.captorFactionId,
+      });
+      additionalLogs.push(`${officer.name}兵败战死，遗留装备由${target.name}收存。`);
+    } else {
+      next = captureOfficer(next, {
+        officerId: officer.id,
+        captorFactionId: lifecycle.captorFactionId,
+        cityId: target.id,
+      });
+      additionalLogs.push(`${officer.name}兵败被俘，暂押于${target.name}。`);
+    }
+  }
+  const defenderEliminated = result.cityCaptured
+    && !Object.values(next.cities).some((city) => city.ownerId === result.defenderFactionId);
+  if (defenderEliminated) {
+    next = releaseLandlessFactionOfficers(next);
+    additionalLogs.push(`${state.factions[result.defenderFactionId].name}失去最后一座城池，所属武将转为在野。`);
+  }
   next = updateCitySatraps(next);
   next = appendLogs(next, 'battle', [...result.logs, ...additionalLogs]);
   next = evaluateOutcome(next);
@@ -352,6 +396,7 @@ export function executeAttack(state: GameState, order: AttackOrder, config = bat
 
 export function validateAttackOrder(state: GameState, order: AttackOrder): AttackContext {
   if (state.phase === 'ended') throw new Error('The game has ended');
+  if (state.pendingSuccession) throw new Error('必须先拥立新君');
   const source = state.cities[order.sourceCityId];
   const target = state.cities[order.targetCityId];
   if (!source) throw new Error(`Unknown source city: ${order.sourceCityId}`);
@@ -512,15 +557,10 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function findRetreatCity(state: GameState, capturedCityId: string, factionId: string): string | undefined {
-  const capturedCity = state.cities[capturedCityId];
-  const neighboringRetreat = capturedCity.neighbors
-    .map((cityId) => state.cities[cityId])
-    .filter((city) => city?.ownerId === factionId)
-    .sort((a, b) => a.id.localeCompare(b.id))[0];
-  if (neighboringRetreat) return neighboringRetreat.id;
-
-  return Object.values(state.cities)
-    .filter((city) => city.id !== capturedCityId && city.ownerId === factionId)
-    .sort((a, b) => a.id.localeCompare(b.id))[0]?.id;
+function compareBattleCities(
+  left: GameState['cities'][string],
+  right: GameState['cities'][string],
+): number {
+  return (left.sourceIndex ?? Number.MAX_SAFE_INTEGER) - (right.sourceIndex ?? Number.MAX_SAFE_INTEGER)
+    || left.id.localeCompare(right.id);
 }

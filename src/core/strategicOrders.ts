@@ -124,6 +124,7 @@ function getRoadOrderAvailability(
   actionName: '调动' | '输送',
 ): StrategicOrderAvailability {
   if (state.phase === 'ended') return { allowed: false, reason: '战役已经结束' };
+  if (state.pendingSuccession) return { allowed: false, reason: '必须先拥立新君' };
   const source = state.cities[input.sourceCityId];
   const target = state.cities[input.targetCityId];
   if (!source || !target) return { allowed: false, reason: `${actionName}的出发城或目标城不存在` };

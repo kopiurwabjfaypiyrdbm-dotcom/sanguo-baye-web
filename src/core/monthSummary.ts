@@ -22,6 +22,15 @@ const importantCommandKeywords = [
   '招揽',
   '策反',
   '劝降',
+  '处斩',
+  '流放',
+  '没收',
+  '逃离囚禁',
+  '病逝',
+  '战死',
+  '继任',
+  '新君',
+  '势力瓦解',
 ];
 
 export function summarizeMonth(logs: GameLog[]): string[] {

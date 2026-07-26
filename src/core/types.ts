@@ -4,12 +4,53 @@ export type AiProfile = 'balanced' | 'aggressive' | 'defensive';
 
 export type LogKind = 'system' | 'turn' | 'battle' | 'ai' | 'map';
 
-export type GamePhase = 'player' | 'ai' | 'ended';
+export type GamePhase = 'player' | 'ai' | 'succession' | 'ended';
 
 export type GameOutcome = 'victory' | 'defeat';
 
-export type OfficerStatus = 'serving' | 'free' | 'hidden' | 'captive';
+export type OfficerStatus = 'serving' | 'free' | 'hidden' | 'captive' | 'dead';
 export type CityCondition = 'normal' | 'famine' | 'drought' | 'flood' | 'rebellion';
+
+export type LifecyclePolicy = {
+  version: 1;
+  ageGrowth: 'enabled' | 'disabled';
+  /**
+   * The fixed C source has this branch commented out. It remains opt-in so
+   * campaigns can use it without presenting it as the only original rule.
+   */
+  naturalDeath: 'disabled' | 'age-90-coinflip';
+  /** The vendored source initializer permits the rare no-escape battle death branch. */
+  battleDeath: 'disabled' | 'baye-rare';
+  /** Monthly escape is a documented modern continuity rule. */
+  captiveEscape: 'disabled' | 'modern-monthly';
+};
+
+export type OfficerDeathCause = 'battle-death' | 'natural-death' | 'execution';
+export type SuccessionReason = OfficerDeathCause | 'capture';
+
+export type PendingSuccession = {
+  version: 1;
+  factionId: string;
+  formerRulerOfficerId: string;
+  candidateOfficerIds: string[];
+  reason: SuccessionReason;
+  createdTurn: number;
+  createdYear: number;
+  createdMonth: number;
+  resumePhase: 'player' | 'ai';
+  resumeActiveFactionId: string;
+  /** Browser-interactive AI defense resumes after this faction-order index. */
+  resumeAiFactionIndex?: number;
+};
+
+export type DeathRecord = {
+  cause: OfficerDeathCause;
+  turn: number;
+  year: number;
+  month: number;
+  cityId?: string;
+  responsibleFactionId?: string;
+};
 
 export type Faction = {
   id: string;
@@ -108,6 +149,8 @@ export type Officer = {
   appearanceYear?: number;
   /** Missing target means the original rule selects a deterministic random city. */
   appearanceCityId?: string;
+  /** Dead officers remain as historical records and never re-enter city queues. */
+  death?: DeathRecord;
 };
 
 export type GameLog = {
@@ -180,7 +223,7 @@ export type DiplomaticOrder = {
 };
 
 export type GameState = {
-  schemaVersion: 4;
+  schemaVersion: 5;
   scenario?: {
     id: string;
     source: 'sample' | 'baye-legacy';
@@ -197,6 +240,9 @@ export type GameState = {
     month: number;
   };
   campaignStarted: boolean;
+  lifecyclePolicy: LifecyclePolicy;
+  /** Player succession is an explicit, saveable decision point. AI succession resolves immediately. */
+  pendingSuccession?: PendingSuccession;
   playerFactionId: string;
   actedOfficerIds: string[];
   /** Active multi-month strategic orders. Their officers are serving but not stationed in a city. */

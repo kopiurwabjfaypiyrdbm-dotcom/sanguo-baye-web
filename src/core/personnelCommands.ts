@@ -224,6 +224,7 @@ export function rewardOfficer(state: GameState, order: RewardOfficerOrder): Game
 
 export function getGiveItemAvailability(state: GameState, order: GiveItemOrder): CommandAvailability {
   if (state.phase === 'ended') return { allowed: false, reason: '战役已经结束' };
+  if (state.pendingSuccession) return { allowed: false, reason: '必须先拥立新君' };
   const city = state.cities[order.cityId];
   if (!city || city.ownerId !== state.activeFactionId) return { allowed: false, reason: '只能使用己方城池中的道具' };
   if (!(city.itemIds ?? []).includes(order.itemId)) return { allowed: false, reason: '该道具不在城中或尚未发现' };
@@ -285,6 +286,7 @@ export function giveItemToOfficer(state: GameState, order: GiveItemOrder): GameS
 
 export function unequipOfficerItem(state: GameState, order: UnequipItemOrder): GameState {
   if (state.phase === 'ended') throw new Error('战役已经结束');
+  if (state.pendingSuccession) throw new Error('必须先拥立新君');
   const city = state.cities[order.cityId];
   if (!city || city.ownerId !== state.activeFactionId) throw new Error('只能管理己方城池中的装备');
   const officer = state.officers[order.officerId];
@@ -337,6 +339,7 @@ export function appointSatrap(state: GameState, order: AppointSatrapOrder): Game
 
 function validateSearch(state: GameState, order: SearchOrder): { city: City; officer: Officer } {
   if (state.phase === 'ended') throw new Error('战役已经结束');
+  if (state.pendingSuccession) throw new Error('必须先拥立新君');
   const city = state.cities[order.cityId];
   if (!city) throw new Error(`未知城池：${order.cityId}`);
   if (city.ownerId !== state.activeFactionId) throw new Error('只能在己方城池执行搜寻');

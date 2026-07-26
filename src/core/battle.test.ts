@@ -130,7 +130,7 @@ describe('automatic battle', () => {
     expect(validateGameState(next)).toEqual([]);
   });
 
-  it('retreats zero-troop stationed officers even though they did not join automatic combat', () => {
+  it('captures a zero-troop stationed ruler even though they did not join automatic combat', () => {
     const state = createSampleState();
     state.officers['cao-cao'].cityId = 'chang-an';
     state.officers['cao-cao'].troops = 100_000;
@@ -147,9 +147,41 @@ describe('automatic battle', () => {
     const next = applyBattleResult(state, result);
 
     expect(result.defenderOfficerIds).not.toContain('liu-bei');
-    expect(next.officers['liu-bei'].cityId).toBe('chengdu');
-    expect(next.officers['liu-bei'].status).toBe('serving');
+    expect(next.officers['liu-bei']).toMatchObject({
+      status: 'captive',
+      captorFactionId: 'cao-cao',
+      formerFactionId: 'liu-bei',
+      cityId: 'hanzhong',
+    });
+    expect(next.factions['liu-bei'].rulerOfficerId).toBe('zhuge-liang');
     expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('assigns defeated-officer random outcomes by battle queue rather than record insertion order', () => {
+    const state = createSampleState();
+    state.officers['cao-cao'].cityId = 'chang-an';
+    state.officers['cao-cao'].troops = 100_000;
+    state.officers['zhang-fei'].cityId = 'hanzhong';
+    state.officers['guan-yu'].troops = 1;
+    state.officers['zhang-fei'].troops = 1;
+    state.cities.hanzhong.reserveTroops = 0;
+    const result = resolveBattle(state, {
+      sourceCityId: 'chang-an',
+      targetCityId: 'hanzhong',
+      officerIds: ['cao-cao'],
+      provisions: 100,
+    });
+    const reversed = structuredClone(state);
+    reversed.officers = Object.fromEntries(Object.entries(reversed.officers).reverse());
+
+    const expected = applyBattleResult(state, result);
+    const reordered = applyBattleResult(reversed, result);
+
+    expect(reordered.rngSeed).toBe(expected.rngSeed);
+    for (const officerId of result.defenderOfficerIds) {
+      expect(reordered.officers[officerId]).toEqual(expected.officers[officerId]);
+    }
+    expect(validateGameState(reordered)).toEqual([]);
   });
 
   it('rejects applying the same battle result twice', () => {
@@ -186,6 +218,64 @@ describe('automatic battle', () => {
       cityId: 'hanzhong',
       troops: 0,
     });
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('opens a saveable succession decision when the player ruler is captured', () => {
+    const state = createSampleState();
+    state.officers['cao-cao'].cityId = 'chang-an';
+    state.officers['cao-cao'].troops = 1;
+    state.officers['cao-cao'].intelligence = 0;
+    state.cities.hanzhong.reserveTroops = 100_000;
+    const result = resolveBattle(state, {
+      sourceCityId: 'chang-an', targetCityId: 'hanzhong', officerIds: ['cao-cao'], provisions: 100,
+    });
+
+    const next = applyBattleResult(state, result);
+
+    expect(next.officers['cao-cao']).toMatchObject({
+      status: 'captive',
+      captorFactionId: 'liu-bei',
+      formerFactionId: 'cao-cao',
+    });
+    expect(next.phase).toBe('succession');
+    expect(next.pendingSuccession).toMatchObject({
+      factionId: 'cao-cao',
+      formerRulerOfficerId: 'cao-cao',
+      reason: 'capture',
+    });
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('applies the opt-in rare no-escape battle death and recovers equipment once', () => {
+    const state = createSampleState();
+    state.lifecyclePolicy.battleDeath = 'baye-rare';
+    state.officers['cao-cao'].cityId = 'chang-an';
+    state.officers['cao-cao'].troops = 100_000;
+    state.cities.hanzhong.reserveTroops = 0;
+    state.officers['guan-yu'].troops = 1;
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId === 'liu-bei' && city.id !== 'hanzhong') city.ownerId = 'neutral';
+    }
+    for (const officer of Object.values(state.officers)) {
+      if (officer.factionId === 'liu-bei') {
+        officer.cityId = 'hanzhong';
+        if (officer.id !== 'guan-yu') officer.troops = 0;
+      }
+    }
+    const result = resolveBattle(updateCitySatraps(state), {
+      sourceCityId: 'chang-an', targetCityId: 'hanzhong', officerIds: ['cao-cao'], provisions: 100,
+    });
+    result.nextRngSeed = 1972;
+
+    const next = applyBattleResult(updateCitySatraps(state), result);
+
+    expect(next.officers['guan-yu']).toMatchObject({
+      status: 'dead',
+      equipmentItemIds: [],
+      death: { cause: 'battle-death', cityId: 'hanzhong' },
+    });
+    expect(next.cities.hanzhong.itemIds?.filter((itemId) => itemId === 'qinglong-blade')).toHaveLength(1);
     expect(validateGameState(next)).toEqual([]);
   });
 

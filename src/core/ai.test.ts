@@ -525,6 +525,7 @@ describe('basic AI', () => {
 
   it('uses a discovered city item before routine development', () => {
     const state = beginAiPhase(createSampleState());
+    state.cities.luoyang.itemIds = [];
     state.cities.hanzhong.itemIds = ['sunzi-manual'];
     const next = runAiFactionTurn(state);
 
@@ -567,5 +568,33 @@ describe('basic AI', () => {
 
     expect(next.officers['chen-gong']).toMatchObject({ status: 'serving', factionId: 'liu-bei', cityId: 'hanzhong' });
     expect(next.logs.some((log) => log.message.includes('说服陈宫归顺'))).toBe(true);
+  });
+
+  it('lets an aggressive AI execute a highly loyal captive when nobody can recruit them', () => {
+    const state = beginAiPhase(createSampleState());
+    state.factions['liu-bei'].aiProfile = 'aggressive';
+    state.actedOfficerIds = Object.values(state.officers)
+      .filter((officer) => officer.factionId === 'liu-bei')
+      .map((officer) => officer.id);
+    state.officers['chen-gong'] = {
+      ...state.officers['chen-gong'],
+      status: 'captive',
+      factionId: 'neutral',
+      cityId: 'hanzhong',
+      captorFactionId: 'liu-bei',
+      formerFactionId: 'cao-cao',
+      loyalty: 90,
+      troops: 0,
+    };
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.officers['chen-gong']).toMatchObject({
+      status: 'dead',
+      factionId: 'neutral',
+      cityId: undefined,
+    });
+    expect(next.logs.some((log) => log.message.includes('处斩陈宫'))).toBe(true);
+    expect(validateGameState(next)).toEqual([]);
   });
 });

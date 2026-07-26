@@ -35,6 +35,7 @@ import {
 } from './personnelCommands';
 import type { AiProfile, GameState } from './types';
 import { recruitCaptive, SURRENDER_STAMINA_COST } from './captiveCommands';
+import { executeCaptive } from './officerLifecycle';
 import {
   MOVE_STAMINA_COST,
   TRANSPORT_STAMINA_COST,
@@ -177,7 +178,7 @@ function prepareAiFactionTurn(state: GameState): { state: GameState; order?: Att
     supplyFrontier,
     reinforceFrontier,
   ]) {
-    if (actionCount >= AI_MAX_ACTIONS - 1 || next.phase === 'ended') break;
+    if (actionCount >= AI_MAX_ACTIONS - 1 || next.phase === 'ended' || next.phase === 'succession') break;
     const operated = operation(next, faction.id);
     if (operated) {
       next = operated;
@@ -185,7 +186,9 @@ function prepareAiFactionTurn(state: GameState): { state: GameState; order?: Att
     }
   }
 
-  if (next.phase === 'ended' || actionCount >= AI_MAX_ACTIONS) return { state: next };
+  if (next.phase === 'ended' || next.phase === 'succession' || actionCount >= AI_MAX_ACTIONS) {
+    return { state: next };
+  }
   const decision = planAiAction(next, faction.id);
   if (decision.action === 'skip' || !decision.order) {
     return { state: appendLogs(next, 'ai', [`${faction.name}完成 ${actionCount} 项经营行动，未出征：${decision.reason}`]) };
@@ -286,6 +289,13 @@ function recruitLocalCaptive(state: GameState, factionId: string): GameState | u
       executorOfficerId: executor.id,
       captiveOfficerId: captive.id,
     });
+    const formerRulerId = captive.formerFactionId
+      ? state.factions[captive.formerFactionId]?.rulerOfficerId
+      : undefined;
+    if (formerRulerId !== captive.id && state.factions[factionId].aiProfile === 'aggressive'
+      && captive.loyalty >= 80) {
+      return executeCaptive(state, { cityId: captive.cityId!, captiveOfficerId: captive.id });
+    }
   }
   return undefined;
 }
@@ -571,7 +581,7 @@ export function runAiRound(state: GameState): GameState {
   if (state.phase !== 'ai') throw new Error('AI round requires the AI phase');
   let next = state;
   for (const factionId of state.factionOrder) {
-    if (next.phase === 'ended') break;
+    if (next.phase === 'ended' || next.phase === 'succession') break;
     if (factionId === state.playerFactionId) continue;
     next = { ...next, activeFactionId: factionId };
     next = runAiFactionTurn(next);

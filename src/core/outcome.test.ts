@@ -5,6 +5,7 @@ import { validateGameState } from './validation';
 import { issueMoveOrder, issueTransportOrder } from './strategicOrders';
 import { issueDiplomaticOrder } from './diplomaticOrders';
 import { reconnoitreCity } from './reconnaissance';
+import { killOfficer, resolveSuccession } from './officerLifecycle';
 
 describe('campaign outcome', () => {
   it('ends in defeat when the player owns no city', () => {
@@ -44,6 +45,27 @@ describe('campaign outcome', () => {
     expect(next.logs.at(-1)?.message).toContain('战役胜利');
     expect(next.strategicOrders).toEqual({});
     expect(next.officers['cao-cao'].cityId).toBe('chang-an');
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('waits for a valid successor before declaring campaign victory', () => {
+    const pending = killOfficer(createSampleState(), {
+      officerId: 'cao-cao',
+      cause: 'battle-death',
+      cityId: 'luoyang',
+    });
+    for (const city of Object.values(pending.cities)) {
+      city.ownerId = pending.playerFactionId;
+      city.satrapOfficerId = undefined;
+    }
+
+    const awaitingChoice = evaluateOutcome(pending);
+    const next = resolveSuccession(awaitingChoice, 'xun-yu');
+
+    expect(awaitingChoice.phase).toBe('succession');
+    expect(next).toMatchObject({ phase: 'ended', outcome: 'victory' });
+    expect(next.pendingSuccession).toBeUndefined();
+    expect(next.factions['cao-cao'].rulerOfficerId).toBe('xun-yu');
     expect(validateGameState(next)).toEqual([]);
   });
 

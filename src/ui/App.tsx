@@ -40,7 +40,7 @@ import {
   type InteractiveTurnProgress,
 } from '../core/turn';
 import { summarizeMonth } from '../core/monthSummary';
-import type { GameState } from '../core/types';
+import type { GameState, LifecyclePolicy } from '../core/types';
 import {
   attackTacticalUnit,
   createTacticalBattle,
@@ -69,6 +69,14 @@ import { CityPanel } from './CityPanel';
 import { TacticalBattleScreen } from './TacticalBattleScreen';
 import { getFactionStrategicOrders, issueTransportOrder } from '../core/strategicOrders';
 import { getFactionDiplomaticOrders, issueDiplomaticOrder } from '../core/diplomaticOrders';
+import {
+  SAFE_LIFECYCLE_POLICY,
+  banishOfficer,
+  configureLifecyclePolicy,
+  confiscateOfficerEquipment,
+  executeCaptive,
+  resolveSuccession,
+} from '../core/officerLifecycle';
 
 type AppScreen = 'title' | 'scenario' | 'ruler' | 'game' | 'battle';
 const scenarioOptions = getScenarioOptions();
@@ -80,6 +88,9 @@ export function App() {
   const [hasContinue, setHasContinue] = useState(initialGame.hasAutoSave);
   const [selectedPeriod, setSelectedPeriod] = useState<BundledPeriodId>(1);
   const [selectedRulerIndex, setSelectedRulerIndex] = useState(() => getScenarioRulers(1)[0].sourceIndex);
+  const [selectedLifecyclePolicy, setSelectedLifecyclePolicy] = useState<LifecyclePolicy>({
+    ...SAFE_LIFECYCLE_POLICY,
+  });
   const [selectedCityId, setSelectedCityId] = useState(() => firstOwnedCityId(initialGame.state));
   const [sourceLabel, setSourceLabel] = useState(initialGame.sourceLabel);
   const [selectedSaveSlot, setSelectedSaveSlot] = useState<Exclude<SaveSlotId, 'auto'>>('1');
@@ -174,7 +185,10 @@ export function App() {
   }
 
   function startCampaign() {
-    const next = createBundledScenario(selectedPeriod, selectedRulerIndex);
+    const next = configureLifecyclePolicy(
+      createBundledScenario(selectedPeriod, selectedRulerIndex),
+      selectedLifecyclePolicy,
+    );
     const label = sourceLabelForState(next);
     setState(next);
     setSelectedCityId(firstOwnedCityId(next));
@@ -414,10 +428,19 @@ export function App() {
     if (!tacticalBattle || tacticalBattle.status === 'ongoing') return;
     try {
       const result = createTacticalBattleResult(tacticalBattle);
-      const next = applyBattleResult(state, result);
+      let next = applyBattleResult(state, result);
+      if (next.pendingSuccession && aiResumeFactionIndex !== undefined) {
+        next = {
+          ...next,
+          pendingSuccession: {
+            ...next.pendingSuccession,
+            resumeAiFactionIndex: aiResumeFactionIndex,
+          },
+        };
+      }
       setTacticalBattle(undefined);
       setSelectedTacticalUnitId(undefined);
-      if (aiResumeFactionIndex !== undefined && next.phase !== 'ended') {
+      if (aiResumeFactionIndex !== undefined && next.phase !== 'ended' && !next.pendingSuccession) {
         const progress = continueTurnUntilPlayerDefense(next, aiResumeFactionIndex);
         setAiResumeFactionIndex(undefined);
         applyInteractiveTurnProgress(progress);
@@ -493,6 +516,20 @@ export function App() {
     }
   }
 
+  function chooseSuccessor(officerId: string) {
+    try {
+      const pending = state.pendingSuccession;
+      const next = resolveSuccession(state, officerId);
+      setState(next);
+      setFeedback({ kind: 'success', message: next.logs.at(-1)?.message ?? '新君已经继位。' });
+      if (pending?.resumePhase === 'ai' && pending.resumeAiFactionIndex !== undefined) {
+        applyInteractiveTurnProgress(continueTurnUntilPlayerDefense(next, pending.resumeAiFactionIndex));
+      }
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '无法完成君主继承。' });
+    }
+  }
+
   if (screen === 'battle' && tacticalBattle) {
     return (
       <TacticalBattleScreen
@@ -515,7 +552,14 @@ export function App() {
   }
 
   if (screen === 'title') {
-    return <TitleScreen hasContinue={hasContinue} onNewGame={beginNewGame} onContinue={continueCampaign} />;
+    return (
+      <TitleScreen
+        hasContinue={hasContinue}
+        hasPendingSuccession={Boolean(state.pendingSuccession)}
+        onNewGame={beginNewGame}
+        onContinue={continueCampaign}
+      />
+    );
   }
 
   if (screen === 'scenario') {
@@ -530,6 +574,8 @@ export function App() {
         rulers={getScenarioRulers(selectedPeriod)}
         selectedRulerIndex={selectedRulerIndex}
         onSelectRuler={setSelectedRulerIndex}
+        lifecyclePolicy={selectedLifecyclePolicy}
+        onLifecyclePolicyChange={setSelectedLifecyclePolicy}
         onStart={startCampaign}
         onBack={() => setScreen('scenario')}
       />
@@ -563,7 +609,12 @@ export function App() {
             </label>
           </div>
           <button type="button" className="return-title-action" onClick={() => setScreen('title')}>返回标题</button>
-          <button type="button" className="primary-action" disabled={isResolving || state.phase === 'ended'} onClick={endMonth}>
+          <button
+            type="button"
+            className="primary-action"
+            disabled={isResolving || state.phase === 'ended' || Boolean(state.pendingSuccession)}
+            onClick={endMonth}
+          >
             {isResolving ? '推演中…' : '结束本月'}
           </button>
         </div>
@@ -626,7 +677,7 @@ export function App() {
       <CityPanel
         state={state}
         cityId={selectedCityId}
-        disabled={isResolving}
+        disabled={isResolving || Boolean(state.pendingSuccession)}
         onDevelop={(cityId, officerId) => applyPlayerAction(
           (current) => developFarming(current, { cityId, officerId }),
         )}
@@ -666,11 +717,20 @@ export function App() {
         onUnequipItem={(cityId, officerId, itemId) => applyPlayerAction(
           (current) => unequipOfficerItem(current, { cityId, officerId, itemId }),
         )}
+        onConfiscateItem={(cityId, officerId, itemId) => applyPlayerAction(
+          (current) => confiscateOfficerEquipment(current, { cityId, officerId, itemId }),
+        )}
+        onBanishOfficer={(cityId, officerId) => applyPlayerAction(
+          (current) => banishOfficer(current, { cityId, officerId }),
+        )}
         onRecruitCaptive={(cityId, executorOfficerId, captiveOfficerId) => applyPlayerAction(
           (current) => recruitCaptive(current, { cityId, executorOfficerId, captiveOfficerId }),
         )}
         onReleaseCaptive={(cityId, captiveOfficerId) => applyPlayerAction(
           (current) => releaseCaptive(current, { cityId, captiveOfficerId }),
+        )}
+        onExecuteCaptive={(cityId, captiveOfficerId) => applyPlayerAction(
+          (current) => executeCaptive(current, { cityId, captiveOfficerId }),
         )}
         onMove={(sourceCityId, targetCityId, officerId) => applyPlayerAction(
           (current) => moveOfficer(current, { sourceCityId, targetCityId, officerId }),
@@ -709,10 +769,14 @@ export function App() {
           onKeyDown={(event) => {
             if (event.key === 'Escape') setPendingAttack(undefined);
             if (event.key !== 'Tab') return;
-            const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
-            if (buttons.length === 0) return;
-            const first = buttons[0];
-            const last = buttons[buttons.length - 1];
+            const controls = [
+              ...event.currentTarget.querySelectorAll<HTMLElement>(
+                'button:not(:disabled), select:not(:disabled)',
+              ),
+            ];
+            if (controls.length === 0) return;
+            const first = controls[0];
+            const last = controls[controls.length - 1];
             if (event.shiftKey && document.activeElement === first) {
               event.preventDefault();
               last.focus();
@@ -744,6 +808,99 @@ export function App() {
         </div>
       )}
 
+      {state.pendingSuccession && (
+        <div
+          className="battle-choice-backdrop"
+          role="presentation"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              return;
+            }
+            if (event.key !== 'Tab') return;
+            const controls = [
+              ...event.currentTarget.querySelectorAll<HTMLElement>(
+                'button:not(:disabled), select:not(:disabled)',
+              ),
+            ];
+            if (controls.length === 0) return;
+            const first = controls[0];
+            const last = controls[controls.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+              event.preventDefault();
+              last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+              event.preventDefault();
+              first.focus();
+            }
+          }}
+        >
+          <section
+            className="battle-choice-dialog succession-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="succession-title"
+            aria-describedby="succession-description"
+          >
+            <p className="panel-kicker">Succession decision</p>
+            <h2 id="succession-title">拥立新君</h2>
+            <p id="succession-description">
+              {state.officers[state.pendingSuccession.formerRulerOfficerId].name}
+              {describeSuccessionReason(state.pendingSuccession.reason)}，
+              {state.factions[state.pendingSuccession.factionId].name}必须立即确定继承人。
+              此决策已经写入自动存档，刷新或返回标题不会丢失。
+            </p>
+            <div className="succession-candidates" role="list">
+              {state.pendingSuccession.candidateOfficerIds.map((officerId, index) => {
+                const officer = state.officers[officerId];
+                return (
+                  <button
+                    type="button"
+                    className={index === 0 ? 'primary-action' : undefined}
+                    autoFocus={index === 0}
+                    key={officer.id}
+                    onClick={() => chooseSuccessor(officer.id)}
+                  >
+                    <strong>{officer.name}</strong>
+                    <span>
+                      智 {officer.intelligence} · 忠 {officer.loyalty} ·
+                      {' '}{officer.cityId ? state.cities[officer.cityId]?.name : '在途'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="succession-persistence-actions" aria-label="继承期间的存档操作">
+              <label>
+                <span>存档槽</span>
+                <select
+                  aria-label="继承存档槽"
+                  value={selectedSaveSlot}
+                  onChange={(event) =>
+                    setSelectedSaveSlot(event.target.value as Exclude<SaveSlotId, 'auto'>)}
+                >
+                  <option value="1">槽位 1</option>
+                  <option value="2">槽位 2</option>
+                  <option value="3">槽位 3</option>
+                </select>
+              </label>
+              <button type="button" onClick={saveManualSlot}>保存</button>
+              <button type="button" onClick={exportCurrentSave}>导出</button>
+              <button type="button" onClick={() => setScreen('title')}>返回标题</button>
+            </div>
+            {feedback && (
+              <p
+                className={`succession-feedback ${feedback.kind}`}
+                role={feedback.kind === 'error' ? 'alert' : 'status'}
+              >
+                {feedback.message}
+              </p>
+            )}
+            <small>继承前不能执行城池命令或结束本月；可在此保存、导出或返回标题。</small>
+          </section>
+        </div>
+      )}
+
       <section className="log-panel" aria-label="日志">
         <div>
           <p className="panel-kicker">Campaign log</p>
@@ -768,7 +925,16 @@ function firstOwnedCityId(state: GameState): string {
 }
 
 function countCurrentOfficers(state: GameState): number {
-  return Object.values(state.officers).filter((officer) => officer.status !== 'hidden').length;
+  return Object.values(state.officers).filter(
+    (officer) => officer.status !== 'hidden' && officer.status !== 'dead',
+  ).length;
+}
+
+function describeSuccessionReason(reason: NonNullable<GameState['pendingSuccession']>['reason']): string {
+  if (reason === 'capture') return '兵败被俘';
+  if (reason === 'battle-death') return '兵败战死';
+  if (reason === 'execution') return '遭到处斩';
+  return '年迈病逝';
 }
 
 function loadInitialGame(): { state: GameState; sourceLabel: string; hasAutoSave: boolean } {

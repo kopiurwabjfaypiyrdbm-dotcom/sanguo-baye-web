@@ -1,5 +1,5 @@
 import { applyMonthlyGrowth } from './economy';
-import { runAiFactionTurnUntilPlayerDefense, runAiRound } from './ai';
+import { runAiFactionTurn, runAiFactionTurnUntilPlayerDefense } from './ai';
 import { appendLogs } from './logs';
 import type { AttackOrder } from './battle';
 import type { GameState } from './types';
@@ -10,6 +10,7 @@ import { advanceStrategicOrders } from './strategicOrders';
 import { settleCityEvents } from './cityEvents';
 import { settleAnnualProgression } from './annualProgression';
 import { advanceDiplomaticOrders } from './diplomaticOrders';
+import { settleCaptiveEscapes, settleNaturalDeaths } from './officerLifecycle';
 
 export type InteractiveTurnProgress = {
   state: GameState;
@@ -27,6 +28,7 @@ export function advanceCalendar(calendar: GameState['calendar']): GameState['cal
 }
 
 export function beginAiPhase(state: GameState): GameState {
+  if (state.pendingSuccession || state.phase === 'succession') throw new Error('必须先拥立新君');
   if (state.phase !== 'player') throw new Error('Only the player phase can be ended');
   const firstAiFactionId = state.factionOrder.find((factionId) => factionId !== state.playerFactionId);
   if (!firstAiFactionId) return finishTurn({ ...state, campaignStarted: true, phase: 'ai' });
@@ -49,10 +51,12 @@ export function finishTurn(state: GameState): GameState {
   };
   const afterOrders = advanceStrategicOrders(settling, { deferValidation: true });
   const afterDiplomacy = advanceDiplomaticOrders(afterOrders, { deferValidation: true });
-  const afterAnnualProgression = settleAnnualProgression(afterDiplomacy, state.calendar);
+  const afterEscapes = settleCaptiveEscapes(afterDiplomacy);
+  const afterAnnualProgression = settleAnnualProgression(afterEscapes, state.calendar);
   const grown = applyMonthlyGrowth(afterAnnualProgression);
   const afterEvents = settleCityEvents(grown);
-  const next = evaluateOutcome(updateCitySatraps(afterEvents));
+  const afterDeaths = settleNaturalDeaths(afterEvents);
+  const next = evaluateOutcome(updateCitySatraps(afterDeaths));
   const withLog = appendLogs(next, 'turn', [`进入 ${next.calendar.year} 年 ${next.calendar.month} 月。`]);
   assertValidGameState(withLog);
   return withLog;
@@ -61,8 +65,20 @@ export function finishTurn(state: GameState): GameState {
 export function advanceTurn(state: GameState): GameState {
   const aiState = beginAiPhase(state);
   if (aiState.phase !== 'ai') return aiState;
-  const afterAi = runAiRound(aiState);
-  return afterAi.phase === 'ended' ? afterAi : finishTurn(afterAi);
+  return continueAiTurn(aiState, 0);
+}
+
+export function continueAiTurn(state: GameState, startFactionIndex: number): GameState {
+  if (state.phase === 'ended' || state.phase === 'succession') return state;
+  if (state.phase !== 'ai') throw new Error('AI continuation requires the AI phase');
+  let next = state;
+  for (let index = startFactionIndex; index < state.factionOrder.length; index += 1) {
+    const factionId = state.factionOrder[index];
+    if (factionId === state.playerFactionId) continue;
+    next = runAiFactionTurn({ ...next, activeFactionId: factionId });
+    if (next.phase === 'ended' || next.phase === 'succession') return next;
+  }
+  return finishTurn(next);
 }
 
 export function advanceTurnUntilPlayerDefense(state: GameState): InteractiveTurnProgress {
@@ -75,7 +91,7 @@ export function continueTurnUntilPlayerDefense(
   state: GameState,
   startFactionIndex: number,
 ): InteractiveTurnProgress {
-  if (state.phase === 'ended') return { state, completed: true };
+  if (state.phase === 'ended' || state.phase === 'succession') return { state, completed: true };
   if (state.phase !== 'ai') throw new Error('Interactive AI continuation requires the AI phase');
   let next = state;
   for (let index = startFactionIndex; index < state.factionOrder.length; index += 1) {
@@ -84,7 +100,7 @@ export function continueTurnUntilPlayerDefense(
     next = { ...next, activeFactionId: factionId };
     const progress = runAiFactionTurnUntilPlayerDefense(next);
     next = progress.state;
-    if (next.phase === 'ended') return { state: next, completed: true };
+    if (next.phase === 'ended' || next.phase === 'succession') return { state: next, completed: true };
     if (progress.pendingPlayerDefense) {
       return {
         state: next,

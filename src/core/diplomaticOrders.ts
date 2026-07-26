@@ -71,6 +71,7 @@ export function getDiplomaticOrderAvailability(
   input: DiplomaticOrderInput,
 ): DiplomaticAvailability {
   if (state.phase === 'ended') return { allowed: false, reason: '战役已经结束' };
+  if (state.pendingSuccession) return { allowed: false, reason: '必须先拥立新君' };
   if (!Number.isSafeInteger(state.nextDiplomaticOrderSerial)
     || state.nextDiplomaticOrderSerial >= Number.MAX_SAFE_INTEGER) {
     return { allowed: false, reason: '谋略命令序号已经耗尽' };

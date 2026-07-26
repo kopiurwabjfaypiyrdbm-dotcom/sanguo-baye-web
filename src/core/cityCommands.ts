@@ -283,6 +283,7 @@ export function tradeFood(state: GameState, order: TradeOrder): GameState {
 
 export function getBanquetAvailability(state: GameState, order: BanquetOrder): CityCommandAvailability {
   if (state.phase === 'ended') return { allowed: false, reason: '战役已经结束' };
+  if (state.pendingSuccession) return { allowed: false, reason: '必须先拥立新君' };
   const city = state.cities[order.cityId];
   if (!city || city.ownerId !== state.activeFactionId) return { allowed: false, reason: '只能在己方城池宴请' };
   const target = state.officers[order.targetOfficerId];
@@ -448,6 +449,7 @@ function getCityCommandAvailability(
   moneyCost: number,
 ): CityCommandAvailability {
   if (state.phase === 'ended') return { allowed: false, reason: '战役已经结束' };
+  if (state.pendingSuccession) return { allowed: false, reason: '必须先拥立新君' };
   const city = state.cities[order.cityId];
   if (!city || city.ownerId !== state.activeFactionId) return { allowed: false, reason: '只能在己方城池执行命令' };
   const officer = state.officers[order.officerId];
@@ -472,6 +474,7 @@ function validateActiveCityOfficer(
   order: CityCommandOrder,
 ): { city: City; officer: Officer } {
   if (state.phase === 'ended') throw new Error('战役已经结束');
+  if (state.pendingSuccession) throw new Error('必须先拥立新君');
   const city = state.cities[order.cityId];
   if (!city) throw new Error(`未知城池：${order.cityId}`);
   if (city.ownerId !== state.activeFactionId) throw new Error('只能在己方城池执行命令');

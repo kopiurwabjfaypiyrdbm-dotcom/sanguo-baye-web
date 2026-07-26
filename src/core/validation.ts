@@ -10,7 +10,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const add = (path: string, message: string) => issues.push({ path, message });
 
-  if (state.schemaVersion !== 4) add('schemaVersion', 'must be 4');
+  if (state.schemaVersion !== 5) add('schemaVersion', 'must be 5');
   if (typeof state.campaignStarted !== 'boolean') add('campaignStarted', 'must be a boolean');
   if (!Number.isInteger(state.turn) || state.turn < 1) add('turn', 'must be a positive integer');
   if (!Number.isInteger(state.rngSeed) || state.rngSeed < 0) add('rngSeed', 'must be a non-negative integer');
@@ -21,11 +21,36 @@ export function validateGameState(state: GameState): ValidationIssue[] {
 
   if (!state.factions[state.playerFactionId]) add('playerFactionId', `unknown faction: ${state.playerFactionId}`);
   if (!state.factions[state.activeFactionId]) add('activeFactionId', `unknown faction: ${state.activeFactionId}`);
-  if (state.phase === 'player' && state.activeFactionId !== state.playerFactionId) {
+  if ((state.phase === 'player' || state.phase === 'succession')
+    && state.activeFactionId !== state.playerFactionId) {
     add('activeFactionId', 'must be the player faction during the player phase');
+  }
+  if (state.phase === 'succession' && !state.pendingSuccession) {
+    add('pendingSuccession', 'is required during the succession phase');
+  }
+  if (state.phase !== 'succession' && state.pendingSuccession) {
+    add('pendingSuccession', 'is only allowed during the succession phase');
   }
   if (state.phase === 'ended' && !state.outcome) add('outcome', 'is required when the game has ended');
   if (state.phase !== 'ended' && state.outcome) add('outcome', 'is only allowed when the game has ended');
+  const rawLifecyclePolicy = (state as { lifecyclePolicy?: unknown }).lifecyclePolicy;
+  if (!isRecord(rawLifecyclePolicy)) {
+    add('lifecyclePolicy', 'must be an object');
+  } else {
+    if (rawLifecyclePolicy.version !== 1) add('lifecyclePolicy.version', 'must be 1');
+    if (!['enabled', 'disabled'].includes(String(rawLifecyclePolicy.ageGrowth))) {
+      add('lifecyclePolicy.ageGrowth', 'must be enabled or disabled');
+    }
+    if (!['disabled', 'age-90-coinflip'].includes(String(rawLifecyclePolicy.naturalDeath))) {
+      add('lifecyclePolicy.naturalDeath', 'must be a supported policy');
+    }
+    if (!['disabled', 'baye-rare'].includes(String(rawLifecyclePolicy.battleDeath))) {
+      add('lifecyclePolicy.battleDeath', 'must be a supported policy');
+    }
+    if (!['disabled', 'modern-monthly'].includes(String(rawLifecyclePolicy.captiveEscape))) {
+      add('lifecyclePolicy.captiveEscape', 'must be a supported policy');
+    }
+  }
 
   const actedOfficerIds = new Set(state.actedOfficerIds);
   if (actedOfficerIds.size !== state.actedOfficerIds.length) add('actedOfficerIds', 'contains duplicate officer ids');
@@ -333,17 +358,26 @@ export function validateGameState(state: GameState): ValidationIssue[] {
     }
     const ruler = state.officers[faction.rulerOfficerId];
     const factionOwnsCity = Object.values(state.cities).some((city) => city.ownerId === faction.id);
+    const awaitingSuccession = state.pendingSuccession?.factionId === faction.id
+      && state.pendingSuccession.formerRulerOfficerId === faction.rulerOfficerId;
     if (!ruler) add(`factions.${key}.rulerOfficerId`, `unknown officer: ${faction.rulerOfficerId}`);
-    else if (!faction.isNeutral && factionOwnsCity && ruler.factionId !== faction.id) {
+    else if (!awaitingSuccession && !faction.isNeutral && factionOwnsCity && ruler.factionId !== faction.id) {
       add(`factions.${key}.rulerOfficerId`, 'ruler belongs to another faction');
     }
-    else if (!faction.isNeutral && factionOwnsCity && ruler.status !== 'serving') {
+    else if (!awaitingSuccession && !faction.isNeutral && factionOwnsCity && ruler.status !== 'serving') {
       add(`factions.${key}.rulerOfficerId`, 'non-neutral ruler must be serving');
     }
   }
   if (playerFlags !== 1) add('factions', 'must contain exactly one player faction');
 
   const placedItemIds = new Set<string>();
+  const itemLocationById = new Map<string, string>();
+  const placeItem = (itemId: string, path: string) => {
+    const previous = itemLocationById.get(itemId);
+    if (previous) add(path, `item is already placed at ${previous}: ${itemId}`);
+    else itemLocationById.set(itemId, path);
+    placedItemIds.add(itemId);
+  };
   for (const [key, city] of Object.entries(state.cities)) {
     const path = `cities.${key}`;
     if (key !== city.id) add(`${path}.id`, `must match record key: ${key}`);
@@ -399,7 +433,7 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       }
       for (const itemId of itemIds ?? []) {
         if (!state.items[itemId]) add(`${path}.${field}`, `unknown item: ${itemId}`);
-        placedItemIds.add(itemId);
+        placeItem(itemId, `${path}.${field}`);
       }
     }
     const neighbors = new Set<string>();
@@ -417,12 +451,18 @@ export function validateGameState(state: GameState): ValidationIssue[] {
     const path = `officers.${key}`;
     const activeOrderId = activeOrderByOfficerId.get(officer.id);
     if (key !== officer.id) add(`${path}.id`, `must match record key: ${key}`);
-    if (!['serving', 'free', 'hidden', 'captive'].includes(officer.status)) add(`${path}.status`, `unknown status: ${officer.status}`);
+    if (!['serving', 'free', 'hidden', 'captive', 'dead'].includes(officer.status)) {
+      add(`${path}.status`, `unknown status: ${officer.status}`);
+    }
     if (!state.factions[officer.factionId]) add(`${path}.factionId`, `unknown faction: ${officer.factionId}`);
     if (officer.status === 'hidden') {
       if (officer.cityId !== undefined) add(`${path}.cityId`, 'hidden officer must not be assigned to a city');
       if (!state.factions[officer.factionId]?.isNeutral) add(`${path}.factionId`, 'hidden officer must be neutral');
       if (activeOrderId) add(`${path}.cityId`, 'hidden officer cannot have an active strategic order');
+    } else if (officer.status === 'dead') {
+      if (officer.cityId !== undefined) add(`${path}.cityId`, 'dead officer must not be assigned to a city');
+      if (!state.factions[officer.factionId]?.isNeutral) add(`${path}.factionId`, 'dead officer must be neutral');
+      if (activeOrderId) add(`${path}.cityId`, 'dead officer cannot have an active campaign order');
     } else if (officer.status !== 'serving' || !activeOrderId) {
       if (!officer.cityId || !state.cities[officer.cityId]) add(`${path}.cityId`, `unknown city: ${officer.cityId}`);
     }
@@ -454,6 +494,38 @@ export function validateGameState(state: GameState): ValidationIssue[] {
     if (officer.status === 'serving' && Boolean(officer.cityId) === Boolean(activeOrderId)) {
       add(`${path}.cityId`, 'serving officer must be either stationed or assigned exactly one active strategic order');
     }
+    if (officer.status === 'dead') {
+      if (officer.troops !== 0) add(`${path}.troops`, 'dead officer must have zero troops');
+      if (officer.stamina !== 0) add(`${path}.stamina`, 'dead officer must have zero stamina');
+      if (state.actedOfficerIds.includes(officer.id)) add(`${path}.status`, 'dead officer cannot be marked as acted');
+      if (state.discoveredOfficerIds.includes(officer.id)) add(`${path}.status`, 'dead officer cannot be discovered as free');
+      if (!officer.death) {
+        add(`${path}.death`, 'dead officer must retain a death record');
+      } else {
+        if (!['battle-death', 'natural-death', 'execution'].includes(officer.death.cause)) {
+          add(`${path}.death.cause`, 'must be a supported death cause');
+        }
+        if (!Number.isInteger(officer.death.turn) || officer.death.turn < 1 || officer.death.turn > state.turn) {
+          add(`${path}.death.turn`, 'must be within the current campaign');
+        }
+        if (!Number.isInteger(officer.death.year) || officer.death.year < 1
+          || officer.death.year * 12 + officer.death.month > state.calendar.year * 12 + state.calendar.month) {
+          add(`${path}.death.year`, 'must not be later than the current calendar');
+        }
+        if (!Number.isInteger(officer.death.month) || officer.death.month < 1 || officer.death.month > 12) {
+          add(`${path}.death.month`, 'must be from 1 to 12');
+        }
+        if (officer.death.cityId !== undefined && !state.cities[officer.death.cityId]) {
+          add(`${path}.death.cityId`, `unknown city: ${officer.death.cityId}`);
+        }
+        if (officer.death.responsibleFactionId !== undefined
+          && !state.factions[officer.death.responsibleFactionId]) {
+          add(`${path}.death.responsibleFactionId`, `unknown faction: ${officer.death.responsibleFactionId}`);
+        }
+      }
+    } else if (officer.death) {
+      add(`${path}.death`, 'only dead officers may retain a death record');
+    }
     if (activeOrderId) {
       const strategicOrder = isRecord(rawStrategicOrders) ? rawStrategicOrders[activeOrderId] : undefined;
       const diplomaticOrder = isRecord(rawDiplomaticOrders) ? rawDiplomaticOrders[activeOrderId] : undefined;
@@ -477,7 +549,10 @@ export function validateGameState(state: GameState): ValidationIssue[] {
       }
       for (const itemId of equipmentItemIds) {
         if (!state.items[itemId]) add(`${path}.equipmentItemIds`, `unknown item: ${itemId}`);
-        placedItemIds.add(itemId);
+        placeItem(itemId, `${path}.equipmentItemIds`);
+      }
+      if (officer.status === 'dead' && equipmentItemIds.length > 0) {
+        add(`${path}.equipmentItemIds`, 'dead officer cannot retain equipment');
       }
     }
     for (const [field, value] of Object.entries({
@@ -512,13 +587,84 @@ export function validateGameState(state: GameState): ValidationIssue[] {
     }
     if (officer.appearanceYear !== undefined
       && officer.appearanceYear > state.calendar.year
-      && officer.status !== 'hidden') {
+      && officer.status !== 'hidden'
+      && officer.status !== 'dead') {
       add(`${path}.status`, 'officer cannot appear before appearanceYear');
     }
     if (officer.appearanceYear !== undefined
       && officer.appearanceYear <= state.calendar.year
       && officer.status === 'hidden') {
       add(`${path}.status`, 'hidden officer is overdue for appearance');
+    }
+  }
+
+  if (state.pendingSuccession) {
+    const pending = state.pendingSuccession;
+    const path = 'pendingSuccession';
+    if (pending.version !== 1) add(`${path}.version`, 'must be 1');
+    if (!state.factions[pending.factionId] || state.factions[pending.factionId]?.isNeutral) {
+      add(`${path}.factionId`, `unknown playable faction: ${pending.factionId}`);
+    }
+    if (pending.factionId !== state.playerFactionId) add(`${path}.factionId`, 'only player succession may remain pending');
+    if (!Object.values(state.cities).some((city) => city.ownerId === pending.factionId)) {
+      add(`${path}.factionId`, 'pending succession faction must still own a city');
+    }
+    const formerRuler = state.officers[pending.formerRulerOfficerId];
+    const expectedFormerStatus = pending.reason === 'capture' ? 'captive' : 'dead';
+    if (!formerRuler || formerRuler.status !== expectedFormerStatus) {
+      add(`${path}.formerRulerOfficerId`, `former ruler must be ${expectedFormerStatus}`);
+    }
+    if (state.factions[pending.factionId]?.rulerOfficerId !== pending.formerRulerOfficerId) {
+      add(`${path}.formerRulerOfficerId`, 'must match the faction ruler awaiting replacement');
+    }
+    if (!['battle-death', 'natural-death', 'execution', 'capture'].includes(pending.reason)) {
+      add(`${path}.reason`, 'must be a supported succession reason');
+    }
+    if (!Array.isArray(pending.candidateOfficerIds) || pending.candidateOfficerIds.length === 0) {
+      add(`${path}.candidateOfficerIds`, 'must contain at least one candidate');
+    } else {
+      if (new Set(pending.candidateOfficerIds).size !== pending.candidateOfficerIds.length) {
+        add(`${path}.candidateOfficerIds`, 'contains duplicate officer ids');
+      }
+      for (const officerId of pending.candidateOfficerIds) {
+        const candidate = state.officers[officerId];
+        if (!candidate || candidate.status !== 'serving' || candidate.factionId !== pending.factionId) {
+          add(`${path}.candidateOfficerIds`, `invalid successor candidate: ${officerId}`);
+        }
+      }
+    }
+    if (!['player', 'ai'].includes(pending.resumePhase)) add(`${path}.resumePhase`, 'must be player or ai');
+    if (!state.factions[pending.resumeActiveFactionId]) {
+      add(`${path}.resumeActiveFactionId`, `unknown faction: ${pending.resumeActiveFactionId}`);
+    }
+    if (pending.resumePhase === 'player') {
+      if (pending.resumeActiveFactionId !== state.playerFactionId) {
+        add(`${path}.resumeActiveFactionId`, 'must be the player faction for player-phase recovery');
+      }
+      if (pending.resumeAiFactionIndex !== undefined) {
+        add(`${path}.resumeAiFactionIndex`, 'must be absent for player-phase recovery');
+      }
+    } else {
+      const expectedCursor = state.factionOrder.indexOf(pending.resumeActiveFactionId) + 1;
+      if (pending.resumeActiveFactionId === state.playerFactionId) {
+        add(`${path}.resumeActiveFactionId`, 'must identify the active AI faction');
+      }
+      if (!Number.isInteger(pending.resumeAiFactionIndex)
+        || pending.resumeAiFactionIndex !== expectedCursor
+        || expectedCursor <= 0
+        || expectedCursor > state.factionOrder.length) {
+        add(`${path}.resumeAiFactionIndex`, 'must resume after the active AI faction');
+      }
+    }
+    if (!Number.isInteger(pending.createdTurn) || pending.createdTurn < 1 || pending.createdTurn > state.turn) {
+      add(`${path}.createdTurn`, 'must be within the current campaign');
+    }
+    if (!Number.isInteger(pending.createdMonth) || pending.createdMonth < 1 || pending.createdMonth > 12) {
+      add(`${path}.createdMonth`, 'must be from 1 to 12');
+    }
+    if (!Number.isInteger(pending.createdYear) || pending.createdYear < 1
+      || pending.createdYear * 12 + pending.createdMonth > state.calendar.year * 12 + state.calendar.month) {
+      add(`${path}.createdYear`, 'must not be later than the current calendar');
     }
   }
 

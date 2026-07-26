@@ -116,7 +116,7 @@ export function applyMonthlyGrowth(state: GameState): GameState {
   for (const officer of Object.values(officers)) {
     officers[officer.id] = {
       ...officer,
-      stamina: officer.status === 'captive'
+      stamina: officer.status === 'captive' || officer.status === 'dead'
         ? 0
         : Math.min(100, officer.stamina + MONTHLY_STAMINA_RECOVERY),
     };

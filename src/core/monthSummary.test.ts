@@ -121,4 +121,14 @@ describe('month summary', () => {
       ...critical.slice(0, 4).map((log) => log.message),
     ]);
   });
+
+  it('keeps lifecycle and succession consequences in the monthly report', () => {
+    const logs: GameLog[] = [
+      { id: 'death', kind: 'turn', message: '曹操年迈病逝。', turn: 30 },
+      { id: 'heir', kind: 'system', message: '荀彧被拥立为曹操军新君。', turn: 30 },
+      { id: 'banish', kind: 'map', message: '流放夏侯惇，其流落至陈留。', turn: 30 },
+    ];
+
+    expect(summarizeMonth(logs)).toEqual(expect.arrayContaining(logs.map((log) => log.message)));
+  });
 });

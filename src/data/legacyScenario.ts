@@ -1,5 +1,6 @@
 import type { ArmsType, City, Faction, GameState, Officer } from '../core/types';
 import { updateCitySatraps } from '../core/administration';
+import { normalizeUniqueItemPlacements } from '../core/equipment';
 import { assertValidGameState } from '../core/validation';
 import { parseBayeLegacyPeriod, type BayeLegacyPeriod } from '../compat/baye/legacyScenario';
 import { createItemCatalog, itemId } from './itemCatalog';
@@ -186,7 +187,7 @@ export function createGameStateFromLegacyPeriod(
 
   const playerFactionId = factionId(playerRulerIndex);
   const state: GameState = {
-    schemaVersion: 4,
+    schemaVersion: 5,
     scenario: { id: `baye-period-${period.period}`, source: 'baye-legacy', period: period.period },
     turn: 1,
     phase: 'player',
@@ -195,6 +196,13 @@ export function createGameStateFromLegacyPeriod(
     rngSeed: (period.year << 8) | period.period,
     calendar: { year: period.year, month: 1 },
     campaignStarted: false,
+    lifecyclePolicy: {
+      version: 1,
+      ageGrowth: 'enabled',
+      naturalDeath: 'disabled',
+      battleDeath: 'disabled',
+      captiveEscape: 'disabled',
+    },
     playerFactionId,
     actedOfficerIds: [],
     strategicOrders: {},
@@ -217,7 +225,7 @@ export function createGameStateFromLegacyPeriod(
       },
     ],
   };
-  const initialized = updateCitySatraps(state);
+  const initialized = updateCitySatraps(normalizeUniqueItemPlacements(state));
   assertValidGameState(initialized);
   return initialized;
 }

@@ -186,6 +186,11 @@ select:focus-visible,
 .ruler-preview dl div { display: flex; justify-content: space-between; padding: 10px; background: #142f28; }
 .ruler-preview dt { color: #8fa497; font-size: 11px; }
 .ruler-preview dd { margin: 0; color: #e5d3a6; font-weight: 800; }
+.lifecycle-policy { display: grid; gap: 8px; margin: 0 0 14px; padding: 10px; border: 1px solid rgba(214, 189, 123, .22); border-radius: 4px; background: rgba(7, 25, 21, .45); }
+.lifecycle-policy legend { padding: 0 5px; color: #e5d3a6; font-size: 11px; font-weight: 800; }
+.lifecycle-policy label { display: grid; grid-template-columns: 72px 1fr; align-items: center; gap: 8px; color: #aebcb1; font-size: 10px; }
+.lifecycle-policy select { min-width: 0; }
+.lifecycle-policy small { color: #82968a; line-height: 1.45; }
 .start-campaign { width: 100%; min-height: 54px; margin-top: auto; font-family: Georgia, "Noto Serif SC", serif; font-size: 18px; font-weight: 900; }
 
 .app-shell {
@@ -886,12 +891,15 @@ select:focus-visible,
   display: grid;
   place-items: center;
   padding: 24px;
+  overflow-y: auto;
   background: rgba(5, 14, 12, .76);
   backdrop-filter: blur(4px);
 }
 
 .battle-choice-dialog {
   width: min(100%, 480px);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   padding: 28px;
   color: #e9dfc3;
   background: linear-gradient(145deg, #243b34, #142822);
@@ -902,6 +910,16 @@ select:focus-visible,
 
 .battle-choice-dialog h2 { margin: 4px 0 10px; color: #f0dcae; font: 800 28px Georgia, "Noto Serif SC", serif; }
 .battle-choice-dialog > p:not(.panel-kicker) { color: #bfcac0; line-height: 1.6; }
+.succession-dialog { max-width: 560px; }
+.succession-candidates { display: grid; max-height: min(46vh, 380px); gap: 8px; margin: 14px 0; overflow: auto; }
+.succession-candidates button { display: flex; align-items: center; justify-content: space-between; gap: 16px; text-align: left; }
+.succession-candidates span { color: #9aaca0; font-size: 10px; }
+.succession-persistence-actions { display: grid; grid-template-columns: 1.2fr repeat(3, auto); gap: 8px; margin: 12px 0; }
+.succession-persistence-actions label { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 7px; color: #aebcb1; font-size: 10px; }
+.succession-persistence-actions select,
+.succession-persistence-actions button { min-height: 36px; }
+.succession-feedback { margin: 8px 0; color: #cfe8d8; font-size: 11px; }
+.succession-feedback.error { color: #f1b4a9; }
 .battle-choice-actions { display: grid; grid-template-columns: 1.2fr 1fr .7fr; gap: 8px; margin-top: 22px; }
 .battle-choice-actions button,
 .battle-command-actions button {
@@ -1010,6 +1028,9 @@ select:focus-visible,
   .top-bar { grid-template-columns: 1fr; gap: 10px; }
   .top-actions { flex-wrap: wrap; }
   .save-controls { flex-wrap: wrap; border-right: 0; }
+  .succession-persistence-actions { grid-template-columns: 1fr 1fr; }
+  .succession-persistence-actions label { grid-column: 1 / -1; min-width: 0; }
+  .succession-persistence-actions select { min-width: 0; width: 100%; }
   .side-panel { border-top: 1px solid rgba(230, 211, 159, 0.28); border-left: 0; }
   .map-toolbar span:first-child { display: none; }
   .map-toolbar { justify-content: flex-end; }

@@ -46,7 +46,12 @@ export function settleAnnualProgression(
   const officers = Object.fromEntries(
     Object.entries(state.officers).map(([officerId, officer]) => [
       officerId,
-      { ...officer, age: officer.age + 1 },
+      {
+        ...officer,
+        age: state.lifecyclePolicy.ageGrowth === 'enabled' && officer.status !== 'dead'
+          ? officer.age + 1
+          : officer.age,
+      },
     ]),
   );
   for (const officer of Object.values(officers).sort(bySourceIdThenId)) {
@@ -63,7 +68,7 @@ export function settleAnnualProgression(
       status: 'free',
       factionId: neutralFactionId(state),
       cityId: targetCityId,
-      age: PERSON_APPEAR_AGE,
+      age: state.lifecyclePolicy.ageGrowth === 'enabled' ? PERSON_APPEAR_AGE : officer.age,
       troops: 0,
     };
     appearedOfficerCount += 1;
@@ -73,7 +78,7 @@ export function settleAnnualProgression(
     { ...state, rngSeed: seed, cities, officers },
     'turn',
     [
-      '年度更新：人物年龄增长 1 岁'
+      `年度更新：${state.lifecyclePolicy.ageGrowth === 'enabled' ? '人物年龄增长 1 岁' : '人物年龄按战役规则保持不变'}`
         + (appearedOfficerCount > 0 ? '；各地传来新人才出仕前的活动消息' : '')
         + (appearedItemCount > 0 ? '；有新道具进入各地隐藏库存' : '')
         + '。',

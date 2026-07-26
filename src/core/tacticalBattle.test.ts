@@ -414,7 +414,13 @@ describe('manual tactical battle core', () => {
     expect(result.winner).toBe('attacker');
     expect(next.cities.hanzhong.ownerId).toBe('cao-cao');
     expect(next.officers['cao-cao'].cityId).toBe('hanzhong');
-    expect(next.officers['liu-bei'].cityId).toBe('chengdu');
+    expect(next.officers['liu-bei']).toMatchObject({
+      status: 'captive',
+      captorFactionId: 'cao-cao',
+      formerFactionId: 'liu-bei',
+      cityId: 'hanzhong',
+    });
+    expect(next.factions['liu-bei'].rulerOfficerId).toBe('zhuge-liang');
     expect(next.officers['guan-yu']).toMatchObject({
       status: 'captive', captorFactionId: 'cao-cao', formerFactionId: 'liu-bei', cityId: 'hanzhong',
     });

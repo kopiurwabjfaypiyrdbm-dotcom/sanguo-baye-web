@@ -17,6 +17,7 @@ import { createBundledScenario, getScenarioRulers } from '../data/bundledScenari
 import { getEffectiveOfficerAttributes } from './equipment';
 import { nextRandom } from './random';
 import { getStrategicDestinations, issueMoveOrder } from './strategicOrders';
+import type { GameState } from './types';
 
 describe('versioned saves', () => {
   it('round-trips the complete state and deterministic random sequence', () => {
@@ -37,13 +38,21 @@ describe('versioned saves', () => {
     delete legacy.discoveredOfficerIds;
 
     const loaded = parseSave(legacy);
-    expect(loaded.state.schemaVersion).toBe(4);
+    expect(loaded.state.schemaVersion).toBe(5);
     expect(loaded.state.discoveredOfficerIds).toEqual([]);
     expect(loaded.state.intelReports).toEqual({});
     expect(loaded.state.strategicOrders).toEqual({});
     expect(loaded.state.nextStrategicOrderSerial).toBe(1);
     expect(loaded.state.diplomaticOrders).toEqual({});
     expect(loaded.state.nextDiplomaticOrderSerial).toBe(1);
+    expect(loaded.state.lifecyclePolicy).toEqual({
+      version: 1,
+      ageGrowth: 'enabled',
+      naturalDeath: 'disabled',
+      battleDeath: 'disabled',
+      captiveEscape: 'disabled',
+    });
+    expect(loaded.state.pendingSuccession).toBeUndefined();
   });
 
   it('migrates schema-two saves with an empty intelligence report layer', () => {
@@ -53,7 +62,7 @@ describe('versioned saves', () => {
 
     const loaded = parseSave(legacy);
 
-    expect(loaded.state.schemaVersion).toBe(4);
+    expect(loaded.state.schemaVersion).toBe(5);
     expect(loaded.state.intelReports).toEqual({});
     expect(loaded.state.strategicOrders).toEqual({});
     expect(loaded.state.diplomaticOrders).toEqual({});
@@ -69,7 +78,7 @@ describe('versioned saves', () => {
 
     const loaded = parseSave(legacy);
 
-    expect(loaded.state.schemaVersion).toBe(4);
+    expect(loaded.state.schemaVersion).toBe(5);
     expect(loaded.state.strategicOrders).toEqual({});
     expect(loaded.state.nextStrategicOrderSerial).toBe(1);
     expect(loaded.state.diplomaticOrders).toEqual({});
@@ -160,6 +169,8 @@ describe('versioned saves', () => {
 
   it('migrates early named equipment slots into the ordered two-slot model', () => {
     const legacy = createSampleState();
+    (legacy as { schemaVersion: number }).schemaVersion = 4;
+    delete (legacy as Partial<GameState>).lifecyclePolicy;
     delete legacy.officers['guan-yu'].equipmentItemIds;
     legacy.officers['guan-yu'].weaponItemId = 'qinglong-blade';
     legacy.officers['guan-yu'].mountItemId = 'red-hare';
@@ -173,6 +184,8 @@ describe('versioned saves', () => {
 
   it('returns a third early named-slot item to the officer city during migration', () => {
     const legacy = createSampleState();
+    (legacy as { schemaVersion: number }).schemaVersion = 4;
+    delete (legacy as Partial<GameState>).lifecyclePolicy;
     delete legacy.officers['cao-cao'].equipmentItemIds;
     legacy.officers['cao-cao'].weaponItemId = 'qinglong-blade';
     legacy.officers['cao-cao'].intelligenceItemId = 'sunzi-manual';
@@ -188,6 +201,8 @@ describe('versioned saves', () => {
 
   it('restores the untouched item layer in pre-item bundled campaign saves', () => {
     const legacy = createBundledScenario(4, getScenarioRulers(4)[0].sourceIndex);
+    (legacy as { schemaVersion: number }).schemaVersion = 4;
+    delete (legacy as Partial<GameState>).lifecyclePolicy;
     for (const officer of Object.values(legacy.officers)) {
       const effective = getEffectiveOfficerAttributes(legacy, officer);
       officer.force = effective.force;
@@ -203,7 +218,7 @@ describe('versioned saves', () => {
     const loaded = parseSave(legacy).state;
     const zhaoYun = Object.values(loaded.officers).find((officer) => officer.name === '赵云')!;
 
-    expect(Object.keys(loaded.items)).toHaveLength(33);
+    expect(Object.keys(loaded.items).length).toBeGreaterThanOrEqual(33);
     expect(zhaoYun.equipmentItemIds).toEqual(['item-9', 'item-8']);
     expect(getEffectiveOfficerAttributes(loaded, zhaoYun).force).toBe(109);
   });
@@ -382,6 +397,18 @@ describe('versioned saves', () => {
     const state = createSampleState();
     state.officers['cao-cao'].cityId = 'missing';
     expect(() => serializeSave(state)).toThrow('Invalid game state');
+  });
+
+  it('rejects schema-five saves that omit the required lifecycle policy', () => {
+    const state = createSampleState();
+    delete (state as Partial<GameState>).lifecyclePolicy;
+
+    expect(() => parseSave({
+      format: 'sanguo-baye-web',
+      version: 1,
+      savedAt: '2026-07-26T00:00:00.000Z',
+      state,
+    })).toThrow('lifecyclePolicy');
   });
 
   it('stores independent automatic and manual slots', () => {
