@@ -2,12 +2,21 @@ import { estimateBattle, executeAttack, type AttackOrder } from './battle';
 import {
   DEVELOP_MONEY_COST,
   DEVELOP_STAMINA_COST,
+  GOVERN_MONEY_COST,
+  GOVERN_STAMINA_COST,
+  INSPECT_MONEY_COST,
+  INSPECT_STAMINA_COST,
   RECRUIT_STAMINA_COST,
   MAX_DISTRIBUTION_INCREASE,
   calculateOfficerTroopCapacity,
   calculateRecruitCapacity,
+  developCommerce,
   developFarming,
   distributeTroops,
+  getDevelopCommerceAvailability,
+  getDevelopFarmingAvailability,
+  governCity,
+  inspectCity,
   recruitTroops,
 } from './cityCommands';
 import { appendLogs } from './logs';
@@ -148,7 +157,7 @@ function prepareAiFactionTurn(state: GameState): { state: GameState; order?: Att
     useCityItem,
     balanceTroops,
     recruitReserves,
-    developWeakCity,
+    improveCity,
     searchLocalTalent,
     supplyFrontier,
     reinforceFrontier,
@@ -254,17 +263,73 @@ function recruitReserves(state: GameState, factionId: string): GameState | undef
   return undefined;
 }
 
-function developWeakCity(state: GameState, factionId: string): GameState | undefined {
-  const candidates = Object.values(state.cities)
-    .filter((city) => city.ownerId === factionId && city.money >= DEVELOP_MONEY_COST)
-    .filter((city) => city.farmingLimit === undefined || city.farming < city.farmingLimit)
+function improveCity(state: GameState, factionId: string): GameState | undefined {
+  const inspectionCandidates = Object.values(state.cities)
+    .filter((city) =>
+      city.ownerId === factionId
+      && !isExposedSoleGarrison(state, city.id, factionId)
+      && city.publicLoyalty !== undefined
+      && city.publicLoyalty < 60
+      && city.money >= INSPECT_MONEY_COST)
     .sort((a, b) =>
-      farmingRatio(a.farming, a.farmingLimit) - farmingRatio(b.farming, b.farmingLimit)
+      (a.publicLoyalty ?? 0) - (b.publicLoyalty ?? 0)
       || a.id.localeCompare(b.id));
-  for (const city of candidates) {
+  for (const city of inspectionCandidates) {
+    const officer = availableOfficers(state, factionId, city.id, INSPECT_STAMINA_COST)
+      .sort((a, b) => b.intelligence - a.intelligence || a.id.localeCompare(b.id))[0];
+    if (officer) return inspectCity(state, { cityId: city.id, officerId: officer.id });
+  }
+
+  const candidates = Object.values(state.cities)
+    .filter((city) =>
+      city.ownerId === factionId
+      && !isExposedSoleGarrison(state, city.id, factionId)
+      && city.money >= DEVELOP_MONEY_COST)
+    .map((city) => ({
+      city,
+      farmingRatio: farmingRatio(city.farming, city.farmingLimit),
+      commerceRatio: farmingRatio(city.commerce, city.commerceLimit),
+    }))
+    .filter(({ city }) => {
+      const officer = availableOfficers(state, factionId, city.id, DEVELOP_STAMINA_COST)[0];
+      if (!officer) return false;
+      const order = { cityId: city.id, officerId: officer.id };
+      return getDevelopFarmingAvailability(state, order).allowed
+        || getDevelopCommerceAvailability(state, order).allowed;
+    })
+    .sort((a, b) =>
+      Math.min(a.farmingRatio, a.commerceRatio) - Math.min(b.farmingRatio, b.commerceRatio)
+      || a.city.id.localeCompare(b.city.id));
+  for (const candidate of candidates) {
+    const { city } = candidate;
     const officer = availableOfficers(state, factionId, city.id, DEVELOP_STAMINA_COST)
       .sort((a, b) => b.intelligence - a.intelligence || a.id.localeCompare(b.id))[0];
-    if (officer) return developFarming(state, { cityId: city.id, officerId: officer.id });
+    if (!officer) continue;
+    const order = { cityId: city.id, officerId: officer.id };
+    const canDevelopFarming = getDevelopFarmingAvailability(state, order).allowed;
+    const canDevelopCommerce = getDevelopCommerceAvailability(state, order).allowed;
+    if (canDevelopCommerce && (!canDevelopFarming || candidate.commerceRatio < candidate.farmingRatio)) {
+      return developCommerce(state, order);
+    }
+    if (canDevelopFarming) return developFarming(state, order);
+  }
+
+  // Disaster events arrive in v0.5. Until then, governance is a fallback
+  // investment after loyalty and revenue-producing improvements are exhausted.
+  const governanceCandidates = Object.values(state.cities)
+    .filter((city) =>
+      city.ownerId === factionId
+      && !isExposedSoleGarrison(state, city.id, factionId)
+      && city.disasterPrevention !== undefined
+      && city.disasterPrevention < 40
+      && city.money >= GOVERN_MONEY_COST)
+    .sort((a, b) =>
+      (a.disasterPrevention ?? 0) - (b.disasterPrevention ?? 0)
+      || a.id.localeCompare(b.id));
+  for (const city of governanceCandidates) {
+    const officer = availableOfficers(state, factionId, city.id, GOVERN_STAMINA_COST)
+      .sort((a, b) => b.intelligence - a.intelligence || a.id.localeCompare(b.id))[0];
+    if (officer) return governCity(state, { cityId: city.id, officerId: officer.id });
   }
   return undefined;
 }
@@ -389,6 +454,12 @@ function stationedCount(state: GameState, cityId: string, factionId: string): nu
   return Object.values(state.officers).filter(
     (officer) => officer.status === 'serving' && officer.factionId === factionId && officer.cityId === cityId,
   ).length;
+}
+
+function isExposedSoleGarrison(state: GameState, cityId: string, factionId: string): boolean {
+  const city = state.cities[cityId];
+  return city.neighbors.some((neighborId) => state.cities[neighborId]?.ownerId !== factionId)
+    && stationedCount(state, cityId, factionId) <= 1;
 }
 
 function farmingRatio(farming: number, limit?: number): number {

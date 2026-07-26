@@ -2,9 +2,18 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import {
   DEVELOP_MONEY_COST,
   DEVELOP_STAMINA_COST,
+  GOVERN_MONEY_COST,
+  GOVERN_STAMINA_COST,
+  INSPECT_MONEY_COST,
+  INSPECT_STAMINA_COST,
   RECRUIT_STAMINA_COST,
+  calculateCommerceGain,
   calculateOfficerTroopCapacity,
   calculateRecruitCapacity,
+  getDevelopCommerceAvailability,
+  getDevelopFarmingAvailability,
+  getGovernAvailability,
+  getInspectAvailability,
 } from '../core/cityCommands';
 import type { GameState } from '../core/types';
 import {
@@ -35,6 +44,9 @@ type CityPanelProps = {
   cityId: string;
   disabled?: boolean;
   onDevelop: (cityId: string, officerId: string) => void;
+  onDevelopCommerce: (cityId: string, officerId: string) => void;
+  onGovern: (cityId: string, officerId: string) => void;
+  onInspect: (cityId: string, officerId: string) => void;
   onRecruit: (cityId: string, officerId: string) => void;
   onSearch: (cityId: string, officerId: string) => void;
   onRecruitOfficer: (cityId: string, executorOfficerId: string, targetOfficerId: string) => void;
@@ -63,6 +75,9 @@ export function CityPanel({
   cityId,
   disabled = false,
   onDevelop,
+  onDevelopCommerce,
+  onGovern,
+  onInspect,
   onRecruit,
   onSearch,
   onRecruitOfficer,
@@ -169,6 +184,15 @@ export function CityPanel({
   const faction = state.factions[city.ownerId];
   const satrap = city.satrapOfficerId ? state.officers[city.satrapOfficerId] : undefined;
   const selectedOfficer = eligibleOfficers.find((officer) => officer.id === selectedOfficerId);
+  const selectedEffectiveAttributes = selectedOfficer
+    ? getEffectiveOfficerAttributes(state, selectedOfficer)
+    : undefined;
+  const commerceGainRange = selectedEffectiveAttributes
+    ? [
+      calculateCommerceGain(selectedEffectiveAttributes, 0),
+      calculateCommerceGain(selectedEffectiveAttributes, 0.999_999),
+    ]
+    : [0, 0];
   const selectedCaptive = captives.find((captive) => captive.id === selectedCaptiveId);
   const selectedItem = state.items[selectedItemId];
   const selectedEquipmentIds = selectedOfficer ? getOfficerEquipmentIds(selectedOfficer) : [];
@@ -183,9 +207,28 @@ export function CityPanel({
   const distributionCapacity = selectedOfficer ? calculateOfficerTroopCapacity(selectedOfficer) : 0;
   const distributionDelta = selectedOfficer ? distributionValue - selectedOfficer.troops : 0;
   const provisionValue = Number(provisions);
-  const canDevelop = isOwned && selectedOfficer !== undefined && selectedOfficer.stamina >= DEVELOP_STAMINA_COST
-    && !selectedOfficerActed && city.money >= DEVELOP_MONEY_COST
-    && (city.farmingLimit === undefined || city.farming < city.farmingLimit);
+  const farmingAvailability = selectedOfficer
+    ? getDevelopFarmingAvailability(state, { cityId: city.id, officerId: selectedOfficer.id })
+    : { allowed: false as const, reason: '请选择执行武将' };
+  const canDevelop = farmingAvailability.allowed;
+  const commerceAvailability = selectedOfficer
+    ? getDevelopCommerceAvailability(state, { cityId: city.id, officerId: selectedOfficer.id })
+    : { allowed: false as const, reason: '请选择执行武将' };
+  const governAvailability = selectedOfficer
+    ? getGovernAvailability(state, { cityId: city.id, officerId: selectedOfficer.id })
+    : { allowed: false as const, reason: '请选择执行武将' };
+  const inspectAvailability = selectedOfficer
+    ? getInspectAvailability(state, { cityId: city.id, officerId: selectedOfficer.id })
+    : { allowed: false as const, reason: '请选择执行武将' };
+  const displayedCommerceAvailability = disabled
+    ? { allowed: false as const, reason: '当前有待处理操作，暂时不能执行城池命令' }
+    : commerceAvailability;
+  const displayedGovernAvailability = disabled
+    ? { allowed: false as const, reason: '当前有待处理操作，暂时不能执行城池命令' }
+    : governAvailability;
+  const displayedInspectAvailability = disabled
+    ? { allowed: false as const, reason: '当前有待处理操作，暂时不能执行城池命令' }
+    : inspectAvailability;
   const canRecruit = isOwned && selectedOfficer !== undefined && selectedOfficer.stamina >= RECRUIT_STAMINA_COST
     && !selectedOfficerActed && calculateRecruitCapacity(city) > 0;
   const canSearch = isOwned && selectedOfficer !== undefined && selectedOfficer.stamina >= SEARCH_STAMINA_COST
@@ -309,6 +352,7 @@ export function CityPanel({
           ? String(city.publicLoyalty ?? '—')
           : intelValue(false, city.publicLoyalty ?? 0, intelReport?.publicLoyalty)} />
         <Stat label="城防" value={intelValue(isPlayerCity, city.defense, intelReport?.defense)} />
+        <Stat label="防灾" value={isPlayerCity ? String(city.disasterPrevention ?? 0) : '未知'} />
         <Stat label="太守" value={isPlayerCity ? satrap?.name ?? '空缺' : intelReport?.satrapName ?? '未知'} />
       </dl>
 
@@ -404,6 +448,59 @@ export function CityPanel({
               >
                 搜寻
               </button>
+              <button
+                type="button"
+                disabled={!isOwned || !displayedCommerceAvailability.allowed}
+                onClick={() => onDevelopCommerce(city.id, selectedOfficerId)}
+                aria-describedby="civic-command-guidance"
+                title={displayedCommerceAvailability.allowed
+                  ? `消耗金钱 ${DEVELOP_MONEY_COST}、体力 ${DEVELOP_STAMINA_COST}`
+                  : displayedCommerceAvailability.reason}
+              >
+                招商
+              </button>
+              <button
+                type="button"
+                disabled={!isOwned || !displayedGovernAvailability.allowed}
+                onClick={() => onGovern(city.id, selectedOfficerId)}
+                aria-describedby="civic-command-guidance"
+                title={displayedGovernAvailability.allowed
+                  ? `提高防灾，消耗金钱 ${GOVERN_MONEY_COST}、体力 ${GOVERN_STAMINA_COST}`
+                  : displayedGovernAvailability.reason}
+              >
+                治理
+              </button>
+              <button
+                type="button"
+                disabled={!isOwned || !displayedInspectAvailability.allowed}
+                onClick={() => onInspect(city.id, selectedOfficerId)}
+                aria-describedby="civic-command-guidance"
+                title={displayedInspectAvailability.allowed
+                  ? `提高民忠与人口，消耗金钱 ${INSPECT_MONEY_COST}、体力 ${INSPECT_STAMINA_COST}`
+                  : displayedInspectAvailability.reason}
+              >
+                出巡
+              </button>
+            </div>
+            <div className="civic-command-guidance" id="civic-command-guidance">
+              <span>
+                招商：
+                {displayedCommerceAvailability.allowed
+                  ? `商业预计 +${commerceGainRange[0]}～${commerceGainRange[1]}；${DEVELOP_MONEY_COST} 金、${DEVELOP_STAMINA_COST} 体力、占用本月行动。`
+                  : `不可用——${displayedCommerceAvailability.reason}`}
+              </span>
+              <span>
+                治理：
+                {displayedGovernAvailability.allowed
+                  ? `防灾 +1～4；${GOVERN_MONEY_COST} 金、${GOVERN_STAMINA_COST} 体力、占用本月行动。灾害效果将在 v0.5 接入。`
+                  : `不可用——${displayedGovernAvailability.reason}`}
+              </span>
+              <span>
+                出巡：
+                {displayedInspectAvailability.allowed
+                  ? `民忠 +1～4、人口最多 +100；${INSPECT_MONEY_COST} 金、${INSPECT_STAMINA_COST} 体力、占用本月行动。`
+                  : `不可用——${displayedInspectAvailability.reason}`}
+              </span>
             </div>
 
             <p className="command-group-title">人事</p>

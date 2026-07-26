@@ -275,6 +275,10 @@ export function validateGameState(state: GameState): ValidationIssue[] {
         add(`${path}.${field}`, 'must be a non-negative integer');
       }
     }
+    for (const field of ['publicLoyalty', 'disasterPrevention'] as const) {
+      const value = city[field];
+      if (value !== undefined && value > 100) add(`${path}.${field}`, 'must not exceed 100');
+    }
     for (const field of ['itemIds', 'hiddenItemIds'] as const) {
       const itemIds = city[field];
       if (itemIds !== undefined && !Array.isArray(itemIds)) {

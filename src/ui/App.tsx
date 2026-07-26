@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { applyBattleResult, executeAttack, type AttackOrder } from '../core/battle';
-import { developFarming, distributeTroops, recruitTroops } from '../core/cityCommands';
+import {
+  developCommerce,
+  developFarming,
+  distributeTroops,
+  governCity,
+  inspectCity,
+  recruitTroops,
+} from '../core/cityCommands';
 import { createSampleState } from '../core/sampleState';
 import { recruitCaptive, releaseCaptive } from '../core/captiveCommands';
 import { reconnoitreCity } from '../core/reconnaissance';
@@ -29,7 +36,8 @@ import {
   continueTurnUntilPlayerDefense,
   type InteractiveTurnProgress,
 } from '../core/turn';
-import type { GameLog, GameState } from '../core/types';
+import { summarizeMonth } from '../core/monthSummary';
+import type { GameState } from '../core/types';
 import {
   attackTacticalUnit,
   createTacticalBattle,
@@ -596,6 +604,15 @@ export function App() {
         onDevelop={(cityId, officerId) => applyPlayerAction(
           (current) => developFarming(current, { cityId, officerId }),
         )}
+        onDevelopCommerce={(cityId, officerId) => applyPlayerAction(
+          (current) => developCommerce(current, { cityId, officerId }),
+        )}
+        onGovern={(cityId, officerId) => applyPlayerAction(
+          (current) => governCity(current, { cityId, officerId }),
+        )}
+        onInspect={(cityId, officerId) => applyPlayerAction(
+          (current) => inspectCity(current, { cityId, officerId }),
+        )}
         onRecruit={(cityId, officerId) => applyPlayerAction(
           (current) => recruitTroops(current, { cityId, officerId }),
         )}
@@ -753,22 +770,6 @@ function sourceLabelForState(state: GameState): string {
     return `${title} · ${Object.keys(state.cities).length} 城`;
   }
   return `内置演示剧本 · ${Object.keys(state.cities).length} 城`;
-}
-
-function summarizeMonth(logs: GameLog[]): string[] {
-  const important = logs
-    .filter((log) =>
-      log.kind === 'ai'
-      || (log.kind === 'battle' && (log.message.includes('占领') || log.message.includes('击退')))
-      || log.message.includes('粮草不足')
-      || log.message.includes('抵达')
-      || log.message.includes('目标易主')
-      || log.message.includes('失效')
-      || log.message.includes('流落')
-      || log.message.includes('输送'))
-    .map((log) => log.message);
-  if (important.length > 0) return [...new Set(important)].slice(0, 5);
-  return ['各势力本月没有发生重大事件。'];
 }
 
 function formatRouteWaypoints(state: GameState, routeCityIds: string[]): string {

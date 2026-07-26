@@ -23,11 +23,11 @@ function strongestRuler(period: BundledPeriodId) {
 }
 
 describe('long campaign soak', () => {
-  it.each([1, 2, 3, 4] as const)('keeps bundled period %s valid for up to 24 months', (period) => {
+  it.each([1, 2, 3, 4] as const)('keeps bundled period %s valid for up to 36 months', (period) => {
     const ruler = strongestRuler(period);
-    const state = runCampaign(createBundledScenario(period, ruler.sourceIndex), 24);
+    const state = runCampaign(createBundledScenario(period, ruler.sourceIndex), 36);
 
-    expect(state.phase === 'ended' || state.turn === 25).toBe(true);
+    expect(state.phase === 'ended' || state.turn === 37).toBe(true);
     if (state.phase === 'ended') expect(['victory', 'defeat']).toContain(state.outcome);
     else expect(state.activeFactionId).toBe(state.playerFactionId);
   });
@@ -38,10 +38,10 @@ describe('long campaign soak', () => {
       .sort((a, b) => a.cityCount - b.cityCount || a.sourceIndex - b.sourceIndex)[0];
     const create = () => createBundledScenario(period, ruler.sourceIndex);
 
-    const first = runCampaign(create(), 18);
-    const second = runCampaign(create(), 18);
+    const first = runCampaign(create(), 36);
+    const second = runCampaign(create(), 36);
 
     expect(first).toEqual(second);
-    expect(first.phase === 'ended' || first.turn === 19).toBe(true);
+    expect(first.phase === 'ended' || first.turn === 37).toBe(true);
   });
 });

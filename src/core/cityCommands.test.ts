@@ -2,12 +2,24 @@ import { describe, expect, it } from 'vitest';
 import {
   DEVELOP_MONEY_COST,
   DEVELOP_STAMINA_COST,
+  GOVERN_MONEY_COST,
+  GOVERN_STAMINA_COST,
+  INSPECT_MONEY_COST,
+  INSPECT_STAMINA_COST,
   RECRUIT_STAMINA_COST,
   MAX_DISTRIBUTION_INCREASE,
+  calculateCommerceGain,
   calculateFarmingGain,
   calculateOfficerTroopCapacity,
+  developCommerce,
   developFarming,
   distributeTroops,
+  getDevelopCommerceAvailability,
+  getDevelopFarmingAvailability,
+  getGovernAvailability,
+  getInspectAvailability,
+  governCity,
+  inspectCity,
   recruitTroops,
 } from './cityCommands';
 import { createSampleState } from './sampleState';
@@ -36,6 +48,105 @@ describe('city commands', () => {
     const next = developFarming(state, { cityId: 'luoyang', officerId: 'cao-cao' });
 
     expect(next.cities.luoyang.farming).toBe(state.cities.luoyang.farmingLimit);
+  });
+
+  it('develops commerce with the original IQ-shaped gain and city limit', () => {
+    const state = createSampleState();
+    state.cities.luoyang.commerceLimit = state.cities.luoyang.commerce + 3;
+    const next = developCommerce(state, { cityId: 'luoyang', officerId: 'cao-cao' });
+
+    expect(calculateCommerceGain(state.officers['cao-cao'], 0)).toBe(
+      calculateFarmingGain(state.officers['cao-cao'], 0),
+    );
+    expect(next.cities.luoyang.commerce).toBe(state.cities.luoyang.commerceLimit);
+    expect(next.cities.luoyang.money).toBe(state.cities.luoyang.money - DEVELOP_MONEY_COST);
+    expect(next.officers['cao-cao'].stamina).toBe(100 - DEVELOP_STAMINA_COST);
+    expect(next.actedOfficerIds).toContain('cao-cao');
+    expect(next.rngSeed).not.toBe(state.rngSeed);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('uses equipment-adjusted intelligence for farming and commerce gains', () => {
+    const plain = createSampleState();
+    const equipped = createSampleState();
+    equipped.officers['cao-cao'].equipmentItemIds = ['sunzi-manual'];
+    equipped.cities.luoyang.itemIds = [];
+
+    const plainCommerce = developCommerce(plain, { cityId: 'luoyang', officerId: 'cao-cao' });
+    const equippedCommerce = developCommerce(equipped, { cityId: 'luoyang', officerId: 'cao-cao' });
+
+    expect(equippedCommerce.cities.luoyang.commerce - equipped.cities.luoyang.commerce)
+      .toBeGreaterThan(plainCommerce.cities.luoyang.commerce - plain.cities.luoyang.commerce);
+  });
+
+  it('keeps commerce and population growth inside the safe integer range', () => {
+    const commerceState = createSampleState();
+    commerceState.cities.luoyang.commerce = Number.MAX_SAFE_INTEGER - 1;
+    const developed = developCommerce(commerceState, { cityId: 'luoyang', officerId: 'cao-cao' });
+    expect(developed.cities.luoyang.commerce).toBe(Number.MAX_SAFE_INTEGER);
+    developed.actedOfficerIds = [];
+    expect(getDevelopCommerceAvailability(developed, { cityId: 'luoyang', officerId: 'cao-cao' }))
+      .toMatchObject({ allowed: false, reason: '该城商业已经达到安全上限' });
+
+    const inspectionState = createSampleState();
+    inspectionState.cities.luoyang.population = Number.MAX_SAFE_INTEGER;
+    inspectionState.cities.luoyang.publicLoyalty = 99;
+    const inspected = inspectCity(inspectionState, { cityId: 'luoyang', officerId: 'cao-cao' });
+    expect(inspected.cities.luoyang.population).toBe(Number.MAX_SAFE_INTEGER);
+    expect(inspected.cities.luoyang.publicLoyalty).toBe(100);
+    expect(validateGameState(inspected)).toEqual([]);
+  });
+
+  it('governs disaster prevention with the original 1-to-4 gain band', () => {
+    const state = createSampleState();
+    state.cities.luoyang.disasterPrevention = 98;
+    const next = governCity(state, { cityId: 'luoyang', officerId: 'cao-cao' });
+
+    expect(next.cities.luoyang.disasterPrevention).toBeGreaterThanOrEqual(99);
+    expect(next.cities.luoyang.disasterPrevention).toBeLessThanOrEqual(100);
+    expect(next.cities.luoyang.money).toBe(state.cities.luoyang.money - GOVERN_MONEY_COST);
+    expect(next.officers['cao-cao'].stamina).toBe(100 - GOVERN_STAMINA_COST);
+    expect(validateGameState(next)).toEqual([]);
+
+    next.actedOfficerIds = [];
+    next.cities.luoyang.disasterPrevention = 100;
+    expect(getGovernAvailability(next, { cityId: 'luoyang', officerId: 'cao-cao' }))
+      .toMatchObject({ allowed: false, reason: '该城防灾已经达到上限' });
+  });
+
+  it('inspects a city to raise loyalty and population without crossing limits', () => {
+    const state = createSampleState();
+    state.cities.luoyang.publicLoyalty = 99;
+    state.cities.luoyang.populationLimit = state.cities.luoyang.population + 40;
+    const next = inspectCity(state, { cityId: 'luoyang', officerId: 'cao-cao' });
+
+    expect(next.cities.luoyang.publicLoyalty).toBe(100);
+    expect(next.cities.luoyang.population).toBe(state.cities.luoyang.populationLimit);
+    expect(next.cities.luoyang.money).toBe(state.cities.luoyang.money - INSPECT_MONEY_COST);
+    expect(next.officers['cao-cao'].stamina).toBe(100 - INSPECT_STAMINA_COST);
+    expect(validateGameState(next)).toEqual([]);
+
+    next.actedOfficerIds = [];
+    expect(getInspectAvailability(next, { cityId: 'luoyang', officerId: 'cao-cao' }))
+      .toMatchObject({ allowed: false, reason: '该城民忠和人口已经达到上限' });
+  });
+
+  it('reports civic command availability from core rules', () => {
+    const state = createSampleState();
+    state.cities.luoyang.money = DEVELOP_MONEY_COST - 1;
+    expect(getDevelopCommerceAvailability(state, { cityId: 'luoyang', officerId: 'cao-cao' }))
+      .toMatchObject({ allowed: false, reason: `城中金钱不足，需要 ${DEVELOP_MONEY_COST}` });
+
+    state.cities.luoyang.money = 800;
+    state.actedOfficerIds = ['cao-cao'];
+    expect(getGovernAvailability(state, { cityId: 'luoyang', officerId: 'cao-cao' }))
+      .toMatchObject({ allowed: false, reason: '该武将本月已经执行过命令' });
+
+    state.actedOfficerIds = [];
+    state.cities.luoyang.farming = Number.MAX_SAFE_INTEGER;
+    state.cities.luoyang.farmingLimit = undefined;
+    expect(getDevelopFarmingAvailability(state, { cityId: 'luoyang', officerId: 'cao-cao' }))
+      .toMatchObject({ allowed: false, reason: '该城农业已经达到安全上限' });
   });
 
   it('recruits into city reserves and then distributes troops to an officer', () => {

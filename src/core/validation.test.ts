@@ -66,6 +66,17 @@ describe('game state validation', () => {
     }));
   });
 
+  it('rejects loyalty and disaster prevention above 100', () => {
+    const state = createSampleState();
+    state.cities.hanzhong.publicLoyalty = 101;
+    state.cities.hanzhong.disasterPrevention = 101;
+
+    expect(validateGameState(state)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'cities.hanzhong.publicLoyalty', message: 'must not exceed 100' }),
+      expect.objectContaining({ path: 'cities.hanzhong.disasterPrevention', message: 'must not exceed 100' }),
+    ]));
+  });
+
   it('rejects unknown or over-capacity equipment references', () => {
     const unknown = createSampleState();
     unknown.officers['cao-cao'].equipmentItemIds = ['missing-item'];

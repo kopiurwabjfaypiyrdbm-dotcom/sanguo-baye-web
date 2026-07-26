@@ -156,6 +156,137 @@ describe('basic AI', () => {
     expect(validateGameState(next)).toEqual([]);
   });
 
+  it('uses governance for a city with weak disaster prevention', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.reserveTroops = 1_000;
+      city.farmingLimit = city.farming;
+      city.commerceLimit = city.commerce;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+    state.cities.hanzhong.disasterPrevention = 5;
+    state.officers['zhang-fei'].cityId = 'hanzhong';
+    state.cities.jiangzhou.satrapOfficerId = undefined;
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.cities.hanzhong.disasterPrevention).toBeGreaterThan(5);
+    expect(next.logs.some((log) => log.message.includes('治理汉中'))).toBe(true);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('develops commerce when it is the weakest available city investment', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.reserveTroops = 1_000;
+      city.farmingLimit = city.farming;
+      city.commerceLimit = city.commerce;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+    state.cities.hanzhong.commerce = 100;
+    state.cities.hanzhong.commerceLimit = 1_000;
+    state.officers['zhang-fei'].cityId = 'hanzhong';
+    state.cities.jiangzhou.satrapOfficerId = undefined;
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.cities.hanzhong.commerce).toBeGreaterThan(100);
+    expect(next.logs.some((log) => log.message.includes('主持招商'))).toBe(true);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('inspects a city with critically low public loyalty', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.reserveTroops = 1_000;
+      city.farmingLimit = city.farming;
+      city.commerceLimit = city.commerce;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+    state.cities.hanzhong.publicLoyalty = 10;
+    state.officers['zhang-fei'].cityId = 'hanzhong';
+    state.cities.jiangzhou.satrapOfficerId = undefined;
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.cities.hanzhong.publicLoyalty).toBeGreaterThan(10);
+    expect(next.logs.some((log) => log.message.includes('出巡汉中'))).toBe(true);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('prioritizes urgent loyalty over currently preparatory governance', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.reserveTroops = 1_000;
+      city.farmingLimit = city.farming;
+      city.commerceLimit = city.commerce;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+    state.cities.hanzhong.publicLoyalty = 10;
+    state.cities.hanzhong.disasterPrevention = 5;
+    state.officers['zhang-fei'].cityId = 'hanzhong';
+    state.cities.jiangzhou.satrapOfficerId = undefined;
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.cities.hanzhong.publicLoyalty).toBeGreaterThan(10);
+    expect(next.cities.hanzhong.disasterPrevention).toBe(5);
+    expect(next.logs.some((log) => log.message.includes('出巡汉中'))).toBe(true);
+    expect(next.logs.some((log) => log.message.includes('治理汉中'))).toBe(false);
+  });
+
+  it('does not consume the only officer in an exposed border city for civic work', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.reserveTroops = 1_000;
+      city.farmingLimit = city.farming;
+      city.commerceLimit = city.commerce;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+    state.cities.hanzhong.publicLoyalty = 10;
+    state.cities.hanzhong.disasterPrevention = 5;
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.logs.some((log) =>
+      log.message.includes('治理汉中') || log.message.includes('出巡汉中') || log.message.includes('汉中主持招商'),
+    )).toBe(false);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('does not attempt development when unlimited industries reached the safe integer ceiling', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.reserveTroops = 1_000;
+      city.farming = Number.MAX_SAFE_INTEGER;
+      city.farmingLimit = undefined;
+      city.commerce = Number.MAX_SAFE_INTEGER;
+      city.commerceLimit = undefined;
+      city.publicLoyalty = 100;
+      city.disasterPrevention = 100;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+
+    const next = runAiFactionTurn(state);
+
+    expect(validateGameState(next)).toEqual([]);
+    expect(next.logs.some((log) =>
+      log.message.includes('主持开垦') || log.message.includes('主持招商'),
+    )).toBe(false);
+  });
+
   it('makes the same decisions from the same state', () => {
     const state = beginAiPhase(createSampleState());
     expect(runAiFactionTurn(structuredClone(state))).toEqual(runAiFactionTurn(structuredClone(state)));
