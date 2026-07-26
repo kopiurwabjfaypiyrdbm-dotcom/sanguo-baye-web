@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { applyBattleResult, executeAttack, type AttackOrder } from '../core/battle';
 import {
+  banquetOfficer,
   developCommerce,
   developFarming,
   distributeTroops,
   governCity,
   inspectCity,
+  plunderCity,
   recruitTroops,
+  tradeFood,
 } from '../core/cityCommands';
 import { createSampleState } from '../core/sampleState';
 import { recruitCaptive, releaseCaptive } from '../core/captiveCommands';
@@ -612,6 +615,15 @@ export function App() {
         )}
         onInspect={(cityId, officerId) => applyPlayerAction(
           (current) => inspectCity(current, { cityId, officerId }),
+        )}
+        onTrade={(cityId, officerId, direction, amount) => applyPlayerAction(
+          (current) => tradeFood(current, { cityId, officerId, direction, amount }),
+        )}
+        onBanquet={(cityId, targetOfficerId) => applyPlayerAction(
+          (current) => banquetOfficer(current, { cityId, targetOfficerId }),
+        )}
+        onPlunder={(cityId, officerId) => applyPlayerAction(
+          (current) => plunderCity(current, { cityId, officerId }),
         )}
         onRecruit={(cityId, officerId) => applyPlayerAction(
           (current) => recruitTroops(current, { cityId, officerId }),

@@ -382,6 +382,8 @@ export function validateGameState(state: GameState): ValidationIssue[] {
     }
     if ((officer.level ?? 1) > 20) add(`${path}.level`, 'must not exceed 20');
     if ((officer.experience ?? 0) >= 100) add(`${path}.experience`, 'must be below 100');
+    if (officer.loyalty > 100) add(`${path}.loyalty`, 'must not exceed 100');
+    if (officer.stamina > 100) add(`${path}.stamina`, 'must not exceed 100');
   }
 
   for (const [key, item] of Object.entries(state.items)) {

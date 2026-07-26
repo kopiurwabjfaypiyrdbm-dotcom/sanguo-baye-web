@@ -21,4 +21,16 @@ describe('month summary', () => {
     ])).toEqual([message]);
     expect(summarizeMonth([])).toEqual(['各势力本月没有发生重大事件。']);
   });
+
+  it('keeps plunder visible ahead of routine events in a busy month', () => {
+    const logs: GameLog[] = Array.from({ length: 6 }, (_, index) => ({
+      id: `routine-${index}`,
+      kind: 'ai',
+      message: `例行经营 ${index}`,
+      turn: 1,
+    }));
+    logs.push({ id: 'plunder', kind: 'map', message: '张飞掠夺汉中。', turn: 1 });
+
+    expect(summarizeMonth(logs)[0]).toBe('张飞掠夺汉中。');
+  });
 });

@@ -85,6 +85,7 @@ describe('turn progression', () => {
     const state = createSampleState();
     state.officers['guan-yu'].troops = 100_000;
     state.cities['chang-an'].reserveTroops = 0;
+    state.cities.hanzhong.food = 30_000;
     const progress = advanceTurnUntilPlayerDefense(state);
 
     expect(progress.completed).toBe(false);
@@ -105,6 +106,7 @@ describe('turn progression', () => {
     state.officers['guan-yu'].troops = 100_000;
     state.officers['cao-cao'].cityId = 'chang-an';
     state.cities['chang-an'].reserveTroops = 0;
+    state.cities.hanzhong.food = 30_000;
     state = updateCitySatraps(state);
     const progress = advanceTurnUntilPlayerDefense(state);
     const pending = progress.pendingPlayerDefense!;

@@ -30,13 +30,14 @@ export function calculateCityGrowth(
   };
 }
 
-export function applyMonthlyGrowth(state: GameState): GameState {
-  const officers = Object.fromEntries(
-    Object.values(state.officers).map((officer) => [officer.id, { ...officer }]),
-  );
-  const transitOfficersBySupportCity = new Map<string, string[]>();
+export function getSupportedOfficerIdsByCity(state: GameState): Map<string, string[]> {
+  const supported = new Map<string, string[]>();
+  for (const officer of Object.values(state.officers)) {
+    if (officer.status !== 'serving' || !officer.cityId) continue;
+    supported.set(officer.cityId, [...(supported.get(officer.cityId) ?? []), officer.id]);
+  }
   for (const order of Object.values(state.strategicOrders)) {
-    const officer = officers[order.officerId];
+    const officer = state.officers[order.officerId];
     if (!officer || officer.status !== 'serving' || officer.cityId) continue;
     const supportCity = [state.cities[order.sourceCityId], state.cities[order.targetCityId]]
       .find((city) => city?.ownerId === order.factionId)
@@ -44,28 +45,31 @@ export function applyMonthlyGrowth(state: GameState): GameState {
         .filter((city) => city.ownerId === order.factionId)
         .sort((a, b) => a.id.localeCompare(b.id))[0];
     if (!supportCity) continue;
-    transitOfficersBySupportCity.set(supportCity.id, [
-      ...(transitOfficersBySupportCity.get(supportCity.id) ?? []),
-      officer.id,
-    ]);
+    supported.set(supportCity.id, [...(supported.get(supportCity.id) ?? []), officer.id]);
   }
+  return supported;
+}
+
+export function applyMonthlyGrowth(state: GameState): GameState {
+  const officers = Object.fromEntries(
+    Object.values(state.officers).map((officer) => [officer.id, { ...officer }]),
+  );
+  const supportedOfficerIdsByCity = getSupportedOfficerIdsByCity(state);
   const shortageCities: string[] = [];
   const cities = Object.fromEntries(
     Object.values(state.cities).map((city) => {
       const faction = state.factions[city.ownerId];
       if (!faction || faction.isNeutral) return [city.id, { ...city }];
-      const stationed = Object.values(officers).filter(
-        (officer) => officer.status === 'serving' && officer.cityId === city.id && officer.factionId === city.ownerId,
-      );
-      const supportedTransit = (transitOfficersBySupportCity.get(city.id) ?? [])
-        .map((officerId) => officers[officerId]);
-      const supportedTroops = [...stationed, ...supportedTransit].reduce((sum, officer) => sum + officer.troops, 0);
+      const supportedOfficers = (supportedOfficerIdsByCity.get(city.id) ?? [])
+        .map((officerId) => officers[officerId])
+        .filter((officer) => officer?.factionId === city.ownerId);
+      const supportedTroops = supportedOfficers.reduce((sum, officer) => sum + officer.troops, 0);
       const growth = calculateCityGrowth(city, state.calendar, supportedTroops);
       const availableFood = city.food + (city.food >= MAX_CITY_RESOURCE ? 0 : growth.food);
       const hasShortage = availableFood <= growth.upkeep;
       if (hasShortage) {
         shortageCities.push(city.name);
-        for (const officer of [...stationed, ...supportedTransit]) {
+        for (const officer of supportedOfficers) {
           officers[officer.id] = { ...officers[officer.id], troops: Math.floor(officer.troops / 2) };
         }
       }

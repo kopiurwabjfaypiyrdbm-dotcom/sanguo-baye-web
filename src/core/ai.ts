@@ -7,6 +7,9 @@ import {
   INSPECT_MONEY_COST,
   INSPECT_STAMINA_COST,
   RECRUIT_STAMINA_COST,
+  BUY_FOOD_PRICE,
+  TRADE_MONEY_SOFT_CAP,
+  TRADE_STAMINA_COST,
   MAX_DISTRIBUTION_INCREASE,
   calculateOfficerTroopCapacity,
   calculateRecruitCapacity,
@@ -15,10 +18,13 @@ import {
   distributeTroops,
   getDevelopCommerceAvailability,
   getDevelopFarmingAvailability,
+  getTradeAvailability,
   governCity,
   inspectCity,
   recruitTroops,
+  tradeFood,
 } from './cityCommands';
+import { calculateCityGrowth, getSupportedOfficerIdsByCity } from './economy';
 import { appendLogs } from './logs';
 import {
   SEARCH_STAMINA_COST,
@@ -153,6 +159,7 @@ function prepareAiFactionTurn(state: GameState): { state: GameState; order?: Att
   let actionCount = 0;
 
   for (const operation of [
+    stabilizeFood,
     recruitLocalCaptive,
     useCityItem,
     balanceTroops,
@@ -182,6 +189,38 @@ function prepareAiFactionTurn(state: GameState): { state: GameState; order?: Att
     `${faction.name}完成 ${actionCount} 项经营行动后，决定从${source.name}进攻${target.name}：${decision.reason}`,
   ]);
   return { state: announced, order: decision.order };
+}
+
+function stabilizeFood(state: GameState, factionId: string): GameState | undefined {
+  const supportedOfficerIdsByCity = getSupportedOfficerIdsByCity(state);
+  const candidates = Object.values(state.cities)
+    .filter((city) => city.ownerId === factionId)
+    .map((city) => {
+      const supportedTroops = (supportedOfficerIdsByCity.get(city.id) ?? [])
+        .map((officerId) => state.officers[officerId])
+        .filter((officer) => officer?.factionId === factionId)
+        .reduce((sum, officer) => sum + officer.troops, 0);
+      const upkeep = calculateCityGrowth(city, state.calendar, supportedTroops).upkeep;
+      return { city, upkeep, targetFood: upkeep * 2 + 1 };
+    })
+    .filter(({ city, upkeep, targetFood }) =>
+      upkeep > 0 && city.food < targetFood && city.money >= BUY_FOOD_PRICE)
+    .sort((a, b) =>
+      (a.city.food / a.targetFood) - (b.city.food / b.targetFood)
+      || a.city.id.localeCompare(b.city.id));
+  for (const { city, targetFood } of candidates) {
+    const officer = availableOfficers(state, factionId, city.id, TRADE_STAMINA_COST)[0];
+    if (!officer) continue;
+    const amount = Math.min(
+      targetFood - city.food,
+      Math.floor(city.money / BUY_FOOD_PRICE),
+      Math.max(0, TRADE_MONEY_SOFT_CAP - city.food),
+    );
+    if (amount <= 0) continue;
+    const order = { cityId: city.id, officerId: officer.id, direction: 'buy' as const, amount };
+    if (getTradeAvailability(state, order).allowed) return tradeFood(state, order);
+  }
+  return undefined;
 }
 
 function recruitLocalCaptive(state: GameState, factionId: string): GameState | undefined {

@@ -3,7 +3,12 @@ import { planAiAction, runAiFactionTurn } from './ai';
 import { createSampleState } from './sampleState';
 import { beginAiPhase } from './turn';
 import { validateGameState } from './validation';
-import { MOVE_STAMINA_COST, TRANSPORT_STAMINA_COST, issueTransportOrder } from './strategicOrders';
+import {
+  MOVE_STAMINA_COST,
+  TRANSPORT_STAMINA_COST,
+  issueMoveOrder,
+  issueTransportOrder,
+} from './strategicOrders';
 
 describe('basic AI', () => {
   it('skips when no stationed officer can attack', () => {
@@ -53,6 +58,7 @@ describe('basic AI', () => {
     const state = beginAiPhase(createSampleState());
     state.officers['guan-yu'].troops = 100_000;
     state.cities['chang-an'].reserveTroops = 0;
+    state.cities.hanzhong.food = 30_000;
     const next = runAiFactionTurn(state);
     const battleStarts = next.logs.filter(
       (log) => log.turn === state.turn && log.kind === 'battle' && log.message.includes('发起进攻'),
@@ -71,6 +77,114 @@ describe('basic AI', () => {
     const next = runAiFactionTurn(state);
 
     expect(next.logs.some((log) => log.message.includes('征募 500 名后备兵'))).toBe(true);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('buys food before recruiting when a city cannot cover two months of upkeep', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.reserveTroops = 0;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+    state.cities.hanzhong.food = 0;
+    state.cities.hanzhong.money = 2_000;
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.logs.some((log) => log.message.includes('在汉中买入'))).toBe(true);
+    expect(next.cities.hanzhong.food).toBeGreaterThan(0);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('buys food before distributing reserves when a low-food city has one available officer', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+    state.cities.hanzhong.food = 0;
+    state.cities.hanzhong.money = 2_000;
+    state.cities.hanzhong.reserveTroops = 500;
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.logs.some((log) => log.message.includes('在汉中买入'))).toBe(true);
+    expect(next.logs.some((log) => log.message.includes('汉中完成兵力分配'))).toBe(false);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('includes an in-transit army in the source city food stabilization target', () => {
+    let state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.reserveTroops = 0;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+    state.officers['zhang-fei'].cityId = 'chengdu';
+    state.officers['zhang-fei'].troops = 10_000;
+    state.cities.jiangzhou.satrapOfficerId = undefined;
+    state = issueMoveOrder(state, {
+      sourceCityId: 'chengdu',
+      targetCityId: 'jiangzhou',
+      officerId: 'zhang-fei',
+    });
+    state.cities.chengdu.food = 0;
+    state.cities.chengdu.money = 5_000;
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.logs.some((log) => log.message.includes('在成都买入'))).toBe(true);
+    expect(next.cities.chengdu.food).toBeGreaterThan(400);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('stabilizes food before using a sole city officer to recruit a captive', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.reserveTroops = 0;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+    state.cities.hanzhong.food = 0;
+    state.cities.hanzhong.money = 2_000;
+    state.officers['chen-gong'] = {
+      ...state.officers['chen-gong'],
+      status: 'captive',
+      factionId: 'neutral',
+      cityId: 'hanzhong',
+      captorFactionId: 'liu-bei',
+      formerFactionId: 'cao-cao',
+      troops: 0,
+      stamina: 0,
+    };
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.logs.some((log) => log.message.includes('在汉中买入'))).toBe(true);
+    expect(next.officers['chen-gong'].status).toBe('captive');
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('does not overbuy when a huge supported army pushes the target above the food soft cap', () => {
+    const state = beginAiPhase(createSampleState());
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== 'liu-bei') continue;
+      city.reserveTroops = 0;
+      city.itemIds = [];
+      city.hiddenItemIds = [];
+    }
+    state.officers['guan-yu'].troops = 2_000_000;
+    state.cities.hanzhong.food = 30_000;
+    state.cities.hanzhong.money = 30_000;
+
+    const next = runAiFactionTurn(state);
+
+    expect(next.logs.some((log) => log.message.includes('在汉中买入'))).toBe(false);
     expect(validateGameState(next)).toEqual([]);
   });
 

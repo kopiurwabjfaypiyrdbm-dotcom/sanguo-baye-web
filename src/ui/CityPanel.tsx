@@ -1,19 +1,30 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import {
+  BANQUET_MONEY_COST,
+  BANQUET_STAMINA_RECOVERY,
+  BUY_FOOD_PRICE,
   DEVELOP_MONEY_COST,
   DEVELOP_STAMINA_COST,
   GOVERN_MONEY_COST,
   GOVERN_STAMINA_COST,
   INSPECT_MONEY_COST,
   INSPECT_STAMINA_COST,
+  PLUNDER_STAMINA_COST,
   RECRUIT_STAMINA_COST,
+  SELL_FOOD_PRICE,
+  TRADE_MONEY_SOFT_CAP,
+  TRADE_STAMINA_COST,
   calculateCommerceGain,
+  calculatePlunderGains,
   calculateOfficerTroopCapacity,
   calculateRecruitCapacity,
   getDevelopCommerceAvailability,
   getDevelopFarmingAvailability,
+  getBanquetAvailability,
   getGovernAvailability,
   getInspectAvailability,
+  getPlunderAvailability,
+  getTradeAvailability,
 } from '../core/cityCommands';
 import type { GameState } from '../core/types';
 import {
@@ -47,6 +58,9 @@ type CityPanelProps = {
   onDevelopCommerce: (cityId: string, officerId: string) => void;
   onGovern: (cityId: string, officerId: string) => void;
   onInspect: (cityId: string, officerId: string) => void;
+  onTrade: (cityId: string, officerId: string, direction: 'buy' | 'sell', amount: number) => void;
+  onBanquet: (cityId: string, targetOfficerId: string) => void;
+  onPlunder: (cityId: string, officerId: string) => void;
   onRecruit: (cityId: string, officerId: string) => void;
   onSearch: (cityId: string, officerId: string) => void;
   onRecruitOfficer: (cityId: string, executorOfficerId: string, targetOfficerId: string) => void;
@@ -78,6 +92,9 @@ export function CityPanel({
   onDevelopCommerce,
   onGovern,
   onInspect,
+  onTrade,
+  onBanquet,
+  onPlunder,
   onRecruit,
   onSearch,
   onRecruitOfficer,
@@ -126,6 +143,9 @@ export function CityPanel({
   const [selectedCaptiveId, setSelectedCaptiveId] = useState('');
   const [selectedAttackerIds, setSelectedAttackerIds] = useState<string[]>([]);
   const [provisions, setProvisions] = useState('100');
+  const [activeCivicCommand, setActiveCivicCommand] = useState<'trade' | 'banquet' | 'plunder' | null>(null);
+  const [tradeDirection, setTradeDirection] = useState<'buy' | 'sell'>('buy');
+  const [tradeAmount, setTradeAmount] = useState('1');
 
   useEffect(() => {
     if (!eligibleOfficers.some((officer) => officer.id === selectedOfficerId)) {
@@ -155,6 +175,11 @@ export function CityPanel({
     setTransportFood('0');
     setTransportReserveTroops('0');
   }, [city.id, selectedMoveTargetId]);
+
+  useEffect(() => {
+    setActiveCivicCommand(null);
+    setTradeAmount('1');
+  }, [city.id, selectedOfficerId, state.turn, state.phase, disabled]);
 
   useEffect(() => {
     if (!reconTargets.some((target) => target.id === selectedReconTargetId)) {
@@ -210,6 +235,33 @@ export function CityPanel({
   const farmingAvailability = selectedOfficer
     ? getDevelopFarmingAvailability(state, { cityId: city.id, officerId: selectedOfficer.id })
     : { allowed: false as const, reason: '请选择执行武将' };
+  const tradeValue = Number(tradeAmount);
+  const tradeAvailability = selectedOfficer
+    ? getTradeAvailability(state, {
+      cityId: city.id,
+      officerId: selectedOfficer.id,
+      direction: tradeDirection,
+      amount: tradeValue,
+    })
+    : { allowed: false as const, reason: '请选择执行武将' };
+  const banquetAvailability = selectedOfficer
+    ? getBanquetAvailability(state, { cityId: city.id, targetOfficerId: selectedOfficer.id })
+    : { allowed: false as const, reason: '请选择宴请目标' };
+  const plunderAvailability = selectedOfficer
+    ? getPlunderAvailability(state, { cityId: city.id, officerId: selectedOfficer.id })
+    : { allowed: false as const, reason: '请选择执行武将' };
+  const maxTradeAmount = tradeDirection === 'buy'
+    ? Math.min(
+      Math.floor(city.money / BUY_FOOD_PRICE),
+      Math.max(0, TRADE_MONEY_SOFT_CAP - city.food),
+    )
+    : Math.min(city.food, Math.max(0, Math.floor((TRADE_MONEY_SOFT_CAP - city.money) / SELL_FOOD_PRICE)));
+  const tradeMoneyDelta = Number.isSafeInteger(tradeValue) && tradeValue > 0
+    ? tradeValue * (tradeDirection === 'buy' ? BUY_FOOD_PRICE : SELL_FOOD_PRICE)
+    : 0;
+  const plunderGains = selectedOfficer
+    ? calculatePlunderGains(state, city, selectedOfficer)
+    : { money: 0, food: 0 };
   const canDevelop = farmingAvailability.allowed;
   const commerceAvailability = selectedOfficer
     ? getDevelopCommerceAvailability(state, { cityId: city.id, officerId: selectedOfficer.id })
@@ -481,6 +533,16 @@ export function CityPanel({
               >
                 出巡
               </button>
+              <button type="button" disabled={disabled} onClick={() => setActiveCivicCommand('trade')}>交易</button>
+              <button type="button" disabled={disabled} onClick={() => setActiveCivicCommand('banquet')}>宴请</button>
+              <button
+                type="button"
+                className="danger-command"
+                disabled={disabled}
+                onClick={() => setActiveCivicCommand('plunder')}
+              >
+                掠夺
+              </button>
             </div>
             <div className="civic-command-guidance" id="civic-command-guidance">
               <span>
@@ -502,6 +564,109 @@ export function CityPanel({
                   : `不可用——${displayedInspectAvailability.reason}`}
               </span>
             </div>
+            {activeCivicCommand === 'trade' && (
+              <div className="civic-command-card" aria-label="交易命令">
+                <div className="section-title">
+                  <strong>粮草交易</strong>
+                  <button type="button" onClick={() => setActiveCivicCommand(null)}>关闭</button>
+                </div>
+                <div className="trade-command-row">
+                  <label className="command-field">
+                    <span>方向</span>
+                    <select value={tradeDirection} onChange={(event) => setTradeDirection(event.target.value as 'buy' | 'sell')}>
+                      <option value="buy">买入（5 金 / 粮）</option>
+                      <option value="sell">卖出（2 金 / 粮）</option>
+                    </select>
+                  </label>
+                  <label className="command-field">
+                    <span>数量（最多 {number.format(maxTradeAmount)}）</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max={maxTradeAmount}
+                      step="1"
+                      value={tradeAmount}
+                      onChange={(event) => setTradeAmount(event.target.value)}
+                    />
+                  </label>
+                </div>
+                <p className="command-hint" id="trade-command-hint">
+                  {tradeAvailability.allowed
+                    ? `${tradeDirection === 'buy' ? '粮草' : '金钱'} +${number.format(tradeDirection === 'buy' ? tradeValue : tradeMoneyDelta)}，`
+                      + `${tradeDirection === 'buy' ? '金钱' : '粮草'} -${number.format(tradeDirection === 'buy' ? tradeMoneyDelta : tradeValue)}；`
+                      + `${TRADE_STAMINA_COST} 体力并占用本月行动。`
+                    : `不可交易——${tradeAvailability.reason}`}
+                </p>
+                <button
+                  type="button"
+                  disabled={disabled || !tradeAvailability.allowed}
+                  aria-describedby="trade-command-hint"
+                  onClick={() => {
+                    onTrade(city.id, selectedOfficerId, tradeDirection, tradeValue);
+                    setActiveCivicCommand(null);
+                  }}
+                >
+                  确认交易
+                </button>
+              </div>
+            )}
+            {activeCivicCommand === 'banquet' && (
+              <div className="civic-command-card" aria-label="宴请命令">
+                <div className="section-title">
+                  <strong>宴请所选武将</strong>
+                  <button type="button" onClick={() => setActiveCivicCommand(null)}>关闭</button>
+                </div>
+                <p className="command-hint" id="banquet-command-hint">
+                  {banquetAvailability.allowed
+                    ? `${selectedOfficer!.name}体力最多 +${BANQUET_STAMINA_RECOVERY}`
+                      + `${state.factions[selectedOfficer!.factionId]?.rulerOfficerId === selectedOfficer!.id ? '' : '、忠诚 +1'}；`
+                      + `花费 ${BANQUET_MONEY_COST} 金，不占用也不重置本月行动。`
+                    : `不可宴请——${banquetAvailability.reason}`}
+                </p>
+                <button
+                  type="button"
+                  disabled={disabled || !banquetAvailability.allowed}
+                  aria-describedby="banquet-command-hint"
+                  onClick={() => {
+                    onBanquet(city.id, selectedOfficerId);
+                    setActiveCivicCommand(null);
+                  }}
+                >
+                  确认宴请
+                </button>
+              </div>
+            )}
+            {activeCivicCommand === 'plunder' && (
+              <div className="civic-command-card danger-card" role="alert" aria-label="掠夺确认">
+                <div className="section-title">
+                  <strong>危险：确认掠夺</strong>
+                  <button type="button" autoFocus onClick={() => setActiveCivicCommand(null)}>取消</button>
+                </div>
+                <p>
+                  民忠 {city.publicLoyalty ?? 70} → {Math.floor((city.publicLoyalty ?? 70) / 2)}；
+                  农业 {number.format(city.farming)} → {number.format(Math.floor(city.farming / 2))}；
+                  商业 {number.format(city.commerce)} → {number.format(Math.floor(city.commerce / 2))}。
+                </p>
+                <p className="command-hint" id="plunder-command-hint">
+                  {plunderAvailability.allowed
+                    ? `获得 ${number.format(plunderGains.money)} 金、${number.format(plunderGains.food)} 粮；`
+                      + `${PLUNDER_STAMINA_COST} 体力并占用本月行动。此操作不可撤销。`
+                    : `不可掠夺——${plunderAvailability.reason}`}
+                </p>
+                <button
+                  type="button"
+                  className="danger-command"
+                  disabled={disabled || !plunderAvailability.allowed}
+                  aria-describedby="plunder-command-hint"
+                  onClick={() => {
+                    onPlunder(city.id, selectedOfficerId);
+                    setActiveCivicCommand(null);
+                  }}
+                >
+                  确认掠夺
+                </button>
+              </div>
+            )}
 
             <p className="command-group-title">人事</p>
             {discoveredFreeOfficers.length > 0 && (

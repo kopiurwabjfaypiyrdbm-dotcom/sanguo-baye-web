@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BANQUET_MONEY_COST,
+  BANQUET_STAMINA_RECOVERY,
+  BUY_FOOD_PRICE,
   DEVELOP_MONEY_COST,
   DEVELOP_STAMINA_COST,
   GOVERN_MONEY_COST,
@@ -8,6 +11,11 @@ import {
   INSPECT_STAMINA_COST,
   RECRUIT_STAMINA_COST,
   MAX_DISTRIBUTION_INCREASE,
+  PLUNDER_STAMINA_COST,
+  SELL_FOOD_PRICE,
+  TRADE_MONEY_SOFT_CAP,
+  TRADE_STAMINA_COST,
+  banquetOfficer,
   calculateCommerceGain,
   calculateFarmingGain,
   calculateOfficerTroopCapacity,
@@ -18,11 +26,16 @@ import {
   getDevelopFarmingAvailability,
   getGovernAvailability,
   getInspectAvailability,
+  getBanquetAvailability,
+  getTradeAvailability,
   governCity,
   inspectCity,
+  plunderCity,
   recruitTroops,
+  tradeFood,
 } from './cityCommands';
 import { createSampleState } from './sampleState';
+import { parseSave, serializeSave } from './saveGame';
 import { validateGameState } from './validation';
 
 describe('city commands', () => {
@@ -147,6 +160,136 @@ describe('city commands', () => {
     state.cities.luoyang.farmingLimit = undefined;
     expect(getDevelopFarmingAvailability(state, { cityId: 'luoyang', officerId: 'cao-cao' }))
       .toMatchObject({ allowed: false, reason: '该城农业已经达到安全上限' });
+  });
+
+  it('buys and sells food at the fixed exchange rates without hidden cap loss', () => {
+    const buyState = createSampleState();
+    const bought = tradeFood(buyState, {
+      cityId: 'luoyang',
+      officerId: 'cao-cao',
+      direction: 'buy',
+      amount: 10,
+    });
+    expect(bought.cities.luoyang.food).toBe(buyState.cities.luoyang.food + 10);
+    expect(bought.cities.luoyang.money).toBe(buyState.cities.luoyang.money - 10 * BUY_FOOD_PRICE);
+    expect(bought.officers['cao-cao'].stamina).toBe(100 - TRADE_STAMINA_COST);
+    expect(bought.actedOfficerIds).toContain('cao-cao');
+
+    const sellState = createSampleState();
+    sellState.cities.luoyang.money = TRADE_MONEY_SOFT_CAP - 20;
+    const sold = tradeFood(sellState, {
+      cityId: 'luoyang',
+      officerId: 'cao-cao',
+      direction: 'sell',
+      amount: 10,
+    });
+    expect(sold.cities.luoyang.food).toBe(sellState.cities.luoyang.food - 10);
+    expect(sold.cities.luoyang.money).toBe(TRADE_MONEY_SOFT_CAP);
+    expect(sold.cities.luoyang.money - sellState.cities.luoyang.money).toBe(10 * SELL_FOOD_PRICE);
+
+    sellState.actedOfficerIds = [];
+    expect(getTradeAvailability(sellState, {
+      cityId: 'luoyang',
+      officerId: 'cao-cao',
+      direction: 'sell',
+      amount: 11,
+    })).toMatchObject({ allowed: false, reason: '最多可卖出 10 粮，避免超过交易金钱上限' });
+    expect(validateGameState(sold)).toEqual([]);
+  });
+
+  it('rejects invalid exchange amounts and resource overdraw', () => {
+    const state = createSampleState();
+    expect(getTradeAvailability(state, {
+      cityId: 'luoyang', officerId: 'cao-cao', direction: 'buy', amount: 0,
+    }).allowed).toBe(false);
+    expect(getTradeAvailability(state, {
+      cityId: 'luoyang', officerId: 'cao-cao', direction: 'buy', amount: 1.5,
+    }).allowed).toBe(false);
+    expect(getTradeAvailability(state, {
+      cityId: 'luoyang', officerId: 'cao-cao', direction: 'buy', amount: Number.MAX_SAFE_INTEGER,
+    }).allowed).toBe(false);
+    expect(getTradeAvailability(state, {
+      cityId: 'luoyang', officerId: 'cao-cao', direction: 'sell', amount: state.cities.luoyang.food + 1,
+    }).allowed).toBe(false);
+    state.cities.luoyang.food = TRADE_MONEY_SOFT_CAP;
+    expect(getTradeAvailability(state, {
+      cityId: 'luoyang', officerId: 'cao-cao', direction: 'buy', amount: 1,
+    })).toMatchObject({ allowed: false, reason: `城中粮草已达到交易上限 ${TRADE_MONEY_SOFT_CAP}` });
+  });
+
+  it('banquets an officer without consuming or resetting the monthly action', () => {
+    const state = createSampleState();
+    state.officers['cao-cao'].stamina = 30;
+    state.officers['cao-cao'].loyalty = 70;
+    state.actedOfficerIds = ['cao-cao'];
+    const next = banquetOfficer(state, { cityId: 'luoyang', targetOfficerId: 'cao-cao' });
+
+    expect(next.officers['cao-cao'].stamina).toBe(30 + BANQUET_STAMINA_RECOVERY);
+    expect(next.officers['cao-cao'].loyalty).toBe(70);
+    expect(next.actedOfficerIds).toEqual(['cao-cao']);
+    expect(next.cities.luoyang.money).toBe(state.cities.luoyang.money - BANQUET_MONEY_COST);
+
+    next.officers['cao-cao'].stamina = 100;
+    expect(getBanquetAvailability(next, { cityId: 'luoyang', targetOfficerId: 'cao-cao' }).allowed).toBe(false);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('raises non-ruler loyalty at a banquet and caps both benefits', () => {
+    const state = createSampleState();
+    state.officers['xun-yu'].stamina = 75;
+    state.officers['xun-yu'].loyalty = 99;
+    const next = banquetOfficer(state, { cityId: 'xuchang', targetOfficerId: 'xun-yu' });
+    expect(next.officers['xun-yu'].stamina).toBe(100);
+    expect(next.officers['xun-yu'].loyalty).toBe(100);
+  });
+
+  it('plunders with equipment-adjusted attributes and floors civic values', () => {
+    const state = createSampleState();
+    state.officers['cao-cao'].equipmentItemIds = ['sunzi-manual'];
+    state.cities.luoyang.itemIds = [];
+    state.cities.luoyang.publicLoyalty = 81;
+    state.cities.luoyang.farming = 561;
+    state.cities.luoyang.commerce = 701;
+    const strength = state.officers['cao-cao'].force + state.officers['cao-cao'].intelligence
+      + state.items['sunzi-manual'].forceBonus + state.items['sunzi-manual'].intelligenceBonus;
+    const next = plunderCity(state, { cityId: 'luoyang', officerId: 'cao-cao' });
+
+    expect(next.cities.luoyang.publicLoyalty).toBe(40);
+    expect(next.cities.luoyang.farming).toBe(280);
+    expect(next.cities.luoyang.commerce).toBe(350);
+    expect(next.cities.luoyang.food - state.cities.luoyang.food).toBe(strength * 5);
+    expect(next.cities.luoyang.money - state.cities.luoyang.money).toBe(strength * 2);
+    expect(next.officers['cao-cao'].stamina).toBe(100 - PLUNDER_STAMINA_COST);
+    expect(next.actedOfficerIds).toContain('cao-cao');
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('uses default loyalty and preserves resources already above the plunder soft cap', () => {
+    const state = createSampleState();
+    state.cities.luoyang.publicLoyalty = undefined;
+    state.cities.luoyang.money = TRADE_MONEY_SOFT_CAP + 1;
+    state.cities.luoyang.food = TRADE_MONEY_SOFT_CAP + 2;
+    const next = plunderCity(state, { cityId: 'luoyang', officerId: 'cao-cao' });
+
+    expect(next.cities.luoyang.publicLoyalty).toBe(35);
+    expect(next.cities.luoyang.money).toBe(TRADE_MONEY_SOFT_CAP + 1);
+    expect(next.cities.luoyang.food).toBe(TRADE_MONEY_SOFT_CAP + 2);
+    expect(validateGameState(next)).toEqual([]);
+  });
+
+  it('round-trips a deterministic sequence of trade, banquet, and plunder', () => {
+    const initial = createSampleState();
+    initial.officers['xun-yu'].stamina = 40;
+    const traded = tradeFood(initial, {
+      cityId: 'luoyang', officerId: 'cao-cao', direction: 'buy', amount: 10,
+    });
+    const banqueted = banquetOfficer(traded, { cityId: 'xuchang', targetOfficerId: 'xun-yu' });
+    const plundered = plunderCity(banqueted, { cityId: 'xuchang', officerId: 'xun-yu' });
+    const loaded = parseSave(serializeSave(plundered)).state;
+
+    expect(loaded).toEqual(plundered);
+    expect(loaded.rngSeed).toBe(initial.rngSeed);
+    expect(validateGameState(loaded)).toEqual([]);
   });
 
   it('recruits into city reserves and then distributes troops to an officer', () => {

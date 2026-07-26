@@ -77,6 +77,17 @@ describe('game state validation', () => {
     ]));
   });
 
+  it('rejects officer loyalty and stamina above 100', () => {
+    const state = createSampleState();
+    state.officers['cao-cao'].loyalty = 101;
+    state.officers['xun-yu'].stamina = 101;
+
+    expect(validateGameState(state)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'officers.cao-cao.loyalty', message: 'must not exceed 100' }),
+      expect.objectContaining({ path: 'officers.xun-yu.stamina', message: 'must not exceed 100' }),
+    ]));
+  });
+
   it('rejects unknown or over-capacity equipment references', () => {
     const unknown = createSampleState();
     unknown.officers['cao-cao'].equipmentItemIds = ['missing-item'];

@@ -598,6 +598,37 @@ select:focus-visible,
   line-height: 1.4;
 }
 
+.civic-command-card {
+  display: grid;
+  gap: 8px;
+  margin-top: 9px;
+  padding: 10px;
+  color: #35473e;
+  background: rgba(232, 225, 198, .52);
+  border: 1px solid rgba(105, 126, 108, .32);
+  border-radius: 4px;
+}
+
+.civic-command-card .section-title { margin-bottom: 0; }
+.civic-command-card .section-title button { min-height: 32px; }
+.trade-command-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+.danger-card {
+  background: rgba(130, 64, 45, .1);
+  border-color: rgba(139, 65, 46, .55);
+}
+.city-command-buttons .danger-command,
+.danger-command {
+  color: #fff1df;
+  background: #884b3b;
+  border-color: #a86650;
+}
+.city-command-buttons .danger-command:hover,
+.danger-command:hover { background: #9b5845; }
+
 .command-group-title {
   margin: 14px 0 0;
   color: #8a623d;
@@ -944,6 +975,7 @@ select:focus-visible,
   .map-toolbar span:first-child { display: none; }
   .map-toolbar { justify-content: flex-end; }
   .log-panel { grid-template-columns: 1fr; }
+  .trade-command-row { grid-template-columns: 1fr; }
   .battle-shell { grid-template-rows: auto minmax(520px, 1fr) auto; height: auto; min-height: 100%; overflow: auto; }
   .battle-top-bar,
   .battle-command-bar { grid-template-columns: 1fr; }

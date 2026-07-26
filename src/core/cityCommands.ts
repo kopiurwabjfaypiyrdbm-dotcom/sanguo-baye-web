@@ -10,6 +10,13 @@ export const GOVERN_STAMINA_COST = 4;
 export const GOVERN_MONEY_COST = 50;
 export const INSPECT_STAMINA_COST = 4;
 export const INSPECT_MONEY_COST = 50;
+export const TRADE_STAMINA_COST = 4;
+export const BUY_FOOD_PRICE = 5;
+export const SELL_FOOD_PRICE = 2;
+export const TRADE_MONEY_SOFT_CAP = 30_000;
+export const BANQUET_MONEY_COST = 50;
+export const BANQUET_STAMINA_RECOVERY = 50;
+export const PLUNDER_STAMINA_COST = 4;
 export const RECRUIT_STAMINA_COST = 12;
 export const ARMS_PER_DEVOTION = 20;
 export const ARMS_PER_MONEY = 10;
@@ -28,6 +35,16 @@ export type RecruitOrder = CityCommandOrder & {
 
 export type DistributionOrder = CityCommandOrder & {
   targetTroops: number;
+};
+
+export type TradeOrder = CityCommandOrder & {
+  direction: 'buy' | 'sell';
+  amount: number;
+};
+
+export type BanquetOrder = {
+  cityId: string;
+  targetOfficerId: string;
 };
 
 export type CityCommandAvailability =
@@ -199,6 +216,163 @@ export function inspectCity(state: GameState, order: CityCommandOrder): GameStat
   );
   return appendLogs(next, 'map', [
     `${officer.name}出巡${city.name}，民忠提高 ${loyaltyGain}、人口增加 ${populationGain}，消耗金钱 ${INSPECT_MONEY_COST}、体力 ${INSPECT_STAMINA_COST}。`,
+  ]);
+}
+
+export function getTradeAvailability(state: GameState, order: TradeOrder): CityCommandAvailability {
+  const base = getCityCommandAvailability(state, order, TRADE_STAMINA_COST, 0);
+  if (!base.allowed) return base;
+  if (!Number.isSafeInteger(order.amount) || order.amount <= 0) {
+    return { allowed: false, reason: '交易数量必须是正安全整数' };
+  }
+  const city = state.cities[order.cityId];
+  if (order.direction === 'buy') {
+    if (order.amount > Math.floor(Number.MAX_SAFE_INTEGER / BUY_FOOD_PRICE)) {
+      return { allowed: false, reason: '买入数量过大' };
+    }
+    const cost = order.amount * BUY_FOOD_PRICE;
+    if (city.money < cost) return { allowed: false, reason: `城中金钱不足，需要 ${cost}` };
+    if (city.food >= TRADE_MONEY_SOFT_CAP) {
+      return { allowed: false, reason: `城中粮草已达到交易上限 ${TRADE_MONEY_SOFT_CAP}` };
+    }
+    if (order.amount > TRADE_MONEY_SOFT_CAP - city.food) {
+      return { allowed: false, reason: `最多可买入 ${TRADE_MONEY_SOFT_CAP - city.food} 粮` };
+    }
+    return { allowed: true };
+  }
+  if (city.food < order.amount) return { allowed: false, reason: '城中粮草不足' };
+  if (city.money >= TRADE_MONEY_SOFT_CAP) {
+    return { allowed: false, reason: `城中金钱已达到交易上限 ${TRADE_MONEY_SOFT_CAP}` };
+  }
+  const maxSellAmount = Math.floor((TRADE_MONEY_SOFT_CAP - city.money) / SELL_FOOD_PRICE);
+  if (order.amount > maxSellAmount) {
+    return { allowed: false, reason: `最多可卖出 ${maxSellAmount} 粮，避免超过交易金钱上限` };
+  }
+  return { allowed: true };
+}
+
+export function tradeFood(state: GameState, order: TradeOrder): GameState {
+  const availability = getTradeAvailability(state, order);
+  if (!availability.allowed) throw new Error(availability.reason);
+  const { city, officer } = validateCityCommand(state, order, TRADE_STAMINA_COST);
+  const buying = order.direction === 'buy';
+  const quotedMoney = order.amount * (buying ? BUY_FOOD_PRICE : SELL_FOOD_PRICE);
+  const nextMoney = buying ? city.money - quotedMoney : city.money + quotedMoney;
+  const actualMoney = Math.abs(nextMoney - city.money);
+  const next = updateCityAndOfficer(
+    state,
+    {
+      ...city,
+      food: city.food + (buying ? order.amount : -order.amount),
+      money: nextMoney,
+    },
+    { ...officer, stamina: officer.stamina - TRADE_STAMINA_COST },
+    true,
+  );
+  return appendLogs(next, 'map', [
+    `${officer.name}在${city.name}${buying ? '买入' : '卖出'} ${order.amount} 粮，`
+      + `${buying ? '花费' : '获得'} ${actualMoney} 金，消耗体力 ${TRADE_STAMINA_COST}。`,
+  ]);
+}
+
+export function getBanquetAvailability(state: GameState, order: BanquetOrder): CityCommandAvailability {
+  if (state.phase === 'ended') return { allowed: false, reason: '战役已经结束' };
+  const city = state.cities[order.cityId];
+  if (!city || city.ownerId !== state.activeFactionId) return { allowed: false, reason: '只能在己方城池宴请' };
+  const target = state.officers[order.targetOfficerId];
+  if (!target || target.status !== 'serving'
+    || target.factionId !== state.activeFactionId || target.cityId !== city.id) {
+    return { allowed: false, reason: '宴请目标不在该城' };
+  }
+  if (city.money < BANQUET_MONEY_COST) {
+    return { allowed: false, reason: `城中金钱不足，需要 ${BANQUET_MONEY_COST}` };
+  }
+  const isRuler = state.factions[target.factionId]?.rulerOfficerId === target.id;
+  if (target.stamina >= 100 && (isRuler || target.loyalty >= 100)) {
+    return { allowed: false, reason: '该武将体力和可提升忠诚均已达到上限' };
+  }
+  return { allowed: true };
+}
+
+export function banquetOfficer(state: GameState, order: BanquetOrder): GameState {
+  const availability = getBanquetAvailability(state, order);
+  if (!availability.allowed) throw new Error(availability.reason);
+  const city = state.cities[order.cityId];
+  const target = state.officers[order.targetOfficerId];
+  const isRuler = state.factions[target.factionId].rulerOfficerId === target.id;
+  const nextTarget = {
+    ...target,
+    stamina: Math.min(100, target.stamina + BANQUET_STAMINA_RECOVERY),
+    loyalty: isRuler ? target.loyalty : Math.min(100, target.loyalty + 1),
+  };
+  const next: GameState = {
+    ...state,
+    campaignStarted: true,
+    cities: { ...state.cities, [city.id]: { ...city, money: city.money - BANQUET_MONEY_COST } },
+    officers: { ...state.officers, [target.id]: nextTarget },
+  };
+  assertValidGameState(next);
+  return appendLogs(next, 'map', [
+    `${city.name}宴请${target.name}，体力恢复 ${nextTarget.stamina - target.stamina}`
+      + `${isRuler ? '' : `、忠诚提高 ${nextTarget.loyalty - target.loyalty}`}，花费 ${BANQUET_MONEY_COST} 金。`,
+  ]);
+}
+
+export function getPlunderAvailability(
+  state: GameState,
+  order: CityCommandOrder,
+): CityCommandAvailability {
+  const base = getCityCommandAvailability(state, order, PLUNDER_STAMINA_COST, 0);
+  if (!base.allowed) return base;
+  const officer = state.officers[order.officerId];
+  const effective = getEffectiveOfficerAttributes(state, officer);
+  const strength = effective.intelligence + effective.force;
+  if (!Number.isSafeInteger(strength) || strength < 0
+    || strength > Math.floor(Number.MAX_SAFE_INTEGER / 5)) {
+    return { allowed: false, reason: '武将属性过大，无法安全计算掠夺收益' };
+  }
+  return { allowed: true };
+}
+
+export function calculatePlunderGains(
+  state: GameState,
+  city: City,
+  officer: Officer,
+): { money: number; food: number } {
+  const effective = getEffectiveOfficerAttributes(state, officer);
+  const strength = effective.intelligence + effective.force;
+  return {
+    food: Math.min(
+      city.food >= TRADE_MONEY_SOFT_CAP ? 0 : TRADE_MONEY_SOFT_CAP - city.food,
+      strength * 5,
+    ),
+    money: Math.min(
+      city.money >= TRADE_MONEY_SOFT_CAP ? 0 : TRADE_MONEY_SOFT_CAP - city.money,
+      strength * 2,
+    ),
+  };
+}
+
+export function plunderCity(state: GameState, order: CityCommandOrder): GameState {
+  const availability = getPlunderAvailability(state, order);
+  if (!availability.allowed) throw new Error(availability.reason);
+  const { city, officer } = validateCityCommand(state, order, PLUNDER_STAMINA_COST);
+  const { food: foodGain, money: moneyGain } = calculatePlunderGains(state, city, officer);
+  const next = updateCityAndOfficer(
+    state,
+    {
+      ...city,
+      publicLoyalty: Math.floor((city.publicLoyalty ?? 70) / 2),
+      farming: Math.floor(city.farming / 2),
+      commerce: Math.floor(city.commerce / 2),
+      food: city.food + foodGain,
+      money: city.money + moneyGain,
+    },
+    { ...officer, stamina: officer.stamina - PLUNDER_STAMINA_COST },
+    true,
+  );
+  return appendLogs(next, 'map', [
+    `${officer.name}掠夺${city.name}，获得 ${moneyGain} 金、${foodGain} 粮；民忠、农业与商业折半。`,
   ]);
 }
 
