@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import {
+  ARMS_PER_MONEY,
   BANQUET_STAMINA_RECOVERY,
   BUY_FOOD_PRICE,
+  DEFAULT_RECRUIT_AMOUNT,
   SELL_FOOD_PRICE,
   TRADE_MONEY_SOFT_CAP,
   calculateCommerceGain,
+  calculateFarmingGain,
   calculatePlunderGains,
   calculateOfficerTroopCapacity,
   calculateRecruitCapacity,
@@ -19,6 +22,7 @@ import {
 import type { DiplomaticOrderKind, GameState } from '../core/types';
 import {
   RECRUIT_OFFICER_STAMINA_COST,
+  REWARD_LOYALTY_GAIN,
   REWARD_MONEY_COST,
   SEARCH_STAMINA_COST,
   getGiveItemAvailability,
@@ -40,6 +44,9 @@ import {
   getDiplomaticOrderAvailability,
 } from '../core/diplomaticOrders';
 import { getCampaignCommandCost } from '../core/rulesets';
+import { CommandReviewDialog, type CommandReview } from './CommandReviewDialog';
+
+type PendingCommandReview = CommandReview & { execute: () => void };
 
 type CityPanelProps = {
   state: GameState;
@@ -191,6 +198,7 @@ export function CityPanel({
   const [selectedAttackerIds, setSelectedAttackerIds] = useState<string[]>([]);
   const [provisions, setProvisions] = useState('100');
   const [activeCivicCommand, setActiveCivicCommand] = useState<'trade' | 'banquet' | 'plunder' | null>(null);
+  const [pendingCommandReview, setPendingCommandReview] = useState<PendingCommandReview>();
   const [tradeDirection, setTradeDirection] = useState<'buy' | 'sell'>('buy');
   const [tradeAmount, setTradeAmount] = useState('1');
 
@@ -271,8 +279,19 @@ export function CityPanel({
       calculateCommerceGain(selectedEffectiveAttributes, 0.999_999),
     ]
     : [0, 0];
+  const farmingGainRange = selectedEffectiveAttributes
+    ? [
+      calculateFarmingGain(selectedEffectiveAttributes, 0),
+      calculateFarmingGain(selectedEffectiveAttributes, 0.999_999),
+    ]
+    : [0, 0];
   const selectedCaptive = captives.find((captive) => captive.id === selectedCaptiveId);
   const selectedItem = state.items[selectedItemId];
+  const selectedRecruitTarget = discoveredFreeOfficers.find((officer) => officer.id === selectedRecruitTargetId);
+  const selectedMoveTarget = strategicDestinations.find((destination) => destination.city.id === selectedMoveTargetId);
+  const selectedDiplomacyTarget = diplomacyTargets.find((officer) => officer.id === selectedDiplomacyTargetId);
+  const selectedReconTarget = reconTargets.find((target) => target.id === selectedReconTargetId);
+  const selectedAttackTarget = hostileNeighbors.find((target) => target.id === selectedTargetId);
   const selectedEquipmentIds = selectedOfficer ? getOfficerEquipmentIds(selectedOfficer) : [];
   const isPlayerCity = city.ownerId === state.playerFactionId;
   const intelReport = isPlayerCity ? undefined : state.intelReports[city.id];
@@ -339,6 +358,32 @@ export function CityPanel({
     && !selectedOfficerActed && calculateRecruitCapacity(city) > 0;
   const canSearch = isOwned && selectedOfficer !== undefined && selectedOfficer.stamina >= SEARCH_STAMINA_COST
     && !selectedOfficerActed;
+  const recruitGain = Math.min(
+    DEFAULT_RECRUIT_AMOUNT,
+    calculateRecruitCapacity(city),
+    0xffff - city.reserveTroops,
+  );
+  const recruitMoneyCost = Math.floor(recruitGain / ARMS_PER_MONEY);
+  const recruitUnavailableReason = !isOwned
+    ? '只能在己方城池征兵'
+    : !selectedOfficer
+      ? '请选择执行武将'
+      : selectedOfficerActed
+        ? `${selectedOfficer.name}本月已经行动`
+        : selectedOfficer.stamina < RECRUIT_STAMINA_COST
+          ? `${selectedOfficer.name}体力不足，需要 ${RECRUIT_STAMINA_COST}`
+          : recruitGain <= 0
+            ? '该城没有足够的金钱、民忠或后备兵容量'
+            : '';
+  const searchUnavailableReason = !isOwned
+    ? '只能在己方城池搜寻'
+    : !selectedOfficer
+      ? '请选择执行武将'
+      : selectedOfficerActed
+        ? `${selectedOfficer.name}本月已经行动`
+        : selectedOfficer.stamina < SEARCH_STAMINA_COST
+          ? `${selectedOfficer.name}体力不足，需要 ${SEARCH_STAMINA_COST}`
+          : '';
   const canRecruitOfficer = isOwned && selectedOfficer !== undefined && !selectedOfficerActed
     && selectedOfficer.stamina >= RECRUIT_OFFICER_STAMINA_COST && Boolean(selectedRecruitTargetId);
   const canReward = isOwned && selectedOfficer !== undefined
@@ -441,6 +486,7 @@ export function CityPanel({
 
   useEffect(() => {
     setProvisions(String(Math.max(1, Math.min(city.food, 500))));
+    setPendingCommandReview(undefined);
   }, [city.id]);
 
   function toggleAttacker(officerId: string) {
@@ -451,6 +497,17 @@ export function CityPanel({
 
   function scrollToCommand(commandId: string) {
     document.getElementById(commandId)?.scrollIntoView({ block: 'start' });
+  }
+
+  function reviewCommand(review: CommandReview, execute: () => void) {
+    setPendingCommandReview({ ...review, execute });
+  }
+
+  function confirmReviewedCommand() {
+    const command = pendingCommandReview;
+    if (!command) return;
+    setPendingCommandReview(undefined);
+    command.execute();
   }
 
   return (
@@ -571,31 +628,65 @@ export function CityPanel({
               <button
                 type="button"
                 disabled={disabled || !canDevelop}
-                onClick={() => onDevelop(city.id, selectedOfficerId)}
-                title={`消耗金钱 ${DEVELOP_MONEY_COST}、体力 ${DEVELOP_STAMINA_COST}`}
+                onClick={() => reviewCommand({
+                  category: '内政',
+                  title: '开垦',
+                  city: city.name,
+                  actor: selectedOfficer?.name,
+                  effects: [`农业预计提高 ${farmingGainRange[0]}～${farmingGainRange[1]}`],
+                  costs: [`金钱 ${DEVELOP_MONEY_COST}`, `体力 ${DEVELOP_STAMINA_COST}`, '占用执行武将本月行动'],
+                  risks: ['实际增量由当前确定性随机序列决定，并受农业上限约束。'],
+                }, () => onDevelop(city.id, selectedOfficerId))}
+                title={farmingAvailability.allowed
+                  ? `农业预计 +${farmingGainRange[0]}～${farmingGainRange[1]}`
+                  : farmingAvailability.reason}
               >
                 开垦
               </button>
               <button
                 type="button"
                 disabled={disabled || !canRecruit}
-                onClick={() => onRecruit(city.id, selectedOfficerId)}
-                title={`征入后备兵，消耗体力 ${RECRUIT_STAMINA_COST}`}
+                onClick={() => reviewCommand({
+                  category: '内政',
+                  title: '征兵',
+                  city: city.name,
+                  actor: selectedOfficer?.name,
+                  effects: [`征募 ${number.format(recruitGain)} 名后备兵`],
+                  costs: [`金钱 ${number.format(recruitMoneyCost)}`, `体力 ${RECRUIT_STAMINA_COST}`, '占用执行武将本月行动'],
+                  risks: ['征募数量受金钱、民忠与后备兵容量共同限制。'],
+                }, () => onRecruit(city.id, selectedOfficerId))}
+                title={canRecruit ? `征募 ${recruitGain} 人，消耗金钱 ${recruitMoneyCost}` : recruitUnavailableReason}
               >
                 征兵
               </button>
               <button
                 type="button"
                 disabled={disabled || !canSearch}
-                onClick={() => onSearch(city.id, selectedOfficerId)}
-                title={`搜寻人才或资源，消耗体力 ${SEARCH_STAMINA_COST}`}
+                onClick={() => reviewCommand({
+                  category: '人事',
+                  title: '搜寻',
+                  city: city.name,
+                  actor: selectedOfficer?.name,
+                  effects: ['尝试发现或直接登用本地人才，也可能获得道具、金钱或粮草'],
+                  costs: [`体力 ${SEARCH_STAMINA_COST}`, '占用执行武将本月行动'],
+                  risks: ['搜索可能没有收获；结果由武将智力与确定性随机序列决定。'],
+                }, () => onSearch(city.id, selectedOfficerId))}
+                title={canSearch ? `搜寻人才或资源，消耗体力 ${SEARCH_STAMINA_COST}` : searchUnavailableReason}
               >
                 搜寻
               </button>
               <button
                 type="button"
                 disabled={!isOwned || !displayedCommerceAvailability.allowed}
-                onClick={() => onDevelopCommerce(city.id, selectedOfficerId)}
+                onClick={() => reviewCommand({
+                  category: '内政',
+                  title: '招商',
+                  city: city.name,
+                  actor: selectedOfficer?.name,
+                  effects: [`商业预计提高 ${commerceGainRange[0]}～${commerceGainRange[1]}`],
+                  costs: [`金钱 ${DEVELOP_MONEY_COST}`, `体力 ${DEVELOP_STAMINA_COST}`, '占用执行武将本月行动'],
+                  risks: ['实际增量由当前确定性随机序列决定，并受商业上限约束。'],
+                }, () => onDevelopCommerce(city.id, selectedOfficerId))}
                 aria-describedby="civic-command-guidance"
                 title={displayedCommerceAvailability.allowed
                   ? `消耗金钱 ${DEVELOP_MONEY_COST}、体力 ${DEVELOP_STAMINA_COST}`
@@ -606,7 +697,18 @@ export function CityPanel({
               <button
                 type="button"
                 disabled={!isOwned || !displayedGovernAvailability.allowed}
-                onClick={() => onGovern(city.id, selectedOfficerId)}
+                onClick={() => reviewCommand({
+                  category: '内政',
+                  title: '治理',
+                  city: city.name,
+                  actor: selectedOfficer?.name,
+                  effects: [
+                    (city.condition ?? 'normal') === 'normal' ? '维持正常状态' : `解除${CITY_CONDITION_LABELS[city.condition ?? 'normal']}`,
+                    governMaxGain > 0 ? `防灾提高 1～${governMaxGain}` : '防灾已满',
+                  ],
+                  costs: [`金钱 ${GOVERN_MONEY_COST}`, `体力 ${GOVERN_STAMINA_COST}`, '占用执行武将本月行动'],
+                  risks: ['防灾实际增量由当前确定性随机序列决定。'],
+                }, () => onGovern(city.id, selectedOfficerId))}
                 aria-describedby="civic-command-guidance"
                 title={displayedGovernAvailability.allowed
                   ? `提高防灾，消耗金钱 ${GOVERN_MONEY_COST}、体力 ${GOVERN_STAMINA_COST}`
@@ -617,7 +719,15 @@ export function CityPanel({
               <button
                 type="button"
                 disabled={!isOwned || !displayedInspectAvailability.allowed}
-                onClick={() => onInspect(city.id, selectedOfficerId)}
+                onClick={() => reviewCommand({
+                  category: '内政',
+                  title: '出巡',
+                  city: city.name,
+                  actor: selectedOfficer?.name,
+                  effects: ['民忠提高 1～4', '人口最多增加 100'],
+                  costs: [`金钱 ${INSPECT_MONEY_COST}`, `体力 ${INSPECT_STAMINA_COST}`, '占用执行武将本月行动'],
+                  risks: ['民忠增量由当前确定性随机序列决定，并受城市上限约束。'],
+                }, () => onInspect(city.id, selectedOfficerId))}
                 aria-describedby="civic-command-guidance"
                 title={displayedInspectAvailability.allowed
                   ? `提高民忠与人口，消耗金钱 ${INSPECT_MONEY_COST}、体力 ${INSPECT_STAMINA_COST}`
@@ -695,10 +805,28 @@ export function CityPanel({
                   type="button"
                   disabled={disabled || !tradeAvailability.allowed}
                   aria-describedby="trade-command-hint"
-                  onClick={() => {
+                  onClick={() => reviewCommand({
+                    category: '内政',
+                    title: tradeDirection === 'buy' ? '买入粮草' : '卖出粮草',
+                    city: city.name,
+                    actor: selectedOfficer?.name,
+                    target: `${number.format(tradeValue)} 粮`,
+                    effects: [
+                      tradeDirection === 'buy'
+                        ? `粮草增加 ${number.format(tradeValue)}`
+                        : `金钱增加 ${number.format(tradeMoneyDelta)}`,
+                    ],
+                    costs: [
+                      tradeDirection === 'buy'
+                        ? `金钱 ${number.format(tradeMoneyDelta)}`
+                        : `粮草 ${number.format(tradeValue)}`,
+                      `体力 ${TRADE_STAMINA_COST}`,
+                      '占用执行武将本月行动',
+                    ],
+                  }, () => {
                     onTrade(city.id, selectedOfficerId, tradeDirection, tradeValue);
                     setActiveCivicCommand(null);
-                  }}
+                  })}
                 >
                   确认交易
                 </button>
@@ -721,10 +849,23 @@ export function CityPanel({
                   type="button"
                   disabled={disabled || !banquetAvailability.allowed}
                   aria-describedby="banquet-command-hint"
-                  onClick={() => {
+                  onClick={() => reviewCommand({
+                    category: '人事',
+                    title: '宴请',
+                    city: city.name,
+                    actor: selectedOfficer?.name,
+                    target: selectedOfficer?.name,
+                    effects: [
+                      `体力最多恢复 ${BANQUET_STAMINA_RECOVERY}`,
+                      state.factions[selectedOfficer!.factionId]?.rulerOfficerId === selectedOfficer!.id
+                        ? '君主忠诚不变'
+                        : '忠诚提高 1',
+                    ],
+                    costs: [`金钱 ${BANQUET_MONEY_COST}`, '不占用本月行动'],
+                  }, () => {
                     onBanquet(city.id, selectedOfficerId);
                     setActiveCivicCommand(null);
-                  }}
+                  })}
                 >
                   确认宴请
                 </button>
@@ -752,10 +893,28 @@ export function CityPanel({
                   className="danger-command"
                   disabled={disabled || !plunderAvailability.allowed}
                   aria-describedby="plunder-command-hint"
-                  onClick={() => {
+                  onClick={() => reviewCommand({
+                    category: '内政',
+                    title: '掠夺',
+                    city: city.name,
+                    actor: selectedOfficer?.name,
+                    effects: [
+                      `获得 ${number.format(plunderGains.money)} 金`,
+                      `获得 ${number.format(plunderGains.food)} 粮`,
+                    ],
+                    costs: [`体力 ${PLUNDER_STAMINA_COST}`, '占用执行武将本月行动'],
+                    risks: [
+                      `民忠降至 ${Math.floor((city.publicLoyalty ?? 70) / 2)}`,
+                      `农业降至 ${number.format(Math.floor(city.farming / 2))}`,
+                      `商业降至 ${number.format(Math.floor(city.commerce / 2))}`,
+                      '执行后不可撤销。',
+                    ],
+                    dangerous: true,
+                    confirmLabel: '确认掠夺',
+                  }, () => {
                     onPlunder(city.id, selectedOfficerId);
                     setActiveCivicCommand(null);
-                  }}
+                  })}
                 >
                   确认掠夺
                 </button>
@@ -776,7 +935,16 @@ export function CityPanel({
                 <button
                   type="button"
                   disabled={disabled || !canRecruitOfficer}
-                  onClick={() => onRecruitOfficer(city.id, selectedOfficerId, selectedRecruitTargetId)}
+                  onClick={() => reviewCommand({
+                    category: '人事',
+                    title: '登用人才',
+                    city: city.name,
+                    actor: selectedOfficer?.name,
+                    target: selectedRecruitTarget?.name,
+                    effects: [`尝试让${selectedRecruitTarget?.name ?? '目标人才'}加入${faction?.name ?? '己方势力'}`],
+                    costs: [`体力 ${RECRUIT_OFFICER_STAMINA_COST}`, '占用执行武将本月行动'],
+                    risks: ['结果受执行武将智力与确定性随机序列影响；失败后人才仍保持已发现状态。'],
+                  }, () => onRecruitOfficer(city.id, selectedOfficerId, selectedRecruitTargetId))}
                   title={`消耗执行武将体力 ${RECRUIT_OFFICER_STAMINA_COST}`}
                 >
                   登用
@@ -802,7 +970,16 @@ export function CityPanel({
               <button
                 type="button"
                 disabled={disabled || !canMove}
-                onClick={() => onMove(city.id, selectedMoveTargetId, selectedOfficerId)}
+                onClick={() => reviewCommand({
+                  category: '人事',
+                  title: '调动武将',
+                  city: city.name,
+                  actor: selectedOfficer?.name,
+                  target: selectedMoveTarget?.city.name,
+                  effects: [`${selectedOfficer?.name ?? '所选武将'}将在 ${selectedMoveTarget?.durationMonths ?? '?'} 个月后抵达目标城市`],
+                  costs: [`体力 ${MOVE_STAMINA_COST}`, '占用执行武将本月行动'],
+                  risks: [city.satrapOfficerId === selectedOfficerId ? '太守离城后将按当前规则自动补位。' : '调动期间武将不在城中。'],
+                }, () => onMove(city.id, selectedMoveTargetId, selectedOfficerId))}
                 aria-describedby={!displayedMoveAvailability.allowed ? 'move-command-hint' : undefined}
                 title={displayedMoveAvailability.allowed
                   ? `消耗体力 ${MOVE_STAMINA_COST}，预计 ${displayedMoveAvailability.durationMonths} 个月`
@@ -813,7 +990,15 @@ export function CityPanel({
               <button
                 type="button"
                 disabled={disabled || !canAppoint}
-                onClick={() => onAppoint(city.id, selectedOfficerId)}
+                onClick={() => reviewCommand({
+                  category: '人事',
+                  title: '任命太守',
+                  city: city.name,
+                  actor: state.officers[state.factions[state.playerFactionId].rulerOfficerId]?.name,
+                  target: selectedOfficer?.name,
+                  effects: [`${selectedOfficer?.name ?? '所选武将'}成为${city.name}太守`],
+                  costs: ['不消耗金钱、体力或本月行动'],
+                }, () => onAppoint(city.id, selectedOfficerId))}
                 title={state.rulesetId === 'baye-classic-v1'
                   ? '经典校准规则由君主或城内智力最高者自动担任太守'
                   : '任命所选武将为太守'}
@@ -879,18 +1064,29 @@ export function CityPanel({
                 aria-describedby={!displayedTransportAvailability.allowed
                   ? 'transport-command-risk transport-command-hint'
                   : 'transport-command-risk'}
-                onClick={() => {
-                  if (onTransport(
-                    city.id,
-                    selectedMoveTargetId,
-                    selectedOfficerId,
-                    transportCargo,
-                  )) {
+                onClick={() => reviewCommand({
+                  category: '军事',
+                  title: '输送物资',
+                  city: city.name,
+                  actor: selectedOfficer?.name,
+                  target: selectedMoveTarget?.city.name,
+                  effects: [
+                    `输送金钱 ${number.format(transportCargo.money)}`,
+                    `输送粮草 ${number.format(transportCargo.food)}`,
+                    `输送后备兵 ${number.format(transportCargo.reserveTroops)}`,
+                  ],
+                  costs: [`体力 ${TRANSPORT_STAMINA_COST}`, '占用执行武将本月行动'],
+                  risks: [
+                    `预计 ${selectedMoveTarget?.durationMonths ?? '?'} 个月完成，成功率 79%。`,
+                    '失败时本批物资全部损失，执行者仍会返回出发城。',
+                  ],
+                }, () => {
+                  if (onTransport(city.id, selectedMoveTargetId, selectedOfficerId, transportCargo)) {
                     setTransportMoney('0');
                     setTransportFood('0');
                     setTransportReserveTroops('0');
                   }
-                }}
+                })}
               >
                 发起输送
               </button>
@@ -904,7 +1100,15 @@ export function CityPanel({
               type="button"
               className="reward-command"
               disabled={disabled || !canReward}
-              onClick={() => onReward(city.id, selectedOfficerId)}
+              onClick={() => reviewCommand({
+                category: '人事',
+                title: '奖赏武将',
+                city: city.name,
+                actor: state.officers[state.factions[state.playerFactionId].rulerOfficerId]?.name,
+                target: selectedOfficer?.name,
+                effects: [`忠诚 ${selectedOfficer?.loyalty ?? 0} → ${Math.min(100, (selectedOfficer?.loyalty ?? 0) + REWARD_LOYALTY_GAIN)}`],
+                costs: [`金钱 ${REWARD_MONEY_COST}`, '不占用武将本月行动'],
+              }, () => onReward(city.id, selectedOfficerId))}
               title={(selectedOfficer?.loyalty ?? 0) >= 100
                 ? '该武将忠诚已经达到上限'
                 : `消耗城中金钱 ${REWARD_MONEY_COST}，不占用武将本月行动`}
@@ -918,9 +1122,17 @@ export function CityPanel({
                 || selectedOfficer.id === state.factions[state.playerFactionId].rulerOfficerId}
               onClick={() => {
                 if (!selectedOfficer) return;
-                if (window.confirm(`确认流放${selectedOfficer.name}？其将成为在野人物并随机流落到一座城市。`)) {
-                  onBanishOfficer(city.id, selectedOfficer.id);
-                }
+                reviewCommand({
+                  category: '人事',
+                  title: '流放武将',
+                  city: city.name,
+                  target: selectedOfficer.name,
+                  effects: [`${selectedOfficer.name}离开当前势力并随机流落到一座城市`],
+                  costs: ['不消耗本月行动'],
+                  risks: ['兵力清零；所携装备保留；进行中的相关命令会被取消。', '执行后不可撤销。'],
+                  dangerous: true,
+                  confirmLabel: `确认流放${selectedOfficer.name}`,
+                }, () => onBanishOfficer(city.id, selectedOfficer.id));
               }}
               title={selectedOfficer?.id === state.factions[state.playerFactionId].rulerOfficerId
                 ? '不能流放当前君主'
@@ -947,7 +1159,20 @@ export function CityPanel({
               <button
                 type="button"
                 disabled={disabled || !canGiveItem}
-                onClick={() => onGiveItem(city.id, selectedOfficerId, selectedItemId)}
+                onClick={() => reviewCommand({
+                  category: '人事',
+                  title: '赏赐道具',
+                  city: city.name,
+                  actor: state.officers[state.factions[state.playerFactionId].rulerOfficerId]?.name,
+                  target: `${selectedOfficer?.name ?? '所选武将'} · ${selectedItem?.name ?? '所选道具'}`,
+                  effects: [
+                    selectedItem ? describeItem(selectedItem) : '应用道具效果',
+                    selectedOfficer?.id === state.factions[state.playerFactionId].rulerOfficerId
+                      ? '君主忠诚不变'
+                      : `忠诚提高 ${REWARD_LOYALTY_GAIN}`,
+                  ],
+                  costs: ['道具从城中移交给目标武将', '不占用本月行动'],
+                }, () => onGiveItem(city.id, selectedOfficerId, selectedItemId))}
                 title={disabled
                   ? '当前有待处理操作，暂时不能执行城池命令'
                   : itemAvailability.allowed
@@ -970,14 +1195,23 @@ export function CityPanel({
                     onClick={() => {
                       if (!selectedOfficer) return;
                       const isRuler = selectedOfficer.id === state.factions[state.playerFactionId].rulerOfficerId;
-                      if (isRuler) {
-                        onUnequipItem(city.id, selectedOfficerId, itemId);
-                        return;
-                      }
-                      if (window.confirm(
-                        `确认没收${selectedOfficer.name}的${state.items[itemId].name}？`
-                        + '装备将收入本城，忠诚降低 20。',
-                      )) onConfiscateItem(city.id, selectedOfficerId, itemId);
+                      const item = state.items[itemId];
+                      reviewCommand({
+                        category: '人事',
+                        title: isRuler ? '卸下装备' : '没收装备',
+                        city: city.name,
+                        target: `${selectedOfficer.name} · ${item.name}`,
+                        effects: [`${item.name}收入${city.name}`],
+                        costs: ['不占用本月行动'],
+                        risks: isRuler
+                          ? ['君主忠诚不受影响。']
+                          : [`${selectedOfficer.name}忠诚降低 20。`, '执行后不可撤销。'],
+                        dangerous: !isRuler,
+                        confirmLabel: isRuler ? `确认卸下${item.name}` : `确认没收${item.name}`,
+                      }, () => {
+                        if (isRuler) onUnequipItem(city.id, selectedOfficerId, itemId);
+                        else onConfiscateItem(city.id, selectedOfficerId, itemId);
+                      });
                     }}
                   >
                     {selectedOfficer?.id === state.factions[state.playerFactionId].rulerOfficerId ? '卸下' : '没收'}{' '}
@@ -1003,7 +1237,16 @@ export function CityPanel({
                   <button
                     type="button"
                     disabled={disabled || !canRecruitCaptive}
-                    onClick={() => selectedCaptive && onRecruitCaptive(city.id, selectedOfficerId, selectedCaptive.id)}
+                    onClick={() => selectedCaptive && reviewCommand({
+                      category: '人事',
+                      title: '招降俘虏',
+                      city: city.name,
+                      actor: selectedOfficer?.name,
+                      target: selectedCaptive.name,
+                      effects: [`尝试让${selectedCaptive.name}加入${faction?.name ?? '己方势力'}`],
+                      costs: [`金钱 ${surrenderCost.money}`, `体力 ${SURRENDER_STAMINA_COST}`, '占用执行武将本月行动'],
+                      risks: ['结果受双方智力、俘虏忠诚和确定性随机序列影响；失败会削弱俘虏忠诚。'],
+                    }, () => onRecruitCaptive(city.id, selectedOfficerId, selectedCaptive.id))}
                     title={captiveRecruitReason}
                     aria-describedby="captive-recruit-hint"
                   >
@@ -1012,7 +1255,16 @@ export function CityPanel({
                   <button
                     type="button"
                     disabled={disabled || !isOwned || !selectedCaptive}
-                    onClick={() => selectedCaptive && onReleaseCaptive(city.id, selectedCaptive.id)}
+                    onClick={() => selectedCaptive && reviewCommand({
+                      category: '人事',
+                      title: '释放俘虏',
+                      city: city.name,
+                      target: selectedCaptive.name,
+                      effects: [`${selectedCaptive.name}成为${city.name}已发现的在野人物`],
+                      costs: ['不消耗金钱、体力或本月行动'],
+                      risks: ['兵力清零；人物不再受当前势力羁押。'],
+                      confirmLabel: `确认释放${selectedCaptive.name}`,
+                    }, () => onReleaseCaptive(city.id, selectedCaptive.id))}
                     title="现代化人道选项：不消耗行动，俘虏转为本城在野人物"
                   >
                     释放
@@ -1022,9 +1274,17 @@ export function CityPanel({
                     disabled={disabled || !isOwned || !selectedCaptive}
                     onClick={() => {
                       if (!selectedCaptive) return;
-                      if (window.confirm(`确认流放俘虏${selectedCaptive.name}？其将随机流落到一座城市。`)) {
-                        onBanishOfficer(city.id, selectedCaptive.id);
-                      }
+                      reviewCommand({
+                        category: '人事',
+                        title: '流放俘虏',
+                        city: city.name,
+                        target: selectedCaptive.name,
+                        effects: [`${selectedCaptive.name}成为在野人物并随机流落到一座城市`],
+                        costs: ['不消耗本月行动'],
+                        risks: ['兵力清零；装备随身保留；执行后不可撤销。'],
+                        dangerous: true,
+                        confirmLabel: `确认流放${selectedCaptive.name}`,
+                      }, () => onBanishOfficer(city.id, selectedCaptive.id));
                     }}
                     title="流放后成为在野人物，装备随身保留"
                   >
@@ -1040,10 +1300,17 @@ export function CityPanel({
                         .map((itemId) => state.items[itemId]?.name)
                         .filter(Boolean)
                         .join('、');
-                      if (window.confirm(
-                        `确认处斩${selectedCaptive.name}？此操作不可撤销。`
-                        + `${equipment ? `其装备（${equipment}）将收入${city.name}。` : ''}`,
-                      )) onExecuteCaptive(city.id, selectedCaptive.id);
+                      reviewCommand({
+                        category: '人事',
+                        title: '处斩俘虏',
+                        city: city.name,
+                        target: selectedCaptive.name,
+                        effects: [equipment ? `装备（${equipment}）收入${city.name}` : '没有装备需要回收'],
+                        costs: ['不消耗本月行动'],
+                        risks: [`${selectedCaptive.name}永久死亡。`, '此操作不可撤销。'],
+                        dangerous: true,
+                        confirmLabel: `确认处斩${selectedCaptive.name}`,
+                      }, () => onExecuteCaptive(city.id, selectedCaptive.id));
                     }}
                     title="不可逆：人物死亡，全部装备收入本城"
                   >
@@ -1100,12 +1367,21 @@ export function CityPanel({
                 type="button"
                 disabled={!displayedDiplomacyAvailability.allowed}
                 aria-describedby="diplomacy-command-hint"
-                onClick={() => onDiplomacy(
+                onClick={() => reviewCommand({
+                  category: '谋略',
+                  title: diplomacyLabel(selectedDiplomacyKind),
+                  city: city.name,
+                  actor: selectedOfficer?.name,
+                  target: selectedDiplomacyTarget?.name,
+                  effects: [`发起为期 1 个月的${diplomacyLabel(selectedDiplomacyKind)}行动`],
+                  costs: [`金钱 ${DIPLOMACY_MONEY_COST}`, `体力 ${DIPLOMACY_STAMINA_COST}`, '占用执行武将本月行动'],
+                  risks: [diplomacyFactors(selectedDiplomacyKind), '不展示精确成功率；结果将在命令到期时结算。'],
+                }, () => onDiplomacy(
                   selectedDiplomacyKind,
                   city.id,
                   selectedOfficerId,
                   selectedDiplomacyTargetId,
-                )}
+                ))}
               >
                 发起{diplomacyLabel(selectedDiplomacyKind)}
               </button>
@@ -1131,7 +1407,16 @@ export function CityPanel({
               <button
                 type="button"
                 disabled={!displayedReconAvailability.allowed}
-                onClick={() => onRecon(city.id, selectedReconTargetId, selectedOfficerId)}
+                onClick={() => reviewCommand({
+                  category: '军事',
+                  title: '侦察',
+                  city: city.name,
+                  actor: selectedOfficer?.name,
+                  target: selectedReconTarget?.name,
+                  effects: [`获取${selectedReconTarget?.name ?? '目标城市'}当前情报快照`],
+                  costs: [`金钱 ${RECON_MONEY_COST}`, `体力 ${RECON_STAMINA_COST}`, '占用执行武将本月行动'],
+                  risks: ['情报是执行时快照，后续变化不会自动更新。'],
+                }, () => onRecon(city.id, selectedReconTargetId, selectedOfficerId))}
                 title={displayedReconAvailability.allowed
                   ? `获取敌城情报快照，消耗 ${RECON_MONEY_COST} 金、${RECON_STAMINA_COST} 体力和本月行动`
                   : displayedReconAvailability.reason}
@@ -1157,7 +1442,18 @@ export function CityPanel({
               <button
                 type="button"
                 disabled={disabled || !canDistribute}
-                onClick={() => onDistribute(city.id, selectedOfficerId, distributionValue)}
+                onClick={() => reviewCommand({
+                  category: '军事',
+                  title: '分配兵力',
+                  city: city.name,
+                  actor: selectedOfficer?.name,
+                  target: `${number.format(selectedOfficer?.troops ?? 0)} → ${number.format(distributionValue)} 兵`,
+                  effects: [
+                    `${selectedOfficer?.name ?? '所选武将'}兵力${distributionDelta > 0 ? '增加' : '减少'} ${number.format(Math.abs(distributionDelta))}`,
+                    `城中后备兵变为 ${number.format(city.reserveTroops - distributionDelta)}`,
+                  ],
+                  costs: ['占用执行武将本月行动', '不消耗金钱或体力'],
+                }, () => onDistribute(city.id, selectedOfficerId, distributionValue))}
               >
                 分配
               </button>
@@ -1206,7 +1502,19 @@ export function CityPanel({
               type="button"
               className="attack-command"
               disabled={disabled || !canAttack}
-              onClick={() => onAttack(city.id, selectedTargetId, selectedAttackerIds, provisionValue)}
+              onClick={() => reviewCommand({
+                category: '军事',
+                title: '筹划出征',
+                city: city.name,
+                actor: selectedAttackerIds.map((officerId) => state.officers[officerId]?.name).filter(Boolean).join('、'),
+                target: selectedAttackTarget?.name,
+                effects: [
+                  `${selectedAttackerIds.length} 名武将、${number.format(selectedAttackerIds.reduce((sum, officerId) => sum + (state.officers[officerId]?.troops ?? 0), 0))} 兵出征`,
+                  '确认后仍可选择亲自指挥或快速结算',
+                ],
+                costs: [`携带粮草 ${number.format(provisionValue)}`, '参战武将将按战斗结果消耗行动与状态'],
+                risks: ['胜负、伤亡、俘虏与城池归属由所选战斗方式和当前规则决定。'],
+              }, () => onAttack(city.id, selectedTargetId, selectedAttackerIds, provisionValue))}
             >
               筹划出征
             </button>
@@ -1217,6 +1525,14 @@ export function CityPanel({
           </p>
         )}
       </div>
+
+      {pendingCommandReview && (
+        <CommandReviewDialog
+          review={pendingCommandReview}
+          onCancel={() => setPendingCommandReview(undefined)}
+          onConfirm={confirmReviewedCommand}
+        />
+      )}
     </aside>
   );
 }
