@@ -72,7 +72,7 @@ import {
   type BundledPeriodId,
 } from '../data/bundledScenarios';
 import { createGameBridge } from '../game/events';
-import { createStrategyMap, type StrategyMapController } from '../game/createGame';
+import type { StrategyMapController } from '../game/createGame';
 import { RulerScreen, ScenarioScreen, TitleScreen } from './CampaignSetup';
 import { CampaignNavigator, type CampaignNavView } from './CampaignNavigator';
 import { CityPanel } from './CityPanel';
@@ -124,11 +124,15 @@ export function App() {
   const [selectedTacticalUnitId, setSelectedTacticalUnitId] = useState<string>();
   const [pendingTacticalTargetId, setPendingTacticalTargetId] = useState<string>();
   const [aiResumeFactionIndex, setAiResumeFactionIndex] = useState<number>();
+  const [isStrategyMapReady, setIsStrategyMapReady] = useState(false);
+  const [strategyMapLoadError, setStrategyMapLoadError] = useState<string>();
   const mapHost = useRef<HTMLDivElement>(null);
   const mapController = useRef<StrategyMapController | null>(null);
+  const latestStrategyMapInput = useRef({ state, selectedCityId });
   const aiTurnLogStart = useRef(0);
   const monthResolutionInProgress = useRef(false);
   const bridge = useMemo(() => createGameBridge(), []);
+  latestStrategyMapInput.current = { state, selectedCityId };
   const tacticalReachable = useMemo(() => {
     if (!tacticalBattle || !selectedTacticalUnitId || tacticalBattle.status !== 'ongoing') return [];
     try {
@@ -187,12 +191,29 @@ export function App() {
 
   useEffect(() => {
     if (screen !== 'game' || !mapHost.current) return;
-    mapController.current = createStrategyMap(mapHost.current, bridge, state, selectedCityId);
+    let cancelled = false;
+    let createdController: StrategyMapController | null = null;
+    const host = mapHost.current;
+    setIsStrategyMapReady(false);
+    setStrategyMapLoadError(undefined);
+    void import('../game/createGame')
+      .then(({ createStrategyMap }) => {
+        if (cancelled) return;
+        const latest = latestStrategyMapInput.current;
+        createdController = createStrategyMap(host, bridge, latest.state, latest.selectedCityId);
+        mapController.current = createdController;
+        setIsStrategyMapReady(true);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setStrategyMapLoadError(error instanceof Error ? error.message : '地图模块加载失败');
+      });
     return () => {
-      mapController.current?.destroy();
-      mapController.current = null;
+      cancelled = true;
+      createdController?.destroy();
+      if (mapController.current === createdController) mapController.current = null;
     };
-    // Phaser owns its canvas lifecycle; state updates flow through the controller below.
+    // Phaser is loaded only after campaign entry; later state updates flow through the controller below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bridge, screen]);
 
@@ -930,7 +951,13 @@ export function App() {
             )}
           </div>
         )}
-        <div className="map-host" ref={mapHost} />
+        <div className="map-host" ref={mapHost} aria-busy={!isStrategyMapReady} />
+        {!isStrategyMapReady && (
+          <div className={`canvas-loading ${strategyMapLoadError ? 'error' : ''}`} role={strategyMapLoadError ? 'alert' : 'status'}>
+            <strong>{strategyMapLoadError ? '战略地图加载失败' : '正在展开天下地图'}</strong>
+            <span>{strategyMapLoadError ? '请刷新页面后重试。' : '首次进入需要载入地图绘制模块。'}</span>
+          </div>
+        )}
         {feedback && (
           <div className={`action-feedback ${feedback.kind}`} role={feedback.kind === 'error' ? 'alert' : 'status'}>
             {feedback.message}

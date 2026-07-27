@@ -21,7 +21,7 @@ import {
 } from '../core/tacticalBattle';
 import type { GameState } from '../core/types';
 import { getOfficerEquipmentIds } from '../core/equipment';
-import { createTacticalMap, type TacticalMapController } from '../game/createBattleGame';
+import type { TacticalMapController } from '../game/createBattleGame';
 import type { GameBridge } from '../game/events';
 
 type TacticalBattleScreenProps = {
@@ -72,9 +72,12 @@ export function TacticalBattleScreen({
 }: TacticalBattleScreenProps) {
   const mapHost = useRef<HTMLDivElement>(null);
   const controller = useRef<TacticalMapController | null>(null);
+  const latestMapInput = useRef({ battle, selectedUnitId, reachable, attackableUnitIds });
   const [openPanel, setOpenPanel] = useState<BattlePanel>();
   const [actionMode, setActionMode] = useState<ActionMode>('move');
   const [confirmingRetreat, setConfirmingRetreat] = useState(false);
+  const [isMapReady, setIsMapReady] = useState(false);
+  const [mapLoadError, setMapLoadError] = useState<string>();
   const playerSide = battle.attackerFactionId === campaign.playerFactionId ? 'attacker' : 'defender';
   const enemySide = playerSide === 'attacker' ? 'defender' : 'attacker';
   const selectedUnit = selectedUnitId ? battle.units[selectedUnitId] : undefined;
@@ -82,27 +85,46 @@ export function TacticalBattleScreen({
   const pendingAttackPreview = selectedUnit && pendingTarget
     ? previewTacticalAttack(battle, selectedUnit.id, pendingTarget.id)
     : undefined;
+  const isConfirmingAction = Boolean(pendingTarget) || confirmingRetreat;
   const shownReachable = actionMode === 'move' ? reachable : [];
   const shownAttackable = actionMode === 'attack' ? attackableUnitIds : [];
+  latestMapInput.current = { battle, selectedUnitId, reachable: shownReachable, attackableUnitIds: shownAttackable };
 
   useEffect(() => bridge.on('tactical:unit-selected', ({ unitId }) => onUnitSelected(unitId)), [bridge, onUnitSelected]);
   useEffect(() => bridge.on('tactical:tile-selected', onTileSelected), [bridge, onTileSelected]);
 
   useEffect(() => {
     if (!mapHost.current) return;
-    controller.current = createTacticalMap(
-      mapHost.current,
-      bridge,
-      battle,
-      selectedUnitId,
-      shownReachable,
-      shownAttackable,
-    );
+    let cancelled = false;
+    let createdController: TacticalMapController | null = null;
+    const host = mapHost.current;
+    setIsMapReady(false);
+    setMapLoadError(undefined);
+    void import('../game/createBattleGame')
+      .then(({ createTacticalMap }) => {
+        if (cancelled) return;
+        const latest = latestMapInput.current;
+        createdController = createTacticalMap(
+          host,
+          bridge,
+          latest.battle,
+          latest.selectedUnitId,
+          latest.reachable,
+          latest.attackableUnitIds,
+        );
+        controller.current = createdController;
+        setIsMapReady(true);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setMapLoadError(error instanceof Error ? error.message : '战场模块加载失败');
+      });
     return () => {
-      controller.current?.destroy();
-      controller.current = null;
+      cancelled = true;
+      createdController?.destroy();
+      if (controller.current === createdController) controller.current = null;
     };
-    // Phaser owns its canvas lifecycle; updates flow through the controller below.
+    // Phaser is loaded only when the battle screen opens; later updates flow through the controller below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bridge]);
 
@@ -120,6 +142,18 @@ export function TacticalBattleScreen({
     if (selectedUnit?.acted || battle.status !== 'ongoing') setOpenPanel(undefined);
     if (battle.status !== 'ongoing') setConfirmingRetreat(false);
   }, [battle.status, selectedUnit?.acted, selectedUnit?.moved]);
+
+  useEffect(() => {
+    if (!openPanel && !isConfirmingAction) return;
+    const closeTransientSurface = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (confirmingRetreat) setConfirmingRetreat(false);
+      else if (pendingTarget) onCancelAttack();
+      else setOpenPanel(undefined);
+    };
+    window.addEventListener('keydown', closeTransientSurface);
+    return () => window.removeEventListener('keydown', closeTransientSurface);
+  }, [confirmingRetreat, isConfirmingAction, onCancelAttack, openPanel, pendingTarget]);
 
   const attacker = campaign.factions[battle.attackerFactionId];
   const defender = campaign.factions[battle.defenderFactionId];
@@ -188,7 +222,13 @@ export function TacticalBattleScreen({
       </header>
 
       <section className="battle-main">
-        <div className="battle-map-host" ref={mapHost} aria-label="战术地图" />
+        <div className="battle-map-host" ref={mapHost} aria-label="战术地图" aria-busy={!isMapReady} />
+        {!isMapReady && (
+          <div className={`canvas-loading battle-canvas-loading ${mapLoadError ? 'error' : ''}`} role={mapLoadError ? 'alert' : 'status'}>
+            <strong>{mapLoadError ? '战术地图加载失败' : '正在布置战场'}</strong>
+            <span>{mapLoadError ? '请刷新页面，从战前检查点恢复。' : '正在载入战场绘制模块。'}</span>
+          </div>
+        )}
         {openPanel && (
           <aside className={`battle-edge-panel ${openPanel === 'enemy-roster' ? 'from-right' : ''}`} aria-label={panelTitle(openPanel)}>
             <header>
@@ -304,12 +344,12 @@ export function TacticalBattleScreen({
         )}
 
         {pendingTarget && pendingAttackPreview && (
-          <div className="battle-attack-confirm" role="status">
+          <div className="battle-attack-confirm" role="dialog" aria-label="确认普通攻击">
             <div>
               <strong>{selectedUnit?.name} → {pendingTarget.name}</strong>
               <span>预计伤害 {pendingAttackPreview.damage} · 目标剩余 {pendingAttackPreview.targetTroopsAfter} · 地形修正 {pendingAttackPreview.attackerTerrainShift}/{pendingAttackPreview.defenderTerrainShift}</span>
             </div>
-            <button type="button" onClick={onCancelAttack}>取消</button>
+            <button type="button" autoFocus onClick={onCancelAttack}>取消</button>
             <button type="button" className="primary-action" disabled={!canCommand} onClick={onConfirmAttack}>确认攻击</button>
           </div>
         )}
@@ -317,12 +357,12 @@ export function TacticalBattleScreen({
         {confirmingRetreat && (
           <div className="battle-retreat-confirm" role="alertdialog" aria-label="确认全军撤退">
             <span>全军撤退会立即判负，是否确认？</span>
-            <button type="button" onClick={() => setConfirmingRetreat(false)}>取消</button>
+            <button type="button" autoFocus onClick={() => setConfirmingRetreat(false)}>取消</button>
             <button type="button" className="danger-action" disabled={!canCommand} onClick={() => { setConfirmingRetreat(false); onRetreat(); }}>确认撤退</button>
           </div>
         )}
 
-        <button type="button" className="battle-selection-card" disabled={!selectedUnit} onClick={() => togglePanel('details')}>
+        <button type="button" className="battle-selection-card" disabled={!selectedUnit || isConfirmingAction} onClick={() => togglePanel('details')}>
           {selectedUnit ? (
             <>
               <strong>{selectedUnit.name}</strong>
@@ -335,22 +375,22 @@ export function TacticalBattleScreen({
         <div className="battle-command-actions" aria-label="当前单位动作">
           {battle.status === 'ongoing' ? (
             <>
-              <button type="button" className={actionMode === 'move' ? 'active' : undefined} disabled={!canCommand || !selectedUnit || selectedUnit.moved || selectedUnit.acted} onClick={() => { setActionMode('move'); togglePanel('move'); }}>
+              <button type="button" className={actionMode === 'move' ? 'active' : undefined} disabled={isConfirmingAction || !canCommand || !selectedUnit || selectedUnit.moved || selectedUnit.acted} onClick={() => { setActionMode('move'); togglePanel('move'); }}>
                 <strong>移动</strong><span>{reachable.length} 格</span>
               </button>
-              <button type="button" className={actionMode === 'attack' ? 'active' : undefined} disabled={!canCommand || !selectedUnit || selectedUnit.acted} onClick={() => { setActionMode('attack'); togglePanel('attack'); }}>
+              <button type="button" className={actionMode === 'attack' ? 'active' : undefined} disabled={isConfirmingAction || !canCommand || !selectedUnit || selectedUnit.acted} onClick={() => { setActionMode('attack'); togglePanel('attack'); }}>
                 <strong>普攻</strong><span>{attackableUnitIds.length} 目标</span>
               </button>
-              <button type="button" disabled={!canCommand || !selectedUnit || selectedUnit.acted || !selectedUnit.officerId} onClick={() => togglePanel('skills')}>
+              <button type="button" disabled={isConfirmingAction || !canCommand || !selectedUnit || selectedUnit.acted || !selectedUnit.officerId} onClick={() => togglePanel('skills')}>
                 <strong>计谋</strong><span>{selectedSkills.length} 项</span>
               </button>
-              <button type="button" disabled={!canCommand || !selectedUnit || selectedUnit.acted} onClick={onWait}>
+              <button type="button" disabled={isConfirmingAction || !canCommand || !selectedUnit || selectedUnit.acted} onClick={onWait}>
                 <strong>待命</strong><span>结束行动</span>
               </button>
-              <button type="button" disabled={!canCommand} onClick={onEndSide}>
+              <button type="button" disabled={isConfirmingAction || !canCommand} onClick={onEndSide}>
                 <strong>结束阶段</strong><span>{unactedCount} 队未动</span>
               </button>
-              <button type="button" className="danger-action" disabled={!canCommand} onClick={() => { setOpenPanel(undefined); setConfirmingRetreat(true); }}>
+              <button type="button" className="danger-action" disabled={isConfirmingAction || !canCommand} onClick={() => { setOpenPanel(undefined); setConfirmingRetreat(true); }}>
                 <strong>撤退</strong><span>立即判负</span>
               </button>
             </>
