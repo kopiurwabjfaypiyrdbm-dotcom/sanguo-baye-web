@@ -1,6 +1,20 @@
 import type { BundledPeriodId, RulerOption, ScenarioOption } from '../data/bundledScenarios';
 import type { LifecyclePolicy } from '../core/types';
 
+const entryArt = {
+  titleBackground: new URL('../../assets/production/entry/title-background.webp', import.meta.url).href,
+  titleVideo: new URL('../../assets/source/entry/Video-1785141282737.mp4', import.meta.url).href,
+  periodSelectionBackground: new URL('../../assets/production/entry/period-selection-background.png', import.meta.url).href,
+  titleWordmark: new URL('../../assets/production/entry/title-wordmark.png', import.meta.url).href,
+} as const;
+
+const scenarioArt: Record<BundledPeriodId, string> = {
+  1: new URL('../../assets/production/entry/period-1-dong-zhuo.webp', import.meta.url).href,
+  2: new URL('../../assets/production/entry/period-2-cao-cao.webp', import.meta.url).href,
+  3: new URL('../../assets/production/entry/period-3-red-cliffs.webp', import.meta.url).href,
+  4: new URL('../../assets/production/entry/period-4-three-kingdoms.webp', import.meta.url).href,
+};
+
 export function TitleScreen({
   hasContinue,
   hasPendingSuccession,
@@ -13,12 +27,21 @@ export function TitleScreen({
   onContinue: () => void;
 }) {
   return (
-    <main className="entry-shell title-screen">
-      <div className="entry-ornament" aria-hidden="true" />
+    <main className="entry-shell title-screen" style={{ backgroundImage: `url(${entryArt.titleBackground})` }}>
+      <video
+        className="title-background-video"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        poster={entryArt.titleBackground}
+        aria-hidden="true"
+      >
+        <source src={entryArt.titleVideo} type="video/mp4" />
+      </video>
       <section className="title-card" aria-labelledby="game-title">
-        <p className="entry-era">汉末 · 群雄逐鹿</p>
-        <h1 id="game-title">三国霸业</h1>
-        <p className="title-subtitle">步步高电子词典版 · 现代 Web 重写</p>
+        <img id="game-title" className="title-wordmark" src={entryArt.titleWordmark} alt="三国霸业" />
         <div className="title-actions">
           <button type="button" className="entry-primary" onClick={onNewGame}>
             <span>新君登基</span>
@@ -33,7 +56,6 @@ export function TitleScreen({
             </small>
           </button>
         </div>
-        <p className="entry-note">四个原版时期剧本已内置，无需选择本地资料文件</p>
       </section>
     </main>
   );
@@ -49,13 +71,15 @@ export function ScenarioScreen({
   onBack: () => void;
 }) {
   return (
-    <main className="entry-shell setup-screen">
+    <main
+      className="entry-shell setup-screen scenario-screen"
+      style={{ backgroundImage: `url(${entryArt.periodSelectionBackground})` }}
+    >
       <section className="setup-card" aria-labelledby="scenario-title">
         <header className="setup-heading">
           <button type="button" className="entry-back" onClick={onBack}>返回</button>
           <div>
-            <p className="entry-era">新君登基</p>
-            <h1 id="scenario-title">选择历史时期</h1>
+            <h1 id="scenario-title">选择剧本</h1>
           </div>
           <span className="setup-step">第一步 / 共两步</span>
         </header>
@@ -64,14 +88,16 @@ export function ScenarioScreen({
             <button
               type="button"
               className={`scenario-card period-${scenario.period}`}
+              style={{ backgroundImage: `url(${scenarioArt[scenario.period]})` }}
               key={scenario.period}
               onClick={() => onSelect(scenario.period)}
             >
-              <span className="scenario-number">时期 {scenario.period}</span>
-              <strong>{scenario.title}</strong>
-              <span className="scenario-year">公元 {scenario.year} 年</span>
-              <p>{scenario.description}</p>
-              <small>38 城 · {scenario.rulerCount} 方诸侯</small>
+              <span className="scenario-caption">
+                <strong>{scenario.title}</strong>
+                <span className="scenario-year">公元 {scenario.year} 年</span>
+                <p>{scenario.description}</p>
+                <small>38 城 · {scenario.rulerCount} 方诸侯</small>
+              </span>
             </button>
           ))}
         </div>

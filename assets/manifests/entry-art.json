@@ -1,0 +1,168 @@
+{
+  "manifestVersion": 1,
+  "collection": "campaign-entry",
+  "createdAt": "2026-07-25",
+  "author": "sanguo-baye-web contributors with OpenAI image generation",
+  "license": "Project assets generated with OpenAI; use is governed by the applicable OpenAI terms and the project's release policy.",
+  "licenseUrl": "https://openai.com/policies/terms-of-use/",
+  "generationModel": "OpenAI built-in imagegen",
+  "assets": [
+    {
+      "id": "title-background-video",
+      "category": "title-background-video",
+      "sourceFile": "assets/source/entry/Video-1785141282737.mp4",
+      "exportFiles": [],
+      "derivedFrom": "User-provided video asset for the title screen background.",
+      "generationPrompt": null,
+      "sha256": {
+        "source": "e2956e7ed6581cb39cc998dd21721da71508cd7c5485404ab1c0514f8dd095a0",
+        "exports": {}
+      },
+      "reviewStatus": "integration-pending"
+    },
+    {
+      "id": "title-background",
+      "category": "title-background",
+      "sourceFile": "assets/source/entry/title-background.png",
+      "exportFiles": [
+        "assets/production/entry/title-background.webp"
+      ],
+      "derivedFrom": "Original prompt based on the approved epic landscape composition; no upstream binary art used.",
+      "generationPrompt": "A realistic late-Han epic river-valley panorama with fortified cities and disciplined armies along both lower edges, a quiet central upper area for a separate title, plausible Eastern Han material culture, restrained Chinese ink atmosphere, and no text or existing-franchise likeness.",
+      "sha256": {
+        "source": "f69003f28248212e34adc73dda19e10d1146e35012cf0f5ba8872ec1db14d512",
+        "exports": {
+          "assets/production/entry/title-background.webp": "228efa74cd867a1f20206e8966fe44b88eafecd45a8a1cd6a6ce5e11847ed87e"
+        }
+      },
+      "reviewStatus": "visual-pass; historical-detail-review-pending"
+    },
+    {
+      "id": "period-selection-background",
+      "category": "scenario-background",
+      "sourceFile": "assets/source/entry/period-selection-background.png",
+      "exportFiles": [
+        "assets/production/entry/period-selection-background.png"
+      ],
+      "derivedFrom": "Original generated wide landscape background for the period-selection interface; no upstream binary art used.",
+      "generationPrompt": "A restrained, elegant Chinese-style late-Han mountain-and-river panorama for a strategy game period-selection screen, with layered mountains, a quiet river valley, sparse watchtowers and distant city silhouettes near the edges, clean negative space through the center and middle-lower area for interface cards, realistic historical key art, muted warm gray, jade green, charcoal and desaturated bronze palette, no text, no characters, no UI, no ornaments, no watermark.",
+      "sha256": {
+        "source": "fe0c686d59d4968ee94ebc90dd1e964b5c81469a54feb7ed410ef8294110dfc6",
+        "exports": {
+          "assets/production/entry/period-selection-background.png": "fe0c686d59d4968ee94ebc90dd1e964b5c81469a54feb7ed410ef8294110dfc6"
+        }
+      },
+      "reviewStatus": "visual-pass; historical-detail-review-pending"
+    },
+    {
+      "id": "period-1-dong-zhuo",
+      "category": "scenario-illustration",
+      "sourceFile": "assets/source/entry/period-1-dong-zhuo.png",
+      "exportFiles": [
+        "assets/production/entry/period-1-dong-zhuo.webp"
+      ],
+      "derivedFrom": "Original prompt following the requested symbolic giant Dong Zhuo composition; no actor or existing game likeness used.",
+      "generationPrompt": "Year 190: a monumental original Dong Zhuo portrait emerges from smoke and looms over ruined Luoyang, with refugees, overturned carts, shattered banners and scattered fires below; realistic historical key art, plausible Eastern Han armor and architecture, no text.",
+      "sha256": {
+        "source": "c7f4bf1cd65190411023b2a05fdf5134ec4f40b9bc8192989b81def32a71c8eb",
+        "exports": {
+          "assets/production/entry/period-1-dong-zhuo.webp": "4168c4f5ccf71713401d00335386a28e2e1a81eff83a9bb419e32942c6cb4e6a"
+        }
+      },
+      "reviewStatus": "visual-pass; historical-detail-review-pending"
+    },
+    {
+      "id": "period-2-cao-cao",
+      "category": "scenario-illustration",
+      "sourceFile": "assets/source/entry/period-2-cao-cao.png",
+      "exportFiles": [
+        "assets/production/entry/period-2-cao-cao.webp"
+      ],
+      "derivedFrom": "Original prompt using viewing-the-sea imagery as a symbolic expression of Cao Cao's ambition; no actor or existing game likeness used.",
+      "generationPrompt": "Year 196: an original historically inspired Cao Cao stands confidently on a high coastal cliff and views a vast stormy sea, with advisers, cavalry, banners and distant ships; realistic Eastern Han key art, heroic but grounded, no text.",
+      "sha256": {
+        "source": "72be64f4139338dad9d5902a13ad9e32b8409043c616ff6ce2e96d687bb3fdc4",
+        "exports": {
+          "assets/production/entry/period-2-cao-cao.webp": "e5618f4d82f1aed6ab5006afaac43405c991d50d5159f1ab8f68141da6369d73"
+        }
+      },
+      "reviewStatus": "visual-pass; symbolic-not-literal-196-event; historical-detail-review-pending"
+    },
+    {
+      "id": "period-3-red-cliffs",
+      "category": "scenario-illustration",
+      "sourceFile": "assets/source/entry/period-3-red-cliffs.png",
+      "exportFiles": [
+        "assets/production/entry/period-3-red-cliffs.webp"
+      ],
+      "derivedFrom": "Original prompt following the requested two-fleet panoramic standoff; no upstream binary art used.",
+      "generationPrompt": "Year 208: an immense Yangtze naval standoff before the fires begin, with two opposing fleets, hundreds of wooden warships and dense masts, armies and watchtowers on both shores, a broad central water corridor, blue-hour storm light and restrained signal fires; no text.",
+      "sha256": {
+        "source": "7b8d066b325e460c7036c9eb6c9b60ab20fb47db911d8f6d3b1137050bb253e3",
+        "exports": {
+          "assets/production/entry/period-3-red-cliffs.webp": "87f7d531175ec946601a36759e918a2bd794d55ace451495c5141849e2944b60"
+        }
+      },
+      "reviewStatus": "visual-pass; historical-detail-review-pending"
+    },
+    {
+      "id": "period-4-three-kingdoms",
+      "category": "scenario-illustration",
+      "sourceFile": "assets/source/entry/period-4-three-kingdoms.png",
+      "exportFiles": [
+        "assets/production/entry/period-4-three-kingdoms.webp"
+      ],
+      "derivedFrom": "Original prompt depicting a symbolic three-way strategic balance; no upstream binary art used.",
+      "generationPrompt": "Year 220: a high panoramic view of three historically grounded armies and fortified regions separated by rivers and mountain passes, messenger roads converging through the center, winter sunrise, strategic equilibrium, no named portraits and no text.",
+      "sha256": {
+        "source": "4331fa594202e949b4aad9d030f32ba05e26b072c778f13e1dc373f12813600f",
+        "exports": {
+          "assets/production/entry/period-4-three-kingdoms.webp": "27c11e8986cde29bf294a4e31e0dcf5a7acb890571011c76422a5628d61103a2"
+        }
+      },
+      "reviewStatus": "visual-pass; historical-detail-review-pending"
+    },
+    {
+      "id": "title-wordmark",
+      "category": "wordmark",
+      "sourceFile": "assets/source/entry/title-wordmark-chroma.png",
+      "exportFiles": [
+        "assets/production/entry/title-wordmark.png"
+      ],
+      "derivedFrom": "Original generated calligraphy; flat chroma-key background removed locally.",
+      "generationPrompt": "Render exactly the four Chinese characters 三国霸业 in a bold, legible running-regular calligraphy style, warm aged-gold ink with a dark edge and restrained flying-white texture in 霸业, one horizontal line, no other text, on a flat green chroma-key background.",
+      "sha256": {
+        "source": "03b3cc6858b8ccc23aa8329110e25f806b3c451bde8099fa6e976db170001d48",
+        "exports": {
+          "assets/production/entry/title-wordmark.png": "184e045a7f5c3498a07ce747404a3cdd574ee912a0f3e822c335d48a12339dfe"
+        }
+      },
+      "reviewStatus": "text-pass; alpha-pass"
+    },
+    {
+      "id": "entry-ornaments",
+      "category": "ornament-atlas",
+      "sourceFile": "assets/source/entry/entry-ornaments-chroma.png",
+      "exportFiles": [
+        "assets/production/entry/entry-ornaments.png",
+        "assets/production/entry/ornament-cloud-divider.png",
+        "assets/production/entry/ornament-border-strip.png",
+        "assets/production/entry/ornament-corner.png",
+        "assets/production/entry/ornament-seal-frame.png"
+      ],
+      "derivedFrom": "Original Han-inspired motifs; flat chroma-key background removed locally.",
+      "generationPrompt": "A clean four-element Han-inspired UI ornament atlas containing an aged-bronze cloud divider, cinnabar geometric border strip, L-shaped cloud-and-thunder corner flourish, and empty square seal frame, with no characters or text, on a flat green chroma-key background.",
+      "sha256": {
+        "source": "d71de46559bf0df52071177ee0d4fc80d6377041276a16b92187859f9bbda873",
+        "exports": {
+          "assets/production/entry/entry-ornaments.png": "b7a2f4446da1079ae6f045323993daa0660af47efcdec0649cb90dafb7afe3de",
+          "assets/production/entry/ornament-cloud-divider.png": "8c3b88e58ead26f613bd7f92085032a82416568e8dafcd2a7831b44e0863c3a7",
+          "assets/production/entry/ornament-border-strip.png": "c616ab8d5706cb4c320a32ef2b12970cbf0736ae606da66fd1ccb57e097d4999",
+          "assets/production/entry/ornament-corner.png": "5c557a6fb1554428e9c5393dbbab5bf708a3d5a630356beba71b15a7deccd885",
+          "assets/production/entry/ornament-seal-frame.png": "03c90078df62a409e1fd39391c78e7ac00c98257b0564c6831959bca02d68f94"
+        }
+      },
+      "reviewStatus": "visual-pass; alpha-pass"
+    }
+  ]
+}

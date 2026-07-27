@@ -8,3 +8,4 @@ tsconfig.tsbuildinfo
 .DS_Store
 Thumbs.db
 .reference/
+.superpowers/

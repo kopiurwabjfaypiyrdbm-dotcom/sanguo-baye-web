@@ -1,0 +1,101 @@
+{
+  "manifestVersion": 1,
+  "purpose": "Defines the independent visual layers for campaign-entry integration.",
+  "rules": [
+    "Scene backgrounds contain no interface captions, buttons, borders, wordmarks, or decorative overlays.",
+    "All ordinary Chinese interface text is rendered by React and remains selectable, localizable, and responsive.",
+    "The game title wordmark is the only rasterized text asset and is stored as a standalone transparent PNG.",
+    "Borders are independent DOM/CSS layers. Transparent ornament PNGs may be placed above those borders without altering the background.",
+    "Scenario captions remain DOM text positioned independently from their illustration."
+  ],
+  "titleScreen": {
+    "layersBackToFront": [
+      {
+        "id": "title-background",
+        "kind": "image",
+        "source": "assets/production/entry/title-background.webp"
+      },
+      {
+        "id": "title-wordmark",
+        "kind": "transparent-image",
+        "source": "assets/production/entry/title-wordmark.png"
+      },
+      {
+        "id": "menu-controls",
+        "kind": "dom",
+        "content": [
+          "新君登基",
+          "重返沙场"
+        ]
+      },
+      {
+        "id": "menu-border",
+        "kind": "css-border",
+        "ornamentOptions": [
+          "assets/production/entry/ornament-corner.png",
+          "assets/production/entry/ornament-border-strip.png"
+        ]
+      }
+    ]
+  },
+  "scenarioSelection": {
+    "background": "assets/production/entry/period-selection-background.png",
+    "illustrations": {
+      "1": "assets/production/entry/period-1-dong-zhuo.webp",
+      "2": "assets/production/entry/period-2-cao-cao.webp",
+      "3": "assets/production/entry/period-3-red-cliffs.webp",
+      "4": "assets/production/entry/period-4-three-kingdoms.webp"
+    },
+    "layersBackToFront": [
+      {
+        "id": "title-video-background",
+        "kind": "video",
+        "source": "assets/source/entry/Video-1785141282737.mp4",
+        "playback": {
+          "autoplay": true,
+          "loop": true,
+          "muted": true,
+          "playsInline": true,
+          "fallback": "title-background"
+        }
+      },
+      {
+        "id": "scenario-background",
+        "kind": "image",
+        "source": "scenarioSelection.background"
+      },
+      {
+        "id": "scenario-illustration",
+        "kind": "image",
+        "source": "scenarioSelection.illustrations[period]"
+      },
+      {
+        "id": "scenario-border",
+        "kind": "css-border",
+        "ornamentOptions": [
+          "assets/production/entry/ornament-corner.png",
+          "assets/production/entry/ornament-border-strip.png"
+        ]
+      },
+      {
+        "id": "scenario-caption",
+        "kind": "dom",
+        "placement": "bottom-right",
+        "backgroundMask": false,
+        "fields": [
+          "title",
+          "year"
+        ]
+      }
+    ]
+  },
+  "ornaments": {
+    "atlas": "assets/production/entry/entry-ornaments.png",
+    "standalone": {
+      "cloudDivider": "assets/production/entry/ornament-cloud-divider.png",
+      "borderStrip": "assets/production/entry/ornament-border-strip.png",
+      "corner": "assets/production/entry/ornament-corner.png",
+      "sealFrame": "assets/production/entry/ornament-seal-frame.png"
+    }
+  }
+}
