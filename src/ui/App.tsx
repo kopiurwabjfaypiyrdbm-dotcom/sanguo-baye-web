@@ -102,6 +102,7 @@ export function App() {
   });
   const [selectedRulesetId, setSelectedRulesetId] = useState<CampaignRulesetId>(DEFAULT_NEW_CAMPAIGN_RULESET);
   const [selectedCityId, setSelectedCityId] = useState(() => firstOwnedCityId(initialGame.state));
+  const [isCityPanelOpen, setIsCityPanelOpen] = useState(false);
   const [sourceLabel, setSourceLabel] = useState(initialGame.sourceLabel);
   const [selectedSaveSlot, setSelectedSaveSlot] = useState<Exclude<SaveSlotId, 'auto'>>('1');
   const [feedback, setFeedback] = useState<{ kind: 'success' | 'error'; message: string }>();
@@ -141,7 +142,19 @@ export function App() {
     [state],
   );
 
-  useEffect(() => bridge.on('city:selected', ({ cityId }) => setSelectedCityId(cityId)), [bridge]);
+  useEffect(() => bridge.on('city:selected', ({ cityId }) => {
+    setSelectedCityId(cityId);
+    setIsCityPanelOpen(true);
+  }), [bridge]);
+
+  useEffect(() => {
+    if (screen !== 'game' || !isCityPanelOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsCityPanelOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [isCityPanelOpen, screen]);
 
   useEffect(() => {
     if (screen !== 'game' || !mapHost.current) return;
@@ -203,6 +216,7 @@ export function App() {
     const label = sourceLabelForState(next);
     setState(next);
     setSelectedCityId(firstOwnedCityId(next));
+    setIsCityPanelOpen(false);
     setSourceLabel(label);
     setMonthSummary([]);
     try {
@@ -249,6 +263,7 @@ export function App() {
         }
         setState(recovery.state);
         setSelectedCityId(firstOwnedCityId(recovery.state));
+        setIsCityPanelOpen(false);
         setSourceLabel(sourceLabelForState(recovery.state));
         setMonthSummary([]);
         setScreen('game');
@@ -262,6 +277,7 @@ export function App() {
         const battle = createTacticalBattle(recovery.state, recovery.order);
         setState(recovery.state);
         setSelectedCityId(recovery.order.targetCityId);
+        setIsCityPanelOpen(false);
         setSourceLabel(sourceLabelForState(recovery.state));
         setMonthSummary([]);
         setTacticalBattle(battle);
@@ -311,6 +327,7 @@ export function App() {
     clearBattleCheckpoint();
     setState(next);
     setSelectedCityId(firstOwnedCityId(next));
+    setIsCityPanelOpen(false);
     setSourceLabel(sourceLabelForState(next));
     setMonthSummary([]);
     setFeedback({ kind: 'success', message: label ? `已载入：${label}` : '存档已载入。' });
@@ -749,14 +766,6 @@ export function App() {
             </label>
           </div>
           <button type="button" className="return-title-action" onClick={() => setScreen('title')}>返回标题</button>
-          <button
-            type="button"
-            className="primary-action"
-            disabled={isResolving || state.phase === 'ended' || Boolean(state.pendingSuccession)}
-            onClick={endMonth}
-          >
-            {isResolving ? '推演中…' : '结束本月'}
-          </button>
         </div>
       </header>
 
@@ -814,10 +823,12 @@ export function App() {
         )}
       </section>
 
-      <CityPanel
-        state={state}
-        cityId={selectedCityId}
-        disabled={isResolving || Boolean(state.pendingSuccession)}
+      {isCityPanelOpen && (
+        <CityPanel
+          state={state}
+          cityId={selectedCityId}
+          disabled={isResolving || Boolean(state.pendingSuccession)}
+          onClose={() => setIsCityPanelOpen(false)}
         onDevelop={(cityId, officerId) => applyPlayerAction(
           (current) => developFarming(current, { cityId, officerId }),
         )}
@@ -894,13 +905,14 @@ export function App() {
           (current) => issueDiplomaticOrder(current, { kind, sourceCityId, officerId, targetOfficerId }),
           sourceCityId,
         )}
-        onAttack={(sourceCityId, targetCityId, officerIds, provisions) => requestAttack({
-          sourceCityId,
-          targetCityId,
-          officerIds,
-          provisions,
-        })}
-      />
+          onAttack={(sourceCityId, targetCityId, officerIds, provisions) => requestAttack({
+            sourceCityId,
+            targetCityId,
+            officerIds,
+            provisions,
+          })}
+        />
+      )}
 
       {pendingAttack && (
         <div
@@ -1055,6 +1067,53 @@ export function App() {
           {state.logs.slice(-5).map((log) => <p key={log.id}>{log.message}</p>)}
         </div>
       </section>
+
+      <nav className="campaign-dock" aria-label="战略地图导航">
+        <button
+          type="button"
+          className={!isCityPanelOpen ? 'active' : undefined}
+          aria-pressed={!isCityPanelOpen}
+          onClick={() => setIsCityPanelOpen(false)}
+        >
+          <span aria-hidden="true">图</span>
+          地图
+        </button>
+        <button
+          type="button"
+          className={isCityPanelOpen ? 'active' : undefined}
+          aria-pressed={isCityPanelOpen}
+          onClick={() => setIsCityPanelOpen(true)}
+        >
+          <span aria-hidden="true">城</span>
+          城情
+        </button>
+        <label className="campaign-city-picker">
+          <span className="visually-hidden">快速选择城池</span>
+          <select
+            aria-label="快速选择城池"
+            value={selectedCityId}
+            onChange={(event) => {
+              setSelectedCityId(event.target.value);
+              setIsCityPanelOpen(true);
+            }}
+          >
+            {Object.values(state.cities).map((city) => (
+              <option value={city.id} key={city.id}>
+                {city.name} · {city.ownerId ? state.factions[city.ownerId]?.name ?? '未知势力' : '无主'}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          className="advance-month-action"
+          disabled={isResolving || state.phase === 'ended' || Boolean(state.pendingSuccession)}
+          onClick={endMonth}
+        >
+          <span aria-hidden="true">令</span>
+          {isResolving ? '推演中…' : '结束本月'}
+        </button>
+      </nav>
     </main>
   );
 }

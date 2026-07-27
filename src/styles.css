@@ -27,6 +27,17 @@
 
 * { box-sizing: border-box; }
 
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 html,
 body,
 #root {
@@ -233,13 +244,15 @@ input:focus-visible,
 .start-campaign { width: 100%; min-height: 54px; margin-top: auto; font-family: Georgia, "Noto Serif SC", serif; font-size: 18px; font-weight: 900; }
 
 .app-shell {
+  position: relative;
   display: grid;
   grid-template-areas:
-    "top top"
-    "map side"
-    "log side";
-  grid-template-columns: minmax(0, 1fr) 350px;
-  grid-template-rows: 82px minmax(0, 1fr) 126px;
+    "top"
+    "map"
+    "log"
+    "dock";
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 76px minmax(0, 1fr) 104px 62px;
   width: 100%;
   height: 100dvh;
   min-height: 0;
@@ -503,13 +516,20 @@ input:focus-visible,
 .load-error + .action-feedback { bottom: 72px; }
 
 .side-panel {
-  grid-area: side;
+  position: absolute;
+  top: calc(var(--safe-top) + 76px);
+  right: var(--safe-right);
+  bottom: calc(var(--safe-bottom) + 62px);
+  z-index: 8;
+  width: min(420px, calc(100% - 64px));
   min-height: 0;
   overflow: auto;
   padding: 19px;
   color: #24342d;
   background: linear-gradient(180deg, #eee8d7, #ddd5c0);
   border-left: 1px solid rgba(230, 211, 159, 0.28);
+  box-shadow: -18px 0 44px rgba(4, 15, 12, .34);
+  overscroll-behavior: contain;
 }
 
 .city-heading,
@@ -525,6 +545,64 @@ input:focus-visible,
   color: #1b3029;
   font-family: Georgia, "Noto Serif SC", "Songti SC", serif;
   font-size: 28px;
+}
+
+.city-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.city-panel-close {
+  display: grid;
+  width: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  place-items: center;
+  color: #34473f;
+  background: rgba(255, 255, 255, .38);
+  border: 1px solid rgba(52, 71, 63, .3);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.city-panel-close span { font-size: 24px; line-height: 1; }
+.city-panel-close:hover { color: #162a23; background: rgba(255, 255, 255, .72); }
+
+.city-category-nav {
+  position: sticky;
+  top: -19px;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  margin: 14px -7px 12px;
+  padding: 7px;
+  background: rgba(229, 222, 202, .96);
+  border: 1px solid rgba(79, 95, 83, .18);
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+}
+
+.city-category-nav button {
+  display: grid;
+  min-height: 38px;
+  place-items: center;
+  color: #33473f;
+  background: rgba(255, 255, 255, .36);
+  border: 1px solid rgba(70, 91, 80, .2);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.city-category-nav button:hover,
+.city-category-nav button:focus-visible {
+  color: #14251f;
+  background: rgba(255, 255, 255, .72);
+  border-color: #8c7541;
 }
 
 .side-panel .panel-kicker { color: #62735e; }
@@ -925,6 +1003,77 @@ input:focus-visible,
 .month-summary strong { color: #f0d07d; font-size: 12px; }
 .month-summary p { margin: 0; color: #cbd2c8; font-size: 11px; line-height: 1.35; }
 
+.campaign-dock {
+  grid-area: dock;
+  z-index: 7;
+  display: grid;
+  grid-template-columns: minmax(76px, auto) minmax(76px, auto) minmax(0, 1fr) minmax(112px, auto);
+  align-items: stretch;
+  gap: 6px;
+  padding: 7px max(12px, var(--safe-right)) max(7px, var(--safe-bottom)) max(12px, var(--safe-left));
+  color: #cdd6cf;
+  background: linear-gradient(180deg, #1a2e28, #13241f);
+  border-top: 1px solid rgba(230, 211, 159, .22);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, .2);
+}
+
+.command-group-title[id] { scroll-margin-top: 58px; }
+
+.campaign-dock button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 46px;
+  padding: 0 13px;
+  color: #b9c8be;
+  background: rgba(255, 255, 255, .035);
+  border: 1px solid rgba(194, 207, 196, .16);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.campaign-dock button > span {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  color: #d9c37e;
+  background: rgba(228, 196, 110, .09);
+  border: 1px solid rgba(228, 196, 110, .28);
+  border-radius: 50%;
+  font-family: Georgia, "Noto Serif SC", serif;
+  font-size: 12px;
+}
+
+.campaign-dock button.active {
+  color: #f3e6c5;
+  background: rgba(79, 112, 94, .42);
+  border-color: rgba(228, 196, 110, .58);
+}
+
+.campaign-city-picker {
+  display: grid;
+  min-width: 0;
+  align-items: stretch;
+  padding: 0 10px;
+}
+
+.campaign-city-picker select {
+  width: 100%;
+  min-width: 0;
+  padding: 0 32px 0 12px;
+  color: #f0dcae;
+  background: rgba(6, 20, 16, .38);
+  border: 1px solid rgba(194, 207, 196, .16);
+  border-radius: 6px;
+  font: 800 14px Georgia, "Noto Serif SC", serif;
+}
+.campaign-dock .advance-month-action { color: #18241d; background: #e4c46e; border-color: #f2dc96; }
+.campaign-dock .advance-month-action > span { color: #29352b; border-color: rgba(35, 52, 42, .28); }
+.campaign-dock .advance-month-action:disabled { color: #7f7b6d; background: #48483f; border-color: #5e5d52; cursor: not-allowed; }
+
 .battle-choice-backdrop {
   position: fixed;
   inset: 0;
@@ -1048,7 +1197,7 @@ input:focus-visible,
 @media (max-width: 1050px) {
   .top-bar { grid-template-columns: auto 1fr; }
   .campaign-status { display: none; }
-  .app-shell { grid-template-columns: minmax(0, 1fr) 320px; }
+  .app-shell { grid-template-columns: minmax(0, 1fr); }
   .battle-main { grid-template-columns: 132px minmax(0, 1fr) 132px; }
 }
 
@@ -1069,9 +1218,9 @@ input:focus-visible,
   .ruler-grid { grid-template-columns: 1fr 1fr; max-height: 46vh; }
   .ruler-preview { min-height: 240px; }
   .app-shell {
-    grid-template-areas: "top" "map" "side" "log";
+    grid-template-areas: "top" "map" "log" "dock";
     grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(430px, 62vh) auto auto;
+    grid-template-rows: auto minmax(430px, 62vh) auto 62px;
     height: auto;
     min-height: 100%;
     overflow: auto;
@@ -1082,7 +1231,14 @@ input:focus-visible,
   .succession-persistence-actions { grid-template-columns: 1fr 1fr; }
   .succession-persistence-actions label { grid-column: 1 / -1; min-width: 0; }
   .succession-persistence-actions select { min-width: 0; width: 100%; }
-  .side-panel { border-top: 1px solid rgba(230, 211, 159, 0.28); border-left: 0; }
+  .side-panel {
+    position: fixed;
+    top: max(64px, var(--safe-top));
+    right: var(--safe-right);
+    bottom: max(62px, var(--safe-bottom));
+    width: min(420px, calc(100% - 28px));
+    border-left: 1px solid rgba(230, 211, 159, 0.28);
+  }
   .map-toolbar span:first-child { display: none; }
   .map-toolbar { justify-content: flex-end; }
   .log-panel { grid-template-columns: 1fr; }
@@ -1212,11 +1368,12 @@ input:focus-visible,
 
   .app-shell {
     grid-template-areas:
-      "top top"
-      "map side"
-      "log side";
-    grid-template-columns: minmax(0, 1fr) clamp(280px, 38vw, 320px);
-    grid-template-rows: 62px minmax(0, 1fr) 76px;
+      "top"
+      "map"
+      "log"
+      "dock";
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 62px minmax(0, 1fr) 0 54px;
     height: 100dvh;
     min-height: 0;
     overflow: hidden;
@@ -1247,13 +1404,47 @@ input:focus-visible,
   .map-host { min-height: 0; border-radius: 6px; }
   .map-toolbar { top: 12px; right: 14px; left: 14px; font-size: 9px; }
   .strategic-order-strip { top: 34px; right: 14px; left: 14px; max-height: 54px; overflow: auto; }
-  .side-panel { padding: 12px; border-top: 0; border-left: 1px solid rgba(230, 211, 159, .28); }
+  .side-panel {
+    position: absolute;
+    top: calc(var(--safe-top) + 62px);
+    right: var(--safe-right);
+    bottom: calc(var(--safe-bottom) + 54px);
+    width: min(360px, calc(100% - 56px));
+    padding: 12px;
+    border-top: 0;
+    border-left: 1px solid rgba(230, 211, 159, .28);
+  }
+  .city-category-nav { top: -12px; margin: 10px -4px; padding: 5px; }
   .city-heading h2 { font-size: 23px; }
-  .log-panel { grid-template-columns: minmax(220px, .8fr) minmax(0, 1.2fr); gap: 10px; padding: 7px 10px; overflow: auto; }
+  .log-panel {
+    position: absolute;
+    right: max(8px, var(--safe-right));
+    bottom: calc(var(--safe-bottom) + 60px);
+    left: max(8px, var(--safe-left));
+    z-index: 6;
+    grid-template-columns: minmax(100px, .45fr) minmax(0, 1.55fr);
+    max-height: 46px;
+    gap: 8px;
+    padding: 6px 9px;
+    overflow: auto;
+    background: rgba(20, 42, 35, .9);
+    border: 1px solid rgba(230, 211, 159, .2);
+    border-radius: 5px;
+    backdrop-filter: blur(6px);
+  }
   .log-lines { gap: 2px; }
   .log-lines p,
   .month-summary p { font-size: 10px; line-height: 1.25; }
   .month-summary { max-height: 58px; }
+  .campaign-dock {
+    grid-template-columns: 70px 70px minmax(0, 1fr) minmax(108px, auto);
+    gap: 4px;
+    padding: 4px max(8px, var(--safe-right)) max(4px, var(--safe-bottom)) max(8px, var(--safe-left));
+  }
+  .campaign-dock button { min-height: 44px; gap: 4px; padding: 0 8px; font-size: 11px; }
+  .campaign-dock button > span { width: 22px; height: 22px; font-size: 10px; }
+  .campaign-city-picker { padding: 0 4px; }
+  .campaign-city-picker select { min-height: 44px; padding-left: 8px; font-size: 12px; }
 
   .battle-choice-backdrop {
     padding:

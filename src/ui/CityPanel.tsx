@@ -45,6 +45,7 @@ type CityPanelProps = {
   state: GameState;
   cityId: string;
   disabled?: boolean;
+  onClose: () => void;
   onDevelop: (cityId: string, officerId: string) => void;
   onDevelopCommerce: (cityId: string, officerId: string) => void;
   onGovern: (cityId: string, officerId: string) => void;
@@ -94,6 +95,7 @@ export function CityPanel({
   state,
   cityId,
   disabled = false,
+  onClose,
   onDevelop,
   onDevelopCommerce,
   onGovern,
@@ -447,19 +449,35 @@ export function CityPanel({
       : current.length < 10 ? [...current, officerId] : current);
   }
 
+  function scrollToCommand(commandId: string) {
+    document.getElementById(commandId)?.scrollIntoView({ block: 'start' });
+  }
+
   return (
-    <aside className="side-panel" aria-label="城池面板">
+    <aside className="side-panel" aria-label={`${city.name}城池面板`}>
       <div className="city-heading">
         <div>
           <p className="panel-kicker">City {city.sourceIndex !== undefined ? city.sourceIndex + 1 : ''}</p>
           <h2>{city.name}</h2>
         </div>
-        <span className="faction-chip" style={{ '--faction-color': faction?.color } as CSSProperties}>
-          {faction?.name ?? '未知势力'}
-        </span>
+        <div className="city-heading-actions">
+          <span className="faction-chip" style={{ '--faction-color': faction?.color } as CSSProperties}>
+            {faction?.name ?? '未知势力'}
+          </span>
+          <button type="button" className="city-panel-close" aria-label="关闭城池面板" onClick={onClose}>
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
       </div>
 
-      <dl className="city-stats">
+      <nav className="city-category-nav" aria-label="城池命令分类">
+        <button type="button" onClick={() => scrollToCommand('city-command-internal')}>内政</button>
+        <button type="button" onClick={() => scrollToCommand('city-command-personnel')}>人事</button>
+        <button type="button" onClick={() => scrollToCommand('city-command-military')}>军事</button>
+        <button type="button" onClick={() => scrollToCommand('city-command-intrigue')}>谋略</button>
+      </nav>
+
+      <dl className="city-stats" id="city-detail-start">
         <Stat label="人口" value={intelValue(isPlayerCity, city.population, intelReport?.population)} />
         <Stat label="金钱" value={intelValue(isPlayerCity, city.money, intelReport?.money)} />
         <Stat label="粮草" value={intelValue(isPlayerCity, city.food, intelReport?.food)} />
@@ -548,7 +566,7 @@ export function CityPanel({
               <p className="command-hint">本城没有可下令的己方武将；仍可释放俘虏。</p>
             )}
 
-            <p className="command-group-title">内政</p>
+            <p className="command-group-title" id="city-command-internal">内政</p>
             <div className="city-command-buttons">
               <button
                 type="button"
@@ -744,7 +762,7 @@ export function CityPanel({
               </div>
             )}
 
-            <p className="command-group-title">人事</p>
+            <p className="command-group-title" id="city-command-personnel">人事</p>
             {discoveredFreeOfficers.length > 0 && (
               <div className="recruit-command-row">
                 <label className="command-field">
@@ -1038,7 +1056,7 @@ export function CityPanel({
               </div>
             )}
 
-            <p className="command-group-title">谋略</p>
+            <p className="command-group-title" id="city-command-intrigue">谋略</p>
             <div className="diplomacy-command-card">
               <label className="command-field">
                 <span>谋略类型</span>
@@ -1093,7 +1111,7 @@ export function CityPanel({
               </button>
             </div>
 
-            <p className="command-group-title">军事</p>
+            <p className="command-group-title" id="city-command-military">军事</p>
             <div className="recon-command-row">
               <label className="command-field">
                 <span>侦察目标</span>
