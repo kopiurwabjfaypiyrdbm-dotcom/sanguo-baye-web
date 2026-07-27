@@ -3,6 +3,7 @@ import { getEffectiveOfficerAttributes } from './equipment';
 import { nextRandom } from './random';
 import type { City, GameState, Officer } from './types';
 import { assertValidGameState } from './validation';
+import { getCampaignCommandCost, type CampaignCommandKind } from './rulesets';
 
 export const DEVELOP_STAMINA_COST = 8;
 export const DEVELOP_MONEY_COST = 50;
@@ -70,9 +71,10 @@ export function calculateOfficerTroopCapacity(officer: Officer): number {
 }
 
 export function developFarming(state: GameState, order: CityCommandOrder): GameState {
+  const cost = commandCost(state, 'develop');
   const availability = getDevelopFarmingAvailability(state, order);
   if (!availability.allowed) throw new Error(availability.reason);
-  const { city, officer } = validateCityCommand(state, order, DEVELOP_STAMINA_COST);
+  const { city, officer } = validateCityCommand(state, order, cost.stamina);
   const available = city.farmingLimit === undefined
     ? Number.MAX_SAFE_INTEGER - city.farming
     : Math.max(0, city.farmingLimit - city.farming);
@@ -82,12 +84,12 @@ export function developFarming(state: GameState, order: CityCommandOrder): GameS
   const gain = Math.min(available, calculateFarmingGain(effective, random.value));
   const next = updateCityAndOfficer(
     { ...state, rngSeed: random.seed },
-    { ...city, farming: city.farming + gain, money: city.money - DEVELOP_MONEY_COST },
-    { ...officer, stamina: officer.stamina - DEVELOP_STAMINA_COST },
+    { ...city, farming: city.farming + gain, money: city.money - cost.money },
+    { ...officer, stamina: officer.stamina - cost.stamina },
     true,
   );
   return appendLogs(next, 'map', [
-    `${officer.name}在${city.name}主持开垦，农业提高 ${gain}，消耗金钱 ${DEVELOP_MONEY_COST}、体力 ${DEVELOP_STAMINA_COST}。`,
+    `${officer.name}在${city.name}主持开垦，农业提高 ${gain}，消耗金钱 ${cost.money}、体力 ${cost.stamina}。`,
   ]);
 }
 
@@ -95,7 +97,8 @@ export function getDevelopFarmingAvailability(
   state: GameState,
   order: CityCommandOrder,
 ): CityCommandAvailability {
-  const base = getCityCommandAvailability(state, order, DEVELOP_STAMINA_COST, DEVELOP_MONEY_COST);
+  const cost = commandCost(state, 'develop');
+  const base = getCityCommandAvailability(state, order, cost.stamina, cost.money);
   if (!base.allowed) return base;
   const city = state.cities[order.cityId];
   if (city.farmingLimit !== undefined && city.farming >= city.farmingLimit) {
@@ -111,7 +114,8 @@ export function getDevelopCommerceAvailability(
   state: GameState,
   order: CityCommandOrder,
 ): CityCommandAvailability {
-  const base = getCityCommandAvailability(state, order, DEVELOP_STAMINA_COST, DEVELOP_MONEY_COST);
+  const cost = commandCost(state, 'develop');
+  const base = getCityCommandAvailability(state, order, cost.stamina, cost.money);
   if (!base.allowed) return base;
   const city = state.cities[order.cityId];
   if (city.commerceLimit !== undefined && city.commerce >= city.commerceLimit) {
@@ -124,9 +128,10 @@ export function getDevelopCommerceAvailability(
 }
 
 export function developCommerce(state: GameState, order: CityCommandOrder): GameState {
+  const cost = commandCost(state, 'develop');
   const availability = getDevelopCommerceAvailability(state, order);
   if (!availability.allowed) throw new Error(availability.reason);
-  const { city, officer } = validateCityCommand(state, order, DEVELOP_STAMINA_COST);
+  const { city, officer } = validateCityCommand(state, order, cost.stamina);
   const available = city.commerceLimit === undefined
     ? Number.MAX_SAFE_INTEGER - city.commerce
     : Math.max(0, city.commerceLimit - city.commerce);
@@ -135,12 +140,12 @@ export function developCommerce(state: GameState, order: CityCommandOrder): Game
   const gain = Math.min(available, calculateCommerceGain(effective, random.value));
   const next = updateCityAndOfficer(
     { ...state, rngSeed: random.seed },
-    { ...city, commerce: city.commerce + gain, money: city.money - DEVELOP_MONEY_COST },
-    { ...officer, stamina: officer.stamina - DEVELOP_STAMINA_COST },
+    { ...city, commerce: city.commerce + gain, money: city.money - cost.money },
+    { ...officer, stamina: officer.stamina - cost.stamina },
     true,
   );
   return appendLogs(next, 'map', [
-    `${officer.name}在${city.name}主持招商，商业提高 ${gain}，消耗金钱 ${DEVELOP_MONEY_COST}、体力 ${DEVELOP_STAMINA_COST}。`,
+    `${officer.name}在${city.name}主持招商，商业提高 ${gain}，消耗金钱 ${cost.money}、体力 ${cost.stamina}。`,
   ]);
 }
 
@@ -148,7 +153,8 @@ export function getGovernAvailability(
   state: GameState,
   order: CityCommandOrder,
 ): CityCommandAvailability {
-  const base = getCityCommandAvailability(state, order, GOVERN_STAMINA_COST, GOVERN_MONEY_COST);
+  const cost = commandCost(state, 'govern');
+  const base = getCityCommandAvailability(state, order, cost.stamina, cost.money);
   if (!base.allowed) return base;
   const city = state.cities[order.cityId];
   if ((city.condition ?? 'normal') === 'normal' && (city.disasterPrevention ?? 0) >= 100) {
@@ -158,9 +164,10 @@ export function getGovernAvailability(
 }
 
 export function governCity(state: GameState, order: CityCommandOrder): GameState {
+  const cost = commandCost(state, 'govern');
   const availability = getGovernAvailability(state, order);
   if (!availability.allowed) throw new Error(availability.reason);
-  const { city, officer } = validateCityCommand(state, order, GOVERN_STAMINA_COST);
+  const { city, officer } = validateCityCommand(state, order, cost.stamina);
   const random = nextRandom(state.rngSeed);
   const gain = Math.min(100 - (city.disasterPrevention ?? 0), Math.floor(random.value * 4) + 1);
   const next = updateCityAndOfficer(
@@ -169,9 +176,9 @@ export function governCity(state: GameState, order: CityCommandOrder): GameState
       ...city,
       condition: 'normal',
       disasterPrevention: (city.disasterPrevention ?? 0) + gain,
-      money: city.money - GOVERN_MONEY_COST,
+      money: city.money - cost.money,
     },
-    { ...officer, stamina: officer.stamina - GOVERN_STAMINA_COST },
+    { ...officer, stamina: officer.stamina - cost.stamina },
     true,
   );
   return appendLogs(next, 'map', [
@@ -179,7 +186,7 @@ export function governCity(state: GameState, order: CityCommandOrder): GameState
       ? `${state.factions[state.activeFactionId].name}完成灾害治理。`
       : `${officer.name}治理${city.name}，防灾提高 ${gain}，`
         + `${(city.condition ?? 'normal') === 'normal' ? '' : '城池恢复正常，'}`
-        + `消耗金钱 ${GOVERN_MONEY_COST}、体力 ${GOVERN_STAMINA_COST}。`,
+        + `消耗金钱 ${cost.money}、体力 ${cost.stamina}。`,
   ]);
 }
 
@@ -187,7 +194,8 @@ export function getInspectAvailability(
   state: GameState,
   order: CityCommandOrder,
 ): CityCommandAvailability {
-  const base = getCityCommandAvailability(state, order, INSPECT_STAMINA_COST, INSPECT_MONEY_COST);
+  const cost = commandCost(state, 'inspect');
+  const base = getCityCommandAvailability(state, order, cost.stamina, cost.money);
   if (!base.allowed) return base;
   const city = state.cities[order.cityId];
   const loyaltyFull = (city.publicLoyalty ?? 70) >= 100;
@@ -197,9 +205,10 @@ export function getInspectAvailability(
 }
 
 export function inspectCity(state: GameState, order: CityCommandOrder): GameState {
+  const cost = commandCost(state, 'inspect');
   const availability = getInspectAvailability(state, order);
   if (!availability.allowed) throw new Error(availability.reason);
-  const { city, officer } = validateCityCommand(state, order, INSPECT_STAMINA_COST);
+  const { city, officer } = validateCityCommand(state, order, cost.stamina);
   const random = nextRandom(state.rngSeed);
   const loyaltyGain = Math.max(
     0,
@@ -215,18 +224,19 @@ export function inspectCity(state: GameState, order: CityCommandOrder): GameStat
       ...city,
       publicLoyalty: (city.publicLoyalty ?? 70) + loyaltyGain,
       population: city.population + populationGain,
-      money: city.money - INSPECT_MONEY_COST,
+      money: city.money - cost.money,
     },
-    { ...officer, stamina: officer.stamina - INSPECT_STAMINA_COST },
+    { ...officer, stamina: officer.stamina - cost.stamina },
     true,
   );
   return appendLogs(next, 'map', [
-    `${officer.name}出巡${city.name}，民忠提高 ${loyaltyGain}、人口增加 ${populationGain}，消耗金钱 ${INSPECT_MONEY_COST}、体力 ${INSPECT_STAMINA_COST}。`,
+    `${officer.name}出巡${city.name}，民忠提高 ${loyaltyGain}、人口增加 ${populationGain}，消耗金钱 ${cost.money}、体力 ${cost.stamina}。`,
   ]);
 }
 
 export function getTradeAvailability(state: GameState, order: TradeOrder): CityCommandAvailability {
-  const base = getCityCommandAvailability(state, order, TRADE_STAMINA_COST, 0);
+  const cost = commandCost(state, 'trade');
+  const base = getCityCommandAvailability(state, order, cost.stamina, cost.money);
   if (!base.allowed) return base;
   if (!Number.isSafeInteger(order.amount) || order.amount <= 0) {
     return { allowed: false, reason: '交易数量必须是正安全整数' };
@@ -258,9 +268,10 @@ export function getTradeAvailability(state: GameState, order: TradeOrder): CityC
 }
 
 export function tradeFood(state: GameState, order: TradeOrder): GameState {
+  const cost = commandCost(state, 'trade');
   const availability = getTradeAvailability(state, order);
   if (!availability.allowed) throw new Error(availability.reason);
-  const { city, officer } = validateCityCommand(state, order, TRADE_STAMINA_COST);
+  const { city, officer } = validateCityCommand(state, order, cost.stamina);
   const buying = order.direction === 'buy';
   const quotedMoney = order.amount * (buying ? BUY_FOOD_PRICE : SELL_FOOD_PRICE);
   const nextMoney = buying ? city.money - quotedMoney : city.money + quotedMoney;
@@ -272,16 +283,17 @@ export function tradeFood(state: GameState, order: TradeOrder): GameState {
       food: city.food + (buying ? order.amount : -order.amount),
       money: nextMoney,
     },
-    { ...officer, stamina: officer.stamina - TRADE_STAMINA_COST },
+    { ...officer, stamina: officer.stamina - cost.stamina },
     true,
   );
   return appendLogs(next, 'map', [
     `${officer.name}在${city.name}${buying ? '买入' : '卖出'} ${order.amount} 粮，`
-      + `${buying ? '花费' : '获得'} ${actualMoney} 金，消耗体力 ${TRADE_STAMINA_COST}。`,
+      + `${buying ? '花费' : '获得'} ${actualMoney} 金，消耗体力 ${cost.stamina}。`,
   ]);
 }
 
 export function getBanquetAvailability(state: GameState, order: BanquetOrder): CityCommandAvailability {
+  const cost = commandCost(state, 'banquet');
   if (state.phase === 'ended') return { allowed: false, reason: '战役已经结束' };
   if (state.pendingSuccession) return { allowed: false, reason: '必须先拥立新君' };
   const city = state.cities[order.cityId];
@@ -291,8 +303,8 @@ export function getBanquetAvailability(state: GameState, order: BanquetOrder): C
     || target.factionId !== state.activeFactionId || target.cityId !== city.id) {
     return { allowed: false, reason: '宴请目标不在该城' };
   }
-  if (city.money < BANQUET_MONEY_COST) {
-    return { allowed: false, reason: `城中金钱不足，需要 ${BANQUET_MONEY_COST}` };
+  if (city.money < cost.money) {
+    return { allowed: false, reason: `城中金钱不足，需要 ${cost.money}` };
   }
   const isRuler = state.factions[target.factionId]?.rulerOfficerId === target.id;
   if (target.stamina >= 100 && (isRuler || target.loyalty >= 100)) {
@@ -302,6 +314,7 @@ export function getBanquetAvailability(state: GameState, order: BanquetOrder): C
 }
 
 export function banquetOfficer(state: GameState, order: BanquetOrder): GameState {
+  const cost = commandCost(state, 'banquet');
   const availability = getBanquetAvailability(state, order);
   if (!availability.allowed) throw new Error(availability.reason);
   const city = state.cities[order.cityId];
@@ -315,13 +328,13 @@ export function banquetOfficer(state: GameState, order: BanquetOrder): GameState
   const next: GameState = {
     ...state,
     campaignStarted: true,
-    cities: { ...state.cities, [city.id]: { ...city, money: city.money - BANQUET_MONEY_COST } },
+    cities: { ...state.cities, [city.id]: { ...city, money: city.money - cost.money } },
     officers: { ...state.officers, [target.id]: nextTarget },
   };
   assertValidGameState(next);
   return appendLogs(next, 'map', [
     `${city.name}宴请${target.name}，体力恢复 ${nextTarget.stamina - target.stamina}`
-      + `${isRuler ? '' : `、忠诚提高 ${nextTarget.loyalty - target.loyalty}`}，花费 ${BANQUET_MONEY_COST} 金。`,
+      + `${isRuler ? '' : `、忠诚提高 ${nextTarget.loyalty - target.loyalty}`}，花费 ${cost.money} 金。`,
   ]);
 }
 
@@ -329,7 +342,8 @@ export function getPlunderAvailability(
   state: GameState,
   order: CityCommandOrder,
 ): CityCommandAvailability {
-  const base = getCityCommandAvailability(state, order, PLUNDER_STAMINA_COST, 0);
+  const cost = commandCost(state, 'plunder');
+  const base = getCityCommandAvailability(state, order, cost.stamina, cost.money);
   if (!base.allowed) return base;
   const officer = state.officers[order.officerId];
   const effective = getEffectiveOfficerAttributes(state, officer);
@@ -361,9 +375,10 @@ export function calculatePlunderGains(
 }
 
 export function plunderCity(state: GameState, order: CityCommandOrder): GameState {
+  const cost = commandCost(state, 'plunder');
   const availability = getPlunderAvailability(state, order);
   if (!availability.allowed) throw new Error(availability.reason);
-  const { city, officer } = validateCityCommand(state, order, PLUNDER_STAMINA_COST);
+  const { city, officer } = validateCityCommand(state, order, cost.stamina);
   const { food: foodGain, money: moneyGain } = calculatePlunderGains(state, city, officer);
   const next = updateCityAndOfficer(
     state,
@@ -375,7 +390,7 @@ export function plunderCity(state: GameState, order: CityCommandOrder): GameStat
       food: city.food + foodGain,
       money: city.money + moneyGain,
     },
-    { ...officer, stamina: officer.stamina - PLUNDER_STAMINA_COST },
+    { ...officer, stamina: officer.stamina - cost.stamina },
     true,
   );
   return appendLogs(next, 'map', [
@@ -384,7 +399,8 @@ export function plunderCity(state: GameState, order: CityCommandOrder): GameStat
 }
 
 export function recruitTroops(state: GameState, order: RecruitOrder): GameState {
-  const { city, officer } = validateCityCommand(state, order, RECRUIT_STAMINA_COST);
+  const cost = commandCost(state, 'recruit-troops');
+  const { city, officer } = validateCityCommand(state, order, cost.stamina);
   const capacity = Math.min(calculateRecruitCapacity(city), 0xffff - city.reserveTroops);
   if (capacity <= 0) throw new Error('该城没有足够的金钱、民忠或后备兵容量');
   const requested = order.amount ?? DEFAULT_RECRUIT_AMOUNT;
@@ -399,11 +415,11 @@ export function recruitTroops(state: GameState, order: RecruitOrder): GameState 
       money: city.money - moneyCost,
       reserveTroops: city.reserveTroops + gain,
     },
-    { ...officer, stamina: officer.stamina - RECRUIT_STAMINA_COST },
+    { ...officer, stamina: officer.stamina - cost.stamina },
     true,
   );
   return appendLogs(next, 'map', [
-    `${officer.name}在${city.name}征募 ${gain} 名后备兵，消耗金钱 ${moneyCost}、体力 ${RECRUIT_STAMINA_COST}。`,
+    `${officer.name}在${city.name}征募 ${gain} 名后备兵，消耗金钱 ${moneyCost}、体力 ${cost.stamina}。`,
   ]);
 }
 
@@ -440,6 +456,10 @@ function validateCityCommand(
   if (state.actedOfficerIds.includes(result.officer.id)) throw new Error('该武将本月已经执行过命令');
   if (result.officer.stamina < staminaCost) throw new Error(`武将体力不足，需要 ${staminaCost}`);
   return result;
+}
+
+function commandCost(state: GameState, command: CampaignCommandKind) {
+  return getCampaignCommandCost(state.rulesetId, command);
 }
 
 function getCityCommandAvailability(

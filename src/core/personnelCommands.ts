@@ -316,6 +316,9 @@ export function moveOfficer(state: GameState, order: MoveOfficerOrder): GameStat
 }
 
 export function appointSatrap(state: GameState, order: AppointSatrapOrder): GameState {
+  if (state.rulesetId === 'baye-classic-v1') {
+    throw new Error('经典校准规则由君主或城内智力最高者自动担任太守');
+  }
   if (state.phase !== 'player' || state.activeFactionId !== state.playerFactionId) {
     throw new Error('只能在玩家阶段任命太守');
   }

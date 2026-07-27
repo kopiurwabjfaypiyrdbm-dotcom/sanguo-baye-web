@@ -20,6 +20,26 @@ import { getStrategicDestinations, issueMoveOrder } from './strategicOrders';
 import type { GameState } from './types';
 
 describe('versioned saves', () => {
+  it('migrates schema-five saves to the modern ruleset without changing their balance identity', () => {
+    const legacy = createSampleState() as unknown as Record<string, unknown>;
+    legacy.schemaVersion = 5;
+    delete legacy.rulesetId;
+
+    const loaded = parseSave(legacy);
+
+    expect(loaded.state.schemaVersion).toBe(6);
+    expect(loaded.state.rulesetId).toBe('modern-balanced-v1');
+  });
+
+  it('does not silently repair corrupt schema-five item ownership while migrating', () => {
+    const legacy = createSampleState() as unknown as Record<string, unknown>;
+    legacy.schemaVersion = 5;
+    delete legacy.rulesetId;
+    (legacy.officers as GameState['officers'])['xiahou-dun'].equipmentItemIds = ['sunzi-manual'];
+
+    expect(() => parseSave(legacy)).toThrow(/item is already placed/);
+  });
+
   it('round-trips the complete state and deterministic random sequence', () => {
     const state = createSampleState();
     state.rngSeed = 682;
@@ -38,7 +58,8 @@ describe('versioned saves', () => {
     delete legacy.discoveredOfficerIds;
 
     const loaded = parseSave(legacy);
-    expect(loaded.state.schemaVersion).toBe(5);
+    expect(loaded.state.schemaVersion).toBe(6);
+    expect(loaded.state.rulesetId).toBe('modern-balanced-v1');
     expect(loaded.state.discoveredOfficerIds).toEqual([]);
     expect(loaded.state.intelReports).toEqual({});
     expect(loaded.state.strategicOrders).toEqual({});
@@ -62,7 +83,8 @@ describe('versioned saves', () => {
 
     const loaded = parseSave(legacy);
 
-    expect(loaded.state.schemaVersion).toBe(5);
+    expect(loaded.state.schemaVersion).toBe(6);
+    expect(loaded.state.rulesetId).toBe('modern-balanced-v1');
     expect(loaded.state.intelReports).toEqual({});
     expect(loaded.state.strategicOrders).toEqual({});
     expect(loaded.state.diplomaticOrders).toEqual({});
@@ -78,7 +100,8 @@ describe('versioned saves', () => {
 
     const loaded = parseSave(legacy);
 
-    expect(loaded.state.schemaVersion).toBe(5);
+    expect(loaded.state.schemaVersion).toBe(6);
+    expect(loaded.state.rulesetId).toBe('modern-balanced-v1');
     expect(loaded.state.strategicOrders).toEqual({});
     expect(loaded.state.nextStrategicOrderSerial).toBe(1);
     expect(loaded.state.diplomaticOrders).toEqual({});

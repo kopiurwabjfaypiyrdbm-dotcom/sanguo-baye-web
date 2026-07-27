@@ -61,6 +61,11 @@
       "role": "resource-item-ids"
     },
     {
+      "path": "baye_c/src/pconst.c",
+      "sha256": "924286b7547c05cd2fba37b8ab4c4f22767c2a7b3b4618df1ea83c2fecd92b43",
+      "role": "local-only-generated-command-cost-and-shape-evidence"
+    },
+    {
       "path": "baye_c/src/dat.lib.orig",
       "sha256": "c5b33922146e1631b5ab1c8429ca3c6cb3b80b26152747e391438409ec0f82ab",
       "role": "local-only-original-resource-archive"

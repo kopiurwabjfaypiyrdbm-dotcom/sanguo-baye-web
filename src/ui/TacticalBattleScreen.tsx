@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BAYE_ARMS_LABELS, BAYE_TERRAIN_LABELS } from '../compat/baye/tacticalBattle';
 import {
   getTacticalPathCost,
-  getTacticalAttackRange,
+  getTacticalNormalAttackLabel,
   getTacticalProvisionUse,
   getTacticalSkillTargetIds,
   getTacticalTile,
@@ -40,6 +40,7 @@ type TacticalBattleScreenProps = {
   onWait: () => void;
   onUseSkill: (skillId: TacticalSkillId, targetUnitId: string) => void;
   onEndSide: () => void;
+  onRetreat: () => void;
   onFinish: () => void;
 };
 
@@ -61,10 +62,12 @@ export function TacticalBattleScreen({
   onWait,
   onUseSkill,
   onEndSide,
+  onRetreat,
   onFinish,
 }: TacticalBattleScreenProps) {
   const mapHost = useRef<HTMLDivElement>(null);
   const controller = useRef<TacticalMapController | null>(null);
+  const [confirmingRetreat, setConfirmingRetreat] = useState(false);
   const playerSide = battle.attackerFactionId === campaign.playerFactionId ? 'attacker' : 'defender';
   const selectedUnit = selectedUnitId ? battle.units[selectedUnitId] : undefined;
   const pendingTarget = pendingTargetUnitId ? battle.units[pendingTargetUnitId] : undefined;
@@ -96,6 +99,10 @@ export function TacticalBattleScreen({
   useEffect(() => {
     controller.current?.update(battle, selectedUnitId, reachable, attackableUnitIds);
   }, [battle, selectedUnitId, reachable, attackableUnitIds]);
+
+  useEffect(() => {
+    if (battle.status !== 'ongoing') setConfirmingRetreat(false);
+  }, [battle.status]);
 
   const attacker = campaign.factions[battle.attackerFactionId];
   const defender = campaign.factions[battle.defenderFactionId];
@@ -176,7 +183,7 @@ export function TacticalBattleScreen({
               <strong>{selectedUnit.name}</strong>
               <span>
                 {BAYE_ARMS_LABELS[selectedUnit.armsType]} · 兵 {number.format(selectedUnit.troops)} ·
-                等级 {selectedUnit.level} · 移动 {getTacticalUnitMobility(selectedUnit)} · 射程 {getTacticalAttackRange(selectedUnit.armsType)}
+                等级 {selectedUnit.level} · 移动 {getTacticalUnitMobility(selectedUnit)} · 普攻 {getTacticalNormalAttackLabel(selectedUnit)}
               </span>
               <span>计谋点 {selectedUnit.skillPoints} / {selectedUnit.maxSkillPoints} · 状态 {statusLabel(selectedUnit.status)}</span>
               {selectedUnit.officerId && (battle.experienceGains[selectedUnit.officerId] ?? 0) > 0 && (
@@ -212,6 +219,9 @@ export function TacticalBattleScreen({
           )}
           {selectedUnit && (
             <div className="battle-skill-list" aria-label="计谋列表">
+              <span className="battle-skill-reason">
+                技能来源：现代数据驱动规则；原版兵种技能 ID 资源尚未进入可再分发基线。
+              </span>
               {selectedUnit.officerId ? selectedSkills.map((skill) => {
                 const targetIds = getTacticalSkillTargetIds(battle, selectedUnit.id, skill.id);
                 const unavailableReason = selectedUnit.status === 'silenced'
@@ -287,6 +297,26 @@ export function TacticalBattleScreen({
             待命
           </button>
           <button type="button" disabled={!canCommand} onClick={onEndSide}>结束本方阶段</button>
+          {confirmingRetreat ? (
+            <>
+              <button
+                type="button"
+                className="danger-action"
+                disabled={!canCommand}
+                onClick={() => {
+                  setConfirmingRetreat(false);
+                  onRetreat();
+                }}
+              >
+                确认全军撤退
+              </button>
+              <button type="button" onClick={() => setConfirmingRetreat(false)}>取消撤退</button>
+            </>
+          ) : (
+            <button type="button" disabled={!canCommand} onClick={() => setConfirmingRetreat(true)}>
+              全军撤退
+            </button>
+          )}
           <button type="button" className="primary-action" disabled={battle.status === 'ongoing'} onClick={onFinish}>
             结算并返回战略地图
           </button>
@@ -311,6 +341,8 @@ export function TacticalBattleScreen({
 }
 
 function victoryReasonLabel(reason?: TacticalVictoryReason): string {
+  if (reason === 'attacker-retreated') return '攻方主动全军撤退。';
+  if (reason === 'defender-retreated') return '守方主动放弃城池并撤退。';
   if (reason === 'attacker-commander-defeated') return '攻方主将败退。';
   if (reason === 'defender-commander-defeated') return '守方主将败退。';
   if (reason === 'objective-held') return '攻方占领城池并坚持到阶段结束。';

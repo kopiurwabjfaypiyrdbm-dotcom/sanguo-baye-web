@@ -1,19 +1,9 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import {
-  BANQUET_MONEY_COST,
   BANQUET_STAMINA_RECOVERY,
   BUY_FOOD_PRICE,
-  DEVELOP_MONEY_COST,
-  DEVELOP_STAMINA_COST,
-  GOVERN_MONEY_COST,
-  GOVERN_STAMINA_COST,
-  INSPECT_MONEY_COST,
-  INSPECT_STAMINA_COST,
-  PLUNDER_STAMINA_COST,
-  RECRUIT_STAMINA_COST,
   SELL_FOOD_PRICE,
   TRADE_MONEY_SOFT_CAP,
-  TRADE_STAMINA_COST,
   calculateCommerceGain,
   calculatePlunderGains,
   calculateOfficerTroopCapacity,
@@ -35,27 +25,21 @@ import {
 } from '../core/personnelCommands';
 import { getCityCaptives, getCityFreeOfficers, getCityOfficers, getNeighborCities } from '../core/selectors';
 import { getEffectiveOfficerAttributes, getOfficerEquipmentIds } from '../core/equipment';
-import { SURRENDER_STAMINA_COST } from '../core/captiveCommands';
 import {
-  RECON_MONEY_COST,
-  RECON_STAMINA_COST,
   getReconAvailability,
   getReconTargets,
 } from '../core/reconnaissance';
 import {
-  MOVE_STAMINA_COST,
-  TRANSPORT_STAMINA_COST,
   getMoveAvailability,
   getStrategicDestinations,
   getTransportAvailability,
 } from '../core/strategicOrders';
 import { CITY_CONDITION_LABELS } from '../core/cityEvents';
 import {
-  DIPLOMACY_MONEY_COST,
-  DIPLOMACY_STAMINA_COST,
   getDiplomacyTargets,
   getDiplomaticOrderAvailability,
 } from '../core/diplomaticOrders';
+import { getCampaignCommandCost } from '../core/rulesets';
 
 type CityPanelProps = {
   state: GameState;
@@ -136,6 +120,32 @@ export function CityPanel({
   onDiplomacy,
   onAttack,
 }: CityPanelProps) {
+  const developCost = getCampaignCommandCost(state.rulesetId, 'develop');
+  const governCost = getCampaignCommandCost(state.rulesetId, 'govern');
+  const inspectCost = getCampaignCommandCost(state.rulesetId, 'inspect');
+  const tradeCost = getCampaignCommandCost(state.rulesetId, 'trade');
+  const banquetCost = getCampaignCommandCost(state.rulesetId, 'banquet');
+  const plunderCost = getCampaignCommandCost(state.rulesetId, 'plunder');
+  const recruitCost = getCampaignCommandCost(state.rulesetId, 'recruit-troops');
+  const surrenderCost = getCampaignCommandCost(state.rulesetId, 'surrender');
+  const moveCost = getCampaignCommandCost(state.rulesetId, 'move');
+  const transportCost = getCampaignCommandCost(state.rulesetId, 'transport');
+  const reconCost = getCampaignCommandCost(state.rulesetId, 'reconnoitre');
+  const DEVELOP_STAMINA_COST = developCost.stamina;
+  const DEVELOP_MONEY_COST = developCost.money;
+  const GOVERN_STAMINA_COST = governCost.stamina;
+  const GOVERN_MONEY_COST = governCost.money;
+  const INSPECT_STAMINA_COST = inspectCost.stamina;
+  const INSPECT_MONEY_COST = inspectCost.money;
+  const TRADE_STAMINA_COST = tradeCost.stamina;
+  const BANQUET_MONEY_COST = banquetCost.money;
+  const PLUNDER_STAMINA_COST = plunderCost.stamina;
+  const RECRUIT_STAMINA_COST = recruitCost.stamina;
+  const SURRENDER_STAMINA_COST = surrenderCost.stamina;
+  const MOVE_STAMINA_COST = moveCost.stamina;
+  const TRANSPORT_STAMINA_COST = transportCost.stamina;
+  const RECON_STAMINA_COST = reconCost.stamina;
+  const RECON_MONEY_COST = reconCost.money;
   const city = state.cities[cityId] ?? Object.values(state.cities)[0];
   const officers = useMemo(() => getCityOfficers(state, cityId), [state, cityId]);
   const eligibleOfficers = useMemo(
@@ -157,6 +167,9 @@ export function CityPanel({
   );
   const reconTargets = useMemo(() => getReconTargets(state, city.id), [state, city.id]);
   const [selectedDiplomacyKind, setSelectedDiplomacyKind] = useState<DiplomaticOrderKind>('alienate');
+  const diplomacyCost = getCampaignCommandCost(state.rulesetId, selectedDiplomacyKind);
+  const DIPLOMACY_STAMINA_COST = diplomacyCost.stamina;
+  const DIPLOMACY_MONEY_COST = diplomacyCost.money;
   const diplomacyTargets = useMemo(
     () => getDiplomacyTargets(state, selectedDiplomacyKind, state.playerFactionId),
     [state, selectedDiplomacyKind],
@@ -334,7 +347,8 @@ export function CityPanel({
     : { allowed: false as const, reason: cityItems.length === 0 ? '城中没有已发现道具' : '请选择受赏武将和道具' };
   const canGiveItem = isOwned && itemAvailability.allowed;
   const canRecruitCaptive = isOwned && selectedOfficer !== undefined && selectedCaptive !== undefined
-    && !selectedOfficerActed && selectedOfficer.stamina >= SURRENDER_STAMINA_COST;
+    && !selectedOfficerActed && selectedOfficer.stamina >= SURRENDER_STAMINA_COST
+    && city.money >= surrenderCost.money;
   const captiveRecruitReason = disabled
     ? '当前有待处理操作，暂时不能执行城池命令'
     : !selectedCaptive
@@ -345,7 +359,9 @@ export function CityPanel({
           ? `${selectedOfficer.name}本月已经行动`
           : selectedOfficer.stamina < SURRENDER_STAMINA_COST
             ? `${selectedOfficer.name}体力不足，需要 ${SURRENDER_STAMINA_COST} 点`
-            : `消耗 ${selectedOfficer.name} ${SURRENDER_STAMINA_COST} 点体力和本月行动；失败会削弱俘虏忠诚`;
+            : city.money < surrenderCost.money
+              ? `${city.name}金钱不足，需要 ${surrenderCost.money}`
+              : `消耗 ${selectedOfficer.name} ${SURRENDER_STAMINA_COST} 点体力、${surrenderCost.money} 金和本月行动；失败会削弱俘虏忠诚`;
   const moveAvailability = selectedOfficer && selectedMoveTargetId
     ? getMoveAvailability(state, {
       sourceCityId: city.id,
@@ -380,7 +396,8 @@ export function CityPanel({
     ? { allowed: false as const, reason: '当前有待处理操作，暂时不能执行城池命令' }
     : transportAvailability;
   const canTransport = isOwned && displayedTransportAvailability.allowed;
-  const canAppoint = isOwned && Boolean(selectedOfficer) && city.satrapOfficerId !== selectedOfficerId;
+  const canAppoint = state.rulesetId !== 'baye-classic-v1'
+    && isOwned && Boolean(selectedOfficer) && city.satrapOfficerId !== selectedOfficerId;
   const canDistribute = isOwned && Boolean(selectedOfficer) && Number.isInteger(distributionValue)
     && distributionValue >= 0 && distributionValue <= distributionCapacity
     && distributionDelta <= city.reserveTroops && distributionDelta !== 0;
@@ -779,6 +796,9 @@ export function CityPanel({
                 type="button"
                 disabled={disabled || !canAppoint}
                 onClick={() => onAppoint(city.id, selectedOfficerId)}
+                title={state.rulesetId === 'baye-classic-v1'
+                  ? '经典校准规则由君主或城内智力最高者自动担任太守'
+                  : '任命所选武将为太守'}
               >
                 任太守
               </button>

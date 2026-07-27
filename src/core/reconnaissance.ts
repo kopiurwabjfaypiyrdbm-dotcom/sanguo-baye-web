@@ -2,6 +2,7 @@ import { appendLogs } from './logs';
 import { getCityOfficers } from './selectors';
 import type { CityIntelReport, GameState, Officer } from './types';
 import { assertValidGameState } from './validation';
+import { getCampaignCommandCost } from './rulesets';
 
 /** Provisional alignment with order.h; runtime ConsumeThew resources are not vendored. */
 export const RECON_STAMINA_COST = 4;
@@ -28,6 +29,7 @@ export function getReconTargets(state: GameState, sourceCityId: string) {
 }
 
 export function getReconAvailability(state: GameState, order: ReconOrder): ReconAvailability {
+  const cost = getCampaignCommandCost(state.rulesetId, 'reconnoitre');
   if (state.phase !== 'player' || state.activeFactionId !== state.playerFactionId) {
     return { allowed: false, reason: '只能在玩家阶段执行侦察' };
   }
@@ -46,16 +48,17 @@ export function getReconAvailability(state: GameState, order: ReconOrder): Recon
   if (state.actedOfficerIds.includes(officer.id)) {
     return { allowed: false, reason: `${officer.name}本月已经行动` };
   }
-  if (officer.stamina < RECON_STAMINA_COST) {
-    return { allowed: false, reason: `${officer.name}体力不足，需要 ${RECON_STAMINA_COST} 点` };
+  if (officer.stamina < cost.stamina) {
+    return { allowed: false, reason: `${officer.name}体力不足，需要 ${cost.stamina} 点` };
   }
-  if (source.money < RECON_MONEY_COST) {
-    return { allowed: false, reason: `${source.name}金钱不足，需要 ${RECON_MONEY_COST}` };
+  if (source.money < cost.money) {
+    return { allowed: false, reason: `${source.name}金钱不足，需要 ${cost.money}` };
   }
   return { allowed: true };
 }
 
 export function reconnoitreCity(state: GameState, order: ReconOrder): GameState {
+  const cost = getCampaignCommandCost(state.rulesetId, 'reconnoitre');
   const availability = getReconAvailability(state, order);
   if (!availability.allowed) throw new Error(availability.reason);
   const source = state.cities[order.sourceCityId];
@@ -67,11 +70,11 @@ export function reconnoitreCity(state: GameState, order: ReconOrder): GameState 
     campaignStarted: true,
     cities: {
       ...state.cities,
-      [source.id]: { ...source, money: source.money - RECON_MONEY_COST },
+      [source.id]: { ...source, money: source.money - cost.money },
     },
     officers: {
       ...state.officers,
-      [officer.id]: { ...officer, stamina: officer.stamina - RECON_STAMINA_COST },
+      [officer.id]: { ...officer, stamina: officer.stamina - cost.stamina },
     },
     actedOfficerIds: [...state.actedOfficerIds, officer.id],
     intelReports: { ...state.intelReports, [target.id]: report },

@@ -53,6 +53,7 @@ import {
   previewTacticalAttack,
   moveTacticalUnit,
   runBasicTacticalAi,
+  retreatTacticalSide,
   useTacticalSkill,
   waitTacticalUnit,
   type TacticalBattleState,
@@ -80,6 +81,11 @@ import {
   executeCaptive,
   resolveSuccession,
 } from '../core/officerLifecycle';
+import {
+  DEFAULT_NEW_CAMPAIGN_RULESET,
+  getCampaignRuleset,
+  type CampaignRulesetId,
+} from '../core/rulesets';
 
 type AppScreen = 'title' | 'scenario' | 'ruler' | 'game' | 'battle';
 const scenarioOptions = getScenarioOptions();
@@ -94,6 +100,7 @@ export function App() {
   const [selectedLifecyclePolicy, setSelectedLifecyclePolicy] = useState<LifecyclePolicy>({
     ...SAFE_LIFECYCLE_POLICY,
   });
+  const [selectedRulesetId, setSelectedRulesetId] = useState<CampaignRulesetId>(DEFAULT_NEW_CAMPAIGN_RULESET);
   const [selectedCityId, setSelectedCityId] = useState(() => firstOwnedCityId(initialGame.state));
   const [sourceLabel, setSourceLabel] = useState(initialGame.sourceLabel);
   const [selectedSaveSlot, setSelectedSaveSlot] = useState<Exclude<SaveSlotId, 'auto'>>('1');
@@ -190,7 +197,7 @@ export function App() {
 
   function startCampaign() {
     const next = configureLifecyclePolicy(
-      createBundledScenario(selectedPeriod, selectedRulerIndex),
+      createBundledScenario(selectedPeriod, selectedRulerIndex, selectedRulesetId),
       selectedLifecyclePolicy,
     );
     const label = sourceLabelForState(next);
@@ -498,6 +505,20 @@ export function App() {
     }
   }
 
+  function retreatPlayerTacticalSide() {
+    if (!tacticalBattle || isResolving) return;
+    try {
+      const playerSide = tacticalBattle.attackerFactionId === state.playerFactionId ? 'attacker' : 'defender';
+      const next = retreatTacticalSide(tacticalBattle, playerSide);
+      setTacticalBattle(next);
+      setSelectedTacticalUnitId(undefined);
+      setPendingTacticalTargetId(undefined);
+      setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '本方已经撤退。' });
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '无法撤退。' });
+    }
+  }
+
   function finishManualBattle() {
     if (!tacticalBattle || tacticalBattle.status === 'ongoing') return;
     try {
@@ -661,6 +682,7 @@ export function App() {
         onWait={waitSelectedTacticalUnit}
         onUseSkill={useSelectedTacticalSkill}
         onEndSide={endPlayerTacticalSide}
+        onRetreat={retreatPlayerTacticalSide}
         onFinish={finishManualBattle}
       />
     );
@@ -691,6 +713,8 @@ export function App() {
         onSelectRuler={setSelectedRulerIndex}
         lifecyclePolicy={selectedLifecyclePolicy}
         onLifecyclePolicyChange={setSelectedLifecyclePolicy}
+        rulesetId={selectedRulesetId}
+        onRulesetChange={setSelectedRulesetId}
         onStart={startCampaign}
         onBack={() => setScreen('scenario')}
       />
@@ -707,6 +731,7 @@ export function App() {
         <div className="campaign-status">
           <span>{state.calendar.year} 年 {state.calendar.month} 月</span>
           <span>{sourceLabel}</span>
+          <span>{getCampaignRuleset(state.rulesetId).label}</span>
         </div>
         <div className="top-actions">
           <div className="save-controls" aria-label="存档操作">
