@@ -3,6 +3,7 @@ import {
   decodeBayeLegacyString,
   parseBayeLegacyCityRecord,
   parseBayeLegacyPersonRecord,
+  parseBayeLegacySearchConditions,
 } from './legacyScenario';
 
 describe('Baye legacy scenario records', () => {
@@ -44,6 +45,16 @@ describe('Baye legacy scenario records', () => {
     });
   });
 
+  it('parses compact birth, preferred officer, and one-based city conditions', () => {
+    expect(parseBayeLegacySearchConditions(new Uint8Array([
+      175, 0, 23,
+      180, 9, 0,
+    ]), 2)).toEqual([
+      { birthYear: 175, preferredOfficerIndex: null, cityIndex: 22 },
+      { birthYear: 180, preferredOfficerIndex: 8, cityIndex: null },
+    ]);
+  });
+
   it('decodes the 15-byte person record and empty equipment sentinel', () => {
     const bytes = new Uint8Array([1, 2, 3, 84, 90, 100, 3, 4, 50, 2, 0x34, 0x12, 0, 7, 35]);
     expect(parseBayeLegacyPersonRecord(bytes, 1)).toEqual({
@@ -70,5 +81,6 @@ describe('Baye legacy scenario records', () => {
 
   it('maps the four custom glyph slots used by the original name table', () => {
     expect(decodeBayeLegacyString(new Uint8Array([0xcf, 0xc4, 0xba, 0xee, 0xa2, 0xef, 0]))).toBe('夏侯惇');
+    expect(decodeBayeLegacyString(new Uint8Array([0xc0, 0xee, 0x80, 0]))).toBe('李傕');
   });
 });

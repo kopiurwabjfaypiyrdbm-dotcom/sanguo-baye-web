@@ -1,11 +1,14 @@
 import type { BundledPeriodId, RulerOption, ScenarioOption } from '../data/bundledScenarios';
+import type { LifecyclePolicy } from '../core/types';
 
 export function TitleScreen({
   hasContinue,
+  hasPendingSuccession,
   onNewGame,
   onContinue,
 }: {
   hasContinue: boolean;
+  hasPendingSuccession?: boolean;
   onNewGame: () => void;
   onContinue: () => void;
 }) {
@@ -23,7 +26,11 @@ export function TitleScreen({
           </button>
           <button type="button" className="entry-secondary" onClick={onContinue} disabled={!hasContinue}>
             <span>重返沙场</span>
-            <small>{hasContinue ? '继续最近的自动存档' : '尚无可继续的战役'}</small>
+            <small>
+              {hasContinue
+                ? hasPendingSuccession ? '待拥立新君，继续处理继承' : '继续最近的自动存档'
+                : '尚无可继续的战役'}
+            </small>
           </button>
         </div>
         <p className="entry-note">四个原版时期剧本已内置，无需选择本地资料文件</p>
@@ -80,6 +87,8 @@ export function RulerScreen({
   onSelectRuler,
   onStart,
   onBack,
+  lifecyclePolicy,
+  onLifecyclePolicyChange,
 }: {
   scenario: ScenarioOption;
   rulers: RulerOption[];
@@ -87,6 +96,8 @@ export function RulerScreen({
   onSelectRuler: (sourceIndex: number) => void;
   onStart: () => void;
   onBack: () => void;
+  lifecyclePolicy: LifecyclePolicy;
+  onLifecyclePolicyChange: (policy: LifecyclePolicy) => void;
 }) {
   const selected = rulers.find((ruler) => ruler.sourceIndex === selectedRulerIndex) ?? rulers[0];
   return (
@@ -124,6 +135,49 @@ export function RulerScreen({
               <div><dt>所属人物</dt><dd>{selected?.officerCount ?? 0}</dd></div>
               <div><dt>天下城池</dt><dd>38</dd></div>
             </dl>
+            <fieldset className="lifecycle-policy">
+              <legend>战役人物规则</legend>
+              <label>
+                <span>战斗死亡</span>
+                <select
+                  value={lifecyclePolicy.battleDeath}
+                  onChange={(event) => onLifecyclePolicyChange({
+                    ...lifecyclePolicy,
+                    battleDeath: event.target.value as LifecyclePolicy['battleDeath'],
+                  })}
+                >
+                  <option value="disabled">关闭（安全模式）</option>
+                  <option value="baye-rare">固定源码稀有战死</option>
+                </select>
+              </label>
+              <label>
+                <span>年龄死亡</span>
+                <select
+                  value={lifecyclePolicy.naturalDeath}
+                  onChange={(event) => onLifecyclePolicyChange({
+                    ...lifecyclePolicy,
+                    naturalDeath: event.target.value as LifecyclePolicy['naturalDeath'],
+                  })}
+                >
+                  <option value="disabled">关闭（固定源码现行）</option>
+                  <option value="age-90-coinflip">90 岁后年度判定（现代可选）</option>
+                </select>
+              </label>
+              <label>
+                <span>俘虏逃脱</span>
+                <select
+                  value={lifecyclePolicy.captiveEscape}
+                  onChange={(event) => onLifecyclePolicyChange({
+                    ...lifecyclePolicy,
+                    captiveEscape: event.target.value as LifecyclePolicy['captiveEscape'],
+                  })}
+                >
+                  <option value="disabled">关闭（安全模式）</option>
+                  <option value="modern-monthly">每月判定（现代可选）</option>
+                </select>
+              </label>
+              <small>规则在开局后锁定，并随存档保存。死亡会回收装备并触发君主继承。</small>
+            </fieldset>
             <button type="button" className="entry-primary start-campaign" onClick={onStart} disabled={!selected}>
               开始霸业
             </button>

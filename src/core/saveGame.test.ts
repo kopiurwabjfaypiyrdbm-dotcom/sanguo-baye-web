@@ -1,8 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { searchCity } from './personnelCommands';
+import { giveItemToOfficer, searchCity } from './personnelCommands';
 import { createSampleState } from './sampleState';
 import { parseSave, serializeSave } from './saveGame';
-import { loadFromSlot, saveToSlot, slotKey, type SaveStorage } from './saveStorage';
+import {
+  deleteBattleCheckpoint,
+  loadBattleCheckpoint,
+  loadFromSlot,
+  saveBattleCheckpoint,
+  savePlayerBattleRollback,
+  saveToSlot,
+  slotKey,
+  type SaveStorage,
+} from './saveStorage';
+import { beginAiPhase } from './turn';
+import { createBundledScenario, getScenarioRulers } from '../data/bundledScenarios';
+import { getEffectiveOfficerAttributes } from './equipment';
+import { nextRandom } from './random';
+import { getStrategicDestinations, issueMoveOrder } from './strategicOrders';
+import type { GameState } from './types';
 
 describe('versioned saves', () => {
   it('round-trips the complete state and deterministic random sequence', () => {
@@ -23,8 +38,356 @@ describe('versioned saves', () => {
     delete legacy.discoveredOfficerIds;
 
     const loaded = parseSave(legacy);
-    expect(loaded.state.schemaVersion).toBe(2);
+    expect(loaded.state.schemaVersion).toBe(5);
     expect(loaded.state.discoveredOfficerIds).toEqual([]);
+    expect(loaded.state.intelReports).toEqual({});
+    expect(loaded.state.strategicOrders).toEqual({});
+    expect(loaded.state.nextStrategicOrderSerial).toBe(1);
+    expect(loaded.state.diplomaticOrders).toEqual({});
+    expect(loaded.state.nextDiplomaticOrderSerial).toBe(1);
+    expect(loaded.state.lifecyclePolicy).toEqual({
+      version: 1,
+      ageGrowth: 'enabled',
+      naturalDeath: 'disabled',
+      battleDeath: 'disabled',
+      captiveEscape: 'disabled',
+    });
+    expect(loaded.state.pendingSuccession).toBeUndefined();
+  });
+
+  it('migrates schema-two saves with an empty intelligence report layer', () => {
+    const legacy = structuredClone(createSampleState()) as unknown as Record<string, unknown>;
+    legacy.schemaVersion = 2;
+    delete legacy.intelReports;
+
+    const loaded = parseSave(legacy);
+
+    expect(loaded.state.schemaVersion).toBe(5);
+    expect(loaded.state.intelReports).toEqual({});
+    expect(loaded.state.strategicOrders).toEqual({});
+    expect(loaded.state.diplomaticOrders).toEqual({});
+  });
+
+  it('migrates schema-three saves with an empty strategic order layer', () => {
+    const legacy = structuredClone(createSampleState()) as unknown as Record<string, unknown>;
+    legacy.schemaVersion = 3;
+    delete legacy.strategicOrders;
+    delete legacy.nextStrategicOrderSerial;
+    delete legacy.diplomaticOrders;
+    delete legacy.nextDiplomaticOrderSerial;
+
+    const loaded = parseSave(legacy);
+
+    expect(loaded.state.schemaVersion).toBe(5);
+    expect(loaded.state.strategicOrders).toEqual({});
+    expect(loaded.state.nextStrategicOrderSerial).toBe(1);
+    expect(loaded.state.diplomaticOrders).toEqual({});
+    expect(loaded.state.nextDiplomaticOrderSerial).toBe(1);
+  });
+
+  it('repairs landless serving officers produced by older schema-two battles', () => {
+    const legacy = createSampleState();
+    for (const city of Object.values(legacy.cities)) {
+      if (city.ownerId === 'liu-bei') city.ownerId = 'cao-cao';
+      city.satrapOfficerId = undefined;
+    }
+    const rawLegacy = legacy as unknown as Record<string, unknown>;
+    rawLegacy.schemaVersion = 2;
+    delete rawLegacy.intelReports;
+
+    const loaded = parseSave(rawLegacy);
+    const formerLiuOfficers = Object.values(loaded.state.officers).filter((officer) =>
+      ['liu-bei', 'guan-yu', 'zhuge-liang', 'zhang-fei'].includes(officer.id),
+    );
+    expect(formerLiuOfficers.every((officer) =>
+      officer.status === 'free' && officer.factionId === 'neutral' && officer.troops === 0,
+    )).toBe(true);
+  });
+
+  it('adds empty item inventories when loading a pre-inventory schema-two save', () => {
+    const legacy = createSampleState();
+    for (const city of Object.values(legacy.cities)) {
+      delete city.itemIds;
+      delete city.hiddenItemIds;
+    }
+    const rawLegacy = legacy as unknown as Record<string, unknown>;
+    rawLegacy.schemaVersion = 2;
+    delete rawLegacy.intelReports;
+
+    const loaded = parseSave(rawLegacy);
+    expect(loaded.state.cities.luoyang.itemIds).toEqual(['sunzi-manual']);
+    expect(loaded.state.cities.chenliu.hiddenItemIds).toEqual(['red-hare']);
+    expect(Object.values(loaded.state.cities).every((city) =>
+      Array.isArray(city.itemIds) && Array.isArray(city.hiddenItemIds),
+    )).toBe(true);
+  });
+
+  it('preserves discovered inventories and equipped items after a command round-trip', () => {
+    const state = createSampleState();
+    const equipped = giveItemToOfficer(state, {
+      cityId: 'luoyang',
+      officerId: 'xiahou-dun',
+      itemId: 'sunzi-manual',
+    });
+
+    const loaded = parseSave(serializeSave(equipped)).state;
+
+    expect(loaded.cities.luoyang.itemIds).toEqual([]);
+    expect(loaded.officers['xiahou-dun'].equipmentItemIds).toEqual(['sunzi-manual']);
+    expect(loaded.rngSeed).toBe(equipped.rngSeed);
+    expect(loaded.actedOfficerIds).toEqual(equipped.actedOfficerIds);
+  });
+
+  it('preserves captive ownership metadata through a save round-trip', () => {
+    const state = createSampleState();
+    state.officers['chen-gong'] = {
+      ...state.officers['chen-gong'],
+      status: 'captive',
+      cityId: 'luoyang',
+      captorFactionId: 'cao-cao',
+      formerFactionId: 'liu-bei',
+      troops: 0,
+      stamina: 0,
+    };
+
+    const loaded = parseSave(serializeSave(state)).state;
+
+    expect(loaded.officers['chen-gong']).toMatchObject({
+      status: 'captive', captorFactionId: 'cao-cao', formerFactionId: 'liu-bei', cityId: 'luoyang',
+    });
+  });
+
+  it('preserves officer level and experience through a save round-trip', () => {
+    const state = createSampleState();
+    state.officers['cao-cao'].level = 7;
+    state.officers['cao-cao'].experience = 63;
+
+    const loaded = parseSave(serializeSave(state)).state;
+
+    expect(loaded.officers['cao-cao']).toMatchObject({ level: 7, experience: 63 });
+  });
+
+  it('migrates early named equipment slots into the ordered two-slot model', () => {
+    const legacy = createSampleState();
+    (legacy as { schemaVersion: number }).schemaVersion = 4;
+    delete (legacy as Partial<GameState>).lifecyclePolicy;
+    delete legacy.officers['guan-yu'].equipmentItemIds;
+    legacy.officers['guan-yu'].weaponItemId = 'qinglong-blade';
+    legacy.officers['guan-yu'].mountItemId = 'red-hare';
+
+    const loaded = parseSave(legacy).state;
+
+    expect(loaded.officers['guan-yu'].equipmentItemIds).toEqual(['qinglong-blade', 'red-hare']);
+    expect(loaded.officers['guan-yu'].weaponItemId).toBeUndefined();
+    expect(loaded.officers['guan-yu'].mountItemId).toBeUndefined();
+  });
+
+  it('returns a third early named-slot item to the officer city during migration', () => {
+    const legacy = createSampleState();
+    (legacy as { schemaVersion: number }).schemaVersion = 4;
+    delete (legacy as Partial<GameState>).lifecyclePolicy;
+    delete legacy.officers['cao-cao'].equipmentItemIds;
+    legacy.officers['cao-cao'].weaponItemId = 'qinglong-blade';
+    legacy.officers['cao-cao'].intelligenceItemId = 'sunzi-manual';
+    legacy.officers['cao-cao'].mountItemId = 'red-hare';
+    legacy.cities.luoyang.itemIds = [];
+    legacy.cities.chenliu.hiddenItemIds = [];
+
+    const loaded = parseSave(legacy).state;
+
+    expect(loaded.officers['cao-cao'].equipmentItemIds).toEqual(['qinglong-blade', 'sunzi-manual']);
+    expect(loaded.cities.luoyang.itemIds).toEqual(['red-hare']);
+  });
+
+  it('restores the untouched item layer in pre-item bundled campaign saves', () => {
+    const legacy = createBundledScenario(4, getScenarioRulers(4)[0].sourceIndex);
+    (legacy as { schemaVersion: number }).schemaVersion = 4;
+    delete (legacy as Partial<GameState>).lifecyclePolicy;
+    for (const officer of Object.values(legacy.officers)) {
+      const effective = getEffectiveOfficerAttributes(legacy, officer);
+      officer.force = effective.force;
+      officer.intelligence = effective.intelligence;
+      delete officer.equipmentItemIds;
+    }
+    legacy.items = {};
+    for (const city of Object.values(legacy.cities)) {
+      delete city.itemIds;
+      delete city.hiddenItemIds;
+    }
+
+    const loaded = parseSave(legacy).state;
+    const zhaoYun = Object.values(loaded.officers).find((officer) => officer.name === '赵云')!;
+
+    expect(Object.keys(loaded.items).length).toBeGreaterThanOrEqual(33);
+    expect(zhaoYun.equipmentItemIds).toEqual(['item-9', 'item-8']);
+    expect(getEffectiveOfficerAttributes(loaded, zhaoYun).force).toBe(109);
+  });
+
+  it('backfills future appearance schedules in older schema-four bundled saves', () => {
+    const legacy = createBundledScenario(1, getScenarioRulers(1)[0].sourceIndex);
+    for (const officer of Object.values(legacy.officers)) {
+      delete officer.appearanceYear;
+      delete officer.appearanceCityId;
+    }
+
+    const loaded = parseSave(legacy).state;
+    const scheduled = Object.values(loaded.officers).filter((officer) => officer.appearanceYear !== undefined);
+
+    expect(scheduled).toHaveLength(30);
+    expect(loaded.officers['officer-54']).toMatchObject({
+      status: 'hidden',
+      appearanceYear: 191,
+      appearanceCityId: 'city-33',
+    });
+    expect(loaded.rngSeed).toBe(legacy.rngSeed);
+    expect(loaded.logs.at(-1)?.message).toContain('补全 30 名人物的登场日程');
+  });
+
+  it('deterministically catches up due people when an older save already passed their appearance year', () => {
+    const legacy = createBundledScenario(1, getScenarioRulers(1)[0].sourceIndex);
+    legacy.calendar = { year: 191, month: 1 };
+    for (const officer of Object.values(legacy.officers)) {
+      delete officer.appearanceYear;
+      delete officer.appearanceCityId;
+    }
+    const afterFirstRandom = nextRandom(legacy.rngSeed);
+    const afterSecondRandom = nextRandom(afterFirstRandom.seed);
+
+    const loaded = parseSave(legacy).state;
+
+    expect(Object.values(loaded.officers).filter(
+      (officer) => officer.status === 'free' && officer.appearanceYear === 191,
+    )).toHaveLength(4);
+    expect(loaded.officers['officer-54']).toMatchObject({
+      name: '孙策',
+      status: 'free',
+      cityId: 'city-33',
+      age: 16,
+    });
+    expect(loaded.rngSeed).toBe(afterSecondRandom.seed);
+    expect(loaded.logs.at(-1)?.message).toContain('其中 4 人按已到年份进入在野');
+  });
+
+  it('catches up every officer status once when restoring an old appearance layer', () => {
+    let legacy = createBundledScenario(1, getScenarioRulers(1)[0].sourceIndex);
+    const neutralFactionId = Object.values(legacy.factions).find((faction) => faction.isNeutral)!.id;
+    const playerCityId = Object.values(legacy.cities).find(
+      (city) => city.ownerId === legacy.playerFactionId,
+    )!.id;
+    const moveCandidate = Object.values(legacy.officers).find((officer) =>
+      officer.status === 'serving'
+      && officer.factionId === legacy.playerFactionId
+      && officer.cityId
+      && legacy.factions[officer.factionId].rulerOfficerId !== officer.id
+      && legacy.cities[officer.cityId].satrapOfficerId !== officer.id
+      && getStrategicDestinations(legacy, officer.cityId, legacy.playerFactionId).length > 0,
+    )!;
+    const moveDestination = getStrategicDestinations(
+      legacy,
+      moveCandidate.cityId!,
+      legacy.playerFactionId,
+    )[0];
+    legacy = issueMoveOrder(legacy, {
+      sourceCityId: moveCandidate.cityId!,
+      targetCityId: moveDestination.city.id,
+      officerId: moveCandidate.id,
+    });
+    legacy.calendar = { year: 193, month: 5 };
+    for (const order of Object.values(legacy.strategicOrders)) {
+      order.createdYear = legacy.calendar.year;
+      order.createdMonth = legacy.calendar.month;
+    }
+
+    const freeOfficer = Object.values(legacy.officers).find(
+      (officer) => officer.status === 'hidden' && (officer.appearanceYear ?? Infinity) <= legacy.calendar.year,
+    )!;
+    const spareServing = Object.values(legacy.officers).filter((officer) =>
+      officer.status === 'serving'
+      && officer.cityId
+      && officer.id !== moveCandidate.id
+      && legacy.factions[officer.factionId].rulerOfficerId !== officer.id
+      && legacy.cities[officer.cityId].satrapOfficerId !== officer.id,
+    );
+    const captiveOfficer = spareServing.find(
+      (officer) => officer.factionId !== legacy.playerFactionId,
+    )!;
+    const servingOfficer = spareServing.find(
+      (officer) => officer.id !== captiveOfficer.id,
+    )!;
+    const futureOfficer = Object.values(legacy.officers).find(
+      (officer) => officer.status === 'hidden' && (officer.appearanceYear ?? 0) > legacy.calendar.year,
+    )!;
+    const originalAges = Object.fromEntries(
+      [moveCandidate, freeOfficer, captiveOfficer, servingOfficer, futureOfficer]
+        .map((officer) => [officer.id, legacy.officers[officer.id].age]),
+    );
+
+    legacy.officers[freeOfficer.id] = {
+      ...legacy.officers[freeOfficer.id],
+      status: 'free',
+      factionId: neutralFactionId,
+      cityId: playerCityId,
+      troops: 0,
+    };
+    legacy.officers[captiveOfficer.id] = {
+      ...legacy.officers[captiveOfficer.id],
+      status: 'captive',
+      factionId: neutralFactionId,
+      cityId: playerCityId,
+      captorFactionId: legacy.playerFactionId,
+      formerFactionId: captiveOfficer.factionId,
+      troops: 0,
+      stamina: 0,
+    };
+    for (const officer of Object.values(legacy.officers)) {
+      delete officer.appearanceYear;
+      delete officer.appearanceCityId;
+    }
+
+    const loaded = parseSave(legacy).state;
+
+    for (const officerId of [moveCandidate.id, freeOfficer.id, captiveOfficer.id, servingOfficer.id, futureOfficer.id]) {
+      expect(loaded.officers[officerId].age).toBe(originalAges[officerId] + 3);
+    }
+    expect(loaded.officers[moveCandidate.id]).toMatchObject({ status: 'serving', cityId: undefined });
+    expect(loaded.officers[freeOfficer.id]).toMatchObject({
+      status: 'free',
+      appearanceYear: freeOfficer.appearanceYear,
+      appearanceCityId: freeOfficer.appearanceCityId,
+    });
+    expect(loaded.officers[captiveOfficer.id].status).toBe('captive');
+    expect(loaded.officers[futureOfficer.id].status).toBe('hidden');
+    expect(loaded.logs.at(-1)?.message).toContain('全员补计 3 次年度年龄');
+
+    const reloaded = parseSave(serializeSave(loaded)).state;
+    expect(Object.fromEntries(
+      Object.values(reloaded.officers).map((officer) => [officer.id, officer.age]),
+    )).toEqual(Object.fromEntries(
+      Object.values(loaded.officers).map((officer) => [officer.id, officer.age]),
+    ));
+  });
+
+  it('rejects partially missing appearance schedules instead of repeating migration', () => {
+    const cityOnly = createBundledScenario(1, getScenarioRulers(1)[0].sourceIndex);
+    const fixedSchedule = Object.values(cityOnly.officers).find(
+      (officer) => officer.appearanceYear !== undefined && officer.appearanceCityId !== undefined,
+    )!;
+    delete cityOnly.officers[fixedSchedule.id].appearanceYear;
+
+    expect(() => parseSave(cityOnly)).toThrow('人物登场日程字段不完整');
+
+    const missingFixedCity = createBundledScenario(1, getScenarioRulers(1)[0].sourceIndex);
+    delete missingFixedCity.officers[fixedSchedule.id].appearanceCityId;
+
+    expect(() => parseSave(missingFixedCity)).toThrow('人物登场日程字段不完整');
+
+    const missingRandomSchedule = createBundledScenario(1, getScenarioRulers(1)[0].sourceIndex);
+    const randomSchedule = Object.values(missingRandomSchedule.officers).find(
+      (officer) => officer.appearanceYear !== undefined && officer.appearanceCityId === undefined,
+    )!;
+    delete missingRandomSchedule.officers[randomSchedule.id].appearanceYear;
+
+    expect(() => parseSave(missingRandomSchedule)).toThrow('人物登场日程字段不完整');
   });
 
   it('rejects unknown envelopes and invalid state references', () => {
@@ -34,6 +397,18 @@ describe('versioned saves', () => {
     const state = createSampleState();
     state.officers['cao-cao'].cityId = 'missing';
     expect(() => serializeSave(state)).toThrow('Invalid game state');
+  });
+
+  it('rejects schema-five saves that omit the required lifecycle policy', () => {
+    const state = createSampleState();
+    delete (state as Partial<GameState>).lifecyclePolicy;
+
+    expect(() => parseSave({
+      format: 'sanguo-baye-web',
+      version: 1,
+      savedAt: '2026-07-26T00:00:00.000Z',
+      state,
+    })).toThrow('lifecyclePolicy');
   });
 
   it('stores independent automatic and manual slots', () => {
@@ -52,5 +427,62 @@ describe('versioned saves', () => {
     expect(values.has(slotKey('auto'))).toBe(true);
     expect(loadFromSlot(storage, 'auto')?.state.calendar.month).toBe(1);
     expect(loadFromSlot(storage, '1')?.state.calendar.month).toBe(2);
+  });
+
+  it('replaces a different campaign auto save before an untouched manual-save battle', () => {
+    const values = new Map<string, string>();
+    const storage: SaveStorage = {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => { values.set(key, value); },
+      removeItem: (key) => { values.delete(key); },
+    };
+    const previousCampaign = createSampleState();
+    previousCampaign.calendar.month = 8;
+    previousCampaign.campaignStarted = true;
+    const loadedManualCampaign = createSampleState();
+    loadedManualCampaign.calendar.month = 2;
+    loadedManualCampaign.campaignStarted = false;
+
+    saveToSlot(storage, 'auto', previousCampaign, '上一局自动存档');
+    savePlayerBattleRollback(
+      storage,
+      loadedManualCampaign,
+      '手动载入战役 · 战前自动存档',
+      '2026-07-26T00:00:00.000Z',
+    );
+
+    const restored = loadFromSlot(storage, 'auto');
+    expect(restored?.label).toBe('手动载入战役 · 战前自动存档');
+    expect(restored?.state).toEqual(loadedManualCampaign);
+    expect(restored?.state.campaignStarted).toBe(false);
+  });
+
+  it('round-trips and clears a resumable player-defense checkpoint', () => {
+    const values = new Map<string, string>();
+    const storage: SaveStorage = {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => { values.set(key, value); },
+      removeItem: (key) => { values.delete(key); },
+    };
+    const state = beginAiPhase(createSampleState());
+    state.activeFactionId = 'liu-bei';
+    const order = {
+      sourceCityId: 'hanzhong',
+      targetCityId: 'chang-an',
+      officerIds: ['guan-yu'],
+      provisions: 100,
+    };
+
+    saveBattleCheckpoint(storage, state, order, 2, '连续守城检查点');
+    expect(loadBattleCheckpoint(storage)).toEqual({ state, order, nextFactionIndex: 2, label: '连续守城检查点' });
+
+    const checkpointKey = [...values.keys()].find((key) => key.includes('battle-checkpoint'))!;
+    const damaged = JSON.parse(values.get(checkpointKey)!) as { resume: { nextFactionIndex: number } };
+    damaged.resume.nextFactionIndex = 0;
+    values.set(checkpointKey, JSON.stringify(damaged));
+    expect(() => loadBattleCheckpoint(storage)).toThrow('AI 恢复位置无效');
+
+    deleteBattleCheckpoint(storage);
+    expect(loadBattleCheckpoint(storage)).toBeUndefined();
   });
 });

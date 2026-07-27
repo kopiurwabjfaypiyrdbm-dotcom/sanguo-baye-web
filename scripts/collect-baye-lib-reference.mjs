@@ -131,9 +131,6 @@ function inspectTarget(archive, target) {
     byteLength: decoded.length,
     decodedSha256: sha256(decoded),
   };
-  if (target.resourceId === 2 && target.itemIndex === 4) {
-    item.signedValues = [...decoded].map((value) => (value > 0x7f ? value - 0x100 : value));
-  }
   return {
     ...target,
     header,

@@ -20,6 +20,7 @@ export function createStrategyMap(
     parent: container,
     backgroundColor: '#10211f',
     antialias: true,
+    audio: { noAudio: true },
     render: { transparent: false },
     scale: {
       mode: Phaser.Scale.RESIZE,

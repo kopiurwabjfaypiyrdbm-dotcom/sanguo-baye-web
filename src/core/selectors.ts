@@ -12,6 +12,12 @@ export function getCityFreeOfficers(state: GameState, cityId: string): Officer[]
     .sort((a, b) => b.intelligence - a.intelligence || b.force - a.force || a.name.localeCompare(b.name, 'zh-Hans-CN'));
 }
 
+export function getCityCaptives(state: GameState, cityId: string): Officer[] {
+  return Object.values(state.officers)
+    .filter((officer) => officer.cityId === cityId && officer.status === 'captive')
+    .sort((a, b) => b.intelligence - a.intelligence || b.force - a.force || a.name.localeCompare(b.name, 'zh-Hans-CN'));
+}
+
 export function getNeighborCities(state: GameState, cityId: string): City[] {
   const city = state.cities[cityId];
   if (!city) return [];

@@ -75,17 +75,17 @@ const items: Record<string, Item> = {
 };
 
 const armsTypes: Record<string, ArmsType> = {
-  cavalry: { id: 'cavalry', name: '骑兵', attackModifier: 1.08, defenseModifier: 0.96, mobility: 4 },
-  infantry: { id: 'infantry', name: '步兵', attackModifier: 1, defenseModifier: 1.08, mobility: 3 },
-  archer: { id: 'archer', name: '弓兵', attackModifier: 1.04, defenseModifier: 0.92, mobility: 3 },
-  navy: { id: 'navy', name: '水兵', attackModifier: 0.98, defenseModifier: 1, mobility: 3 },
-  elite: { id: 'elite', name: '极兵', attackModifier: 1.16, defenseModifier: 1.12, mobility: 4 },
+  cavalry: { id: 'cavalry', name: '骑兵', attackModifier: 1.08, defenseModifier: 0.96, mobility: 5 },
+  infantry: { id: 'infantry', name: '步兵', attackModifier: 1, defenseModifier: 1.08, mobility: 4 },
+  archer: { id: 'archer', name: '弓兵', attackModifier: 1.04, defenseModifier: 0.92, mobility: 4 },
+  navy: { id: 'navy', name: '水兵', attackModifier: 0.98, defenseModifier: 1, mobility: 5 },
+  elite: { id: 'elite', name: '极兵', attackModifier: 1.16, defenseModifier: 1.12, mobility: 6 },
   mystic: { id: 'mystic', name: '玄兵', attackModifier: 0.94, defenseModifier: 1.18, mobility: 3 },
 };
 
 export function createSampleState(): GameState {
   return updateCitySatraps({
-    schemaVersion: 2,
+    schemaVersion: 5,
     scenario: { id: 'sample-190', source: 'sample' },
     turn: 1,
     phase: 'player',
@@ -94,9 +94,21 @@ export function createSampleState(): GameState {
     rngSeed: 0x190001,
     calendar: { year: 190, month: 1 },
     campaignStarted: false,
+    lifecyclePolicy: {
+      version: 1,
+      ageGrowth: 'enabled',
+      naturalDeath: 'disabled',
+      battleDeath: 'disabled',
+      captiveEscape: 'disabled',
+    },
     playerFactionId: 'cao-cao',
     actedOfficerIds: [],
+    strategicOrders: {},
+    nextStrategicOrderSerial: 1,
+    diplomaticOrders: {},
+    nextDiplomaticOrderSerial: 1,
     discoveredOfficerIds: [],
+    intelReports: {},
     factions: structuredClone(factions),
     cities: structuredClone(cities),
     officers: structuredClone(officers),
@@ -143,6 +155,8 @@ function city(
     money: 800,
     food: 1600,
     reserveTroops: 3000,
+    itemIds: id === 'luoyang' ? ['sunzi-manual'] : [],
+    hiddenItemIds: id === 'chenliu' ? ['red-hare'] : [],
   };
 }
 
@@ -158,7 +172,7 @@ function officer(
   troops: number,
   loyalty: number,
   age: number,
-  weaponItemId?: string,
+  equipmentItemId?: string,
   status: Officer['status'] = 'serving',
 ): Officer {
   return {
@@ -168,7 +182,7 @@ function officer(
     intelligence,
     leadership,
     armsTypeId,
-    weaponItemId,
+    equipmentItemIds: equipmentItemId ? [equipmentItemId] : [],
     status,
     factionId,
     cityId,

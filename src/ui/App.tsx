@@ -1,12 +1,64 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
-import { executeAttack } from '../core/battle';
-import { developFarming, distributeTroops, recruitTroops } from '../core/cityCommands';
+import { applyBattleResult, executeAttack, type AttackOrder } from '../core/battle';
+import {
+  banquetOfficer,
+  developCommerce,
+  developFarming,
+  distributeTroops,
+  governCity,
+  inspectCity,
+  plunderCity,
+  recruitTroops,
+  tradeFood,
+} from '../core/cityCommands';
 import { createSampleState } from '../core/sampleState';
-import { appointSatrap, moveOfficer, recruitFreeOfficer, rewardOfficer, searchCity } from '../core/personnelCommands';
+import { recruitCaptive, releaseCaptive } from '../core/captiveCommands';
+import { reconnoitreCity } from '../core/reconnaissance';
+import {
+  appointSatrap,
+  giveItemToOfficer,
+  moveOfficer,
+  recruitFreeOfficer,
+  rewardOfficer,
+  searchCity,
+  unequipOfficerItem,
+} from '../core/personnelCommands';
 import { parseSave, serializeSave } from '../core/saveGame';
-import { loadFromSlot, saveToSlot, slotKey, type SaveSlotId } from '../core/saveStorage';
-import { advanceTurn } from '../core/turn';
-import type { GameLog, GameState } from '../core/types';
+import {
+  deleteBattleCheckpoint,
+  loadFromSlot,
+  saveToSlot,
+  slotKey,
+  type SaveSlotId,
+} from '../core/saveStorage';
+import {
+  loadBattleRecovery,
+  saveCommittedBattleRecovery,
+  savePendingBattleRecovery,
+} from '../core/battleRecovery';
+import {
+  advanceTurnUntilPlayerDefense,
+  continueTurnUntilPlayerDefense,
+  type InteractiveTurnProgress,
+} from '../core/turn';
+import { summarizeMonth } from '../core/monthSummary';
+import type { GameState, LifecyclePolicy } from '../core/types';
+import {
+  attackTacticalUnit,
+  createTacticalBattle,
+  createTacticalBattleResult,
+  endTacticalSide,
+  getAttackableUnitIds,
+  getReachableTiles,
+  previewTacticalAttack,
+  moveTacticalUnit,
+  runBasicTacticalAi,
+  useTacticalSkill,
+  waitTacticalUnit,
+  type TacticalBattleState,
+  type TacticalPosition,
+  type TacticalSkillId,
+} from '../core/tacticalBattle';
 import {
   createBundledScenario,
   getScenarioOptions,
@@ -17,8 +69,19 @@ import { createGameBridge } from '../game/events';
 import { createStrategyMap, type StrategyMapController } from '../game/createGame';
 import { RulerScreen, ScenarioScreen, TitleScreen } from './CampaignSetup';
 import { CityPanel } from './CityPanel';
+import { TacticalBattleScreen } from './TacticalBattleScreen';
+import { getFactionStrategicOrders, issueTransportOrder } from '../core/strategicOrders';
+import { getFactionDiplomaticOrders, issueDiplomaticOrder } from '../core/diplomaticOrders';
+import {
+  SAFE_LIFECYCLE_POLICY,
+  banishOfficer,
+  configureLifecyclePolicy,
+  confiscateOfficerEquipment,
+  executeCaptive,
+  resolveSuccession,
+} from '../core/officerLifecycle';
 
-type AppScreen = 'title' | 'scenario' | 'ruler' | 'game';
+type AppScreen = 'title' | 'scenario' | 'ruler' | 'game' | 'battle';
 const scenarioOptions = getScenarioOptions();
 
 export function App() {
@@ -28,15 +91,48 @@ export function App() {
   const [hasContinue, setHasContinue] = useState(initialGame.hasAutoSave);
   const [selectedPeriod, setSelectedPeriod] = useState<BundledPeriodId>(1);
   const [selectedRulerIndex, setSelectedRulerIndex] = useState(() => getScenarioRulers(1)[0].sourceIndex);
+  const [selectedLifecyclePolicy, setSelectedLifecyclePolicy] = useState<LifecyclePolicy>({
+    ...SAFE_LIFECYCLE_POLICY,
+  });
   const [selectedCityId, setSelectedCityId] = useState(() => firstOwnedCityId(initialGame.state));
   const [sourceLabel, setSourceLabel] = useState(initialGame.sourceLabel);
   const [selectedSaveSlot, setSelectedSaveSlot] = useState<Exclude<SaveSlotId, 'auto'>>('1');
   const [feedback, setFeedback] = useState<{ kind: 'success' | 'error'; message: string }>();
   const [monthSummary, setMonthSummary] = useState<string[]>([]);
   const [isResolving, setIsResolving] = useState(false);
+  const [pendingAttack, setPendingAttack] = useState<AttackOrder>();
+  const [tacticalBattle, setTacticalBattle] = useState<TacticalBattleState>();
+  const [selectedTacticalUnitId, setSelectedTacticalUnitId] = useState<string>();
+  const [pendingTacticalTargetId, setPendingTacticalTargetId] = useState<string>();
+  const [aiResumeFactionIndex, setAiResumeFactionIndex] = useState<number>();
   const mapHost = useRef<HTMLDivElement>(null);
   const mapController = useRef<StrategyMapController | null>(null);
+  const aiTurnLogStart = useRef(0);
   const bridge = useMemo(() => createGameBridge(), []);
+  const tacticalReachable = useMemo(() => {
+    if (!tacticalBattle || !selectedTacticalUnitId || tacticalBattle.status !== 'ongoing') return [];
+    try {
+      return getReachableTiles(tacticalBattle, selectedTacticalUnitId);
+    } catch {
+      return [];
+    }
+  }, [tacticalBattle, selectedTacticalUnitId]);
+  const tacticalAttackable = useMemo(() => {
+    if (!tacticalBattle || !selectedTacticalUnitId || tacticalBattle.status !== 'ongoing') return [];
+    try {
+      return getAttackableUnitIds(tacticalBattle, selectedTacticalUnitId);
+    } catch {
+      return [];
+    }
+  }, [tacticalBattle, selectedTacticalUnitId]);
+  const playerStrategicOrders = useMemo(
+    () => getFactionStrategicOrders(state, state.playerFactionId),
+    [state],
+  );
+  const playerDiplomaticOrders = useMemo(
+    () => getFactionDiplomaticOrders(state, state.playerFactionId),
+    [state],
+  );
 
   useEffect(() => bridge.on('city:selected', ({ cityId }) => setSelectedCityId(cityId)), [bridge]);
 
@@ -65,6 +161,21 @@ export function App() {
     }
   }, [screen, state, sourceLabel]);
 
+  useEffect(() => {
+    if (screen !== 'battle' || !tacticalBattle || tacticalBattle.status !== 'ongoing') return;
+    const playerSide = tacticalBattle.attackerFactionId === state.playerFactionId ? 'attacker' : 'defender';
+    if (tacticalBattle.activeSide === playerSide) return;
+    setIsResolving(true);
+    setFeedback({ kind: 'success', message: '敌方正在判断移动与攻击目标……' });
+    const timer = window.setTimeout(() => {
+      setTacticalBattle((current) => current ? runBasicTacticalAi(current) : current);
+      setSelectedTacticalUnitId(undefined);
+      setIsResolving(false);
+      setFeedback({ kind: 'success', message: '敌方阶段结束。' });
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [screen, state.playerFactionId, tacticalBattle]);
+
   function beginNewGame() {
     setFeedback(undefined);
     setScreen('scenario');
@@ -78,24 +189,87 @@ export function App() {
   }
 
   function startCampaign() {
-    const next = createBundledScenario(selectedPeriod, selectedRulerIndex);
+    const next = configureLifecyclePolicy(
+      createBundledScenario(selectedPeriod, selectedRulerIndex),
+      selectedLifecyclePolicy,
+    );
     const label = sourceLabelForState(next);
     setState(next);
     setSelectedCityId(firstOwnedCityId(next));
     setSourceLabel(label);
     setMonthSummary([]);
-    setFeedback({ kind: 'success', message: `已选择${next.factions[next.playerFactionId].name}，霸业由此开始。` });
+    try {
+      clearBattleCheckpoint();
+    } catch (error) {
+      setFeedback({
+        kind: 'error',
+        message: `旧战斗恢复记录无法安全清理：${error instanceof Error ? error.message : '浏览器存储不可用'}。请修复存储后重试开局。`,
+      });
+      return;
+    }
     try {
       saveToSlot(window.localStorage, 'auto', next, `${label} · 自动存档`);
       setHasContinue(true);
-    } catch {
-      // Starting a campaign remains possible even if browser storage is unavailable.
+      setFeedback({ kind: 'success', message: `已选择${next.factions[next.playerFactionId].name}，霸业由此开始。` });
+    } catch (error) {
+      setFeedback({
+        kind: 'error',
+        message: `霸业已开始，但自动存档不可用：${error instanceof Error ? error.message : '浏览器存储不可用'}。`,
+      });
     }
     setScreen('game');
   }
 
   function continueCampaign() {
     try {
+      let recovery;
+      try {
+        recovery = loadBattleRecovery(window.localStorage);
+      } catch {
+        clearBattleCheckpointBestEffort();
+      }
+      if (recovery?.status === 'committed') {
+        try {
+          saveToSlot(window.localStorage, 'auto', recovery.state, recovery.label);
+          clearBattleCheckpoint();
+        } catch (error) {
+          setHasContinue(true);
+          setFeedback({
+            kind: 'error',
+            message: `战后恢复记录尚未安全清理：${error instanceof Error ? error.message : '浏览器存储不可用'}。请修复存储后重试。`,
+          });
+          return;
+        }
+        setState(recovery.state);
+        setSelectedCityId(firstOwnedCityId(recovery.state));
+        setSourceLabel(sourceLabelForState(recovery.state));
+        setMonthSummary([]);
+        setScreen('game');
+        setFeedback({
+          kind: 'success',
+          message: recovery.label ? `已载入：${recovery.label}` : '已载入战后存档。',
+        });
+        return;
+      }
+      if (recovery?.status === 'pending') {
+        const battle = createTacticalBattle(recovery.state, recovery.order);
+        setState(recovery.state);
+        setSelectedCityId(recovery.order.targetCityId);
+        setSourceLabel(sourceLabelForState(recovery.state));
+        setMonthSummary([]);
+        setTacticalBattle(battle);
+        setSelectedTacticalUnitId(undefined);
+        setPendingTacticalTargetId(undefined);
+        setAiResumeFactionIndex(
+          recovery.resume.kind === 'ai-phase' ? recovery.resume.nextFactionIndex : undefined,
+        );
+        setScreen('battle');
+        setFeedback({
+          kind: 'success',
+          message: `已从战前检查点重新展开${recovery.mode === 'ai-defense' ? '守城战' : '进攻战'}。`,
+        });
+        return;
+      }
       const envelope = loadFromSlot(window.localStorage, 'auto');
       if (!envelope) throw new Error('尚无自动存档');
       applyLoadedState(envelope.state, envelope.label);
@@ -127,6 +301,7 @@ export function App() {
   }
 
   function applyLoadedState(next: GameState, label?: string) {
+    clearBattleCheckpoint();
     setState(next);
     setSelectedCityId(firstOwnedCityId(next));
     setSourceLabel(sourceLabelForState(next));
@@ -163,7 +338,7 @@ export function App() {
   function applyPlayerAction(
     transform: (current: GameState) => GameState,
     selectedAfter?: string | ((next: GameState) => string),
-  ) {
+  ): boolean {
     try {
       const next = transform(state);
       setState(next);
@@ -171,8 +346,272 @@ export function App() {
         setSelectedCityId(typeof selectedAfter === 'function' ? selectedAfter(next) : selectedAfter);
       }
       setFeedback({ kind: 'success', message: next.logs.at(-1)?.message ?? '命令已执行。' });
+      return true;
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '命令执行失败。' });
+      return false;
+    }
+  }
+
+  function requestAttack(order: AttackOrder) {
+    setPendingAttack(order);
+    setFeedback(undefined);
+  }
+
+  function resolvePendingAttackQuickly() {
+    if (!pendingAttack) return;
+    const order = pendingAttack;
+    setPendingAttack(undefined);
+    applyPlayerAction(
+      (current) => executeAttack(current, order),
+      (next) => next.cities[order.targetCityId].ownerId === next.playerFactionId
+        ? order.targetCityId
+        : order.sourceCityId,
+    );
+  }
+
+  function beginManualBattle() {
+    if (!pendingAttack) return;
+    try {
+      const battle = createTacticalBattle(state, pendingAttack);
+      clearBattleCheckpoint();
+      let recoveryWarning: string | undefined;
+      try {
+        savePendingBattleRecovery(
+          window.localStorage,
+          state,
+          pendingAttack,
+          { kind: 'player-phase' },
+          `${sourceLabel} · 进攻战前检查点`,
+        );
+        setHasContinue(true);
+      } catch (error) {
+        recoveryWarning = error instanceof Error ? error.message : '浏览器存储不可用';
+      }
+      setTacticalBattle(battle);
+      setSelectedTacticalUnitId(undefined);
+      setPendingTacticalTargetId(undefined);
+      setPendingAttack(undefined);
+      setFeedback(recoveryWarning
+        ? { kind: 'error', message: `战场已经展开，但刷新恢复不可用：${recoveryWarning}` }
+        : { kind: 'success', message: '战场已经展开；刷新页面会从战前检查点重开。' });
+      setScreen('battle');
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '无法进入战场。' });
+      setPendingAttack(undefined);
+    }
+  }
+
+  function selectTacticalUnit(unitId: string) {
+    if (!tacticalBattle || tacticalBattle.status !== 'ongoing' || isResolving) return;
+    const playerSide = tacticalBattle.attackerFactionId === state.playerFactionId ? 'attacker' : 'defender';
+    const unit = tacticalBattle.units[unitId];
+    if (!unit || unit.troops <= 0) return;
+    if (unit.side === playerSide) {
+      if (tacticalBattle.activeSide !== playerSide) {
+        setFeedback({ kind: 'error', message: '敌方阶段尚未结束。' });
+        return;
+      }
+      if (unit.acted) {
+        setFeedback({ kind: 'error', message: `${unit.name}本阶段已经行动。` });
+        return;
+      }
+      setSelectedTacticalUnitId(unitId);
+      setPendingTacticalTargetId(undefined);
+      setFeedback({ kind: 'success', message: `已选择${unit.name}。青色格可移动，红框单位可攻击。` });
+      return;
+    }
+    if (!selectedTacticalUnitId) {
+      setFeedback({ kind: 'error', message: '请先选择一个己方单位。' });
+      return;
+    }
+    if (!tacticalAttackable.includes(unitId)) {
+      setFeedback({ kind: 'error', message: '目标不在当前单位的攻击范围内。' });
+      return;
+    }
+    setPendingTacticalTargetId(unitId);
+    const preview = previewTacticalAttack(tacticalBattle, selectedTacticalUnitId, unitId);
+    setFeedback({
+      kind: 'success',
+      message: `已锁定${unit.name}：预计损失 ${preview.damage}，确认后才会执行攻击。`,
+    });
+  }
+
+  function confirmSelectedTacticalAttack() {
+    if (!tacticalBattle || !selectedTacticalUnitId || !pendingTacticalTargetId || isResolving) return;
+    try {
+      const next = attackTacticalUnit(tacticalBattle, selectedTacticalUnitId, pendingTacticalTargetId);
+      setTacticalBattle(next);
+      setPendingTacticalTargetId(undefined);
+      setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '攻击完成。' });
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '攻击失败。' });
+    }
+  }
+
+  function moveSelectedTacticalUnit(position: TacticalPosition) {
+    if (!tacticalBattle || !selectedTacticalUnitId || isResolving) return;
+    try {
+      const next = moveTacticalUnit(tacticalBattle, selectedTacticalUnitId, position);
+      setTacticalBattle(next);
+      setPendingTacticalTargetId(undefined);
+      setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '移动完成。' });
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '移动失败。' });
+    }
+  }
+
+  function waitSelectedTacticalUnit() {
+    if (!tacticalBattle || !selectedTacticalUnitId || isResolving) return;
+    try {
+      const next = waitTacticalUnit(tacticalBattle, selectedTacticalUnitId);
+      setTacticalBattle(next);
+      setPendingTacticalTargetId(undefined);
+      setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '单位已待命。' });
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '待命失败。' });
+    }
+  }
+
+  function useSelectedTacticalSkill(skillId: TacticalSkillId, targetUnitId: string) {
+    if (!tacticalBattle || !selectedTacticalUnitId || isResolving) return;
+    try {
+      const next = useTacticalSkill(tacticalBattle, selectedTacticalUnitId, skillId, targetUnitId);
+      setTacticalBattle(next);
+      setPendingTacticalTargetId(undefined);
+      setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '计谋执行完成。' });
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '计谋执行失败。' });
+    }
+  }
+
+  function endPlayerTacticalSide() {
+    if (!tacticalBattle || isResolving) return;
+    try {
+      const next = endTacticalSide(tacticalBattle);
+      setTacticalBattle(next);
+      setSelectedTacticalUnitId(undefined);
+      setPendingTacticalTargetId(undefined);
+      setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '本方阶段结束。' });
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '无法结束阶段。' });
+    }
+  }
+
+  function finishManualBattle() {
+    if (!tacticalBattle || tacticalBattle.status === 'ongoing') return;
+    try {
+      const result = createTacticalBattleResult(tacticalBattle);
+      let next = applyBattleResult(state, result);
+      if (next.pendingSuccession && aiResumeFactionIndex !== undefined) {
+        next = {
+          ...next,
+          pendingSuccession: {
+            ...next.pendingSuccession,
+            resumeAiFactionIndex: aiResumeFactionIndex,
+          },
+        };
+      }
+      if (aiResumeFactionIndex !== undefined && next.phase !== 'ended' && !next.pendingSuccession) {
+        const progress = continueTurnUntilPlayerDefense(next, aiResumeFactionIndex);
+        applyInteractiveTurnProgress(progress, tacticalBattle.id);
+      } else {
+        const persistenceError = finalizeBattleRecovery(tacticalBattle.id, next);
+        if (persistenceError) {
+          setFeedback({ kind: 'error', message: `战斗已结算，但持久化失败：${persistenceError}。请重试结算。` });
+          return;
+        }
+        setTacticalBattle(undefined);
+        setSelectedTacticalUnitId(undefined);
+        setPendingTacticalTargetId(undefined);
+        setAiResumeFactionIndex(undefined);
+        setState(next);
+        setSelectedCityId(next.cities[result.targetCityId].ownerId === next.playerFactionId
+          ? result.targetCityId
+          : result.sourceCityId);
+        setScreen('game');
+        setFeedback({ kind: 'success', message: result.logs.at(-1) ?? '战斗已经结算。' });
+      }
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '战斗结算失败。' });
+    }
+  }
+
+  function applyInteractiveTurnProgress(progress: InteractiveTurnProgress, completedBattleId?: string) {
+    if (progress.pendingPlayerDefense) {
+      try {
+        savePendingBattleRecovery(
+          window.localStorage,
+          progress.state,
+          progress.pendingPlayerDefense.order,
+          { kind: 'ai-phase', nextFactionIndex: progress.pendingPlayerDefense.nextFactionIndex },
+          `${sourceLabel} · 守城战前检查点`,
+        );
+      } catch (error) {
+        setIsResolving(false);
+        setFeedback({
+          kind: 'error',
+          message: `下一场守城战的恢复点写入失败：${error instanceof Error ? error.message : '浏览器存储不可用'}。请重试结算。`,
+        });
+        return;
+      }
+      const battle = createTacticalBattle(progress.state, progress.pendingPlayerDefense.order);
+      setState(progress.state);
+      setTacticalBattle(battle);
+      setSelectedTacticalUnitId(undefined);
+      setPendingTacticalTargetId(undefined);
+      setAiResumeFactionIndex(progress.pendingPlayerDefense.nextFactionIndex);
+      setScreen('battle');
+      setIsResolving(false);
+      setFeedback({
+        kind: 'success',
+        message: `${progress.state.factions[battle.attackerFactionId].name}来袭，请准备守城。`,
+      });
+      return;
+    }
+
+    const persistenceError = completedBattleId
+      ? finalizeBattleRecovery(completedBattleId, progress.state)
+      : undefined;
+    if (persistenceError) {
+      setIsResolving(false);
+      setFeedback({ kind: 'error', message: `月份已推进，但战斗结果持久化失败：${persistenceError}。请重试结算。` });
+      return;
+    }
+    if (!completedBattleId) clearBattleCheckpointBestEffort();
+    setState(progress.state);
+    setTacticalBattle(undefined);
+    setSelectedTacticalUnitId(undefined);
+    setPendingTacticalTargetId(undefined);
+    setAiResumeFactionIndex(undefined);
+    setMonthSummary(summarizeMonth(progress.state.logs.slice(aiTurnLogStart.current)));
+    if (progress.state.cities[selectedCityId]?.ownerId !== progress.state.playerFactionId) {
+      setSelectedCityId(firstOwnedCityId(progress.state));
+    }
+    setScreen('game');
+    setIsResolving(false);
+    setFeedback({
+      kind: 'success',
+      message: progress.state.phase === 'ended'
+        ? progress.state.outcome === 'victory' ? '战役已经胜利。' : '战役已经失败。'
+        : `已进入 ${progress.state.calendar.year} 年 ${progress.state.calendar.month} 月，武将体力与城池资源完成结算。`,
+    });
+  }
+
+  function finalizeBattleRecovery(battleId: string, next: GameState): string | undefined {
+    try {
+      saveCommittedBattleRecovery(
+        window.localStorage,
+        battleId,
+        next,
+        `${sourceLabel} · 战后提交`,
+      );
+      saveToSlot(window.localStorage, 'auto', next, `${sourceLabel} · 自动存档`);
+      clearBattleCheckpoint();
+      setHasContinue(true);
+      return undefined;
+    } catch (error) {
+      return error instanceof Error ? error.message : '浏览器存储不可用';
     }
   }
 
@@ -182,27 +621,60 @@ export function App() {
     setFeedback({ kind: 'success', message: '正在推演其他势力行动……' });
     await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
     try {
-      const next = advanceTurn(state);
-      setMonthSummary(summarizeMonth(next.logs.slice(state.logs.length)));
-      setState(next);
-      if (next.cities[selectedCityId]?.ownerId !== next.playerFactionId) {
-        setSelectedCityId(firstOwnedCityId(next));
-      }
-      setFeedback({
-        kind: 'success',
-        message: next.phase === 'ended'
-          ? next.outcome === 'victory' ? '战役已经胜利。' : '战役已经失败。'
-          : `已进入 ${next.calendar.year} 年 ${next.calendar.month} 月，武将体力与城池资源完成结算。`,
-      });
+      aiTurnLogStart.current = state.logs.length;
+      applyInteractiveTurnProgress(advanceTurnUntilPlayerDefense(state));
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '月度推进失败。' });
-    } finally {
       setIsResolving(false);
     }
   }
 
+  function chooseSuccessor(officerId: string) {
+    try {
+      const pending = state.pendingSuccession;
+      const next = resolveSuccession(state, officerId);
+      setState(next);
+      setFeedback({ kind: 'success', message: next.logs.at(-1)?.message ?? '新君已经继位。' });
+      if (pending?.resumePhase === 'ai' && pending.resumeAiFactionIndex !== undefined) {
+        applyInteractiveTurnProgress(continueTurnUntilPlayerDefense(next, pending.resumeAiFactionIndex));
+      }
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '无法完成君主继承。' });
+    }
+  }
+
+  if (screen === 'battle' && tacticalBattle) {
+    return (
+      <TacticalBattleScreen
+        campaign={state}
+        battle={tacticalBattle}
+        bridge={bridge}
+        selectedUnitId={selectedTacticalUnitId}
+        pendingTargetUnitId={pendingTacticalTargetId}
+        reachable={tacticalReachable}
+        attackableUnitIds={tacticalAttackable}
+        feedback={feedback}
+        isResolving={isResolving}
+        onUnitSelected={selectTacticalUnit}
+        onConfirmAttack={confirmSelectedTacticalAttack}
+        onTileSelected={moveSelectedTacticalUnit}
+        onWait={waitSelectedTacticalUnit}
+        onUseSkill={useSelectedTacticalSkill}
+        onEndSide={endPlayerTacticalSide}
+        onFinish={finishManualBattle}
+      />
+    );
+  }
+
   if (screen === 'title') {
-    return <TitleScreen hasContinue={hasContinue} onNewGame={beginNewGame} onContinue={continueCampaign} />;
+    return (
+      <TitleScreen
+        hasContinue={hasContinue}
+        hasPendingSuccession={Boolean(state.pendingSuccession)}
+        onNewGame={beginNewGame}
+        onContinue={continueCampaign}
+      />
+    );
   }
 
   if (screen === 'scenario') {
@@ -217,6 +689,8 @@ export function App() {
         rulers={getScenarioRulers(selectedPeriod)}
         selectedRulerIndex={selectedRulerIndex}
         onSelectRuler={setSelectedRulerIndex}
+        lifecyclePolicy={selectedLifecyclePolicy}
+        onLifecyclePolicyChange={setSelectedLifecyclePolicy}
         onStart={startCampaign}
         onBack={() => setScreen('scenario')}
       />
@@ -250,7 +724,12 @@ export function App() {
             </label>
           </div>
           <button type="button" className="return-title-action" onClick={() => setScreen('title')}>返回标题</button>
-          <button type="button" className="primary-action" disabled={isResolving || state.phase === 'ended'} onClick={endMonth}>
+          <button
+            type="button"
+            className="primary-action"
+            disabled={isResolving || state.phase === 'ended' || Boolean(state.pendingSuccession)}
+            onClick={endMonth}
+          >
             {isResolving ? '推演中…' : '结束本月'}
           </button>
         </div>
@@ -261,6 +740,42 @@ export function App() {
           <span>拖动地图 · 滚轮缩放 · 点击城池</span>
           <span>{Object.keys(state.cities).length} 城 / {countCurrentOfficers(state)} 名当前人物</span>
         </div>
+        {playerStrategicOrders.length > 0 && (
+          <div className="strategic-order-strip" aria-label="执行中的战略命令">
+            <strong>在途</strong>
+            {playerStrategicOrders.slice(0, 3).map((order) => (
+              <span key={order.id}>{describeStrategicOrder(state, order)}</span>
+            ))}
+            {playerStrategicOrders.length > 3 && (
+              <details className="strategic-order-overflow">
+                <summary>另有 {playerStrategicOrders.length - 3} 项在途命令</summary>
+                <div>
+                  {playerStrategicOrders.slice(3).map((order) => (
+                    <span key={order.id}>{describeStrategicOrder(state, order)}</span>
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
+        )}
+        {playerDiplomaticOrders.length > 0 && (
+          <div className="strategic-order-strip" aria-label="执行中的谋略命令">
+            <strong>谋略</strong>
+            {playerDiplomaticOrders.slice(0, 3).map((order) => (
+              <span key={order.id}>{describeDiplomaticOrder(state, order)}</span>
+            ))}
+            {playerDiplomaticOrders.length > 3 && (
+              <details className="strategic-order-overflow">
+                <summary>另有 {playerDiplomaticOrders.length - 3} 项谋略</summary>
+                <div>
+                  {playerDiplomaticOrders.slice(3).map((order) => (
+                    <span key={order.id}>{describeDiplomaticOrder(state, order)}</span>
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
+        )}
         <div className="map-host" ref={mapHost} />
         {feedback && (
           <div className={`action-feedback ${feedback.kind}`} role={feedback.kind === 'error' ? 'alert' : 'status'}>
@@ -277,9 +792,27 @@ export function App() {
       <CityPanel
         state={state}
         cityId={selectedCityId}
-        disabled={isResolving}
+        disabled={isResolving || Boolean(state.pendingSuccession)}
         onDevelop={(cityId, officerId) => applyPlayerAction(
           (current) => developFarming(current, { cityId, officerId }),
+        )}
+        onDevelopCommerce={(cityId, officerId) => applyPlayerAction(
+          (current) => developCommerce(current, { cityId, officerId }),
+        )}
+        onGovern={(cityId, officerId) => applyPlayerAction(
+          (current) => governCity(current, { cityId, officerId }),
+        )}
+        onInspect={(cityId, officerId) => applyPlayerAction(
+          (current) => inspectCity(current, { cityId, officerId }),
+        )}
+        onTrade={(cityId, officerId, direction, amount) => applyPlayerAction(
+          (current) => tradeFood(current, { cityId, officerId, direction, amount }),
+        )}
+        onBanquet={(cityId, targetOfficerId) => applyPlayerAction(
+          (current) => banquetOfficer(current, { cityId, targetOfficerId }),
+        )}
+        onPlunder={(cityId, officerId) => applyPlayerAction(
+          (current) => plunderCity(current, { cityId, officerId }),
         )}
         onRecruit={(cityId, officerId) => applyPlayerAction(
           (current) => recruitTroops(current, { cityId, officerId }),
@@ -293,9 +826,34 @@ export function App() {
         onReward={(cityId, officerId) => applyPlayerAction(
           (current) => rewardOfficer(current, { cityId, officerId }),
         )}
+        onGiveItem={(cityId, officerId, itemId) => applyPlayerAction(
+          (current) => giveItemToOfficer(current, { cityId, officerId, itemId }),
+        )}
+        onUnequipItem={(cityId, officerId, itemId) => applyPlayerAction(
+          (current) => unequipOfficerItem(current, { cityId, officerId, itemId }),
+        )}
+        onConfiscateItem={(cityId, officerId, itemId) => applyPlayerAction(
+          (current) => confiscateOfficerEquipment(current, { cityId, officerId, itemId }),
+        )}
+        onBanishOfficer={(cityId, officerId) => applyPlayerAction(
+          (current) => banishOfficer(current, { cityId, officerId }),
+        )}
+        onRecruitCaptive={(cityId, executorOfficerId, captiveOfficerId) => applyPlayerAction(
+          (current) => recruitCaptive(current, { cityId, executorOfficerId, captiveOfficerId }),
+        )}
+        onReleaseCaptive={(cityId, captiveOfficerId) => applyPlayerAction(
+          (current) => releaseCaptive(current, { cityId, captiveOfficerId }),
+        )}
+        onExecuteCaptive={(cityId, captiveOfficerId) => applyPlayerAction(
+          (current) => executeCaptive(current, { cityId, captiveOfficerId }),
+        )}
         onMove={(sourceCityId, targetCityId, officerId) => applyPlayerAction(
           (current) => moveOfficer(current, { sourceCityId, targetCityId, officerId }),
-          targetCityId,
+          sourceCityId,
+        )}
+        onTransport={(sourceCityId, targetCityId, officerId, cargo) => applyPlayerAction(
+          (current) => issueTransportOrder(current, { sourceCityId, targetCityId, officerId, cargo }),
+          sourceCityId,
         )}
         onAppoint={(cityId, officerId) => applyPlayerAction(
           (current) => appointSatrap(current, { cityId, officerId }),
@@ -303,11 +861,160 @@ export function App() {
         onDistribute={(cityId, officerId, targetTroops) => applyPlayerAction(
           (current) => distributeTroops(current, { cityId, officerId, targetTroops }),
         )}
-        onAttack={(sourceCityId, targetCityId, officerIds, provisions) => applyPlayerAction(
-          (current) => executeAttack(current, { sourceCityId, targetCityId, officerIds, provisions }),
-          (next) => next.cities[targetCityId].ownerId === next.playerFactionId ? targetCityId : sourceCityId,
+        onRecon={(sourceCityId, targetCityId, officerId) => applyPlayerAction(
+          (current) => reconnoitreCity(current, { sourceCityId, targetCityId, officerId }),
+          targetCityId,
         )}
+        onDiplomacy={(kind, sourceCityId, officerId, targetOfficerId) => applyPlayerAction(
+          (current) => issueDiplomaticOrder(current, { kind, sourceCityId, officerId, targetOfficerId }),
+          sourceCityId,
+        )}
+        onAttack={(sourceCityId, targetCityId, officerIds, provisions) => requestAttack({
+          sourceCityId,
+          targetCityId,
+          officerIds,
+          provisions,
+        })}
       />
+
+      {pendingAttack && (
+        <div
+          className="battle-choice-backdrop"
+          role="presentation"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setPendingAttack(undefined);
+            if (event.key !== 'Tab') return;
+            const controls = [
+              ...event.currentTarget.querySelectorAll<HTMLElement>(
+                'button:not(:disabled), select:not(:disabled)',
+              ),
+            ];
+            if (controls.length === 0) return;
+            const first = controls[0];
+            const last = controls[controls.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+              event.preventDefault();
+              last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+              event.preventDefault();
+              first.focus();
+            }
+          }}
+        >
+          <section
+            className="battle-choice-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="battle-choice-title"
+            aria-describedby="battle-choice-description"
+          >
+            <p className="panel-kicker">Campaign decision</p>
+            <h2 id="battle-choice-title">如何处理这场战斗？</h2>
+            <p id="battle-choice-description">
+              {state.cities[pendingAttack.sourceCityId].name}将向
+              {state.cities[pendingAttack.targetCityId].name}出征，携粮 {pendingAttack.provisions}。
+            </p>
+            <div className="battle-choice-actions">
+              <button type="button" className="primary-action" autoFocus onClick={beginManualBattle}>亲自指挥</button>
+              <button type="button" onClick={resolvePendingAttackQuickly}>快速结算</button>
+              <button type="button" onClick={() => setPendingAttack(undefined)}>取消</button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {state.pendingSuccession && (
+        <div
+          className="battle-choice-backdrop"
+          role="presentation"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              return;
+            }
+            if (event.key !== 'Tab') return;
+            const controls = [
+              ...event.currentTarget.querySelectorAll<HTMLElement>(
+                'button:not(:disabled), select:not(:disabled)',
+              ),
+            ];
+            if (controls.length === 0) return;
+            const first = controls[0];
+            const last = controls[controls.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+              event.preventDefault();
+              last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+              event.preventDefault();
+              first.focus();
+            }
+          }}
+        >
+          <section
+            className="battle-choice-dialog succession-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="succession-title"
+            aria-describedby="succession-description"
+          >
+            <p className="panel-kicker">Succession decision</p>
+            <h2 id="succession-title">拥立新君</h2>
+            <p id="succession-description">
+              {state.officers[state.pendingSuccession.formerRulerOfficerId].name}
+              {describeSuccessionReason(state.pendingSuccession.reason)}，
+              {state.factions[state.pendingSuccession.factionId].name}必须立即确定继承人。
+              此决策已经写入自动存档，刷新或返回标题不会丢失。
+            </p>
+            <div className="succession-candidates" role="list">
+              {state.pendingSuccession.candidateOfficerIds.map((officerId, index) => {
+                const officer = state.officers[officerId];
+                return (
+                  <button
+                    type="button"
+                    className={index === 0 ? 'primary-action' : undefined}
+                    autoFocus={index === 0}
+                    key={officer.id}
+                    onClick={() => chooseSuccessor(officer.id)}
+                  >
+                    <strong>{officer.name}</strong>
+                    <span>
+                      智 {officer.intelligence} · 忠 {officer.loyalty} ·
+                      {' '}{officer.cityId ? state.cities[officer.cityId]?.name : '在途'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="succession-persistence-actions" aria-label="继承期间的存档操作">
+              <label>
+                <span>存档槽</span>
+                <select
+                  aria-label="继承存档槽"
+                  value={selectedSaveSlot}
+                  onChange={(event) =>
+                    setSelectedSaveSlot(event.target.value as Exclude<SaveSlotId, 'auto'>)}
+                >
+                  <option value="1">槽位 1</option>
+                  <option value="2">槽位 2</option>
+                  <option value="3">槽位 3</option>
+                </select>
+              </label>
+              <button type="button" onClick={saveManualSlot}>保存</button>
+              <button type="button" onClick={exportCurrentSave}>导出</button>
+              <button type="button" onClick={() => setScreen('title')}>返回标题</button>
+            </div>
+            {feedback && (
+              <p
+                className={`succession-feedback ${feedback.kind}`}
+                role={feedback.kind === 'error' ? 'alert' : 'status'}
+              >
+                {feedback.message}
+              </p>
+            )}
+            <small>继承前不能执行城池命令或结束本月；可在此保存、导出或返回标题。</small>
+          </section>
+        </div>
+      )}
 
       <section className="log-panel" aria-label="日志">
         <div>
@@ -333,10 +1040,31 @@ function firstOwnedCityId(state: GameState): string {
 }
 
 function countCurrentOfficers(state: GameState): number {
-  return Object.values(state.officers).filter((officer) => officer.status !== 'hidden').length;
+  return Object.values(state.officers).filter(
+    (officer) => officer.status !== 'hidden' && officer.status !== 'dead',
+  ).length;
+}
+
+function describeSuccessionReason(reason: NonNullable<GameState['pendingSuccession']>['reason']): string {
+  if (reason === 'capture') return '兵败被俘';
+  if (reason === 'battle-death') return '兵败战死';
+  if (reason === 'execution') return '遭到处斩';
+  return '年迈病逝';
 }
 
 function loadInitialGame(): { state: GameState; sourceLabel: string; hasAutoSave: boolean } {
+  try {
+    const recovery = loadBattleRecovery(window.localStorage);
+    if (recovery) {
+      return {
+        state: recovery.state,
+        sourceLabel: sourceLabelForState(recovery.state),
+        hasAutoSave: true,
+      };
+    }
+  } catch {
+    clearBattleCheckpointBestEffort();
+  }
   try {
     const envelope = loadFromSlot(window.localStorage, 'auto');
     if (envelope) return { state: envelope.state, sourceLabel: sourceLabelForState(envelope.state), hasAutoSave: true };
@@ -345,6 +1073,18 @@ function loadInitialGame(): { state: GameState; sourceLabel: string; hasAutoSave
   }
   const state = createSampleState();
   return { state, sourceLabel: sourceLabelForState(state), hasAutoSave: false };
+}
+
+function clearBattleCheckpoint(): void {
+  deleteBattleCheckpoint(window.localStorage);
+}
+
+function clearBattleCheckpointBestEffort(): void {
+  try {
+    clearBattleCheckpoint();
+  } catch {
+    // Damaged recovery metadata must not prevent a clean fallback from loading.
+  }
 }
 
 function sourceLabelForState(state: GameState): string {
@@ -356,13 +1096,50 @@ function sourceLabelForState(state: GameState): string {
   return `内置演示剧本 · ${Object.keys(state.cities).length} 城`;
 }
 
-function summarizeMonth(logs: GameLog[]): string[] {
-  const important = logs
-    .filter((log) =>
-      log.kind === 'ai'
-      || (log.kind === 'battle' && (log.message.includes('占领') || log.message.includes('击退')))
-      || log.message.includes('粮草不足'))
-    .map((log) => log.message);
-  if (important.length > 0) return [...new Set(important)].slice(0, 5);
-  return ['各势力本月没有发生重大事件。'];
+function formatRouteWaypoints(state: GameState, routeCityIds: string[]): string {
+  const waypoints = routeCityIds.slice(1, -1)
+    .map((cityId) => state.cities[cityId]?.name ?? cityId);
+  return waypoints.length > 0 ? `途经 ${waypoints.join('、')}` : '直达';
+}
+
+function formatFutureMonth(calendar: GameState['calendar'], offsetMonths: number): string {
+  const zeroBased = calendar.year * 12 + calendar.month - 1 + offsetMonths;
+  return `${Math.floor(zeroBased / 12)} 年 ${(zeroBased % 12) + 1} 月`;
+}
+
+function formatOrderCargo(cargo: GameState['strategicOrders'][string]['cargo']): string {
+  return [
+    cargo.money > 0 ? `${cargo.money} 金` : '',
+    cargo.food > 0 ? `${cargo.food} 粮` : '',
+    cargo.reserveTroops > 0 ? `${cargo.reserveTroops} 后备兵` : '',
+  ].filter(Boolean).join('、');
+}
+
+function describeStrategicOrder(
+  state: GameState,
+  order: GameState['strategicOrders'][string],
+): string {
+  const kind = order.kind === 'transport' ? '输送' : '调动';
+  const officer = state.officers[order.officerId]?.name ?? order.officerId;
+  const source = state.cities[order.sourceCityId]?.name ?? order.sourceCityId;
+  const target = state.cities[order.targetCityId]?.name ?? order.targetCityId;
+  const timing = `预计 ${formatFutureMonth(state.calendar, order.remainingMonths)}${order.kind === 'transport' ? '完成' : '抵达'}`;
+  const cargo = order.kind === 'transport' ? ` · ${formatOrderCargo(order.cargo)}` : '';
+  return `${kind} · ${officer} · ${source} → ${target} · ${formatRouteWaypoints(state, order.routeCityIds)} · ${timing}${cargo}`;
+}
+
+function describeDiplomaticOrder(
+  state: GameState,
+  order: GameState['diplomaticOrders'][string],
+): string {
+  const labels = {
+    alienate: '离间',
+    canvass: '招揽',
+    counterespionage: '策反',
+    induce: '劝降',
+  } as const;
+  const officer = state.officers[order.officerId]?.name ?? order.officerId;
+  const target = state.officers[order.targetOfficerId]?.name ?? order.targetOfficerId;
+  const source = state.cities[order.sourceCityId]?.name ?? order.sourceCityId;
+  return `${labels[order.kind]} · ${officer} · ${source} → ${target} · 已付 ${order.moneyCost} 金 · 预计 ${formatFutureMonth(state.calendar, order.remainingMonths)}回报`;
 }
