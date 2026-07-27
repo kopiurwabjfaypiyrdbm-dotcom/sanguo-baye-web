@@ -51,6 +51,7 @@ type PendingCommandReview = CommandReview & { execute: () => void };
 type CityPanelProps = {
   state: GameState;
   cityId: string;
+  focusOfficerId?: string;
   disabled?: boolean;
   onClose: () => void;
   onDevelop: (cityId: string, officerId: string) => void;
@@ -101,6 +102,7 @@ const conditionGuidance = {
 export function CityPanel({
   state,
   cityId,
+  focusOfficerId,
   disabled = false,
   onClose,
   onDevelop,
@@ -207,6 +209,12 @@ export function CityPanel({
       setSelectedOfficerId(eligibleOfficers[0]?.id ?? '');
     }
   }, [eligibleOfficers, selectedOfficerId]);
+
+  useEffect(() => {
+    if (focusOfficerId && eligibleOfficers.some((officer) => officer.id === focusOfficerId)) {
+      setSelectedOfficerId(focusOfficerId);
+    }
+  }, [eligibleOfficers, focusOfficerId]);
 
   useEffect(() => {
     const officer = state.officers[selectedOfficerId];

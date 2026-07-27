@@ -69,6 +69,7 @@ import {
 import { createGameBridge } from '../game/events';
 import { createStrategyMap, type StrategyMapController } from '../game/createGame';
 import { RulerScreen, ScenarioScreen, TitleScreen } from './CampaignSetup';
+import { CampaignNavigator, type CampaignNavView } from './CampaignNavigator';
 import { CityPanel } from './CityPanel';
 import { TacticalBattleScreen } from './TacticalBattleScreen';
 import { getFactionStrategicOrders, issueTransportOrder } from '../core/strategicOrders';
@@ -103,6 +104,8 @@ export function App() {
   const [selectedRulesetId, setSelectedRulesetId] = useState<CampaignRulesetId>(DEFAULT_NEW_CAMPAIGN_RULESET);
   const [selectedCityId, setSelectedCityId] = useState(() => firstOwnedCityId(initialGame.state));
   const [isCityPanelOpen, setIsCityPanelOpen] = useState(false);
+  const [activeNavView, setActiveNavView] = useState<CampaignNavView>();
+  const [focusedOfficerId, setFocusedOfficerId] = useState<string>();
   const [sourceLabel, setSourceLabel] = useState(initialGame.sourceLabel);
   const [selectedSaveSlot, setSelectedSaveSlot] = useState<Exclude<SaveSlotId, 'auto'>>('1');
   const [feedback, setFeedback] = useState<{ kind: 'success' | 'error'; message: string }>();
@@ -145,7 +148,24 @@ export function App() {
   useEffect(() => bridge.on('city:selected', ({ cityId }) => {
     setSelectedCityId(cityId);
     setIsCityPanelOpen(true);
+    setActiveNavView(undefined);
+    setFocusedOfficerId(undefined);
   }), [bridge]);
+
+  useEffect(() => {
+    if (state.cities[selectedCityId]) return;
+    setSelectedCityId(firstOwnedCityId(state));
+    setIsCityPanelOpen(false);
+    setFocusedOfficerId(undefined);
+  }, [selectedCityId, state]);
+
+  useEffect(() => {
+    if (!focusedOfficerId) return;
+    const officer = state.officers[focusedOfficerId];
+    if (!officer || officer.cityId !== selectedCityId || officer.status === 'hidden' || officer.status === 'dead') {
+      setFocusedOfficerId(undefined);
+    }
+  }, [focusedOfficerId, selectedCityId, state.officers]);
 
   useEffect(() => {
     if (screen !== 'game' || !isCityPanelOpen) return;
@@ -217,6 +237,8 @@ export function App() {
     setState(next);
     setSelectedCityId(firstOwnedCityId(next));
     setIsCityPanelOpen(false);
+    setActiveNavView(undefined);
+    setFocusedOfficerId(undefined);
     setSourceLabel(label);
     setMonthSummary([]);
     try {
@@ -264,6 +286,8 @@ export function App() {
         setState(recovery.state);
         setSelectedCityId(firstOwnedCityId(recovery.state));
         setIsCityPanelOpen(false);
+        setActiveNavView(undefined);
+        setFocusedOfficerId(undefined);
         setSourceLabel(sourceLabelForState(recovery.state));
         setMonthSummary([]);
         setScreen('game');
@@ -278,6 +302,8 @@ export function App() {
         setState(recovery.state);
         setSelectedCityId(recovery.order.targetCityId);
         setIsCityPanelOpen(false);
+        setActiveNavView(undefined);
+        setFocusedOfficerId(undefined);
         setSourceLabel(sourceLabelForState(recovery.state));
         setMonthSummary([]);
         setTacticalBattle(battle);
@@ -328,6 +354,8 @@ export function App() {
     setState(next);
     setSelectedCityId(firstOwnedCityId(next));
     setIsCityPanelOpen(false);
+    setActiveNavView(undefined);
+    setFocusedOfficerId(undefined);
     setSourceLabel(sourceLabelForState(next));
     setMonthSummary([]);
     setFeedback({ kind: 'success', message: label ? `已载入：${label}` : '存档已载入。' });
@@ -344,6 +372,36 @@ export function App() {
     anchor.click();
     URL.revokeObjectURL(url);
     setFeedback({ kind: 'success', message: '当前战役存档已导出。' });
+  }
+
+  function openCampaignNavigator(view: CampaignNavView) {
+    setActiveNavView(view);
+  }
+
+  function selectCityFromNavigator(cityId: string) {
+    if (!state.cities[cityId]) return;
+    setSelectedCityId(cityId);
+    setFocusedOfficerId(undefined);
+    setActiveNavView(undefined);
+    setIsCityPanelOpen(true);
+  }
+
+  function selectOfficerFromNavigator(officerId: string, cityId?: string) {
+    if (!cityId || !state.cities[cityId]) return;
+    setSelectedCityId(cityId);
+    setFocusedOfficerId(officerId);
+    setActiveNavView(undefined);
+    setIsCityPanelOpen(true);
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+      setFeedback({ kind: 'success', message: document.fullscreenElement ? '已进入全屏显示。' : '已退出全屏显示。' });
+    } catch (error) {
+      setFeedback({ kind: 'error', message: `无法切换全屏：${error instanceof Error ? error.message : '浏览器不支持该操作'}` });
+    }
   }
 
   async function importSaveFile(event: ChangeEvent<HTMLInputElement>) {
@@ -750,23 +808,6 @@ export function App() {
           <span>{sourceLabel}</span>
           <span>{getCampaignRuleset(state.rulesetId).label}</span>
         </div>
-        <div className="top-actions">
-          <div className="save-controls" aria-label="存档操作">
-            <select value={selectedSaveSlot} onChange={(event) => setSelectedSaveSlot(event.target.value as Exclude<SaveSlotId, 'auto'>)}>
-              <option value="1">槽位 1</option>
-              <option value="2">槽位 2</option>
-              <option value="3">槽位 3</option>
-            </select>
-            <button type="button" onClick={saveManualSlot}>保存</button>
-            <button type="button" onClick={loadManualSlot}>载入</button>
-            <button type="button" onClick={exportCurrentSave}>导出</button>
-            <label className="file-action compact">
-              导入
-              <input type="file" accept="application/json,.json" onChange={importSaveFile} />
-            </label>
-          </div>
-          <button type="button" className="return-title-action" onClick={() => setScreen('title')}>返回标题</button>
-        </div>
       </header>
 
       <section className="map-section" aria-label="战略地图">
@@ -827,6 +868,7 @@ export function App() {
         <CityPanel
           state={state}
           cityId={selectedCityId}
+          focusOfficerId={focusedOfficerId}
           disabled={isResolving || Boolean(state.pendingSuccession)}
           onClose={() => setIsCityPanelOpen(false)}
         onDevelop={(cityId, officerId) => applyPlayerAction(
@@ -1068,47 +1110,69 @@ export function App() {
         </div>
       </section>
 
+      {activeNavView && (
+        <CampaignNavigator
+          view={activeNavView}
+          state={state}
+          selectedCityId={selectedCityId}
+          selectedSaveSlot={selectedSaveSlot}
+          onSelectSaveSlot={setSelectedSaveSlot}
+          onSelectCity={selectCityFromNavigator}
+          onSelectOfficer={selectOfficerFromNavigator}
+          onSave={saveManualSlot}
+          onLoad={loadManualSlot}
+          onExport={exportCurrentSave}
+          onImport={importSaveFile}
+          onToggleFullscreen={toggleFullscreen}
+          feedback={feedback}
+          onReturnTitle={() => {
+            setActiveNavView(undefined);
+            setScreen('title');
+          }}
+          onClose={() => setActiveNavView(undefined)}
+        />
+      )}
+
       <nav className="campaign-dock" aria-label="战略地图导航">
         <button
           type="button"
-          className={!isCityPanelOpen ? 'active' : undefined}
-          aria-pressed={!isCityPanelOpen}
-          onClick={() => setIsCityPanelOpen(false)}
+          className={!isCityPanelOpen && !activeNavView ? 'active' : undefined}
+          aria-pressed={!isCityPanelOpen && !activeNavView}
+          onClick={() => {
+            setActiveNavView(undefined);
+            setIsCityPanelOpen(false);
+          }}
         >
           <span aria-hidden="true">图</span>
           地图
         </button>
         <button
           type="button"
-          className={isCityPanelOpen ? 'active' : undefined}
-          aria-pressed={isCityPanelOpen}
-          onClick={() => setIsCityPanelOpen(true)}
+          className={isCityPanelOpen || activeNavView === 'cities' ? 'active' : undefined}
+          aria-pressed={isCityPanelOpen || activeNavView === 'cities'}
+          onClick={() => openCampaignNavigator('cities')}
         >
           <span aria-hidden="true">城</span>
-          城情
+          城池
         </button>
-        <label className="campaign-city-picker">
-          <span className="visually-hidden">快速选择城池</span>
-          <select
-            aria-label="快速选择城池"
-            value={selectedCityId}
-            onChange={(event) => {
-              setSelectedCityId(event.target.value);
-              setIsCityPanelOpen(true);
-            }}
-          >
-            {Object.values(state.cities).map((city) => (
-              <option value={city.id} key={city.id}>
-                {city.name} · {city.ownerId ? state.factions[city.ownerId]?.name ?? '未知势力' : '无主'}
-              </option>
-            ))}
-          </select>
-        </label>
+        <button type="button" className={activeNavView === 'officers' ? 'active' : undefined} aria-pressed={activeNavView === 'officers'} onClick={() => openCampaignNavigator('officers')}>
+          <span aria-hidden="true">将</span>人物
+        </button>
+        <button type="button" className={activeNavView === 'orders' ? 'active' : undefined} aria-pressed={activeNavView === 'orders'} onClick={() => openCampaignNavigator('orders')}>
+          <span aria-hidden="true">途</span>军令
+          {(playerStrategicOrders.length + playerDiplomaticOrders.length) > 0 && <b>{playerStrategicOrders.length + playerDiplomaticOrders.length}</b>}
+        </button>
+        <button type="button" className={activeNavView === 'system' ? 'active' : undefined} aria-pressed={activeNavView === 'system'} onClick={() => openCampaignNavigator('system')}>
+          <span aria-hidden="true">设</span>系统
+        </button>
         <button
           type="button"
           className="advance-month-action"
           disabled={isResolving || state.phase === 'ended' || Boolean(state.pendingSuccession)}
-          onClick={endMonth}
+          onClick={() => {
+            setActiveNavView(undefined);
+            endMonth();
+          }}
         >
           <span aria-hidden="true">令</span>
           {isResolving ? '推演中…' : '结束本月'}
