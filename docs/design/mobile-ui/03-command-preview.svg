@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">出征命令确认概念稿</title>
+  <desc id="desc">地图显示许昌到陈留的进军路线，右侧任务抽屉显示四步流程、武将编队、粮草成本、风险预估和确认按钮。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#18302b"/><stop offset="1" stop-color="#0b1816"/></linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f0e9d6"/><stop offset="1" stop-color="#dbd0b8"/></linearGradient>
+    <pattern id="grid" width="82" height="72" patternUnits="userSpaceOnUse"><path d="M82 0H0V72" fill="none" stroke="#b8aa79" stroke-opacity=".08" stroke-width="2"/></pattern>
+    <filter id="shadow"><feDropShadow dx="-12" dy="0" stdDeviation="14" flood-color="#000" flood-opacity=".42"/></filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0 0L12 6L0 12z" fill="#efd27e"/></marker>
+    <style>text{font-family:"Microsoft YaHei","PingFang SC",sans-serif;fill:#eee7d3}.ink{fill:#273a31}.sub{fill:#6b756d}.muted{fill:#9bab9f}.gold{fill:#efd27e}.red{fill:#a94e3d}.small{font-size:18px}.body{font-size:21px}.label{font-size:24px;font-weight:700}.heading{font-size:34px;font-weight:700}.city{stroke:#f4ead0;stroke-width:4}.road{fill:none;stroke:#b7a66e;stroke-width:5;stroke-opacity:.34}</style>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/><rect y="78" width="1600" height="742" fill="url(#grid)"/>
+  <path d="M-50 620C270 510 500 710 810 600S1190 500 1650 590" fill="none" stroke="#477d83" stroke-width="34" stroke-opacity=".45"/>
+  <path class="road" d="M130 590L300 410L520 520L735 315L875 470L1085 310M520 520L760 650L1000 610"/>
+  <g transform="translate(300 410)"><circle r="18" fill="#4676aa" class="city"/><text y="48" text-anchor="middle" class="label">汉中</text></g>
+  <g transform="translate(520 520)"><circle r="18" fill="#4676aa" class="city"/><text y="48" text-anchor="middle" class="label">襄阳</text></g>
+  <g transform="translate(735 315)"><circle r="18" fill="#667b69" class="city"/><text y="48" text-anchor="middle" class="label">洛阳</text></g>
+  <g transform="translate(875 470)"><circle r="37" fill="#efd27e" opacity=".18" stroke="#efd27e" stroke-width="4"/><circle r="21" fill="#9f5a43" class="city"/><text y="56" text-anchor="middle" class="label">许昌</text><text y="82" text-anchor="middle" class="small gold">出发</text></g>
+  <g transform="translate(1085 310)"><circle r="37" fill="#ba5a48" opacity=".18" stroke="#d97863" stroke-width="4"/><circle r="21" fill="#667b69" class="city"/><text y="56" text-anchor="middle" class="label">陈留</text><text y="82" text-anchor="middle" class="small" fill="#e98b73">目标</text></g>
+  <path d="M902 447C950 393 1008 352 1055 325" fill="none" stroke="#13241f" stroke-width="13" stroke-linecap="round" opacity=".75"/>
+  <path d="M902 447C950 393 1008 352 1055 325" fill="none" stroke="#efd27e" stroke-width="6" stroke-linecap="round" stroke-dasharray="14 11" marker-end="url(#arrow)"/>
+  <g transform="translate(700 185)"><rect width="330" height="80" rx="16" fill="#152a24" stroke="#d9bd6b"/><text x="22" y="31" class="small gold">预计 1 个月后抵达</text><text x="22" y="60" class="small">路程安全 · 携粮可维持 4 月</text></g>
+
+  <g><rect width="1600" height="78" fill="#1b302b"/><text x="32" y="31" class="small muted">命令规划 · 地图保持可操作</text><text x="32" y="61" class="label gold">出征　许昌 → 陈留</text><rect x="1410" y="14" width="158" height="50" rx="13" fill="#314940"/><text x="1489" y="47" text-anchor="middle" class="small">取消命令</text></g>
+
+  <g transform="translate(1020 78)" filter="url(#shadow)">
+    <rect width="580" height="822" fill="url(#paper)"/>
+    <g transform="translate(28 28)">
+      <text class="sub small">COMMAND FLOW</text><text y="44" class="ink heading">确认出征</text>
+      <g transform="translate(0 72)">
+        <line x1="38" y1="21" x2="490" y2="21" stroke="#aa9c80" stroke-width="4"/>
+        <g><circle cx="38" cy="21" r="20" fill="#577767"/><text x="38" y="28" text-anchor="middle">✓</text><text x="38" y="58" text-anchor="middle" class="sub small">指令</text></g>
+        <g transform="translate(150)"><circle cx="38" cy="21" r="20" fill="#577767"/><text x="38" y="28" text-anchor="middle">✓</text><text x="38" y="58" text-anchor="middle" class="sub small">执行</text></g>
+        <g transform="translate(300)"><circle cx="38" cy="21" r="20" fill="#577767"/><text x="38" y="28" text-anchor="middle">✓</text><text x="38" y="58" text-anchor="middle" class="sub small">目标</text></g>
+        <g transform="translate(452)"><circle cx="38" cy="21" r="23" fill="#9f5a43" stroke="#e8ca76" stroke-width="3"/><text x="38" y="28" text-anchor="middle">4</text><text x="38" y="58" text-anchor="middle" class="ink small">确认</text></g>
+      </g>
+    </g>
+    <g transform="translate(28 198)">
+      <rect width="524" height="98" rx="17" fill="#fbf7eb" stroke="#a49983" stroke-opacity=".5"/>
+      <text x="20" y="31" class="sub small">进军目标</text><text x="20" y="68" class="ink label">陈留 · 中立城池</text><text x="500" y="31" text-anchor="end" class="sub small">守将 2 人</text><text x="500" y="68" text-anchor="end" class="ink label">约 1,500 兵</text>
+    </g>
+    <g transform="translate(28 318)">
+      <text class="ink label">出征编队</text><text x="524" text-anchor="end" class="sub small">3 / 10 人　修改 ›</text>
+      <g transform="translate(0 22)"><rect width="524" height="126" rx="17" fill="#e8dfca"/>
+        <g transform="translate(16 14)"><circle cx="30" cy="30" r="30" fill="#334c42"/><text x="30" y="38" text-anchor="middle" font-size="23">夏</text><text x="72" y="25" class="ink label">夏侯惇</text><text x="72" y="52" class="sub small">骑兵 · 主将 · 兵 1,400</text><text x="390" y="25" class="ink small">体 100</text></g>
+        <line x1="16" y1="75" x2="508" y2="75" stroke="#b1a58d"/><text x="18" y="104" class="sub small">曹仁　步兵 1,100　　荀攸　谋士 800</text>
+      </g>
+    </g>
+    <g transform="translate(28 496)">
+      <text class="ink label">粮草与成本</text>
+      <rect y="22" width="524" height="94" rx="17" fill="#fbf7eb"/>
+      <text x="20" y="55" class="sub small">携带粮草</text><text x="20" y="88" class="ink label">1,200</text>
+      <rect x="176" y="46" width="245" height="12" rx="6" fill="#d4cab4"/><rect x="176" y="46" width="150" height="12" rx="6" fill="#8c7049"/>
+      <rect x="438" y="32" width="66" height="46" rx="12" fill="#d7cbae" stroke="#9b8f77"/><text x="471" y="61" text-anchor="middle" class="ink small">最大</text>
+    </g>
+    <g transform="translate(28 632)">
+      <rect width="524" height="82" rx="16" fill="#f2dfca" stroke="#b46c54"/>
+      <text x="18" y="30" class="red small">风险提示</text><text x="18" y="60" class="ink small">许昌出兵后余兵 1,260，仍高于边境建议值。</text>
+    </g>
+    <g transform="translate(28 742)">
+      <rect width="160" height="58" rx="14" fill="#d4c8ad" stroke="#9d9076"/><text x="80" y="38" text-anchor="middle" class="ink body">上一步</text>
+      <rect x="178" width="346" height="58" rx="14" fill="#9f5a43" stroke="#b66b53"/><text x="351" y="38" text-anchor="middle" class="body">确认下令并返回地图</text>
+    </g>
+  </g>
+</svg>
