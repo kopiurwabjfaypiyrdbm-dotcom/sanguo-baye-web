@@ -41,7 +41,12 @@ import {
   continueTurnUntilPlayerDefense,
   type InteractiveTurnProgress,
 } from '../core/turn';
-import { summarizeMonth } from '../core/monthSummary';
+import {
+  buildMonthAdvanceReview,
+  buildMonthResolutionReport,
+  type MonthAdvanceReview,
+  type MonthResolutionReport,
+} from '../core/monthReview';
 import type { GameState, LifecyclePolicy } from '../core/types';
 import {
   attackTacticalUnit,
@@ -71,6 +76,7 @@ import { createStrategyMap, type StrategyMapController } from '../game/createGam
 import { RulerScreen, ScenarioScreen, TitleScreen } from './CampaignSetup';
 import { CampaignNavigator, type CampaignNavView } from './CampaignNavigator';
 import { CityPanel } from './CityPanel';
+import { MonthEndReviewDialog, MonthResolutionDialog } from './MonthEndReviewDialog';
 import { TacticalBattleScreen } from './TacticalBattleScreen';
 import { getFactionStrategicOrders, issueTransportOrder } from '../core/strategicOrders';
 import { getFactionDiplomaticOrders, issueDiplomaticOrder } from '../core/diplomaticOrders';
@@ -109,7 +115,9 @@ export function App() {
   const [sourceLabel, setSourceLabel] = useState(initialGame.sourceLabel);
   const [selectedSaveSlot, setSelectedSaveSlot] = useState<Exclude<SaveSlotId, 'auto'>>('1');
   const [feedback, setFeedback] = useState<{ kind: 'success' | 'error'; message: string }>();
-  const [monthSummary, setMonthSummary] = useState<string[]>([]);
+  const [monthAdvanceReview, setMonthAdvanceReview] = useState<MonthAdvanceReview>();
+  const [monthReport, setMonthReport] = useState<MonthResolutionReport>();
+  const [isMonthReportOpen, setIsMonthReportOpen] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [pendingAttack, setPendingAttack] = useState<AttackOrder>();
   const [tacticalBattle, setTacticalBattle] = useState<TacticalBattleState>();
@@ -119,6 +127,7 @@ export function App() {
   const mapHost = useRef<HTMLDivElement>(null);
   const mapController = useRef<StrategyMapController | null>(null);
   const aiTurnLogStart = useRef(0);
+  const monthResolutionInProgress = useRef(false);
   const bridge = useMemo(() => createGameBridge(), []);
   const tacticalReachable = useMemo(() => {
     if (!tacticalBattle || !selectedTacticalUnitId || tacticalBattle.status !== 'ongoing') return [];
@@ -240,7 +249,10 @@ export function App() {
     setActiveNavView(undefined);
     setFocusedOfficerId(undefined);
     setSourceLabel(label);
-    setMonthSummary([]);
+    setMonthAdvanceReview(undefined);
+    setMonthReport(undefined);
+    setIsMonthReportOpen(false);
+    monthResolutionInProgress.current = false;
     try {
       clearBattleCheckpoint();
     } catch (error) {
@@ -289,7 +301,10 @@ export function App() {
         setActiveNavView(undefined);
         setFocusedOfficerId(undefined);
         setSourceLabel(sourceLabelForState(recovery.state));
-        setMonthSummary([]);
+        setMonthAdvanceReview(undefined);
+        setMonthReport(undefined);
+        setIsMonthReportOpen(false);
+        monthResolutionInProgress.current = false;
         setScreen('game');
         setFeedback({
           kind: 'success',
@@ -305,7 +320,11 @@ export function App() {
         setActiveNavView(undefined);
         setFocusedOfficerId(undefined);
         setSourceLabel(sourceLabelForState(recovery.state));
-        setMonthSummary([]);
+        setMonthAdvanceReview(undefined);
+        setMonthReport(undefined);
+        setIsMonthReportOpen(false);
+        aiTurnLogStart.current = findMonthResolutionLogStart(recovery.state);
+        monthResolutionInProgress.current = recovery.resume.kind === 'ai-phase';
         setTacticalBattle(battle);
         setSelectedTacticalUnitId(undefined);
         setPendingTacticalTargetId(undefined);
@@ -357,7 +376,10 @@ export function App() {
     setActiveNavView(undefined);
     setFocusedOfficerId(undefined);
     setSourceLabel(sourceLabelForState(next));
-    setMonthSummary([]);
+    setMonthAdvanceReview(undefined);
+    setMonthReport(undefined);
+    setIsMonthReportOpen(false);
+    monthResolutionInProgress.current = false;
     setFeedback({ kind: 'success', message: label ? `已载入：${label}` : '存档已载入。' });
     setScreen('game');
   }
@@ -625,6 +647,11 @@ export function App() {
         setSelectedCityId(next.cities[result.targetCityId].ownerId === next.playerFactionId
           ? result.targetCityId
           : result.sourceCityId);
+        if (aiResumeFactionIndex !== undefined && monthResolutionInProgress.current) {
+          setMonthReport(buildMonthResolutionReport(next.logs.slice(aiTurnLogStart.current), next));
+          setIsMonthReportOpen(true);
+          monthResolutionInProgress.current = false;
+        }
         setScreen('game');
         setFeedback({ kind: 'success', message: result.logs.at(-1) ?? '战斗已经结算。' });
       }
@@ -644,6 +671,7 @@ export function App() {
           `${sourceLabel} · 守城战前检查点`,
         );
       } catch (error) {
+        monthResolutionInProgress.current = false;
         setIsResolving(false);
         setFeedback({
           kind: 'error',
@@ -666,6 +694,18 @@ export function App() {
       return;
     }
 
+    if (progress.state.pendingSuccession) {
+      setState(progress.state);
+      setTacticalBattle(undefined);
+      setSelectedTacticalUnitId(undefined);
+      setPendingTacticalTargetId(undefined);
+      setAiResumeFactionIndex(undefined);
+      setScreen('game');
+      setIsResolving(false);
+      setFeedback({ kind: 'success', message: '月度推演已暂停，请先拥立新君。' });
+      return;
+    }
+
     const persistenceError = completedBattleId
       ? finalizeBattleRecovery(completedBattleId, progress.state)
       : undefined;
@@ -680,7 +720,12 @@ export function App() {
     setSelectedTacticalUnitId(undefined);
     setPendingTacticalTargetId(undefined);
     setAiResumeFactionIndex(undefined);
-    setMonthSummary(summarizeMonth(progress.state.logs.slice(aiTurnLogStart.current)));
+    setMonthReport(buildMonthResolutionReport(
+      progress.state.logs.slice(aiTurnLogStart.current),
+      progress.state,
+    ));
+    setIsMonthReportOpen(true);
+    monthResolutionInProgress.current = false;
     if (progress.state.cities[selectedCityId]?.ownerId !== progress.state.playerFactionId) {
       setSelectedCityId(firstOwnedCityId(progress.state));
     }
@@ -711,8 +756,26 @@ export function App() {
     }
   }
 
-  async function endMonth() {
-    if (isResolving) return;
+  function openMonthEndReview() {
+    if (isResolving || state.phase === 'ended' || state.pendingSuccession || pendingAttack) return;
+    setActiveNavView(undefined);
+    setMonthAdvanceReview(buildMonthAdvanceReview(state));
+  }
+
+  function selectCityFromMonthOverlay(cityId: string) {
+    if (!state.cities[cityId]) return;
+    setSelectedCityId(cityId);
+    setFocusedOfficerId(undefined);
+    setActiveNavView(undefined);
+    setIsCityPanelOpen(true);
+    setMonthAdvanceReview(undefined);
+    setIsMonthReportOpen(false);
+  }
+
+  async function confirmMonthAdvance() {
+    if (isResolving || monthResolutionInProgress.current) return;
+    setMonthAdvanceReview(undefined);
+    monthResolutionInProgress.current = true;
     setIsResolving(true);
     setFeedback({ kind: 'success', message: '正在推演其他势力行动……' });
     await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
@@ -720,6 +783,7 @@ export function App() {
       aiTurnLogStart.current = state.logs.length;
       applyInteractiveTurnProgress(advanceTurnUntilPlayerDefense(state));
     } catch (error) {
+      monthResolutionInProgress.current = false;
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '月度推进失败。' });
       setIsResolving(false);
     }
@@ -733,6 +797,17 @@ export function App() {
       setFeedback({ kind: 'success', message: next.logs.at(-1)?.message ?? '新君已经继位。' });
       if (pending?.resumePhase === 'ai' && pending.resumeAiFactionIndex !== undefined) {
         applyInteractiveTurnProgress(continueTurnUntilPlayerDefense(next, pending.resumeAiFactionIndex));
+      } else if (monthResolutionInProgress.current) {
+        setMonthReport(buildMonthResolutionReport(next.logs.slice(aiTurnLogStart.current), next));
+        setIsMonthReportOpen(true);
+        monthResolutionInProgress.current = false;
+        if (next.cities[selectedCityId]?.ownerId !== next.playerFactionId) setSelectedCityId(firstOwnedCityId(next));
+        setFeedback({
+          kind: 'success',
+          message: next.phase === 'ended'
+            ? next.outcome === 'victory' ? '战役已经胜利。' : '战役已经失败。'
+            : `已进入 ${next.calendar.year} 年 ${next.calendar.month} 月，继承与月度结算已经完成。`,
+        });
       }
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '无法完成君主继承。' });
@@ -1098,10 +1173,11 @@ export function App() {
       <section className="log-panel" aria-label="日志">
         <div>
           <p className="panel-kicker">Campaign log</p>
-          {monthSummary.length > 0 && (
+          {monthReport && monthReport.headline.length > 0 && (
             <div className="month-summary">
               <strong>本月摘要</strong>
-              {monthSummary.map((message) => <p key={message}>{message}</p>)}
+              {monthReport.headline.map((message) => <p key={message}>{message}</p>)}
+              <button type="button" onClick={() => setIsMonthReportOpen(true)}>查看完整月报</button>
             </div>
           )}
         </div>
@@ -1169,15 +1245,29 @@ export function App() {
           type="button"
           className="advance-month-action"
           disabled={isResolving || state.phase === 'ended' || Boolean(state.pendingSuccession)}
-          onClick={() => {
-            setActiveNavView(undefined);
-            endMonth();
-          }}
+          onClick={openMonthEndReview}
         >
           <span aria-hidden="true">令</span>
           {isResolving ? '推演中…' : '结束本月'}
         </button>
       </nav>
+
+      {monthAdvanceReview && (
+        <MonthEndReviewDialog
+          review={monthAdvanceReview}
+          onCancel={() => setMonthAdvanceReview(undefined)}
+          onConfirm={confirmMonthAdvance}
+          onSelectCity={selectCityFromMonthOverlay}
+        />
+      )}
+
+      {monthReport && isMonthReportOpen && (
+        <MonthResolutionDialog
+          report={monthReport}
+          onClose={() => setIsMonthReportOpen(false)}
+          onSelectCity={selectCityFromMonthOverlay}
+        />
+      )}
     </main>
   );
 }
@@ -1185,6 +1275,13 @@ export function App() {
 function firstOwnedCityId(state: GameState): string {
   return Object.values(state.cities).find((city) => city.ownerId === state.playerFactionId)?.id
     ?? Object.keys(state.cities)[0];
+}
+
+function findMonthResolutionLogStart(state: GameState): number {
+  for (let index = state.logs.length - 1; index >= 0; index -= 1) {
+    if (state.logs[index].message === '玩家阶段结束，进入 AI 阶段。') return index;
+  }
+  return Math.max(0, state.logs.length - 1);
 }
 
 function countCurrentOfficers(state: GameState): number {
