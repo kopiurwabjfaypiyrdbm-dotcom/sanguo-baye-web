@@ -828,6 +828,10 @@ export function App() {
         isResolving={isResolving}
         onUnitSelected={selectTacticalUnit}
         onConfirmAttack={confirmSelectedTacticalAttack}
+        onCancelAttack={() => {
+          setPendingTacticalTargetId(undefined);
+          setFeedback({ kind: 'success', message: '已取消攻击预览，可重新选择动作或目标。' });
+        }}
         onTileSelected={moveSelectedTacticalUnit}
         onWait={waitSelectedTacticalUnit}
         onUseSkill={useSelectedTacticalSkill}

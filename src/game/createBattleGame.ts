@@ -30,7 +30,7 @@ export function createTacticalMap(
     audio: { noAudio: true },
     fps: { target: 30 },
     render: { transparent: false },
-    input: { touch: { capture: false } },
+    input: { touch: { capture: true } },
     scale: {
       mode: Phaser.Scale.RESIZE,
       width: container.clientWidth,

@@ -36,6 +36,7 @@ type TacticalBattleScreenProps = {
   isResolving: boolean;
   onUnitSelected: (unitId: string) => void;
   onConfirmAttack: () => void;
+  onCancelAttack: () => void;
   onTileSelected: (position: TacticalPosition) => void;
   onWait: () => void;
   onUseSkill: (skillId: TacticalSkillId, targetUnitId: string) => void;
@@ -43,6 +44,9 @@ type TacticalBattleScreenProps = {
   onRetreat: () => void;
   onFinish: () => void;
 };
+
+type BattlePanel = 'player-roster' | 'enemy-roster' | 'situation' | 'move' | 'attack' | 'skills' | 'details' | 'log';
+type ActionMode = 'move' | 'attack';
 
 const number = new Intl.NumberFormat('zh-CN');
 
@@ -58,6 +62,7 @@ export function TacticalBattleScreen({
   isResolving,
   onUnitSelected,
   onConfirmAttack,
+  onCancelAttack,
   onTileSelected,
   onWait,
   onUseSkill,
@@ -67,13 +72,18 @@ export function TacticalBattleScreen({
 }: TacticalBattleScreenProps) {
   const mapHost = useRef<HTMLDivElement>(null);
   const controller = useRef<TacticalMapController | null>(null);
+  const [openPanel, setOpenPanel] = useState<BattlePanel>();
+  const [actionMode, setActionMode] = useState<ActionMode>('move');
   const [confirmingRetreat, setConfirmingRetreat] = useState(false);
   const playerSide = battle.attackerFactionId === campaign.playerFactionId ? 'attacker' : 'defender';
+  const enemySide = playerSide === 'attacker' ? 'defender' : 'attacker';
   const selectedUnit = selectedUnitId ? battle.units[selectedUnitId] : undefined;
   const pendingTarget = pendingTargetUnitId ? battle.units[pendingTargetUnitId] : undefined;
   const pendingAttackPreview = selectedUnit && pendingTarget
     ? previewTacticalAttack(battle, selectedUnit.id, pendingTarget.id)
     : undefined;
+  const shownReachable = actionMode === 'move' ? reachable : [];
+  const shownAttackable = actionMode === 'attack' ? attackableUnitIds : [];
 
   useEffect(() => bridge.on('tactical:unit-selected', ({ unitId }) => onUnitSelected(unitId)), [bridge, onUnitSelected]);
   useEffect(() => bridge.on('tactical:tile-selected', onTileSelected), [bridge, onTileSelected]);
@@ -85,30 +95,42 @@ export function TacticalBattleScreen({
       bridge,
       battle,
       selectedUnitId,
-      reachable,
-      attackableUnitIds,
+      shownReachable,
+      shownAttackable,
     );
     return () => {
       controller.current?.destroy();
       controller.current = null;
     };
-    // Phaser owns the canvas lifecycle; updates flow through the controller below.
+    // Phaser owns its canvas lifecycle; updates flow through the controller below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bridge]);
 
   useEffect(() => {
-    controller.current?.update(battle, selectedUnitId, reachable, attackableUnitIds);
-  }, [battle, selectedUnitId, reachable, attackableUnitIds]);
+    controller.current?.update(battle, selectedUnitId, shownReachable, shownAttackable);
+  }, [battle, selectedUnitId, shownReachable, shownAttackable]);
 
   useEffect(() => {
+    setActionMode('move');
+    setOpenPanel(undefined);
+  }, [selectedUnitId]);
+
+  useEffect(() => {
+    if (selectedUnit?.moved && !selectedUnit.acted) setActionMode('attack');
+    if (selectedUnit?.acted || battle.status !== 'ongoing') setOpenPanel(undefined);
     if (battle.status !== 'ongoing') setConfirmingRetreat(false);
-  }, [battle.status]);
+  }, [battle.status, selectedUnit?.acted, selectedUnit?.moved]);
 
   const attacker = campaign.factions[battle.attackerFactionId];
   const defender = campaign.factions[battle.defenderFactionId];
   const activeName = battle.activeSide === 'attacker' ? attacker?.name : defender?.name;
   const canCommand = battle.status === 'ongoing' && battle.activeSide === playerSide && !isResolving;
-  const unactedCount = Object.values(battle.units)
+  const units = Object.values(battle.units);
+  const playerUnits = units.filter((unit) => unit.side === playerSide);
+  const enemyUnits = units.filter((unit) => unit.side === enemySide);
+  const playerTroops = playerUnits.reduce((sum, unit) => sum + Math.max(0, unit.troops), 0);
+  const enemyTroops = enemyUnits.reduce((sum, unit) => sum + Math.max(0, unit.troops), 0);
+  const unactedCount = units
     .filter((unit) => unit.side === battle.activeSide && unit.troops > 0 && !unit.acted).length;
   const selectedTerrain = selectedUnit
     ? getTacticalTile(battle, selectedUnit.x, selectedUnit.y)?.terrain
@@ -123,52 +145,155 @@ export function TacticalBattleScreen({
   const attackerUse = getTacticalProvisionUse(battle, 'attacker');
   const defenderUse = getTacticalProvisionUse(battle, 'defender');
 
+  function togglePanel(panel: BattlePanel) {
+    setConfirmingRetreat(false);
+    setOpenPanel((current) => current === panel ? undefined : panel);
+  }
+
+  function chooseMove(position: TacticalPosition) {
+    setOpenPanel(undefined);
+    onTileSelected(position);
+  }
+
+  function chooseAttackTarget(unitId: string) {
+    setActionMode('attack');
+    setOpenPanel(undefined);
+    onUnitSelected(unitId);
+  }
+
+  function useSkill(skillId: TacticalSkillId, unitId: string) {
+    setOpenPanel(undefined);
+    onUseSkill(skillId, unitId);
+  }
+
   return (
     <main className="battle-shell">
       <header className="battle-top-bar">
-        <div>
-          <p className="eyebrow">Manual tactical battle</p>
+        <div className="battle-title-block">
+          <p className="eyebrow">Manual battle</p>
           <h1>{campaign.cities[battle.sourceCityId].name} → {campaign.cities[battle.targetCityId].name}</h1>
         </div>
-        <div className="battle-status-strip">
-          <span>第 {battle.day} 日</span>
-          <span>期限 {battle.maxDays} 日</span>
-          <span>天气 {TACTICAL_WEATHER_LABELS[battle.weather]}</span>
-          <span>攻粮 {number.format(battle.attackerFood)}（日耗 {attackerUse} / 约 {Math.ceil(battle.attackerFood / attackerUse)} 日）</span>
-          <span>守粮 {number.format(battle.defenderFood)}（日耗 {defenderUse} / 约 {Math.ceil(battle.defenderFood / defenderUse)} 日）</span>
-          <span>玩家为{playerSide === 'attacker' ? '攻方' : '守方'}</span>
-          <span>战场 {TACTICAL_BATTLEFIELD_LABELS[battle.battlefieldTemplate]} · {TACTICAL_APPROACH_LABELS[battle.approach]}</span>
-          <span>{battle.status === 'ongoing' ? `${activeName ?? battle.activeSide}行动` : '战斗结束'}</span>
-          {battle.status === 'ongoing' && <span>未行动 {unactedCount} 队</span>}
+        <div className="battle-vitals" aria-label="战场摘要">
+          <span className="active">第 {battle.day}/{battle.maxDays} 日 · {battle.status === 'ongoing' ? `${activeName ?? battle.activeSide}行动` : '战斗结束'}</span>
+          <span className="player">我军 {number.format(playerTroops)}</span>
+          <span className="enemy">敌军 {number.format(enemyTroops)}</span>
+          <span>{TACTICAL_WEATHER_LABELS[battle.weather]} · 未行动 {battle.status === 'ongoing' ? unactedCount : 0}</span>
         </div>
+        <nav className="battle-utility-actions" aria-label="战场信息">
+          <button type="button" aria-pressed={openPanel === 'player-roster'} onClick={() => togglePanel('player-roster')}>我军</button>
+          <button type="button" aria-pressed={openPanel === 'enemy-roster'} onClick={() => togglePanel('enemy-roster')}>敌军</button>
+          <button type="button" aria-pressed={openPanel === 'situation'} onClick={() => togglePanel('situation')}>战况</button>
+          <button type="button" aria-pressed={openPanel === 'log'} onClick={() => togglePanel('log')}>日志</button>
+        </nav>
       </header>
 
       <section className="battle-main">
-        <aside className="battle-roster attacker">
-          <p className="panel-kicker">攻方 · {attacker?.name}</p>
-          <UnitRoster
-            battle={battle}
-            side="attacker"
-            selectedUnitId={selectedUnitId}
-            canCommand={canCommand}
-            playerSide={playerSide}
-            attackableUnitIds={attackableUnitIds}
-            onUnitSelected={onUnitSelected}
-          />
-        </aside>
-        <div className="battle-map-host" ref={mapHost} />
-        <aside className="battle-roster defender">
-          <p className="panel-kicker">守方 · {defender?.name}</p>
-          <UnitRoster
-            battle={battle}
-            side="defender"
-            selectedUnitId={selectedUnitId}
-            canCommand={canCommand}
-            playerSide={playerSide}
-            attackableUnitIds={attackableUnitIds}
-            onUnitSelected={onUnitSelected}
-          />
-        </aside>
+        <div className="battle-map-host" ref={mapHost} aria-label="战术地图" />
+        {openPanel && (
+          <aside className={`battle-edge-panel ${openPanel === 'enemy-roster' ? 'from-right' : ''}`} aria-label={panelTitle(openPanel)}>
+            <header>
+              <div>
+                <p className="panel-kicker">Battle information</p>
+                <h2>{panelTitle(openPanel)}</h2>
+              </div>
+              <button type="button" aria-label="关闭战场面板" onClick={() => setOpenPanel(undefined)}>×</button>
+            </header>
+
+            {openPanel === 'player-roster' && (
+              <UnitRoster
+                battle={battle}
+                side={playerSide}
+                selectedUnitId={selectedUnitId}
+                canCommand={canCommand}
+                playerSide={playerSide}
+                attackableUnitIds={attackableUnitIds}
+                onUnitSelected={(unitId) => {
+                  setOpenPanel(undefined);
+                  onUnitSelected(unitId);
+                }}
+              />
+            )}
+            {openPanel === 'enemy-roster' && (
+              <UnitRoster
+                battle={battle}
+                side={enemySide}
+                selectedUnitId={selectedUnitId}
+                canCommand={canCommand}
+                playerSide={playerSide}
+                attackableUnitIds={attackableUnitIds}
+                onUnitSelected={chooseAttackTarget}
+              />
+            )}
+            {openPanel === 'situation' && (
+              <div className="battle-situation-grid">
+                <span><strong>战场</strong>{TACTICAL_BATTLEFIELD_LABELS[battle.battlefieldTemplate]}</span>
+                <span><strong>进军</strong>{TACTICAL_APPROACH_LABELS[battle.approach]}</span>
+                <span><strong>天气</strong>{TACTICAL_WEATHER_LABELS[battle.weather]}</span>
+                <span><strong>身份</strong>玩家为{playerSide === 'attacker' ? '攻方' : '守方'}</span>
+                <span><strong>攻方粮</strong>{number.format(battle.attackerFood)} · 日耗 {attackerUse} · 约 {Math.ceil(battle.attackerFood / attackerUse)} 日</span>
+                <span><strong>守方粮</strong>{number.format(battle.defenderFood)} · 日耗 {defenderUse} · 约 {Math.ceil(battle.defenderFood / defenderUse)} 日</span>
+                <p>攻方占领城池并结束本方阶段可获胜；任一方主将败退、粮尽或全军溃退也会结束战斗。</p>
+              </div>
+            )}
+            {openPanel === 'move' && selectedUnit && (
+              <div className="battle-target-list">
+                <p>也可直接点击地图上的青色格；以下按钮保留键盘与精确坐标操作。</p>
+                {reachable.length > 0 ? reachable.map((position) => (
+                  <button type="button" key={`${position.x}:${position.y}`} onClick={() => chooseMove(position)}>
+                    <strong>{position.x + 1},{position.y + 1}</strong>
+                    <span>移动消耗 {getTacticalPathCost(battle, selectedUnit.id, position) ?? '?'}</span>
+                  </button>
+                )) : <p>当前没有可移动位置。</p>}
+              </div>
+            )}
+            {openPanel === 'attack' && selectedUnit && (
+              <div className="battle-target-list">
+                <p>选择目标后会先显示伤害预览，确认才会执行。</p>
+                {attackableUnitIds.length > 0 ? attackableUnitIds.map((unitId) => {
+                  const preview = previewTacticalAttack(battle, selectedUnit.id, unitId);
+                  return (
+                    <button type="button" key={unitId} onClick={() => chooseAttackTarget(unitId)}>
+                      <strong>{battle.units[unitId].name}</strong>
+                      <span>预计伤害 {preview.damage} · 剩余 {preview.targetTroopsAfter}</span>
+                    </button>
+                  );
+                }) : <p>当前没有处于普攻范围内的目标。</p>}
+              </div>
+            )}
+            {openPanel === 'skills' && selectedUnit && (
+              <SkillList
+                battle={battle}
+                selectedUnit={selectedUnit}
+                skills={selectedSkills}
+                canCommand={canCommand}
+                onUseSkill={useSkill}
+              />
+            )}
+            {openPanel === 'details' && selectedUnit && (
+              <div className="battle-unit-details">
+                <h3>{selectedUnit.name} · {BAYE_ARMS_LABELS[selectedUnit.armsType]}</h3>
+                <dl>
+                  <div><dt>兵力</dt><dd>{number.format(selectedUnit.troops)}</dd></div>
+                  <div><dt>等级</dt><dd>{selectedUnit.level}</dd></div>
+                  <div><dt>移动</dt><dd>{getTacticalUnitMobility(selectedUnit)}</dd></div>
+                  <div><dt>普攻</dt><dd>{getTacticalNormalAttackLabel(selectedUnit)}</dd></div>
+                  <div><dt>计谋点</dt><dd>{selectedUnit.skillPoints}/{selectedUnit.maxSkillPoints}</dd></div>
+                  <div><dt>状态</dt><dd>{statusLabel(selectedUnit.status)}</dd></div>
+                  <div><dt>地形</dt><dd>{selectedTerrain === undefined ? '未知' : BAYE_TERRAIN_LABELS[selectedTerrain]}</dd></div>
+                  <div><dt>行动</dt><dd>{selectedUnit.acted ? '已行动' : selectedUnit.moved ? '已移动' : '待命'}</dd></div>
+                </dl>
+                {selectedEquipment.length > 0 && <p>装备：{selectedEquipment.join('、')}</p>}
+                {selectedUnit.officerId && (battle.experienceGains[selectedUnit.officerId] ?? 0) > 0 && <p>本场经验 +{battle.experienceGains[selectedUnit.officerId]}</p>}
+                {battle.commanderUnitIds[selectedUnit.side] === selectedUnit.id && <p className="danger-note">本方主将：败退即战败。</p>}
+              </div>
+            )}
+            {openPanel === 'log' && (
+              <div className="battle-log-list">
+                <ol>{battle.logs.slice(-20).map((message, index) => <li key={`${battle.logs.length - 20 + index}:${message}`}>{message}</li>)}</ol>
+              </div>
+            )}
+          </aside>
+        )}
       </section>
 
       <section className="battle-command-bar">
@@ -177,158 +302,65 @@ export function TacticalBattleScreen({
             {feedback.message}
           </div>
         )}
-        <div className="battle-selection">
+
+        {pendingTarget && pendingAttackPreview && (
+          <div className="battle-attack-confirm" role="status">
+            <div>
+              <strong>{selectedUnit?.name} → {pendingTarget.name}</strong>
+              <span>预计伤害 {pendingAttackPreview.damage} · 目标剩余 {pendingAttackPreview.targetTroopsAfter} · 地形修正 {pendingAttackPreview.attackerTerrainShift}/{pendingAttackPreview.defenderTerrainShift}</span>
+            </div>
+            <button type="button" onClick={onCancelAttack}>取消</button>
+            <button type="button" className="primary-action" disabled={!canCommand} onClick={onConfirmAttack}>确认攻击</button>
+          </div>
+        )}
+
+        {confirmingRetreat && (
+          <div className="battle-retreat-confirm" role="alertdialog" aria-label="确认全军撤退">
+            <span>全军撤退会立即判负，是否确认？</span>
+            <button type="button" onClick={() => setConfirmingRetreat(false)}>取消</button>
+            <button type="button" className="danger-action" disabled={!canCommand} onClick={() => { setConfirmingRetreat(false); onRetreat(); }}>确认撤退</button>
+          </div>
+        )}
+
+        <button type="button" className="battle-selection-card" disabled={!selectedUnit} onClick={() => togglePanel('details')}>
           {selectedUnit ? (
             <>
               <strong>{selectedUnit.name}</strong>
-              <span>
-                {BAYE_ARMS_LABELS[selectedUnit.armsType]} · 兵 {number.format(selectedUnit.troops)} ·
-                等级 {selectedUnit.level} · 移动 {getTacticalUnitMobility(selectedUnit)} · 普攻 {getTacticalNormalAttackLabel(selectedUnit)}
-              </span>
-              <span>计谋点 {selectedUnit.skillPoints} / {selectedUnit.maxSkillPoints} · 状态 {statusLabel(selectedUnit.status)}</span>
-              {selectedUnit.officerId && (battle.experienceGains[selectedUnit.officerId] ?? 0) > 0 && (
-                <span>本场经验 +{battle.experienceGains[selectedUnit.officerId]}</span>
-              )}
-              {selectedTerrain !== undefined && <span>所在地形：{BAYE_TERRAIN_LABELS[selectedTerrain]}</span>}
-              {selectedEquipment.length > 0 && <span>装备：{selectedEquipment.join('、')}</span>}
-              {battle.commanderUnitIds[selectedUnit.side] === selectedUnit.id && <span>身份：本方主将（败退即战败）</span>}
-              <span>{selectedUnit.acted ? '本阶段已行动' : selectedUnit.moved ? '已移动，可攻击或待命' : '等待命令'}</span>
+              <span>{BAYE_ARMS_LABELS[selectedUnit.armsType]} · 兵 {number.format(selectedUnit.troops)} · {statusLabel(selectedUnit.status)}</span>
+              <small>{selectedTerrain === undefined ? '选择单位详情' : `${BAYE_TERRAIN_LABELS[selectedTerrain]} · 计谋点 ${selectedUnit.skillPoints}/${selectedUnit.maxSkillPoints}`}</small>
             </>
-          ) : (
-            <span>{canCommand ? '选择己方单位开始行动。' : isResolving ? '敌方正在行动……' : '等待战斗结算。'}</span>
-          )}
-          {canCommand && selectedUnit && !selectedUnit.acted && (
-            <div className="battle-keyboard-targets" aria-label="可用战术目标">
-              {reachable.map((position) => (
-                <button
-                  type="button"
-                  key={`move:${position.x}:${position.y}`}
-                  onClick={() => onTileSelected(position)}
-                >
-                  移至 {position.x + 1},{position.y + 1}
-                  （耗 {getTacticalPathCost(battle, selectedUnit.id, position) ?? '?'}）
-                </button>
-              ))}
-              {attackableUnitIds.map((unitId) => (
-                <button type="button" key={`attack:${unitId}`} onClick={() => onUnitSelected(unitId)}>
-                  预览攻击 {battle.units[unitId].name}
-                  （预计 {previewTacticalAttack(battle, selectedUnit.id, unitId).damage}）
-                </button>
-              ))}
-            </div>
-          )}
-          {selectedUnit && (
-            <div className="battle-skill-list" aria-label="计谋列表">
-              <span className="battle-skill-reason">
-                技能来源：现代数据驱动规则；原版兵种技能 ID 资源尚未进入可再分发基线。
-              </span>
-              {selectedUnit.officerId ? selectedSkills.map((skill) => {
-                const targetIds = getTacticalSkillTargetIds(battle, selectedUnit.id, skill.id);
-                const unavailableReason = selectedUnit.status === 'silenced'
-                  ? '禁咒状态下无法施展计谋'
-                  : selectedUnit.intelligence < skill.minimumIntelligence
-                  ? `智力不足（${selectedUnit.intelligence}/${skill.minimumIntelligence}）`
-                  : selectedUnit.skillPoints < skill.cost
-                    ? `计谋点不足（${selectedUnit.skillPoints}/${skill.cost}）`
-                    : selectedUnit.acted
-                      ? '本阶段已行动'
-                      : targetIds.length === 0
-                        ? '范围内没有合法目标'
-                        : undefined;
-                return (
-                  <div className="battle-skill-row" key={skill.id}>
-                    <div>
-                      <strong>{skill.name}</strong>
-                      <span>{skill.description} 范围 {skill.range} · 消耗 {skill.cost} · 智力 {skill.minimumIntelligence}</span>
-                    </div>
-                    {unavailableReason ? (
-                      <span className="battle-skill-reason">{unavailableReason}</span>
-                    ) : targetIds.map((unitId) => {
-                      const preview = previewTacticalSkill(battle, selectedUnit.id, skill.id, unitId);
-                      const change = preview.expectedTroopChange === 0
-                        ? ''
-                        : ` · ${preview.expectedTroopChange > 0 ? '恢复' : '伤害'} ${Math.abs(preview.expectedTroopChange)}`;
-                      const foodChange = preview.expectedFoodChange === 0
-                        ? ''
-                        : ` · 粮草伤害 ${Math.abs(preview.expectedFoodChange)}`;
-                      const status = preview.resultingStatus
-                        ? ` · 状态 ${TACTICAL_STATUS_LABELS[preview.resultingStatus]}`
-                        : '';
-                      return (
-                        <button
-                          type="button"
-                          key={`skill:${skill.id}:${unitId}`}
-                          disabled={!canCommand}
-                          onClick={() => onUseSkill(skill.id, unitId)}
-                        >
-                          对 {battle.units[unitId].name}
-                          （{preview.successChance}%{change}{foodChange}{status} ·
-                          天候×{preview.weatherMultiplier.toFixed(2)} ·
-                          地形×{preview.terrainMultiplier.toFixed(2)} ·
-                          兵种×{preview.armsMultiplier.toFixed(2)}）
-                        </button>
-                      );
-                    })}
-                  </div>
-                );
-              }) : <span className="battle-skill-reason">守备军无法施展计谋。</span>}
-            </div>
-          )}
-        </div>
-        {pendingTarget && pendingAttackPreview && (
-          <div className="battle-attack-confirm" role="status">
-            <strong>攻击预览：{selectedUnit?.name} → {pendingTarget.name}</strong>
-            <span>
-              预计伤害 {pendingAttackPreview.damage}，目标剩余 {pendingAttackPreview.targetTroopsAfter}；
-              攻方地形修正 {pendingAttackPreview.attackerTerrainShift}，
-              守方地形修正 {pendingAttackPreview.defenderTerrainShift}。
-            </span>
-            <button type="button" className="primary-action" disabled={!canCommand} onClick={onConfirmAttack}>
-              确认攻击
-            </button>
-          </div>
-        )}
-        <div className="battle-command-actions">
-          <button
-            type="button"
-            disabled={!canCommand || !selectedUnit || selectedUnit.side !== playerSide || selectedUnit.acted}
-            onClick={onWait}
-          >
-            待命
-          </button>
-          <button type="button" disabled={!canCommand} onClick={onEndSide}>结束本方阶段</button>
-          {confirmingRetreat ? (
+          ) : <span>{canCommand ? '点击战场或我军名单选择单位' : isResolving ? '敌方正在行动……' : '等待战斗结算'}</span>}
+        </button>
+
+        <div className="battle-command-actions" aria-label="当前单位动作">
+          {battle.status === 'ongoing' ? (
             <>
-              <button
-                type="button"
-                className="danger-action"
-                disabled={!canCommand}
-                onClick={() => {
-                  setConfirmingRetreat(false);
-                  onRetreat();
-                }}
-              >
-                确认全军撤退
+              <button type="button" className={actionMode === 'move' ? 'active' : undefined} disabled={!canCommand || !selectedUnit || selectedUnit.moved || selectedUnit.acted} onClick={() => { setActionMode('move'); togglePanel('move'); }}>
+                <strong>移动</strong><span>{reachable.length} 格</span>
               </button>
-              <button type="button" onClick={() => setConfirmingRetreat(false)}>取消撤退</button>
+              <button type="button" className={actionMode === 'attack' ? 'active' : undefined} disabled={!canCommand || !selectedUnit || selectedUnit.acted} onClick={() => { setActionMode('attack'); togglePanel('attack'); }}>
+                <strong>普攻</strong><span>{attackableUnitIds.length} 目标</span>
+              </button>
+              <button type="button" disabled={!canCommand || !selectedUnit || selectedUnit.acted || !selectedUnit.officerId} onClick={() => togglePanel('skills')}>
+                <strong>计谋</strong><span>{selectedSkills.length} 项</span>
+              </button>
+              <button type="button" disabled={!canCommand || !selectedUnit || selectedUnit.acted} onClick={onWait}>
+                <strong>待命</strong><span>结束行动</span>
+              </button>
+              <button type="button" disabled={!canCommand} onClick={onEndSide}>
+                <strong>结束阶段</strong><span>{unactedCount} 队未动</span>
+              </button>
+              <button type="button" className="danger-action" disabled={!canCommand} onClick={() => { setOpenPanel(undefined); setConfirmingRetreat(true); }}>
+                <strong>撤退</strong><span>立即判负</span>
+              </button>
             </>
           ) : (
-            <button type="button" disabled={!canCommand} onClick={() => setConfirmingRetreat(true)}>
-              全军撤退
+            <button type="button" className="primary-action battle-finish-action" onClick={onFinish}>
+              <strong>结算并返回战略地图</strong>
             </button>
           )}
-          <button type="button" className="primary-action" disabled={battle.status === 'ongoing'} onClick={onFinish}>
-            结算并返回战略地图
-          </button>
         </div>
       </section>
-
-      <details className="battle-log">
-        <summary>战场纪录（最近 {Math.min(10, battle.logs.length)} 条）</summary>
-        <ol>
-          {battle.logs.slice(-10).map((message, index) => <li key={`${battle.logs.length - 10 + index}:${message}`}>{message}</li>)}
-        </ol>
-      </details>
 
       {battle.status !== 'ongoing' && (
         <div className={`battle-outcome ${battle.status}`} role="status" aria-live="assertive">
@@ -338,6 +370,75 @@ export function TacticalBattleScreen({
       )}
     </main>
   );
+}
+
+function SkillList({
+  battle,
+  selectedUnit,
+  skills,
+  canCommand,
+  onUseSkill,
+}: {
+  battle: TacticalBattleState;
+  selectedUnit: TacticalBattleState['units'][string];
+  skills: Array<(typeof TACTICAL_SKILLS)[TacticalSkillId]>;
+  canCommand: boolean;
+  onUseSkill: (skillId: TacticalSkillId, targetUnitId: string) => void;
+}) {
+  return (
+    <div className="battle-skill-list" aria-label="计谋列表">
+      <p className="battle-skill-reason">技能采用现代数据驱动规则；原版兵种技能资源尚未进入可再分发基线。</p>
+      {skills.map((skill) => {
+        const targetIds = getTacticalSkillTargetIds(battle, selectedUnit.id, skill.id);
+        const unavailableReason = selectedUnit.status === 'silenced'
+          ? '禁咒状态下无法施展'
+          : selectedUnit.intelligence < skill.minimumIntelligence
+            ? `智力不足（${selectedUnit.intelligence}/${skill.minimumIntelligence}）`
+            : selectedUnit.skillPoints < skill.cost
+              ? `计谋点不足（${selectedUnit.skillPoints}/${skill.cost}）`
+              : selectedUnit.acted
+                ? '本阶段已行动'
+                : targetIds.length === 0 ? '范围内没有合法目标' : undefined;
+        return (
+          <article className="battle-skill-row" key={skill.id}>
+            <div>
+              <strong>{skill.name}</strong>
+              <span>{skill.description}</span>
+              <small>范围 {skill.range} · 消耗 {skill.cost} · 智力 {skill.minimumIntelligence}</small>
+            </div>
+            {unavailableReason ? <span className="battle-skill-reason">{unavailableReason}</span> : (
+              <div className="battle-skill-targets">
+                {targetIds.map((unitId) => {
+                  const preview = previewTacticalSkill(battle, selectedUnit.id, skill.id, unitId);
+                  const effect = preview.expectedTroopChange === 0
+                    ? preview.expectedFoodChange === 0 ? '' : `粮伤 ${Math.abs(preview.expectedFoodChange)}`
+                    : `${preview.expectedTroopChange > 0 ? '恢复' : '伤害'} ${Math.abs(preview.expectedTroopChange)}`;
+                  const resultingStatus = preview.resultingStatus ? ` · ${TACTICAL_STATUS_LABELS[preview.resultingStatus]}` : '';
+                  return (
+                    <button type="button" key={unitId} disabled={!canCommand} onClick={() => onUseSkill(skill.id, unitId)}>
+                      <strong>{battle.units[unitId].name}</strong>
+                      <span>{preview.successChance}% · {effect}{resultingStatus}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function panelTitle(panel: BattlePanel): string {
+  if (panel === 'player-roster') return '我军队伍';
+  if (panel === 'enemy-roster') return '敌军队伍';
+  if (panel === 'situation') return '战况与胜负条件';
+  if (panel === 'move') return '选择移动位置';
+  if (panel === 'attack') return '选择普攻目标';
+  if (panel === 'skills') return '选择计谋与目标';
+  if (panel === 'details') return '单位详情';
+  return '战场纪录';
 }
 
 function victoryReasonLabel(reason?: TacticalVictoryReason): string {
