@@ -39,6 +39,18 @@
       "notes": "Full elevated city model with walls, towers, inner buildings, streets, bridges, and moat; replaces the flat marker when a dimensional view is desired."
     },
     {
+      "id": "city-model-slate-v3",
+      "role": "slate gray square city model",
+      "path": "assets/production/map/city-model-slate-v3.png",
+      "sourcePath": "assets/source/map/city-model-slate-v3-chroma.png",
+      "dimensions": "1254x1254",
+      "format": "png",
+      "colorMode": "RGBA",
+      "sha256": "398193A5EB1FA18C4DF66DAB0373B1418AFB1701629D5DF9C345F4CBC07D2265",
+      "sourceSha256": "B7CD0048898A761BB313FE3665E6206C1B7E49CBC8B431C93874FA3223994B57",
+      "notes": "Square city plan with slate blue-gray masonry, cool roofs, four corner towers, inner compound, streets, bridge, and moat; intended to match the strategic map palette."
+    },
+    {
       "id": "faction-flag-base-v1",
       "role": "recolorable faction flag",
       "path": "assets/production/map/faction-flag-base-v1.png",
