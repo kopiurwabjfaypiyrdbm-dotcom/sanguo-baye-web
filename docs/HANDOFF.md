@@ -1,6 +1,8 @@
 # 项目交接：sanguo-baye-web
 
-更新日期：2026-07-26
+更新日期：2026-07-28
+
+最新开发日志：`docs/DEVELOPMENT_LOG.md`
 
 ## 1. 项目目标
 

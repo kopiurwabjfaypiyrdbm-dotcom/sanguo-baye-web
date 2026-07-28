@@ -1,5 +1,7 @@
 # sanguo-baye-web
 
+最新开发记录见 [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md)，当前交接状态见 [`docs/HANDOFF.md`](docs/HANDOFF.md)。
+
 一个以步步高电子词典版《三国霸业》为规则和体验基线的现代 Web 重写项目。项目通过解析、验证和差分测试还原原版数据与行为，同时使用现代化界面、可编辑数据和可扩展规则架构重新呈现。
 
 ## 项目原则
