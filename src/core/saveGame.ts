@@ -7,6 +7,7 @@ import { nextRandom } from './random';
 import { createBundledScenario, type BundledPeriodId } from '../data/bundledScenarios';
 import { createSampleState } from './sampleState';
 import { PERSON_APPEAR_AGE } from './annualProgression';
+import { LEGACY_SAVE_RULESET } from './rulesets';
 
 export const SAVE_FORMAT = 'sanguo-baye-web';
 export const SAVE_VERSION = 1;
@@ -74,13 +75,21 @@ export function parseSave(input: string | unknown): SaveEnvelope {
 
 export function migrateGameState(input: unknown): GameState {
   if (!isRecord(input)) throw new Error('存档中的游戏状态无效');
-  if (input.schemaVersion === 5) {
+  if (input.schemaVersion === 6) {
     return normalizeCurrentState(structuredClone(input) as GameState);
+  }
+  if (input.schemaVersion === 5) {
+    return normalizeCurrentState({
+      ...structuredClone(input),
+      schemaVersion: 6,
+      rulesetId: LEGACY_SAVE_RULESET,
+    } as GameState);
   }
   if (input.schemaVersion === 4) {
     return normalizeCurrentState({
       ...structuredClone(input),
-      schemaVersion: 5,
+      schemaVersion: 6,
+      rulesetId: LEGACY_SAVE_RULESET,
       lifecyclePolicy: defaultLifecyclePolicy(),
       pendingSuccession: undefined,
     } as GameState, true);
@@ -88,7 +97,8 @@ export function migrateGameState(input: unknown): GameState {
   if (input.schemaVersion === 3) {
     return normalizeCurrentState({
       ...structuredClone(input),
-      schemaVersion: 5,
+      schemaVersion: 6,
+      rulesetId: LEGACY_SAVE_RULESET,
       strategicOrders: {},
       nextStrategicOrderSerial: 1,
       lifecyclePolicy: defaultLifecyclePolicy(),
@@ -98,7 +108,8 @@ export function migrateGameState(input: unknown): GameState {
   if (input.schemaVersion === 2) {
     return normalizeCurrentState({
       ...structuredClone(input),
-      schemaVersion: 5,
+      schemaVersion: 6,
+      rulesetId: LEGACY_SAVE_RULESET,
       intelReports: {},
       strategicOrders: {},
       nextStrategicOrderSerial: 1,
@@ -109,7 +120,8 @@ export function migrateGameState(input: unknown): GameState {
   if (input.schemaVersion === 1) {
     return normalizeCurrentState({
       ...structuredClone(input),
-      schemaVersion: 5,
+      schemaVersion: 6,
+      rulesetId: LEGACY_SAVE_RULESET,
       discoveredOfficerIds: Array.isArray(input.discoveredOfficerIds) ? [...input.discoveredOfficerIds] : [],
       intelReports: {},
       strategicOrders: {},
@@ -185,7 +197,7 @@ function restoreLegacyAppearanceSchedules(state: GameState): GameState {
   const ruler = state.officers[state.factions[state.playerFactionId]?.rulerOfficerId];
   if (ruler?.sourceId === undefined) return state;
 
-  const baseline = createBundledScenario(period as BundledPeriodId, ruler.sourceId);
+  const baseline = createBundledScenario(period as BundledPeriodId, ruler.sourceId, LEGACY_SAVE_RULESET);
   const baselineSchedules = Object.values(baseline.officers).filter(
     (officer) => officer.appearanceYear !== undefined,
   );
@@ -306,7 +318,7 @@ function restoreLegacyScenarioItems(state: GameState): GameState {
   if (![1, 2, 3, 4].includes(period ?? 0) || Object.keys(state.items ?? {}).length > 0) return state;
   const ruler = state.officers[state.factions[state.playerFactionId]?.rulerOfficerId];
   if (ruler?.sourceId === undefined) return state;
-  const baseline = createBundledScenario(period as BundledPeriodId, ruler.sourceId);
+  const baseline = createBundledScenario(period as BundledPeriodId, ruler.sourceId, LEGACY_SAVE_RULESET);
   const cities = Object.fromEntries(Object.values(state.cities).map((city) => [city.id, {
     ...city,
     itemIds: [...(baseline.cities[city.id]?.itemIds ?? [])],

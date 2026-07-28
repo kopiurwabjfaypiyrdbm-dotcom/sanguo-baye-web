@@ -10,6 +10,7 @@ import type {
   Officer,
 } from './types';
 import { assertValidGameState } from './validation';
+import { getCampaignCommandCost } from './rulesets';
 
 export const DIPLOMACY_STAMINA_COST = 4;
 /** The runtime stamina and money tables are not vendored; both costs are provisional. */
@@ -70,6 +71,7 @@ export function getDiplomaticOrderAvailability(
   state: GameState,
   input: DiplomaticOrderInput,
 ): DiplomaticAvailability {
+  const cost = getCampaignCommandCost(state.rulesetId, input.kind);
   if (state.phase === 'ended') return { allowed: false, reason: '战役已经结束' };
   if (state.pendingSuccession) return { allowed: false, reason: '必须先拥立新君' };
   if (!Number.isSafeInteger(state.nextDiplomaticOrderSerial)
@@ -88,11 +90,11 @@ export function getDiplomaticOrderAvailability(
   }
   if (hasActiveCampaignOrder(state, executor.id)) return { allowed: false, reason: '该武将已有执行中的命令' };
   if (state.actedOfficerIds.includes(executor.id)) return { allowed: false, reason: '该武将本月已经执行过命令' };
-  if (executor.stamina < DIPLOMACY_STAMINA_COST) {
-    return { allowed: false, reason: `${label}需要至少 ${DIPLOMACY_STAMINA_COST} 点体力` };
+  if (executor.stamina < cost.stamina) {
+    return { allowed: false, reason: `${label}需要至少 ${cost.stamina} 点体力` };
   }
-  if (source.money < DIPLOMACY_MONEY_COST) {
-    return { allowed: false, reason: `${label}需要 ${DIPLOMACY_MONEY_COST} 金` };
+  if (source.money < cost.money) {
+    return { allowed: false, reason: `${label}需要 ${cost.money} 金` };
   }
   const target = state.officers[input.targetOfficerId];
   if (!target || !isLegalTarget(state, input.kind, state.activeFactionId, target, true)) {
@@ -105,6 +107,7 @@ export function getDiplomaticOrderAvailability(
 }
 
 export function issueDiplomaticOrder(state: GameState, input: DiplomaticOrderInput): GameState {
+  const cost = getCampaignCommandCost(state.rulesetId, input.kind);
   const availability = getDiplomaticOrderAvailability(state, input);
   if (!availability.allowed) throw new Error(availability.reason);
   const source = state.cities[input.sourceCityId];
@@ -127,20 +130,20 @@ export function issueDiplomaticOrder(state: GameState, input: DiplomaticOrderInp
     createdMonth: state.calendar.month,
     durationMonths: DIPLOMACY_DURATION_MONTHS,
     remainingMonths: DIPLOMACY_DURATION_MONTHS,
-    moneyCost: DIPLOMACY_MONEY_COST,
+    moneyCost: cost.money,
   };
   let next = updateCitySatraps({
     ...state,
     campaignStarted: true,
     diplomaticOrders: { ...state.diplomaticOrders, [id]: order },
     nextDiplomaticOrderSerial: serial + 1,
-    cities: { ...state.cities, [source.id]: { ...source, money: source.money - DIPLOMACY_MONEY_COST } },
+    cities: { ...state.cities, [source.id]: { ...source, money: source.money - cost.money } },
     officers: {
       ...state.officers,
       [executor.id]: {
         ...executor,
         cityId: undefined,
-        stamina: executor.stamina - DIPLOMACY_STAMINA_COST,
+        stamina: executor.stamina - cost.stamina,
       },
     },
     actedOfficerIds: [...state.actedOfficerIds, executor.id],

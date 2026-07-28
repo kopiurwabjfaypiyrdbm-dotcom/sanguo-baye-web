@@ -6,8 +6,11 @@ import {
   formatStrategicCargo,
 } from './strategicOrderCargo';
 import type { City, DiplomaticOrder, GameState, Officer, StrategicOrder } from './types';
+import { getEffectiveOfficerAttributes } from './equipment';
+import { getCampaignRuleset } from './rulesets';
 
 export function updateCitySatraps(state: GameState): GameState {
+  const satrapPolicy = getCampaignRuleset(state.rulesetId).satrapPolicy;
   const cities = Object.fromEntries(
     Object.values(state.cities).map((city) => {
       const faction = state.factions[city.ownerId];
@@ -17,12 +20,14 @@ export function updateCitySatraps(state: GameState): GameState {
 
       const stationed = Object.values(state.officers)
         .filter((officer) => officer.status === 'serving' && officer.factionId === city.ownerId && officer.cityId === city.id)
-        .sort(compareSatrapCandidates);
+        .sort((left, right) => compareSatrapCandidates(state, left, right));
       const current = city.satrapOfficerId
         ? stationed.find((officer) => officer.id === city.satrapOfficerId)
         : undefined;
-      if (current) return [city.id, { ...city, satrapOfficerId: current.id }];
       const ruler = stationed.find((officer) => officer.id === faction.rulerOfficerId);
+      if (satrapPolicy === 'manual-persistent' && current) {
+        return [city.id, { ...city, satrapOfficerId: current.id }];
+      }
       return [city.id, { ...city, satrapOfficerId: ruler?.id ?? stationed[0]?.id }];
     }),
   );
@@ -161,6 +166,8 @@ function settleCargoAcrossCities(
   return creditStrategicCargoAcrossCities(cities, candidates, order.cargo);
 }
 
-function compareSatrapCandidates(a: Officer, b: Officer): number {
-  return b.intelligence - a.intelligence || b.force - a.force || a.id.localeCompare(b.id);
+function compareSatrapCandidates(state: GameState, a: Officer, b: Officer): number {
+  const left = getEffectiveOfficerAttributes(state, a);
+  const right = getEffectiveOfficerAttributes(state, b);
+  return right.intelligence - left.intelligence || right.force - left.force || a.id.localeCompare(b.id);
 }

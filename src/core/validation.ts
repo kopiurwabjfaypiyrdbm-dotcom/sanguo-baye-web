@@ -1,5 +1,6 @@
 import type { GameState } from './types';
 import { OFFICER_EQUIPMENT_LIMIT, getOfficerEquipmentIds } from './equipment';
+import { isCampaignRulesetId } from './rulesets';
 
 export type ValidationIssue = {
   path: string;
@@ -10,7 +11,8 @@ export function validateGameState(state: GameState): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const add = (path: string, message: string) => issues.push({ path, message });
 
-  if (state.schemaVersion !== 5) add('schemaVersion', 'must be 5');
+  if (state.schemaVersion !== 6) add('schemaVersion', 'must be 6');
+  if (!isCampaignRulesetId(state.rulesetId)) add('rulesetId', 'must be a supported campaign ruleset');
   if (typeof state.campaignStarted !== 'boolean') add('campaignStarted', 'must be a boolean');
   if (!Number.isInteger(state.turn) || state.turn < 1) add('turn', 'must be a positive integer');
   if (!Number.isInteger(state.rngSeed) || state.rngSeed < 0) add('rngSeed', 'must be a non-negative integer');

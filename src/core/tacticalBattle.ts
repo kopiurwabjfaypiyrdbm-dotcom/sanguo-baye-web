@@ -15,7 +15,7 @@ import {
   type BattleStateGuard,
 } from './battle';
 import type { GameState, Officer } from './types';
-import { getEffectiveOfficerAttributes } from './equipment';
+import { getEffectiveOfficerAttributes, getOfficerEquipment } from './equipment';
 import { nextRandom } from './random';
 import { calculateBayeBattleExperience, calculateBayeSkillPoints } from '../compat/baye/tacticalGrowth';
 import {
@@ -25,9 +25,12 @@ import {
   getBayeStatusMobility,
   getBayeStoneArrayLoss,
   getModernAttackRange,
+  isBayeNormalAttackOffset,
+  isBayeNormalAttackPatternOffset,
   getModernTerrainMoveCost,
   shouldRecoverBayeStatus,
   type BayeTacticalStatus,
+  type BayeNormalAttackShape,
 } from '../compat/baye/tacticalState';
 
 export type TacticalSide = 'attacker' | 'defender';
@@ -39,7 +42,9 @@ export type TacticalVictoryReason =
   | 'objective-held'
   | 'attacker-food-exhausted'
   | 'defender-food-exhausted'
-  | 'day-limit';
+  | 'day-limit'
+  | 'attacker-retreated'
+  | 'defender-retreated';
 export type TacticalApproach = 'east' | 'west' | 'north' | 'south';
 export type TacticalWeather = 'fine' | 'cloudy' | 'wind' | 'rain' | 'hail';
 export type TacticalUnitStatus = BayeTacticalStatus;
@@ -62,7 +67,8 @@ export type TacticalBattlefieldTemplate =
   | 'forest-road'
   | 'twin-villages'
   | 'open-plain'
-  | 'marsh-fords';
+  | 'marsh-fords'
+  | 'fortified-basin';
 
 export type TacticalSkillDefinition = {
   id: TacticalSkillId;
@@ -101,6 +107,7 @@ export type TacticalUnit = {
   intelligence: number;
   level: number;
   armsType: BayeArmsType;
+  normalAttackPatternOverride?: BayeNormalAttackShape;
   mobility: number;
   originalTroops: number;
   troops: number;
@@ -179,6 +186,7 @@ const BATTLEFIELD_TEMPLATES: readonly TacticalBattlefieldTemplate[] = [
   'twin-villages',
   'open-plain',
   'marsh-fords',
+  'fortified-basin',
 ];
 export const TACTICAL_SIDE_UNIT_LIMIT = 10;
 export const TACTICAL_WEATHERS: readonly TacticalWeather[] = ['fine', 'cloudy', 'wind', 'rain', 'hail'];
@@ -192,6 +200,7 @@ export const TACTICAL_BATTLEFIELD_LABELS: Record<TacticalBattlefieldTemplate, st
   'twin-villages': '双村要冲',
   'open-plain': '平原旷野',
   'marsh-fords': '泽地浅滩',
+  'fortified-basin': '盆地坚城',
 };
 export const TACTICAL_APPROACH_LABELS: Record<TacticalApproach, string> = {
   east: '由西向东',
@@ -481,10 +490,9 @@ export function getTacticalPathCost(
 export function getAttackableUnitIds(state: TacticalBattleState, unitId: string): string[] {
   const unit = requireActiveUnit(state, unitId);
   if (unit.acted) return [];
-  const range = getTacticalAttackRange(unit.armsType);
   return Object.values(state.units)
     .filter((target) => target.troops > 0 && target.side !== unit.side)
-    .filter((target) => isOffsetInRange(unit, target, range, 'diamond'))
+    .filter((target) => isNormalAttackTarget(unit, target))
     .filter((target) => target.status !== 'hidden' || distance(unit, target) <= 1)
     .sort((a, b) => a.troops - b.troops || a.id.localeCompare(b.id))
     .map((target) => target.id);
@@ -538,7 +546,7 @@ export function previewTacticalAttack(
   const target = state.units[targetUnitId];
   if (!attacker || attacker.troops <= 0) throw new Error('攻击单位无效');
   if (!target || target.troops <= 0 || target.side === attacker.side) throw new Error('攻击目标无效');
-  if (!isOffsetInRange(attacker, target, getTacticalAttackRange(attacker.armsType), 'diamond')) {
+  if (!isNormalAttackTarget(attacker, target)) {
     throw new Error('目标不在攻击范围内');
   }
   if (target.status === 'hidden' && distance(attacker, target) > 1) throw new Error('潜踪目标必须相邻才能锁定');
@@ -768,6 +776,19 @@ export function endTacticalSide(state: TacticalBattleState): TacticalBattleState
   return evaluateTacticalOutcome(next);
 }
 
+export function retreatTacticalSide(state: TacticalBattleState, side: TacticalSide): TacticalBattleState {
+  if (state.status !== 'ongoing') throw new Error('战斗已经结束');
+  if (state.activeSide !== side) throw new Error('只能在本方行动阶段下令全军撤退');
+  const status: TacticalBattleStatus = side === 'attacker' ? 'defender-won' : 'attacker-won';
+  const victoryReason: TacticalVictoryReason = side === 'attacker' ? 'attacker-retreated' : 'defender-retreated';
+  return {
+    ...state,
+    status,
+    victoryReason,
+    logs: [...state.logs, victoryReasonMessage(status, victoryReason)],
+  };
+}
+
 export function runBasicTacticalAi(state: TacticalBattleState): TacticalBattleState {
   if (state.status !== 'ongoing') return state;
   let next = state;
@@ -897,6 +918,10 @@ function createStructuredBattlefield(
       )) terrain = 4;
       else if (template === 'marsh-fords' && across >= acrossMiddle - 1 && across <= acrossMiddle + 1
         && (along + across) % 3 !== 0) terrain = 7;
+      else if (template === 'fortified-basin' && (
+        across === acrossMiddle - 2 || across === acrossMiddle + 2
+      ) && Math.abs(along - alongMiddle) > 1) terrain = 2;
+      else if (template === 'fortified-basin' && Math.abs(across - acrossMiddle) <= 1) terrain = 4;
       else if (template === 'open-plain') terrain = (x + y) % 5 === 0 ? 1 : 0;
       else if ((x + y * 3) % 17 === 7) terrain = 3;
       else if ((x * 5 + y) % 23 === 11) terrain = 4;
@@ -926,6 +951,11 @@ function unitFromOfficer(
 ): TacticalUnit {
   const armsType = armsTypeIndex(officer.armsTypeId);
   const effective = getEffectiveOfficerAttributes(state, officer);
+  // FgtGetCmdRng checks both equipment slots in order; the later range-changing tool wins.
+  const normalAttackPatternOverride = getOfficerEquipment(state, officer)
+    .map((item) => item.normalAttackPatternOverride)
+    .filter((pattern): pattern is BayeNormalAttackShape => pattern !== undefined)
+    .at(-1);
   const maxSkillPoints = clamp(calculateBayeSkillPoints(
     effective.intelligence,
     effective.force,
@@ -944,6 +974,7 @@ function unitFromOfficer(
     intelligence: effective.intelligence,
     level: officer.level ?? 1,
     armsType,
+    ...(normalAttackPatternOverride ? { normalAttackPatternOverride } : {}),
     mobility: clamp((state.armsTypes[officer.armsTypeId]?.mobility ?? 3) + effective.moveBonus, 1, 8),
     originalTroops: officer.troops,
     troops: officer.troops,
@@ -1159,6 +1190,19 @@ export function getTacticalAttackRange(armsType: BayeArmsType): number {
   return getModernAttackRange(armsType);
 }
 
+export function getTacticalNormalAttackLabel(unit: TacticalUnit): string {
+  const shape = unit.normalAttackPatternOverride
+    ?? (unit.armsType === 2
+      ? 'manhattan-ring-two'
+      : unit.armsType === 1 || unit.armsType === 4
+        ? 'adjacent-eight'
+        : 'orthogonal-adjacent');
+  const label = shape === 'manhattan-ring-two'
+    ? '距二环射击'
+    : shape === 'adjacent-eight' ? '八向近战' : '四向近战';
+  return unit.normalAttackPatternOverride ? `${label}（道具覆盖）` : label;
+}
+
 function armsTypeIndex(armsTypeId: string): BayeArmsType {
   const index = BAYE_ARMS_TYPES.indexOf(armsTypeId as (typeof BAYE_ARMS_TYPES)[number]);
   return (index < 0 ? 0 : index) as BayeArmsType;
@@ -1296,6 +1340,8 @@ function hashString(value: string): number {
 }
 
 function victoryReasonMessage(status: TacticalBattleStatus, reason?: TacticalVictoryReason): string {
+  if (reason === 'attacker-retreated') return '攻方下令全军撤退，守方获胜。';
+  if (reason === 'defender-retreated') return '守方下令全军撤退，攻方占领城池。';
   if (reason === 'attacker-commander-defeated') return '攻方主将败退，守方获胜。';
   if (reason === 'defender-commander-defeated') return '守方主将败退，攻方获胜。';
   if (reason === 'objective-held') return '攻方占领城池并坚持到本方阶段结束。';
@@ -1328,6 +1374,14 @@ function positionSort(a: TacticalPosition, b: TacticalPosition): number {
 
 function distance(a: TacticalPosition, b: TacticalPosition): number {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+}
+
+function isNormalAttackTarget(origin: TacticalUnit, target: TacticalPosition): boolean {
+  const dx = target.x - origin.x;
+  const dy = target.y - origin.y;
+  return origin.normalAttackPatternOverride
+    ? isBayeNormalAttackPatternOffset(origin.normalAttackPatternOverride, dx, dy)
+    : isBayeNormalAttackOffset(origin.armsType, dx, dy);
 }
 
 function isOffsetInRange(

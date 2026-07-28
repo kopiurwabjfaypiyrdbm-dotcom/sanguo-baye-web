@@ -41,7 +41,12 @@ import {
   continueTurnUntilPlayerDefense,
   type InteractiveTurnProgress,
 } from '../core/turn';
-import { summarizeMonth } from '../core/monthSummary';
+import {
+  buildMonthAdvanceReview,
+  buildMonthResolutionReport,
+  type MonthAdvanceReview,
+  type MonthResolutionReport,
+} from '../core/monthReview';
 import type { GameState, LifecyclePolicy } from '../core/types';
 import {
   attackTacticalUnit,
@@ -53,6 +58,7 @@ import {
   previewTacticalAttack,
   moveTacticalUnit,
   runBasicTacticalAi,
+  retreatTacticalSide,
   useTacticalSkill,
   waitTacticalUnit,
   type TacticalBattleState,
@@ -66,9 +72,11 @@ import {
   type BundledPeriodId,
 } from '../data/bundledScenarios';
 import { createGameBridge } from '../game/events';
-import { createStrategyMap, type StrategyMapController } from '../game/createGame';
+import type { StrategyMapController } from '../game/createGame';
 import { RulerScreen, ScenarioScreen, TitleScreen } from './CampaignSetup';
+import { CampaignNavigator, type CampaignNavView } from './CampaignNavigator';
 import { CityPanel } from './CityPanel';
+import { MonthEndReviewDialog, MonthResolutionDialog } from './MonthEndReviewDialog';
 import { TacticalBattleScreen } from './TacticalBattleScreen';
 import { getFactionStrategicOrders, issueTransportOrder } from '../core/strategicOrders';
 import { getFactionDiplomaticOrders, issueDiplomaticOrder } from '../core/diplomaticOrders';
@@ -80,6 +88,11 @@ import {
   executeCaptive,
   resolveSuccession,
 } from '../core/officerLifecycle';
+import {
+  DEFAULT_NEW_CAMPAIGN_RULESET,
+  getCampaignRuleset,
+  type CampaignRulesetId,
+} from '../core/rulesets';
 
 type AppScreen = 'title' | 'scenario' | 'ruler' | 'game' | 'battle';
 const scenarioOptions = getScenarioOptions();
@@ -94,21 +107,32 @@ export function App() {
   const [selectedLifecyclePolicy, setSelectedLifecyclePolicy] = useState<LifecyclePolicy>({
     ...SAFE_LIFECYCLE_POLICY,
   });
+  const [selectedRulesetId, setSelectedRulesetId] = useState<CampaignRulesetId>(DEFAULT_NEW_CAMPAIGN_RULESET);
   const [selectedCityId, setSelectedCityId] = useState(() => firstOwnedCityId(initialGame.state));
+  const [isCityPanelOpen, setIsCityPanelOpen] = useState(false);
+  const [activeNavView, setActiveNavView] = useState<CampaignNavView>();
+  const [focusedOfficerId, setFocusedOfficerId] = useState<string>();
   const [sourceLabel, setSourceLabel] = useState(initialGame.sourceLabel);
   const [selectedSaveSlot, setSelectedSaveSlot] = useState<Exclude<SaveSlotId, 'auto'>>('1');
   const [feedback, setFeedback] = useState<{ kind: 'success' | 'error'; message: string }>();
-  const [monthSummary, setMonthSummary] = useState<string[]>([]);
+  const [monthAdvanceReview, setMonthAdvanceReview] = useState<MonthAdvanceReview>();
+  const [monthReport, setMonthReport] = useState<MonthResolutionReport>();
+  const [isMonthReportOpen, setIsMonthReportOpen] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [pendingAttack, setPendingAttack] = useState<AttackOrder>();
   const [tacticalBattle, setTacticalBattle] = useState<TacticalBattleState>();
   const [selectedTacticalUnitId, setSelectedTacticalUnitId] = useState<string>();
   const [pendingTacticalTargetId, setPendingTacticalTargetId] = useState<string>();
   const [aiResumeFactionIndex, setAiResumeFactionIndex] = useState<number>();
+  const [isStrategyMapReady, setIsStrategyMapReady] = useState(false);
+  const [strategyMapLoadError, setStrategyMapLoadError] = useState<string>();
   const mapHost = useRef<HTMLDivElement>(null);
   const mapController = useRef<StrategyMapController | null>(null);
+  const latestStrategyMapInput = useRef({ state, selectedCityId });
   const aiTurnLogStart = useRef(0);
+  const monthResolutionInProgress = useRef(false);
   const bridge = useMemo(() => createGameBridge(), []);
+  latestStrategyMapInput.current = { state, selectedCityId };
   const tacticalReachable = useMemo(() => {
     if (!tacticalBattle || !selectedTacticalUnitId || tacticalBattle.status !== 'ongoing') return [];
     try {
@@ -134,16 +158,62 @@ export function App() {
     [state],
   );
 
-  useEffect(() => bridge.on('city:selected', ({ cityId }) => setSelectedCityId(cityId)), [bridge]);
+  useEffect(() => bridge.on('city:selected', ({ cityId }) => {
+    setSelectedCityId(cityId);
+    setIsCityPanelOpen(true);
+    setActiveNavView(undefined);
+    setFocusedOfficerId(undefined);
+  }), [bridge]);
+
+  useEffect(() => {
+    if (state.cities[selectedCityId]) return;
+    setSelectedCityId(firstOwnedCityId(state));
+    setIsCityPanelOpen(false);
+    setFocusedOfficerId(undefined);
+  }, [selectedCityId, state]);
+
+  useEffect(() => {
+    if (!focusedOfficerId) return;
+    const officer = state.officers[focusedOfficerId];
+    if (!officer || officer.cityId !== selectedCityId || officer.status === 'hidden' || officer.status === 'dead') {
+      setFocusedOfficerId(undefined);
+    }
+  }, [focusedOfficerId, selectedCityId, state.officers]);
+
+  useEffect(() => {
+    if (screen !== 'game' || !isCityPanelOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsCityPanelOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [isCityPanelOpen, screen]);
 
   useEffect(() => {
     if (screen !== 'game' || !mapHost.current) return;
-    mapController.current = createStrategyMap(mapHost.current, bridge, state, selectedCityId);
+    let cancelled = false;
+    let createdController: StrategyMapController | null = null;
+    const host = mapHost.current;
+    setIsStrategyMapReady(false);
+    setStrategyMapLoadError(undefined);
+    void import('../game/createGame')
+      .then(({ createStrategyMap }) => {
+        if (cancelled) return;
+        const latest = latestStrategyMapInput.current;
+        createdController = createStrategyMap(host, bridge, latest.state, latest.selectedCityId);
+        mapController.current = createdController;
+        setIsStrategyMapReady(true);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setStrategyMapLoadError(error instanceof Error ? error.message : '地图模块加载失败');
+      });
     return () => {
-      mapController.current?.destroy();
-      mapController.current = null;
+      cancelled = true;
+      createdController?.destroy();
+      if (mapController.current === createdController) mapController.current = null;
     };
-    // Phaser owns its canvas lifecycle; state updates flow through the controller below.
+    // Phaser is loaded only after campaign entry; later state updates flow through the controller below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bridge, screen]);
 
@@ -190,14 +260,20 @@ export function App() {
 
   function startCampaign() {
     const next = configureLifecyclePolicy(
-      createBundledScenario(selectedPeriod, selectedRulerIndex),
+      createBundledScenario(selectedPeriod, selectedRulerIndex, selectedRulesetId),
       selectedLifecyclePolicy,
     );
     const label = sourceLabelForState(next);
     setState(next);
     setSelectedCityId(firstOwnedCityId(next));
+    setIsCityPanelOpen(false);
+    setActiveNavView(undefined);
+    setFocusedOfficerId(undefined);
     setSourceLabel(label);
-    setMonthSummary([]);
+    setMonthAdvanceReview(undefined);
+    setMonthReport(undefined);
+    setIsMonthReportOpen(false);
+    monthResolutionInProgress.current = false;
     try {
       clearBattleCheckpoint();
     } catch (error) {
@@ -242,8 +318,14 @@ export function App() {
         }
         setState(recovery.state);
         setSelectedCityId(firstOwnedCityId(recovery.state));
+        setIsCityPanelOpen(false);
+        setActiveNavView(undefined);
+        setFocusedOfficerId(undefined);
         setSourceLabel(sourceLabelForState(recovery.state));
-        setMonthSummary([]);
+        setMonthAdvanceReview(undefined);
+        setMonthReport(undefined);
+        setIsMonthReportOpen(false);
+        monthResolutionInProgress.current = false;
         setScreen('game');
         setFeedback({
           kind: 'success',
@@ -255,8 +337,15 @@ export function App() {
         const battle = createTacticalBattle(recovery.state, recovery.order);
         setState(recovery.state);
         setSelectedCityId(recovery.order.targetCityId);
+        setIsCityPanelOpen(false);
+        setActiveNavView(undefined);
+        setFocusedOfficerId(undefined);
         setSourceLabel(sourceLabelForState(recovery.state));
-        setMonthSummary([]);
+        setMonthAdvanceReview(undefined);
+        setMonthReport(undefined);
+        setIsMonthReportOpen(false);
+        aiTurnLogStart.current = findMonthResolutionLogStart(recovery.state);
+        monthResolutionInProgress.current = recovery.resume.kind === 'ai-phase';
         setTacticalBattle(battle);
         setSelectedTacticalUnitId(undefined);
         setPendingTacticalTargetId(undefined);
@@ -304,8 +393,14 @@ export function App() {
     clearBattleCheckpoint();
     setState(next);
     setSelectedCityId(firstOwnedCityId(next));
+    setIsCityPanelOpen(false);
+    setActiveNavView(undefined);
+    setFocusedOfficerId(undefined);
     setSourceLabel(sourceLabelForState(next));
-    setMonthSummary([]);
+    setMonthAdvanceReview(undefined);
+    setMonthReport(undefined);
+    setIsMonthReportOpen(false);
+    monthResolutionInProgress.current = false;
     setFeedback({ kind: 'success', message: label ? `已载入：${label}` : '存档已载入。' });
     setScreen('game');
   }
@@ -320,6 +415,36 @@ export function App() {
     anchor.click();
     URL.revokeObjectURL(url);
     setFeedback({ kind: 'success', message: '当前战役存档已导出。' });
+  }
+
+  function openCampaignNavigator(view: CampaignNavView) {
+    setActiveNavView(view);
+  }
+
+  function selectCityFromNavigator(cityId: string) {
+    if (!state.cities[cityId]) return;
+    setSelectedCityId(cityId);
+    setFocusedOfficerId(undefined);
+    setActiveNavView(undefined);
+    setIsCityPanelOpen(true);
+  }
+
+  function selectOfficerFromNavigator(officerId: string, cityId?: string) {
+    if (!cityId || !state.cities[cityId]) return;
+    setSelectedCityId(cityId);
+    setFocusedOfficerId(officerId);
+    setActiveNavView(undefined);
+    setIsCityPanelOpen(true);
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+      setFeedback({ kind: 'success', message: document.fullscreenElement ? '已进入全屏显示。' : '已退出全屏显示。' });
+    } catch (error) {
+      setFeedback({ kind: 'error', message: `无法切换全屏：${error instanceof Error ? error.message : '浏览器不支持该操作'}` });
+    }
   }
 
   async function importSaveFile(event: ChangeEvent<HTMLInputElement>) {
@@ -498,6 +623,20 @@ export function App() {
     }
   }
 
+  function retreatPlayerTacticalSide() {
+    if (!tacticalBattle || isResolving) return;
+    try {
+      const playerSide = tacticalBattle.attackerFactionId === state.playerFactionId ? 'attacker' : 'defender';
+      const next = retreatTacticalSide(tacticalBattle, playerSide);
+      setTacticalBattle(next);
+      setSelectedTacticalUnitId(undefined);
+      setPendingTacticalTargetId(undefined);
+      setFeedback({ kind: 'success', message: next.logs.at(-1) ?? '本方已经撤退。' });
+    } catch (error) {
+      setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '无法撤退。' });
+    }
+  }
+
   function finishManualBattle() {
     if (!tacticalBattle || tacticalBattle.status === 'ongoing') return;
     try {
@@ -529,6 +668,11 @@ export function App() {
         setSelectedCityId(next.cities[result.targetCityId].ownerId === next.playerFactionId
           ? result.targetCityId
           : result.sourceCityId);
+        if (aiResumeFactionIndex !== undefined && monthResolutionInProgress.current) {
+          setMonthReport(buildMonthResolutionReport(next.logs.slice(aiTurnLogStart.current), next));
+          setIsMonthReportOpen(true);
+          monthResolutionInProgress.current = false;
+        }
         setScreen('game');
         setFeedback({ kind: 'success', message: result.logs.at(-1) ?? '战斗已经结算。' });
       }
@@ -548,6 +692,7 @@ export function App() {
           `${sourceLabel} · 守城战前检查点`,
         );
       } catch (error) {
+        monthResolutionInProgress.current = false;
         setIsResolving(false);
         setFeedback({
           kind: 'error',
@@ -570,6 +715,18 @@ export function App() {
       return;
     }
 
+    if (progress.state.pendingSuccession) {
+      setState(progress.state);
+      setTacticalBattle(undefined);
+      setSelectedTacticalUnitId(undefined);
+      setPendingTacticalTargetId(undefined);
+      setAiResumeFactionIndex(undefined);
+      setScreen('game');
+      setIsResolving(false);
+      setFeedback({ kind: 'success', message: '月度推演已暂停，请先拥立新君。' });
+      return;
+    }
+
     const persistenceError = completedBattleId
       ? finalizeBattleRecovery(completedBattleId, progress.state)
       : undefined;
@@ -584,7 +741,12 @@ export function App() {
     setSelectedTacticalUnitId(undefined);
     setPendingTacticalTargetId(undefined);
     setAiResumeFactionIndex(undefined);
-    setMonthSummary(summarizeMonth(progress.state.logs.slice(aiTurnLogStart.current)));
+    setMonthReport(buildMonthResolutionReport(
+      progress.state.logs.slice(aiTurnLogStart.current),
+      progress.state,
+    ));
+    setIsMonthReportOpen(true);
+    monthResolutionInProgress.current = false;
     if (progress.state.cities[selectedCityId]?.ownerId !== progress.state.playerFactionId) {
       setSelectedCityId(firstOwnedCityId(progress.state));
     }
@@ -615,8 +777,26 @@ export function App() {
     }
   }
 
-  async function endMonth() {
-    if (isResolving) return;
+  function openMonthEndReview() {
+    if (isResolving || state.phase === 'ended' || state.pendingSuccession || pendingAttack) return;
+    setActiveNavView(undefined);
+    setMonthAdvanceReview(buildMonthAdvanceReview(state));
+  }
+
+  function selectCityFromMonthOverlay(cityId: string) {
+    if (!state.cities[cityId]) return;
+    setSelectedCityId(cityId);
+    setFocusedOfficerId(undefined);
+    setActiveNavView(undefined);
+    setIsCityPanelOpen(true);
+    setMonthAdvanceReview(undefined);
+    setIsMonthReportOpen(false);
+  }
+
+  async function confirmMonthAdvance() {
+    if (isResolving || monthResolutionInProgress.current) return;
+    setMonthAdvanceReview(undefined);
+    monthResolutionInProgress.current = true;
     setIsResolving(true);
     setFeedback({ kind: 'success', message: '正在推演其他势力行动……' });
     await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
@@ -624,6 +804,7 @@ export function App() {
       aiTurnLogStart.current = state.logs.length;
       applyInteractiveTurnProgress(advanceTurnUntilPlayerDefense(state));
     } catch (error) {
+      monthResolutionInProgress.current = false;
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '月度推进失败。' });
       setIsResolving(false);
     }
@@ -637,6 +818,17 @@ export function App() {
       setFeedback({ kind: 'success', message: next.logs.at(-1)?.message ?? '新君已经继位。' });
       if (pending?.resumePhase === 'ai' && pending.resumeAiFactionIndex !== undefined) {
         applyInteractiveTurnProgress(continueTurnUntilPlayerDefense(next, pending.resumeAiFactionIndex));
+      } else if (monthResolutionInProgress.current) {
+        setMonthReport(buildMonthResolutionReport(next.logs.slice(aiTurnLogStart.current), next));
+        setIsMonthReportOpen(true);
+        monthResolutionInProgress.current = false;
+        if (next.cities[selectedCityId]?.ownerId !== next.playerFactionId) setSelectedCityId(firstOwnedCityId(next));
+        setFeedback({
+          kind: 'success',
+          message: next.phase === 'ended'
+            ? next.outcome === 'victory' ? '战役已经胜利。' : '战役已经失败。'
+            : `已进入 ${next.calendar.year} 年 ${next.calendar.month} 月，继承与月度结算已经完成。`,
+        });
       }
     } catch (error) {
       setFeedback({ kind: 'error', message: error instanceof Error ? error.message : '无法完成君主继承。' });
@@ -657,10 +849,15 @@ export function App() {
         isResolving={isResolving}
         onUnitSelected={selectTacticalUnit}
         onConfirmAttack={confirmSelectedTacticalAttack}
+        onCancelAttack={() => {
+          setPendingTacticalTargetId(undefined);
+          setFeedback({ kind: 'success', message: '已取消攻击预览，可重新选择动作或目标。' });
+        }}
         onTileSelected={moveSelectedTacticalUnit}
         onWait={waitSelectedTacticalUnit}
         onUseSkill={useSelectedTacticalSkill}
         onEndSide={endPlayerTacticalSide}
+        onRetreat={retreatPlayerTacticalSide}
         onFinish={finishManualBattle}
       />
     );
@@ -691,6 +888,8 @@ export function App() {
         onSelectRuler={setSelectedRulerIndex}
         lifecyclePolicy={selectedLifecyclePolicy}
         onLifecyclePolicyChange={setSelectedLifecyclePolicy}
+        rulesetId={selectedRulesetId}
+        onRulesetChange={setSelectedRulesetId}
         onStart={startCampaign}
         onBack={() => setScreen('scenario')}
       />
@@ -707,31 +906,7 @@ export function App() {
         <div className="campaign-status">
           <span>{state.calendar.year} 年 {state.calendar.month} 月</span>
           <span>{sourceLabel}</span>
-        </div>
-        <div className="top-actions">
-          <div className="save-controls" aria-label="存档操作">
-            <select value={selectedSaveSlot} onChange={(event) => setSelectedSaveSlot(event.target.value as Exclude<SaveSlotId, 'auto'>)}>
-              <option value="1">槽位 1</option>
-              <option value="2">槽位 2</option>
-              <option value="3">槽位 3</option>
-            </select>
-            <button type="button" onClick={saveManualSlot}>保存</button>
-            <button type="button" onClick={loadManualSlot}>载入</button>
-            <button type="button" onClick={exportCurrentSave}>导出</button>
-            <label className="file-action compact">
-              导入
-              <input type="file" accept="application/json,.json" onChange={importSaveFile} />
-            </label>
-          </div>
-          <button type="button" className="return-title-action" onClick={() => setScreen('title')}>返回标题</button>
-          <button
-            type="button"
-            className="primary-action"
-            disabled={isResolving || state.phase === 'ended' || Boolean(state.pendingSuccession)}
-            onClick={endMonth}
-          >
-            {isResolving ? '推演中…' : '结束本月'}
-          </button>
+          <span>{getCampaignRuleset(state.rulesetId).label}</span>
         </div>
       </header>
 
@@ -776,7 +951,13 @@ export function App() {
             )}
           </div>
         )}
-        <div className="map-host" ref={mapHost} />
+        <div className="map-host" ref={mapHost} aria-busy={!isStrategyMapReady} />
+        {!isStrategyMapReady && (
+          <div className={`canvas-loading ${strategyMapLoadError ? 'error' : ''}`} role={strategyMapLoadError ? 'alert' : 'status'}>
+            <strong>{strategyMapLoadError ? '战略地图加载失败' : '正在展开天下地图'}</strong>
+            <span>{strategyMapLoadError ? '请刷新页面后重试。' : '首次进入需要载入地图绘制模块。'}</span>
+          </div>
+        )}
         {feedback && (
           <div className={`action-feedback ${feedback.kind}`} role={feedback.kind === 'error' ? 'alert' : 'status'}>
             {feedback.message}
@@ -789,10 +970,13 @@ export function App() {
         )}
       </section>
 
-      <CityPanel
-        state={state}
-        cityId={selectedCityId}
-        disabled={isResolving || Boolean(state.pendingSuccession)}
+      {isCityPanelOpen && (
+        <CityPanel
+          state={state}
+          cityId={selectedCityId}
+          focusOfficerId={focusedOfficerId}
+          disabled={isResolving || Boolean(state.pendingSuccession)}
+          onClose={() => setIsCityPanelOpen(false)}
         onDevelop={(cityId, officerId) => applyPlayerAction(
           (current) => developFarming(current, { cityId, officerId }),
         )}
@@ -869,13 +1053,14 @@ export function App() {
           (current) => issueDiplomaticOrder(current, { kind, sourceCityId, officerId, targetOfficerId }),
           sourceCityId,
         )}
-        onAttack={(sourceCityId, targetCityId, officerIds, provisions) => requestAttack({
-          sourceCityId,
-          targetCityId,
-          officerIds,
-          provisions,
-        })}
-      />
+          onAttack={(sourceCityId, targetCityId, officerIds, provisions) => requestAttack({
+            sourceCityId,
+            targetCityId,
+            officerIds,
+            provisions,
+          })}
+        />
+      )}
 
       {pendingAttack && (
         <div
@@ -1019,10 +1204,11 @@ export function App() {
       <section className="log-panel" aria-label="日志">
         <div>
           <p className="panel-kicker">Campaign log</p>
-          {monthSummary.length > 0 && (
+          {monthReport && monthReport.headline.length > 0 && (
             <div className="month-summary">
               <strong>本月摘要</strong>
-              {monthSummary.map((message) => <p key={message}>{message}</p>)}
+              {monthReport.headline.map((message) => <p key={message}>{message}</p>)}
+              <button type="button" onClick={() => setIsMonthReportOpen(true)}>查看完整月报</button>
             </div>
           )}
         </div>
@@ -1030,6 +1216,89 @@ export function App() {
           {state.logs.slice(-5).map((log) => <p key={log.id}>{log.message}</p>)}
         </div>
       </section>
+
+      {activeNavView && (
+        <CampaignNavigator
+          view={activeNavView}
+          state={state}
+          selectedCityId={selectedCityId}
+          selectedSaveSlot={selectedSaveSlot}
+          onSelectSaveSlot={setSelectedSaveSlot}
+          onSelectCity={selectCityFromNavigator}
+          onSelectOfficer={selectOfficerFromNavigator}
+          onSave={saveManualSlot}
+          onLoad={loadManualSlot}
+          onExport={exportCurrentSave}
+          onImport={importSaveFile}
+          onToggleFullscreen={toggleFullscreen}
+          feedback={feedback}
+          onReturnTitle={() => {
+            setActiveNavView(undefined);
+            setScreen('title');
+          }}
+          onClose={() => setActiveNavView(undefined)}
+        />
+      )}
+
+      <nav className="campaign-dock" aria-label="战略地图导航">
+        <button
+          type="button"
+          className={!isCityPanelOpen && !activeNavView ? 'active' : undefined}
+          aria-pressed={!isCityPanelOpen && !activeNavView}
+          onClick={() => {
+            setActiveNavView(undefined);
+            setIsCityPanelOpen(false);
+          }}
+        >
+          <span aria-hidden="true">图</span>
+          地图
+        </button>
+        <button
+          type="button"
+          className={isCityPanelOpen || activeNavView === 'cities' ? 'active' : undefined}
+          aria-pressed={isCityPanelOpen || activeNavView === 'cities'}
+          onClick={() => openCampaignNavigator('cities')}
+        >
+          <span aria-hidden="true">城</span>
+          城池
+        </button>
+        <button type="button" className={activeNavView === 'officers' ? 'active' : undefined} aria-pressed={activeNavView === 'officers'} onClick={() => openCampaignNavigator('officers')}>
+          <span aria-hidden="true">将</span>人物
+        </button>
+        <button type="button" className={activeNavView === 'orders' ? 'active' : undefined} aria-pressed={activeNavView === 'orders'} onClick={() => openCampaignNavigator('orders')}>
+          <span aria-hidden="true">途</span>军令
+          {(playerStrategicOrders.length + playerDiplomaticOrders.length) > 0 && <b>{playerStrategicOrders.length + playerDiplomaticOrders.length}</b>}
+        </button>
+        <button type="button" className={activeNavView === 'system' ? 'active' : undefined} aria-pressed={activeNavView === 'system'} onClick={() => openCampaignNavigator('system')}>
+          <span aria-hidden="true">设</span>系统
+        </button>
+        <button
+          type="button"
+          className="advance-month-action"
+          disabled={isResolving || state.phase === 'ended' || Boolean(state.pendingSuccession)}
+          onClick={openMonthEndReview}
+        >
+          <span aria-hidden="true">令</span>
+          {isResolving ? '推演中…' : '结束本月'}
+        </button>
+      </nav>
+
+      {monthAdvanceReview && (
+        <MonthEndReviewDialog
+          review={monthAdvanceReview}
+          onCancel={() => setMonthAdvanceReview(undefined)}
+          onConfirm={confirmMonthAdvance}
+          onSelectCity={selectCityFromMonthOverlay}
+        />
+      )}
+
+      {monthReport && isMonthReportOpen && (
+        <MonthResolutionDialog
+          report={monthReport}
+          onClose={() => setIsMonthReportOpen(false)}
+          onSelectCity={selectCityFromMonthOverlay}
+        />
+      )}
     </main>
   );
 }
@@ -1037,6 +1306,13 @@ export function App() {
 function firstOwnedCityId(state: GameState): string {
   return Object.values(state.cities).find((city) => city.ownerId === state.playerFactionId)?.id
     ?? Object.keys(state.cities)[0];
+}
+
+function findMonthResolutionLogStart(state: GameState): number {
+  for (let index = state.logs.length - 1; index >= 0; index -= 1) {
+    if (state.logs[index].message === '玩家阶段结束，进入 AI 阶段。') return index;
+  }
+  return Math.max(0, state.logs.length - 1);
 }
 
 function countCurrentOfficers(state: GameState): number {

@@ -28,6 +28,8 @@ export class BattleScene extends Phaser.Scene {
   private reachable: TacticalPosition[] = [];
   private attackableUnitIds: string[] = [];
   private battleLayer?: Phaser.GameObjects.Container;
+  private lastPointerX = 0;
+  private lastPointerY = 0;
 
   constructor(
     battle: TacticalBattleState,
@@ -48,8 +50,12 @@ export class BattleScene extends Phaser.Scene {
     this.redraw();
     this.fitBattlefield();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.handleResize, this);
+    this.input.on(Phaser.Input.Events.POINTER_DOWN, this.beginPan, this);
+    this.input.on(Phaser.Input.Events.POINTER_MOVE, this.panBattlefield, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.handleResize, this);
+      this.input.off(Phaser.Input.Events.POINTER_DOWN, this.beginPan, this);
+      this.input.off(Phaser.Input.Events.POINTER_MOVE, this.panBattlefield, this);
     });
   }
 
@@ -86,7 +92,10 @@ export class BattleScene extends Phaser.Scene {
       rect.setStrokeStyle(isReachable ? 4 : 1, isReachable ? 0x7ed9ed : 0x233c36, isReachable ? 0.95 : 0.65);
       if (isReachable) {
         rect.setInteractive({ useHandCursor: true });
-        rect.on('pointerdown', () => this.bridge.emit('tactical:tile-selected', { x: tile.x, y: tile.y }));
+        rect.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+          if (pointer.getDistance() > 10) return;
+          this.bridge.emit('tactical:tile-selected', { x: tile.x, y: tile.y });
+        });
         rect.on('pointerover', () => {
           pathPreview.clear();
           if (!this.selectedUnitId) return;
@@ -139,7 +148,8 @@ export class BattleScene extends Phaser.Scene {
       const marker = this.add.circle(centerX, centerY - 5, selected ? 23 : 20, color, unit.acted ? 0.48 : 0.96);
       marker.setStrokeStyle(selected ? 4 : canAttack ? 4 : 2, selected ? 0xffdf80 : canAttack ? 0xff776d : 0xf4ead0, 1);
       marker.setInteractive({ useHandCursor: true });
-      marker.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      marker.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+        if (pointer.getDistance() > 10) return;
         pointer.event.stopPropagation();
         this.bridge.emit('tactical:unit-selected', { unitId: unit.id });
       });
@@ -161,7 +171,7 @@ export class BattleScene extends Phaser.Scene {
       layer.add([marker, name, troops]);
     }
 
-    const footer = this.add.text(WORLD_WIDTH / 2, WORLD_HEIGHT - 22, '青色：可移动格 · 悬停：预览路径 · 攻方占城后需结束本方阶段', {
+    const footer = this.add.text(WORLD_WIDTH / 2, WORLD_HEIGHT - 22, '青色：可移动格 · 拖动：查看战场 · 攻方占城后需结束本方阶段', {
       color: '#c7d5ca',
       fontFamily: 'Microsoft YaHei, PingFang SC, sans-serif',
       fontSize: '13px',
@@ -171,8 +181,11 @@ export class BattleScene extends Phaser.Scene {
 
   private fitBattlefield(): void {
     const camera = this.cameras.main;
+    const containZoom = Math.min(this.scale.width / WORLD_WIDTH, this.scale.height / WORLD_HEIGHT) * 0.98;
+    const mapIsWiderThanWorld = this.scale.width / Math.max(1, this.scale.height) > WORLD_WIDTH / WORLD_HEIGHT;
+    const readableLandscapeZoom = mapIsWiderThanWorld ? this.scale.width / WORLD_WIDTH * 0.92 : containZoom;
     const zoom = Phaser.Math.Clamp(
-      Math.min(this.scale.width / WORLD_WIDTH, this.scale.height / WORLD_HEIGHT) * 0.98,
+      Math.max(containZoom, readableLandscapeZoom),
       0.25,
       1.25,
     );
@@ -182,5 +195,22 @@ export class BattleScene extends Phaser.Scene {
 
   private handleResize(): void {
     this.fitBattlefield();
+  }
+
+  private beginPan(pointer: Phaser.Input.Pointer): void {
+    this.lastPointerX = pointer.x;
+    this.lastPointerY = pointer.y;
+  }
+
+  private panBattlefield(pointer: Phaser.Input.Pointer): void {
+    if (!pointer.isDown) return;
+    const deltaX = pointer.x - this.lastPointerX;
+    const deltaY = pointer.y - this.lastPointerY;
+    this.lastPointerX = pointer.x;
+    this.lastPointerY = pointer.y;
+    if (pointer.getDistance() <= 8) return;
+    const camera = this.cameras.main;
+    camera.scrollX -= deltaX / camera.zoom;
+    camera.scrollY -= deltaY / camera.zoom;
   }
 }
