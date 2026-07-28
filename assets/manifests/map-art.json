@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-28",
+  "style": "realistic Chinese ink-wash historical strategy art",
+  "assets": [
+    {
+      "id": "strategic-map-background-v1",
+      "role": "strategic map background",
+      "path": "assets/production/map/strategic-map-background-v1.png",
+      "sourcePath": "assets/source/map/strategic-map-background-v1.png",
+      "dimensions": "1672x941",
+      "format": "png",
+      "colorMode": "RGB",
+      "sha256": "A8474DE1181051F628B0DAC989D6BE040DBFC7F9678D9C0D1C1F030ECAAEC318",
+      "notes": "No city markers, labels, interface text, or UI frame; intended as a replaceable map backdrop."
+    },
+    {
+      "id": "city-marker-base-v1",
+      "role": "reusable city marker",
+      "path": "assets/production/map/city-marker-base-v1.png",
+      "sourcePath": "assets/source/map/city-marker-base-v1-chroma.png",
+      "dimensions": "1254x1254",
+      "format": "png",
+      "colorMode": "RGBA",
+      "sha256": "B7C52DF43FAC54F3FCDCBF14CC471165B49D1306C4459DAF734C3A3E929EAF3D",
+      "sourceSha256": "71286AD5D7E03C9B4AC8394224116FDA5387E98E1C33719BA683DCE460CBB700",
+      "notes": "Transparent base marker; faction tint, selected outline, labels, and city state badges remain code-rendered layers."
+    }
+  ]
+}
