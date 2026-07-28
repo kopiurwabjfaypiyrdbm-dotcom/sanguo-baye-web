@@ -143,12 +143,13 @@ export class MapScene extends Phaser.Scene {
       let flag: Phaser.GameObjects.Image | undefined;
       let factionField: Phaser.GameObjects.Rectangle | undefined;
       if (hasArt) {
-        flag = this.add.image(city.x + size * 0.2, city.y - size * 0.72, 'faction-flag-reference');
+        const flagAnchorY = city.y + size * 0.14;
+        flag = this.add.image(city.x, flagAnchorY, 'faction-flag-reference');
         const flagWidth = flagHeight * 0.55;
         flag.setDisplaySize(flagWidth, flagHeight);
         flag.setOrigin(0.08, 0.92);
-        const flagLeft = city.x + size * 0.2 - flagWidth * 0.08;
-        const flagTop = city.y - size * 0.72 - flagHeight * 0.92;
+        const flagLeft = city.x - flagWidth * 0.08;
+        const flagTop = flagAnchorY - flagHeight * 0.92;
         factionField = this.add.rectangle(
           flagLeft + flagWidth * 0.39,
           flagTop + flagHeight * 0.49,
@@ -186,9 +187,10 @@ export class MapScene extends Phaser.Scene {
         strokeThickness: 4,
       });
       label.setOrigin(0.5, 0);
+      layer.add(marker);
       if (flag) layer.add(flag);
       if (factionField) layer.add(factionField);
-      layer.add([marker, label]);
+      layer.add(label);
     }
   }
 
