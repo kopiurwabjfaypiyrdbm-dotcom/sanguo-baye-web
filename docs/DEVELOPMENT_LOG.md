@@ -20,6 +20,13 @@
 - 本次资源暂未接入 Phaser 地图代码，等待协作者接入可编辑地图和城池数据层。
 - 当前提交：`3cf3591 art: add strategic map and city marker assets`。
 
+## 2026-07-28：立体城池与势力旗帜补充
+
+- 新增完整立体城池模型 `assets/production/map/city-model-v2.png`，包含外城墙、角楼、城门楼、内城建筑、道路、桥梁和护城河。
+- 新增独立势力旗帜 `assets/production/map/faction-flag-base-v1.png`，保留中性朱砂底色，后续由代码按势力替换颜色。
+- 两项素材均已处理为透明 RGBA PNG，未覆盖上一版平面城池标记，便于后续比较和回退。
+- 资源信息已追加到 `assets/manifests/map-art.json`。
+
 ## 2026-07-28：入口视觉资源接入
 
 ### 已完成
