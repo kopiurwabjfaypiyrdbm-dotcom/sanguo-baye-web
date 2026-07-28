@@ -1,15 +1,7 @@
 import { estimateBattle, executeAttack, type AttackOrder } from './battle';
 import {
-  DEVELOP_MONEY_COST,
-  DEVELOP_STAMINA_COST,
-  GOVERN_MONEY_COST,
-  GOVERN_STAMINA_COST,
-  INSPECT_MONEY_COST,
-  INSPECT_STAMINA_COST,
-  RECRUIT_STAMINA_COST,
   BUY_FOOD_PRICE,
   TRADE_MONEY_SOFT_CAP,
-  TRADE_STAMINA_COST,
   MAX_DISTRIBUTION_INCREASE,
   calculateOfficerTroopCapacity,
   calculateRecruitCapacity,
@@ -34,21 +26,19 @@ import {
   searchCity,
 } from './personnelCommands';
 import type { AiProfile, GameState } from './types';
-import { recruitCaptive, SURRENDER_STAMINA_COST } from './captiveCommands';
+import { recruitCaptive } from './captiveCommands';
 import { executeCaptive } from './officerLifecycle';
 import {
-  MOVE_STAMINA_COST,
-  TRANSPORT_STAMINA_COST,
   findOwnedCityRoute,
   issueTransportOrder,
 } from './strategicOrders';
 import {
-  DIPLOMACY_MONEY_COST,
   getDiplomacyTargets,
   getDiplomaticOrderAvailability,
   issueDiplomaticOrder,
 } from './diplomaticOrders';
 import type { DiplomaticOrderKind } from './types';
+import { getCampaignCommandCost } from './rulesets';
 
 export const AI_MAX_ACTIONS = 5;
 const AI_MIN_ATTACK_PROVISIONS = 200;
@@ -204,7 +194,7 @@ function prepareAiFactionTurn(state: GameState): { state: GameState; order?: Att
 
 export function useDiplomaticOpportunity(state: GameState, factionId: string): GameState | undefined {
   const ownedCities = Object.values(state.cities)
-    .filter((city) => city.ownerId === factionId && city.money >= DIPLOMACY_MONEY_COST)
+    .filter((city) => city.ownerId === factionId)
     .sort((left, right) => left.id.localeCompare(right.id));
   const candidates: Array<{ kind: DiplomaticOrderKind; maximumLoyalty: number }> = [
     { kind: 'induce', maximumLoyalty: 100 },
@@ -214,6 +204,7 @@ export function useDiplomaticOpportunity(state: GameState, factionId: string): G
   ];
 
   for (const { kind, maximumLoyalty } of candidates) {
+    const cost = getCampaignCommandCost(state.rulesetId, kind);
     const targets = getDiplomacyTargets(state, kind, factionId)
       .filter((target) => target.loyalty <= maximumLoyalty)
       .sort((left, right) =>
@@ -222,7 +213,8 @@ export function useDiplomaticOpportunity(state: GameState, factionId: string): G
         || left.id.localeCompare(right.id));
     for (const target of targets) {
       for (const city of ownedCities) {
-        const executors = availableOfficers(state, factionId, city.id, 4)
+        if (city.money < cost.money) continue;
+        const executors = availableOfficers(state, factionId, city.id, cost.stamina)
           .filter((officer) =>
             officer.id !== state.factions[factionId].rulerOfficerId
             && (!isExposedSoleGarrison(state, city.id, factionId) || officer.id !== city.satrapOfficerId))
@@ -244,6 +236,7 @@ export function useDiplomaticOpportunity(state: GameState, factionId: string): G
 }
 
 function stabilizeFood(state: GameState, factionId: string): GameState | undefined {
+  const cost = getCampaignCommandCost(state.rulesetId, 'trade');
   const supportedOfficerIdsByCity = getSupportedOfficerIdsByCity(state);
   const candidates = Object.values(state.cities)
     .filter((city) => city.ownerId === factionId)
@@ -261,7 +254,7 @@ function stabilizeFood(state: GameState, factionId: string): GameState | undefin
       (a.city.food / a.targetFood) - (b.city.food / b.targetFood)
       || a.city.id.localeCompare(b.city.id));
   for (const { city, targetFood } of candidates) {
-    const officer = availableOfficers(state, factionId, city.id, TRADE_STAMINA_COST)[0];
+    const officer = availableOfficers(state, factionId, city.id, cost.stamina)[0];
     if (!officer) continue;
     const amount = Math.min(
       targetFood - city.food,
@@ -276,15 +269,16 @@ function stabilizeFood(state: GameState, factionId: string): GameState | undefin
 }
 
 function recruitLocalCaptive(state: GameState, factionId: string): GameState | undefined {
+  const cost = getCampaignCommandCost(state.rulesetId, 'surrender');
   const candidates = Object.values(state.officers)
     .filter((officer) => officer.status === 'captive' && officer.captorFactionId === factionId && officer.cityId)
     .sort((a, b) => a.loyalty - b.loyalty || b.intelligence - a.intelligence || a.id.localeCompare(b.id));
   for (const captive of candidates) {
     const executor = Object.values(state.officers)
       .filter((officer) => officer.status === 'serving' && officer.factionId === factionId && officer.cityId === captive.cityId)
-      .filter((officer) => officer.stamina >= SURRENDER_STAMINA_COST && !state.actedOfficerIds.includes(officer.id))
+      .filter((officer) => officer.stamina >= cost.stamina && !state.actedOfficerIds.includes(officer.id))
       .sort((a, b) => b.intelligence - a.intelligence || a.id.localeCompare(b.id))[0];
-    if (executor) return recruitCaptive(state, {
+    if (executor && state.cities[captive.cityId!].money >= cost.money) return recruitCaptive(state, {
       cityId: captive.cityId!,
       executorOfficerId: executor.id,
       captiveOfficerId: captive.id,
@@ -350,27 +344,31 @@ function balanceTroops(state: GameState, factionId: string): GameState | undefin
 }
 
 function recruitReserves(state: GameState, factionId: string): GameState | undefined {
+  const cost = getCampaignCommandCost(state.rulesetId, 'recruit-troops');
   const candidates = Object.values(state.cities)
     .filter((city) => city.ownerId === factionId && city.reserveTroops < 1_000 && city.food >= 200)
     .filter((city) => calculateRecruitCapacity(city) > 0)
     .sort((a, b) => a.reserveTroops - b.reserveTroops || a.id.localeCompare(b.id));
   for (const city of candidates) {
-    const officer = availableOfficers(state, factionId, city.id, RECRUIT_STAMINA_COST)[0];
+    const officer = availableOfficers(state, factionId, city.id, cost.stamina)[0];
     if (officer) return recruitTroops(state, { cityId: city.id, officerId: officer.id, amount: 500 });
   }
   return undefined;
 }
 
 function improveCity(state: GameState, factionId: string): GameState | undefined {
+  const developCost = getCampaignCommandCost(state.rulesetId, 'develop');
+  const governCost = getCampaignCommandCost(state.rulesetId, 'govern');
+  const inspectCost = getCampaignCommandCost(state.rulesetId, 'inspect');
   const troubledCities = Object.values(state.cities)
     .filter((city) =>
       city.ownerId === factionId
       && (city.condition ?? 'normal') !== 'normal'
       && !isExposedSoleGarrison(state, city.id, factionId)
-      && city.money >= GOVERN_MONEY_COST)
+      && city.money >= governCost.money)
     .sort((a, b) => a.id.localeCompare(b.id));
   for (const city of troubledCities) {
-    const officer = availableOfficers(state, factionId, city.id, GOVERN_STAMINA_COST)
+    const officer = availableOfficers(state, factionId, city.id, governCost.stamina)
       .sort((a, b) => b.intelligence - a.intelligence || a.id.localeCompare(b.id))[0];
     if (officer) return governCity(state, { cityId: city.id, officerId: officer.id });
   }
@@ -381,12 +379,12 @@ function improveCity(state: GameState, factionId: string): GameState | undefined
       && !isExposedSoleGarrison(state, city.id, factionId)
       && city.publicLoyalty !== undefined
       && city.publicLoyalty < 60
-      && city.money >= INSPECT_MONEY_COST)
+      && city.money >= inspectCost.money)
     .sort((a, b) =>
       (a.publicLoyalty ?? 0) - (b.publicLoyalty ?? 0)
       || a.id.localeCompare(b.id));
   for (const city of inspectionCandidates) {
-    const officer = availableOfficers(state, factionId, city.id, INSPECT_STAMINA_COST)
+    const officer = availableOfficers(state, factionId, city.id, inspectCost.stamina)
       .sort((a, b) => b.intelligence - a.intelligence || a.id.localeCompare(b.id))[0];
     if (officer) return inspectCity(state, { cityId: city.id, officerId: officer.id });
   }
@@ -395,14 +393,14 @@ function improveCity(state: GameState, factionId: string): GameState | undefined
     .filter((city) =>
       city.ownerId === factionId
       && !isExposedSoleGarrison(state, city.id, factionId)
-      && city.money >= DEVELOP_MONEY_COST)
+      && city.money >= developCost.money)
     .map((city) => ({
       city,
       farmingRatio: farmingRatio(city.farming, city.farmingLimit),
       commerceRatio: farmingRatio(city.commerce, city.commerceLimit),
     }))
     .filter(({ city }) => {
-      const officer = availableOfficers(state, factionId, city.id, DEVELOP_STAMINA_COST)[0];
+      const officer = availableOfficers(state, factionId, city.id, developCost.stamina)[0];
       if (!officer) return false;
       const order = { cityId: city.id, officerId: officer.id };
       return getDevelopFarmingAvailability(state, order).allowed
@@ -413,7 +411,7 @@ function improveCity(state: GameState, factionId: string): GameState | undefined
       || a.city.id.localeCompare(b.city.id));
   for (const candidate of candidates) {
     const { city } = candidate;
-    const officer = availableOfficers(state, factionId, city.id, DEVELOP_STAMINA_COST)
+    const officer = availableOfficers(state, factionId, city.id, developCost.stamina)
       .sort((a, b) => b.intelligence - a.intelligence || a.id.localeCompare(b.id))[0];
     if (!officer) continue;
     const order = { cityId: city.id, officerId: officer.id };
@@ -433,12 +431,12 @@ function improveCity(state: GameState, factionId: string): GameState | undefined
       && !isExposedSoleGarrison(state, city.id, factionId)
       && city.disasterPrevention !== undefined
       && city.disasterPrevention < 40
-      && city.money >= GOVERN_MONEY_COST)
+      && city.money >= governCost.money)
     .sort((a, b) =>
       (a.disasterPrevention ?? 0) - (b.disasterPrevention ?? 0)
       || a.id.localeCompare(b.id));
   for (const city of governanceCandidates) {
-    const officer = availableOfficers(state, factionId, city.id, GOVERN_STAMINA_COST)
+    const officer = availableOfficers(state, factionId, city.id, governCost.stamina)
       .sort((a, b) => b.intelligence - a.intelligence || a.id.localeCompare(b.id))[0];
     if (officer) return governCity(state, { cityId: city.id, officerId: officer.id });
   }
@@ -446,6 +444,7 @@ function improveCity(state: GameState, factionId: string): GameState | undefined
 }
 
 function reinforceFrontier(state: GameState, factionId: string): GameState | undefined {
+  const cost = getCampaignCommandCost(state.rulesetId, 'move');
   const borderCities = Object.values(state.cities)
     .filter((city) => city.ownerId === factionId && city.neighbors.some((id) => state.cities[id]?.ownerId !== factionId))
     .sort((a, b) => stationedCount(state, a.id, factionId) - stationedCount(state, b.id, factionId) || a.id.localeCompare(b.id));
@@ -456,7 +455,7 @@ function reinforceFrontier(state: GameState, factionId: string): GameState | und
       .sort((a, b) => stationedCount(state, b.id, factionId) - stationedCount(state, a.id, factionId) || a.id.localeCompare(b.id));
     for (const source of sources) {
       const faction = state.factions[factionId];
-      const officer = availableOfficers(state, factionId, source.id, MOVE_STAMINA_COST)
+      const officer = availableOfficers(state, factionId, source.id, cost.stamina)
         .filter((candidate) => candidate.id !== faction.rulerOfficerId && candidate.id !== source.satrapOfficerId)
         .sort((a, b) => b.leadership - a.leadership || a.id.localeCompare(b.id))[0];
       if (officer) return moveOfficer(state, { sourceCityId: source.id, targetCityId: target.id, officerId: officer.id });
@@ -466,6 +465,7 @@ function reinforceFrontier(state: GameState, factionId: string): GameState | und
 }
 
 function supplyFrontier(state: GameState, factionId: string): GameState | undefined {
+  const cost = getCampaignCommandCost(state.rulesetId, 'transport');
   const projected = new Map(Object.values(state.cities)
     .filter((city) => city.ownerId === factionId)
     .map((city) => {
@@ -513,7 +513,7 @@ function supplyFrontier(state: GameState, factionId: string): GameState | undefi
         || a.city.id.localeCompare(b.city.id));
     for (const { city: source } of sources) {
       const faction = state.factions[factionId];
-      const officer = availableOfficers(state, factionId, source.id, TRANSPORT_STAMINA_COST)
+      const officer = availableOfficers(state, factionId, source.id, cost.stamina)
         .filter((candidate) => candidate.id !== faction.rulerOfficerId && candidate.id !== source.satrapOfficerId)
         .sort((a, b) => b.intelligence - a.intelligence || a.id.localeCompare(b.id))[0];
       if (!officer) continue;

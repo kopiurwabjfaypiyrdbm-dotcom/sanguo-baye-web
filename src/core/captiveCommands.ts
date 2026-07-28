@@ -3,6 +3,7 @@ import { getEffectiveOfficerAttributes } from './equipment';
 import { nextRandom } from './random';
 import type { GameState, Officer } from './types';
 import { assertValidGameState } from './validation';
+import { getCampaignCommandCost } from './rulesets';
 
 export const SURRENDER_STAMINA_COST = 4;
 
@@ -20,6 +21,7 @@ export type ReleaseCaptiveOrder = {
 const characterResistanceDivisor = [2, 5, 4, 3, 1] as const;
 
 export function recruitCaptive(state: GameState, order: RecruitCaptiveOrder): GameState {
+  const cost = getCampaignCommandCost(state.rulesetId, 'surrender');
   if (state.phase === 'ended') throw new Error('战役已经结束');
   if (state.pendingSuccession) throw new Error('必须先拥立新君');
   const city = state.cities[order.cityId];
@@ -27,7 +29,8 @@ export function recruitCaptive(state: GameState, order: RecruitCaptiveOrder): Ga
   const executor = requireExecutor(state, city.id, order.executorOfficerId);
   const captive = requireCaptive(state, city.id, order.captiveOfficerId);
   if (state.actedOfficerIds.includes(executor.id)) throw new Error('该武将本月已经执行过命令');
-  if (executor.stamina < SURRENDER_STAMINA_COST) throw new Error(`招降需要至少 ${SURRENDER_STAMINA_COST} 点体力`);
+  if (executor.stamina < cost.stamina) throw new Error(`招降需要至少 ${cost.stamina} 点体力`);
+  if (city.money < cost.money) throw new Error(`招降需要 ${cost.money} 金`);
 
   let seed = state.rngSeed;
   const draw = (maximum: number) => {
@@ -50,7 +53,7 @@ export function recruitCaptive(state: GameState, order: RecruitCaptiveOrder): Ga
     if (succeeded) recruitedLoyalty = 40 + draw(40);
   }
 
-  const updatedExecutor: Officer = { ...executor, stamina: executor.stamina - SURRENDER_STAMINA_COST };
+  const updatedExecutor: Officer = { ...executor, stamina: executor.stamina - cost.stamina };
   const updatedCaptive: Officer = succeeded
     ? {
         ...captive,
@@ -77,6 +80,10 @@ export function recruitCaptive(state: GameState, order: RecruitCaptiveOrder): Ga
       ...state.officers,
       [executor.id]: updatedExecutor,
       [captive.id]: updatedCaptive,
+    },
+    cities: {
+      ...state.cities,
+      [city.id]: { ...city, money: city.money - cost.money },
     },
   }, 'map', [message]);
   assertValidGameState(next);

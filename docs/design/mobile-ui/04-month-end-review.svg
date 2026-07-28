@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">月末计划检查概念稿</title>
+  <desc id="desc">地图被轻度压暗，中央纸面显示本月命令、闲置武将、战略风险和推进到下月的确认按钮。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#19312c"/><stop offset="1" stop-color="#0b1816"/></linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f2ebd8"/><stop offset="1" stop-color="#d8cdb5"/></linearGradient>
+    <pattern id="grid" width="82" height="72" patternUnits="userSpaceOnUse"><path d="M82 0H0V72" fill="none" stroke="#b8aa79" stroke-opacity=".08" stroke-width="2"/></pattern>
+    <filter id="shadow"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000" flood-opacity=".48"/></filter>
+    <style>text{font-family:"Microsoft YaHei","PingFang SC",sans-serif;fill:#eee7d3}.ink{fill:#273a31}.sub{fill:#687269}.gold{fill:#efd27e}.red{fill:#a34e3d}.small{font-size:18px}.body{font-size:21px}.label{font-size:24px;font-weight:700}.heading{font-size:38px;font-weight:700}.city{stroke:#f4ead0;stroke-width:4}</style>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/><rect y="78" width="1600" height="742" fill="url(#grid)"/>
+  <path d="M-50 620C270 510 500 710 810 600S1190 500 1650 590" fill="none" stroke="#477d83" stroke-width="34" stroke-opacity=".42"/>
+  <path d="M130 590L300 410L520 520L735 315L910 430L1120 340L1360 455M520 520L760 650L1000 610" fill="none" stroke="#b7a66e" stroke-width="5" stroke-opacity=".34"/>
+  <g opacity=".74"><g transform="translate(300 410)"><circle r="18" fill="#4676aa" class="city"/></g><g transform="translate(520 520)"><circle r="18" fill="#4676aa" class="city"/></g><g transform="translate(735 315)"><circle r="18" fill="#667b69" class="city"/></g><g transform="translate(910 430)"><circle r="21" fill="#9f5a43" class="city"/></g><g transform="translate(1120 340)"><circle r="18" fill="#667b69" class="city"/></g><g transform="translate(1360 455)"><circle r="20" fill="#c3744c" class="city"/></g></g>
+  <rect width="1600" height="900" fill="#07110f" opacity=".68"/>
+  <g><rect width="1600" height="78" fill="#172a26"/><text x="32" y="31" class="small" fill="#9bab9f">经典校准 · 曹操</text><text x="32" y="61" class="label gold">190 年 2 月</text><text x="340" y="48" class="body">结束本月前的最后检查</text></g>
+
+  <g transform="translate(250 112)" filter="url(#shadow)">
+    <rect width="1100" height="680" rx="24" fill="url(#paper)" stroke="#d4bd7d" stroke-width="2"/>
+    <g transform="translate(36 30)"><text class="sub small">MONTHLY REVIEW</text><text y="48" class="ink heading">准备推进到 190 年 3 月</text><text x="1028" y="42" text-anchor="end" class="sub body">本月行动 11 项</text></g>
+    <line x1="36" y1="106" x2="1064" y2="106" stroke="#a99d85"/>
+
+    <g transform="translate(36 132)">
+      <text class="ink label">已下达命令</text><text x="504" text-anchor="end" class="sub small">6 项</text>
+      <g transform="translate(0 24)">
+        <rect width="504" height="74" rx="15" fill="#f9f4e7"/><circle cx="34" cy="37" r="18" fill="#9f5a43"/><text x="34" y="44" text-anchor="middle">兵</text><text x="70" y="30" class="ink body">出征　许昌 → 陈留</text><text x="70" y="56" class="sub small">夏侯惇等 3 人 · 携粮 1,200</text><text x="480" y="44" text-anchor="end" class="sub small">1 月</text>
+        <rect y="86" width="504" height="74" rx="15" fill="#f9f4e7"/><circle cx="34" cy="123" r="18" fill="#526f61"/><text x="34" y="130" text-anchor="middle">调</text><text x="70" y="116" class="ink body">调动　洛阳 → 许昌</text><text x="70" y="142" class="sub small">曹仁 · 兵 1,100</text><text x="480" y="130" text-anchor="end" class="sub small">2 月</text>
+        <rect y="172" width="504" height="74" rx="15" fill="#f9f4e7"/><circle cx="34" cy="209" r="18" fill="#786240"/><text x="34" y="216" text-anchor="middle">谋</text><text x="70" y="202" class="ink body">离间　荀攸 → 文丑</text><text x="70" y="228" class="sub small">预计本月结算</text><text x="480" y="216" text-anchor="end" class="sub small">本月</text>
+        <text x="252" y="278" text-anchor="middle" class="sub small">另有 3 项内政命令　查看全部 ›</text>
+      </g>
+    </g>
+
+    <g transform="translate(560 132)">
+      <text class="ink label">需要留意</text><text x="504" text-anchor="end" class="sub small">2 项风险</text>
+      <g transform="translate(0 24)">
+        <rect width="504" height="92" rx="15" fill="#f2dfca" stroke="#b46c54"/>
+        <text x="18" y="30" class="red small">边境兵力偏低</text><text x="18" y="60" class="ink body">襄阳守军 1,080，邻接敌方江陵</text><text x="482" y="60" text-anchor="end" class="red small">定位 ›</text>
+        <rect y="106" width="504" height="92" rx="15" fill="#efe4c8" stroke="#b79d58"/>
+        <text x="18" y="136" class="sub small">仍有武将可行动</text><text x="18" y="166" class="ink body">5 人待命，不影响结束本月</text><text x="482" y="166" text-anchor="end" class="sub small">查看 ›</text>
+      </g>
+      <g transform="translate(0 244)">
+        <text class="ink label">预计本月发生</text>
+        <rect y="22" width="504" height="88" rx="15" fill="#e6ddc8"/>
+        <text x="18" y="55" class="ink body">运输队抵达洛阳</text><text x="18" y="82" class="sub small">粮草 +800 · 金钱 +300</text>
+      </g>
+    </g>
+    <line x1="36" y1="548" x2="1064" y2="548" stroke="#a99d85"/>
+    <g transform="translate(36 578)">
+      <rect width="210" height="64" rx="15" fill="#d4c8ad" stroke="#9d9076"/><text x="105" y="42" text-anchor="middle" class="ink body">返回地图调整</text>
+      <text x="275" y="26" class="sub small">推进后将执行 AI、命令队列、战斗和月度事件。</text><text x="275" y="53" class="sub small">系统会在推进前自动保存。</text>
+      <rect x="760" width="268" height="64" rx="15" fill="#9f5a43" stroke="#b76d54"/><text x="894" y="42" text-anchor="middle" class="body">确认推进到 3 月</text>
+    </g>
+  </g>
+</svg>

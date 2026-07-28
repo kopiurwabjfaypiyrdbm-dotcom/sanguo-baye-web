@@ -10,6 +10,7 @@ import {
 import type { City, GameState, StrategicOrder } from './types';
 import { assertValidGameState } from './validation';
 import { hasActiveCampaignOrder } from './diplomaticOrders';
+import { getCampaignCommandCost } from './rulesets';
 
 export const MOVE_STAMINA_COST = 4;
 export const TRANSPORT_STAMINA_COST = 4;
@@ -90,14 +91,19 @@ export function findOwnedCityRoute(
 }
 
 export function getMoveAvailability(state: GameState, input: MoveOrderInput): StrategicOrderAvailability {
-  return getRoadOrderAvailability(state, input, MOVE_STAMINA_COST, '调动');
+  return getRoadOrderAvailability(state, input, getCampaignCommandCost(state.rulesetId, 'move').stamina, '调动');
 }
 
 export function getTransportAvailability(
   state: GameState,
   input: TransportOrderInput,
 ): StrategicOrderAvailability {
-  const availability = getRoadOrderAvailability(state, input, TRANSPORT_STAMINA_COST, '输送');
+  const availability = getRoadOrderAvailability(
+    state,
+    input,
+    getCampaignCommandCost(state.rulesetId, 'transport').stamina,
+    '输送',
+  );
   if (!availability.allowed) return availability;
   const cargoEntries = Object.entries(input.cargo) as Array<[keyof StrategicOrder['cargo'], number]>;
   if (cargoEntries.some(([, amount]) => !Number.isSafeInteger(amount) || amount < 0)) {
@@ -156,7 +162,7 @@ export function issueMoveOrder(state: GameState, input: MoveOrderInput): GameSta
     availability,
     'move',
     { money: 0, food: 0, reserveTroops: 0 },
-    MOVE_STAMINA_COST,
+    getCampaignCommandCost(state.rulesetId, 'move').stamina,
   );
 }
 
@@ -169,7 +175,7 @@ export function issueTransportOrder(state: GameState, input: TransportOrderInput
     availability,
     'transport',
     input.cargo,
-    TRANSPORT_STAMINA_COST,
+    getCampaignCommandCost(state.rulesetId, 'transport').stamina,
   );
 }
 

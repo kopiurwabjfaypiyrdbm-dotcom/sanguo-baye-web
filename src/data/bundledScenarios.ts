@@ -2,6 +2,7 @@ import type { BayeLegacyPeriod } from '../compat/baye/legacyScenario';
 import type { GameState } from '../core/types';
 import bundledData from './generated/baye-periods.json';
 import { createGameStateFromLegacyPeriod } from './legacyScenario';
+import { DEFAULT_NEW_CAMPAIGN_RULESET, type CampaignRulesetId } from '../core/rulesets';
 
 export type BundledPeriodId = 1 | 2 | 3 | 4;
 
@@ -56,8 +57,12 @@ export function getScenarioRulers(periodId: BundledPeriodId): RulerOption[] {
   }));
 }
 
-export function createBundledScenario(periodId: BundledPeriodId, rulerSourceIndex: number): GameState {
-  return createGameStateFromLegacyPeriod(getPeriod(periodId), rulerSourceIndex);
+export function createBundledScenario(
+  periodId: BundledPeriodId,
+  rulerSourceIndex: number,
+  rulesetId: CampaignRulesetId = DEFAULT_NEW_CAMPAIGN_RULESET,
+): GameState {
+  return createGameStateFromLegacyPeriod(getPeriod(periodId), rulerSourceIndex, rulesetId);
 }
 
 function getPeriod(periodId: BundledPeriodId): BayeLegacyPeriod {

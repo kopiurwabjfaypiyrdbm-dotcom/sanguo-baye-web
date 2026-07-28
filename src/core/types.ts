@@ -1,3 +1,5 @@
+import type { CampaignRulesetId } from './rulesets';
+
 export type CityType = 'capital' | 'city' | 'frontier';
 
 export type AiProfile = 'balanced' | 'aggressive' | 'defensive';
@@ -102,6 +104,8 @@ export type Item = {
   intelligenceBonus: number;
   moveBonus: number;
   armsTypeOverride?: string;
+  /** Optional semantic replacement for the equipped unit's normal attack mask. */
+  normalAttackPatternOverride?: 'orthogonal-adjacent' | 'adjacent-eight' | 'manhattan-ring-two';
   /** Optional annual appearance rule for scenario items not yet placed in a city. */
   appearanceYear?: number;
   appearanceCityId?: string;
@@ -223,7 +227,8 @@ export type DiplomaticOrder = {
 };
 
 export type GameState = {
-  schemaVersion: 5;
+  schemaVersion: 6;
+  rulesetId: CampaignRulesetId;
   scenario?: {
     id: string;
     source: 'sample' | 'baye-legacy';

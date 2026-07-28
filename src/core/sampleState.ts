@@ -1,5 +1,6 @@
 import type { ArmsType, City, Faction, GameState, Item, Officer } from './types';
 import { updateCitySatraps } from './administration';
+import { LEGACY_SAVE_RULESET } from './rulesets';
 
 const factions: Record<string, Faction> = {
   'cao-cao': {
@@ -85,7 +86,8 @@ const armsTypes: Record<string, ArmsType> = {
 
 export function createSampleState(): GameState {
   return updateCitySatraps({
-    schemaVersion: 5,
+    schemaVersion: 6,
+    rulesetId: LEGACY_SAVE_RULESET,
     scenario: { id: 'sample-190', source: 'sample' },
     turn: 1,
     phase: 'player',

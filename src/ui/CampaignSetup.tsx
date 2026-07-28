@@ -1,5 +1,9 @@
 import type { BundledPeriodId, RulerOption, ScenarioOption } from '../data/bundledScenarios';
 import type { LifecyclePolicy } from '../core/types';
+import {
+  CAMPAIGN_RULESETS,
+  type CampaignRulesetId,
+} from '../core/rulesets';
 
 const entryArt = {
   titleBackground: new URL('../../assets/production/entry/title-background.webp', import.meta.url).href,
@@ -115,6 +119,8 @@ export function RulerScreen({
   onBack,
   lifecyclePolicy,
   onLifecyclePolicyChange,
+  rulesetId,
+  onRulesetChange,
 }: {
   scenario: ScenarioOption;
   rulers: RulerOption[];
@@ -124,6 +130,8 @@ export function RulerScreen({
   onBack: () => void;
   lifecyclePolicy: LifecyclePolicy;
   onLifecyclePolicyChange: (policy: LifecyclePolicy) => void;
+  rulesetId: CampaignRulesetId;
+  onRulesetChange: (rulesetId: CampaignRulesetId) => void;
 }) {
   const selected = rulers.find((ruler) => ruler.sourceIndex === selectedRulerIndex) ?? rulers[0];
   return (
@@ -161,6 +169,21 @@ export function RulerScreen({
               <div><dt>所属人物</dt><dd>{selected?.officerCount ?? 0}</dd></div>
               <div><dt>天下城池</dt><dd>38</dd></div>
             </dl>
+            <fieldset className="lifecycle-policy">
+              <legend>战役规则集</legend>
+              <label>
+                <span>规则身份</span>
+                <select
+                  value={rulesetId}
+                  onChange={(event) => onRulesetChange(event.target.value as CampaignRulesetId)}
+                >
+                  {Object.values(CAMPAIGN_RULESETS).map((ruleset) => (
+                    <option key={ruleset.id} value={ruleset.id}>{ruleset.label}</option>
+                  ))}
+                </select>
+              </label>
+              <small>{CAMPAIGN_RULESETS[rulesetId].description} 规则在开局后锁定并随存档保存。</small>
+            </fieldset>
             <fieldset className="lifecycle-policy">
               <legend>战役人物规则</legend>
               <label>

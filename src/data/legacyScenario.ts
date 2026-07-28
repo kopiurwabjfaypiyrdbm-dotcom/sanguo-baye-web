@@ -4,11 +4,16 @@ import { normalizeUniqueItemPlacements } from '../core/equipment';
 import { assertValidGameState } from '../core/validation';
 import { parseBayeLegacyPeriod, type BayeLegacyPeriod } from '../compat/baye/legacyScenario';
 import { createItemCatalog, itemId } from './itemCatalog';
+import {
+  DEFAULT_NEW_CAMPAIGN_RULESET,
+  getCampaignRuleset,
+  type CampaignRulesetId,
+} from '../core/rulesets';
 
 const NEUTRAL_FACTION_ID = 'neutral';
 const DEFAULT_PLAYER_RULER_INDEX = 1; // Cao Cao in period 1.
-/** Parsed period records begin at zero; use one symmetric modern baseline until original initialization is verified. */
-export const DEFAULT_STARTING_TROOPS = 400;
+/** Default for newly created campaigns; retained as a public fixture for scenario tests. */
+export const DEFAULT_STARTING_TROOPS = getCampaignRuleset(DEFAULT_NEW_CAMPAIGN_RULESET).startingTroops;
 const armsTypeIds = ['cavalry', 'infantry', 'archer', 'navy', 'elite', 'mystic'] as const;
 const factionColors = [
   '#a9534f', '#5477b7', '#c58b42', '#6c9b62', '#966bb0', '#4c9c9a',
@@ -20,14 +25,17 @@ export function createLegacyPeriodGameState(
   bytes: Uint8Array,
   period: 1 | 2 | 3 | 4 = 1,
   playerRulerIndex = DEFAULT_PLAYER_RULER_INDEX,
+  rulesetId: CampaignRulesetId = DEFAULT_NEW_CAMPAIGN_RULESET,
 ): GameState {
-  return createGameStateFromLegacyPeriod(parseBayeLegacyPeriod(bytes, period), playerRulerIndex);
+  return createGameStateFromLegacyPeriod(parseBayeLegacyPeriod(bytes, period), playerRulerIndex, rulesetId);
 }
 
 export function createGameStateFromLegacyPeriod(
   period: BayeLegacyPeriod,
   requestedPlayerRulerIndex = DEFAULT_PLAYER_RULER_INDEX,
+  rulesetId: CampaignRulesetId = DEFAULT_NEW_CAMPAIGN_RULESET,
 ): GameState {
+  const ruleset = getCampaignRuleset(rulesetId);
   const activeRulerIndexes = [...new Set(period.cities.flatMap((city) => city.rulerIndex ?? []))];
   if (activeRulerIndexes.length === 0) throw new Error('legacy period contains no playable rulers');
   const playerRulerIndex = activeRulerIndexes.includes(requestedPlayerRulerIndex)
@@ -121,7 +129,7 @@ export function createGameStateFromLegacyPeriod(
           status,
           factionId: activeFaction,
           ...(isAssigned ? { cityId: cityIdByPerson[person.sourceIndex] } : {}),
-          troops: status === 'serving' ? DEFAULT_STARTING_TROOPS : person.troops,
+          troops: status === 'serving' ? ruleset.startingTroops : person.troops,
           loyalty: person.loyalty,
           age: person.age,
           stamina: 100,
@@ -187,7 +195,8 @@ export function createGameStateFromLegacyPeriod(
 
   const playerFactionId = factionId(playerRulerIndex);
   const state: GameState = {
-    schemaVersion: 5,
+    schemaVersion: 6,
+    rulesetId,
     scenario: { id: `baye-period-${period.period}`, source: 'baye-legacy', period: period.period },
     turn: 1,
     phase: 'player',

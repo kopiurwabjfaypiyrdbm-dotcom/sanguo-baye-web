@@ -20,6 +20,7 @@ import {
   moveTacticalUnit,
   previewTacticalAttack,
   previewTacticalSkill,
+  retreatTacticalSide,
   runBasicTacticalAi,
   useTacticalSkill,
 } from './tacticalBattle';
@@ -272,6 +273,85 @@ describe('manual tactical battle core', () => {
     expect(preview.damage).toBe(expectedDamage);
     expect(preview.targetTroopsAfter).toBe(next.units[defender.id].troops);
     expect(next.units[attacker.id].acted).toBe(true);
+  });
+
+  it('lets a configured equipment slot replace the normal attack pattern', () => {
+    const { state, order } = battleFixture();
+    state.items['qinglong-blade'].normalAttackPatternOverride = 'manhattan-ring-two';
+    state.officers['cao-cao'].equipmentItemIds = ['qinglong-blade'];
+    let battle = createTacticalBattle(state, order);
+    const attacker = battle.units['officer:cao-cao'];
+    const defender = battle.units['officer:guan-yu'];
+    battle = {
+      ...battle,
+      units: {
+        ...battle.units,
+        [attacker.id]: { ...attacker, x: 4, y: 4 },
+        [defender.id]: { ...defender, x: 6, y: 4 },
+      },
+    };
+
+    expect(attacker.normalAttackPatternOverride).toBe('manhattan-ring-two');
+    expect(getAttackableUnitIds(battle, attacker.id)).toContain(defender.id);
+  });
+
+  it('uses the original semantic normal-attack shapes for all six arms', () => {
+    const { state, order } = battleFixture();
+    let battle = createTacticalBattle(state, order);
+    const attacker = battle.units['officer:cao-cao'];
+    const defender = battle.units['officer:guan-yu'];
+    battle = {
+      ...battle,
+      units: {
+        ...battle.units,
+        [attacker.id]: { ...attacker, x: 4, y: 4 },
+        [defender.id]: { ...defender, x: 5, y: 5 },
+      },
+    };
+
+    for (const armsType of [0, 3, 5] as const) {
+      const orthogonal = {
+        ...battle,
+        units: { ...battle.units, [attacker.id]: { ...battle.units[attacker.id], armsType } },
+      };
+      expect(getAttackableUnitIds(orthogonal, attacker.id)).not.toContain(defender.id);
+    }
+    for (const armsType of [1, 4] as const) {
+      const adjacentEight = {
+        ...battle,
+        units: { ...battle.units, [attacker.id]: { ...battle.units[attacker.id], armsType } },
+      };
+      expect(getAttackableUnitIds(adjacentEight, attacker.id)).toContain(defender.id);
+    }
+    const archerRing = {
+      ...battle,
+      units: {
+        ...battle.units,
+        [attacker.id]: { ...battle.units[attacker.id], armsType: 2 as const },
+        [defender.id]: { ...battle.units[defender.id], x: 6, y: 4 },
+      },
+    };
+    expect(getAttackableUnitIds(archerRing, attacker.id)).toContain(defender.id);
+    const archerAdjacent = {
+      ...archerRing,
+      units: { ...archerRing.units, [defender.id]: { ...archerRing.units[defender.id], x: 5, y: 4 } },
+    };
+    expect(getAttackableUnitIds(archerAdjacent, attacker.id)).not.toContain(defender.id);
+  });
+
+  it('lets either active side retreat through the normal strategic result path', () => {
+    const { state, order } = battleFixture();
+    const attackBattle = createTacticalBattle(state, order);
+    const attackRetreat = retreatTacticalSide(attackBattle, 'attacker');
+    expect(attackRetreat).toMatchObject({ status: 'defender-won', victoryReason: 'attacker-retreated' });
+    expect(createTacticalBattleResult(attackRetreat).winner).toBe('defender');
+    expect(validateGameState(applyBattleResult(state, createTacticalBattleResult(attackRetreat)))).toEqual([]);
+
+    const defendBattle = endTacticalSide(createTacticalBattle(state, order));
+    const defendRetreat = retreatTacticalSide(defendBattle, 'defender');
+    expect(defendRetreat).toMatchObject({ status: 'attacker-won', victoryReason: 'defender-retreated' });
+    expect(createTacticalBattleResult(defendRetreat)).toMatchObject({ winner: 'attacker', cityCaptured: true });
+    expect(() => retreatTacticalSide(attackBattle, 'defender')).toThrow('本方行动阶段');
   });
 
   it('uses deterministic paths and gives water troops a river-crossing advantage', () => {
@@ -610,7 +690,11 @@ describe('manual tactical battle core', () => {
 
     const adjacent = {
       ...battle,
-      units: { ...battle.units, [defender.id]: { ...defender, x: 5, y: 4 } },
+      units: {
+        ...battle.units,
+        [attacker.id]: { ...battle.units[attacker.id], armsType: 0 as const },
+        [defender.id]: { ...defender, x: 5, y: 4 },
+      },
     };
     const protectedBattle = {
       ...adjacent,
