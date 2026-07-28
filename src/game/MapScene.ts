@@ -2,12 +2,18 @@ import Phaser from 'phaser';
 import type { GameState } from '../core/types';
 import type { GameBridge } from './events';
 
+const strategicMapBackground = new URL('../../assets/production/map/strategic-map-background-v1.png', import.meta.url).href;
+const cityModel = new URL('../../assets/production/map/city-model-slate-v3.png', import.meta.url).href;
+const factionFlag = new URL('../../assets/production/map/faction-flag-reference-v3.png', import.meta.url).href;
+
 const WORLD_WIDTH = 1120;
 const WORLD_HEIGHT = 680;
 
 export class MapScene extends Phaser.Scene {
   private state: GameState;
   private selectedCityId: string;
+  private assetsReady = false;
+  private backgroundLayer?: Phaser.GameObjects.Container;
   private mapLayer?: Phaser.GameObjects.Container;
   private dragOrigin?: { x: number; y: number; scrollX: number; scrollY: number };
 
@@ -22,12 +28,37 @@ export class MapScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.loadArtAssets();
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.drawBackground();
     this.redrawMap();
     this.fitMap();
     this.bindCameraControls();
     this.scale.on(Phaser.Scale.Events.RESIZE, () => this.fitMap());
+  }
+
+  private loadArtAssets(): void {
+    const assets = [
+      ['strategic-map-background', strategicMapBackground],
+      ['city-model-slate', cityModel],
+      ['faction-flag-reference', factionFlag],
+    ] as const;
+    Promise.all(assets.map(([key, url]) => new Promise<void>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => {
+        this.textures.addImage(key, image);
+        resolve();
+      };
+      image.onerror = () => reject(new Error(`Unable to load map art: ${url}`));
+      image.src = url;
+    }))).then(() => {
+      if (!this.sys.isActive()) return;
+      this.assetsReady = true;
+      this.drawBackground();
+      this.redrawMap();
+    }).catch(() => {
+      // Keep the vector fallback if an optional art asset is unavailable.
+    });
   }
 
   updateMap(state: GameState, selectedCityId: string): void {
@@ -37,22 +68,41 @@ export class MapScene extends Phaser.Scene {
   }
 
   private drawBackground(): void {
-    const graphics = this.add.graphics();
-    graphics.fillStyle(0x182c29, 1);
-    graphics.fillRoundedRect(18, 18, WORLD_WIDTH - 36, WORLD_HEIGHT - 36, 22);
-    graphics.lineStyle(1, 0x49635a, 0.23);
-    for (let x = 70; x < WORLD_WIDTH; x += 88) graphics.lineBetween(x, 38, x, WORLD_HEIGHT - 38);
-    for (let y = 62; y < WORLD_HEIGHT; y += 76) graphics.lineBetween(38, y, WORLD_WIDTH - 38, y);
-    graphics.lineStyle(22, 0x244e55, 0.3);
-    const river = new Phaser.Curves.CubicBezier(
-      new Phaser.Math.Vector2(70, 470),
-      new Phaser.Math.Vector2(340, 420),
-      new Phaser.Math.Vector2(540, 600),
-      new Phaser.Math.Vector2(1050, 515),
-    );
-    graphics.strokePoints(river.getPoints(64), false, false);
-    graphics.lineStyle(2, 0x668d88, 0.35);
-    graphics.strokePoints(river.getPoints(64), false, false);
+    this.backgroundLayer?.destroy(true);
+    const layer = this.add.container(0, 0);
+    this.backgroundLayer = layer;
+
+    if (this.assetsReady && this.textures.exists('strategic-map-background')) {
+      const background = this.add.image(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 'strategic-map-background');
+      background.setDisplaySize(WORLD_WIDTH, WORLD_HEIGHT);
+      background.setAlpha(0.94);
+      layer.add(background);
+    } else {
+      const graphics = this.add.graphics();
+      graphics.fillStyle(0x182c29, 1);
+      graphics.fillRoundedRect(18, 18, WORLD_WIDTH - 36, WORLD_HEIGHT - 36, 22);
+      graphics.lineStyle(1, 0x49635a, 0.23);
+      for (let x = 70; x < WORLD_WIDTH; x += 88) graphics.lineBetween(x, 38, x, WORLD_HEIGHT - 38);
+      for (let y = 62; y < WORLD_HEIGHT; y += 76) graphics.lineBetween(38, y, WORLD_WIDTH - 38, y);
+      graphics.lineStyle(22, 0x244e55, 0.3);
+      const river = new Phaser.Curves.CubicBezier(
+        new Phaser.Math.Vector2(70, 470),
+        new Phaser.Math.Vector2(340, 420),
+        new Phaser.Math.Vector2(540, 600),
+        new Phaser.Math.Vector2(1050, 515),
+      );
+      graphics.strokePoints(river.getPoints(64), false, false);
+      graphics.lineStyle(2, 0x668d88, 0.35);
+      graphics.strokePoints(river.getPoints(64), false, false);
+      layer.add(graphics);
+    }
+
+    const wash = this.add.graphics();
+    wash.fillStyle(0x20352f, this.assetsReady ? 0.12 : 0);
+    wash.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    wash.lineStyle(2, 0x7e704f, 0.3);
+    wash.strokeRect(12, 12, WORLD_WIDTH - 24, WORLD_HEIGHT - 24);
+    layer.add(wash);
   }
 
   private redrawMap(): void {
@@ -72,25 +122,61 @@ export class MapScene extends Phaser.Scene {
     }
     layer.add(roadGraphics);
 
+    const hasArt = this.assetsReady && this.textures.exists('city-model-slate') && this.textures.exists('faction-flag-reference');
     for (const city of cities) {
       const faction = this.state.factions[city.ownerId];
       const color = Phaser.Display.Color.HexStringToColor(faction?.color ?? '#77786f').color;
-      const radius = city.type === 'capital' ? 13 : 10;
+      const size = city.type === 'capital' ? 94 : 76;
+      const flagHeight = city.type === 'capital' ? 82 : 68;
       if (city.id === this.selectedCityId) {
-        const ring = this.add.circle(city.x, city.y, radius + 7, 0xf1d585, 0.14);
+        const ring = this.add.ellipse(city.x, city.y - 2, size + 22, size * 0.62, 0xf1d585, 0.18);
         ring.setStrokeStyle(3, 0xf1d585, 0.95);
         layer.add(ring);
       }
-      const marker = this.add.circle(city.x, city.y, radius, color, 1);
-      marker.setStrokeStyle(city.ownerId === this.state.playerFactionId ? 3 : 2, 0xf4ead0, 0.9);
+
+      let marker: Phaser.GameObjects.Image | Phaser.GameObjects.Arc;
+      let flag: Phaser.GameObjects.Image | undefined;
+      let factionField: Phaser.GameObjects.Rectangle | undefined;
+      if (hasArt) {
+        flag = this.add.image(city.x + size * 0.2, city.y - size * 0.72, 'faction-flag-reference');
+        const flagWidth = flagHeight * 0.55;
+        flag.setDisplaySize(flagWidth, flagHeight);
+        flag.setOrigin(0.08, 0.92);
+        const flagLeft = city.x + size * 0.2 - flagWidth * 0.08;
+        const flagTop = city.y - size * 0.72 - flagHeight * 0.92;
+        factionField = this.add.rectangle(
+          flagLeft + flagWidth * 0.39,
+          flagTop + flagHeight * 0.49,
+          flagWidth * 0.38,
+          flagHeight * 0.43,
+          color,
+          0.88,
+        );
+        factionField.setStrokeStyle(1.2, 0xe5c873, 0.94);
+        marker = this.add.image(city.x, city.y, 'city-model-slate');
+        marker.setDisplaySize(size, size);
+        marker.setOrigin(0.5, 0.72);
+      } else {
+        marker = this.add.circle(city.x, city.y, city.type === 'capital' ? 13 : 10, color, 1);
+        marker.setStrokeStyle(city.ownerId === this.state.playerFactionId ? 3 : 2, 0xf4ead0, 0.9);
+      }
+
       marker.setInteractive({ useHandCursor: true });
-      marker.on('pointerover', () => marker.setScale(1.18));
-      marker.on('pointerout', () => marker.setScale(1));
+      marker.on('pointerover', () => {
+        marker.setScale(1.08);
+        flag?.setScale(1.08);
+        factionField?.setScale(1.08);
+      });
+      marker.on('pointerout', () => {
+        marker.setScale(1);
+        flag?.setScale(1);
+        factionField?.setScale(1);
+      });
       marker.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
         this.bridge.emit('city:selected', { cityId: city.id });
       });
-      const label = this.add.text(city.x, city.y + radius + 8, city.name, {
+      const label = this.add.text(city.x, city.y + size * 0.34, city.name, {
         color: '#f7f0dc',
         fontFamily: 'Microsoft YaHei, PingFang SC, sans-serif',
         fontSize: '13px',
@@ -99,6 +185,8 @@ export class MapScene extends Phaser.Scene {
         strokeThickness: 4,
       });
       label.setOrigin(0.5, 0);
+      if (flag) layer.add(flag);
+      if (factionField) layer.add(factionField);
       layer.add([marker, label]);
     }
   }
