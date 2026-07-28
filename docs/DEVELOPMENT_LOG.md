@@ -27,6 +27,12 @@
 - 两项素材均已处理为透明 RGBA PNG，未覆盖上一版平面城池标记，便于后续比较和回退。
 - 资源信息已追加到 `assets/manifests/map-art.json`。
 
+### 旗帜 v2 调整
+
+- 旗面改为宽幅金边燕尾旗，缩短旗杆并降低旗杆视觉权重。
+- 旗面中央保留无图案留白，后续可由 React/Phaser 叠加单字势力简称。
+- 新增 `assets/production/map/faction-flag-base-v2.png`，旧版 `v1` 继续保留作为备选。
+
 ## 2026-07-28：入口视觉资源接入
 
 ### 已完成

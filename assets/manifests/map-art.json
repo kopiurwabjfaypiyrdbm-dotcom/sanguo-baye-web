@@ -49,6 +49,18 @@
       "sha256": "241825AB1FDD030A362E419A88E66DABDB6317669ECDA4F66363EE70453F519F",
       "sourceSha256": "4D52B4E281E5C2441CD708D5DB963767B3E15394B22001A7D6EC0A4EAF5A28EA",
       "notes": "Neutral swallowtail flag and pole; faction color and optional emblem remain code-rendered or recolored layers."
+    },
+    {
+      "id": "faction-flag-base-v2",
+      "role": "wide recolorable faction flag",
+      "path": "assets/production/map/faction-flag-base-v2.png",
+      "sourcePath": "assets/source/map/faction-flag-base-v2-chroma.png",
+      "dimensions": "1536x1024",
+      "format": "png",
+      "colorMode": "RGBA",
+      "sha256": "97B398F5C070C8D2D15672100FB84D5E147743C7FACBCE8D6DD2585F91FC63C3",
+      "sourceSha256": "8C4F3786DBAF3DDCBA5481F0B24308248027BB426B1A611A7BEDEAB40BFFD015",
+      "notes": "Wide gold-edged swallowtail flag with a short pole and a blank central field sized for one later faction character."
     }
   ]
 }
