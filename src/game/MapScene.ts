@@ -126,13 +126,18 @@ export class MapScene extends Phaser.Scene {
     for (const city of cities) {
       const faction = this.state.factions[city.ownerId];
       const color = Phaser.Display.Color.HexStringToColor(faction?.color ?? '#77786f').color;
-      const size = city.type === 'capital' ? 94 : 76;
-      const flagHeight = city.type === 'capital' ? 82 : 68;
+      const size = city.type === 'capital' ? 68 : 54;
+      const flagHeight = city.type === 'capital' ? 60 : 48;
       if (city.id === this.selectedCityId) {
-        const ring = this.add.ellipse(city.x, city.y - 2, size + 22, size * 0.62, 0xf1d585, 0.18);
-        ring.setStrokeStyle(3, 0xf1d585, 0.95);
+        const ring = this.add.ellipse(city.x, city.y - 2, size + 16, size * 0.62, 0xf1d585, 0.18);
+        ring.setStrokeStyle(2.5, 0xf1d585, 0.95);
         layer.add(ring);
       }
+
+      const hoverHighlight = this.add.ellipse(city.x, city.y - 2, size + 12, size * 0.58, 0xf1d585, 0.08);
+      hoverHighlight.setStrokeStyle(2.5, 0xf1d585, 0.96);
+      hoverHighlight.setVisible(false);
+      layer.add(hoverHighlight);
 
       let marker: Phaser.GameObjects.Image | Phaser.GameObjects.Arc;
       let flag: Phaser.GameObjects.Image | undefined;
@@ -163,23 +168,19 @@ export class MapScene extends Phaser.Scene {
 
       marker.setInteractive({ useHandCursor: true });
       marker.on('pointerover', () => {
-        marker.setScale(1.08);
-        flag?.setScale(1.08);
-        factionField?.setScale(1.08);
+        hoverHighlight.setVisible(true);
       });
       marker.on('pointerout', () => {
-        marker.setScale(1);
-        flag?.setScale(1);
-        factionField?.setScale(1);
+        hoverHighlight.setVisible(false);
       });
       marker.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
         this.bridge.emit('city:selected', { cityId: city.id });
       });
-      const label = this.add.text(city.x, city.y + size * 0.34, city.name, {
+      const label = this.add.text(city.x, city.y + size * 0.3, city.name, {
         color: '#f7f0dc',
         fontFamily: 'Microsoft YaHei, PingFang SC, sans-serif',
-        fontSize: '13px',
+        fontSize: '11px',
         fontStyle: 'bold',
         stroke: '#10211f',
         strokeThickness: 4,
