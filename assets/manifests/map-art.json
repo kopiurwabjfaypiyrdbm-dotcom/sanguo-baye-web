@@ -61,6 +61,18 @@
       "sha256": "97B398F5C070C8D2D15672100FB84D5E147743C7FACBCE8D6DD2585F91FC63C3",
       "sourceSha256": "8C4F3786DBAF3DDCBA5481F0B24308248027BB426B1A611A7BEDEAB40BFFD015",
       "notes": "Wide gold-edged swallowtail flag with a short pole and a blank central field sized for one later faction character."
+    },
+    {
+      "id": "faction-flag-reference-v3",
+      "role": "reference-style faction banner",
+      "path": "assets/production/map/faction-flag-reference-v3.png",
+      "sourcePath": "assets/source/map/faction-flag-reference-v3-chroma.png",
+      "dimensions": "928x1694",
+      "format": "png",
+      "colorMode": "RGBA",
+      "sha256": "43B16999EADAE058059E22387C7CD982BD70D688BF43F75A1A9E5C1B131F5EC9",
+      "sourceSha256": "3AEE2D8BBF2EC2A180A8C4155F64887A1A8398B5351C2457A1C9972F9C616A14",
+      "notes": "Black outer banner with torn streamers, a large gold center field, cinnabar border, top crossbar, and blank space for one later faction character."
     }
   ]
 }
