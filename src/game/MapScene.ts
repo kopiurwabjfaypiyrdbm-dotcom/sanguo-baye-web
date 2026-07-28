@@ -126,8 +126,8 @@ export class MapScene extends Phaser.Scene {
     for (const city of cities) {
       const faction = this.state.factions[city.ownerId];
       const color = Phaser.Display.Color.HexStringToColor(faction?.color ?? '#77786f').color;
-      const size = city.type === 'capital' ? 68 : 54;
-      const flagHeight = city.type === 'capital' ? 60 : 48;
+      const size = 48;
+      const flagHeight = 43;
       if (city.id === this.selectedCityId) {
         const ring = this.add.ellipse(city.x, city.y - 2, size + 16, size * 0.62, 0xf1d585, 0.18);
         ring.setStrokeStyle(2.5, 0xf1d585, 0.95);
@@ -143,7 +143,8 @@ export class MapScene extends Phaser.Scene {
       let flag: Phaser.GameObjects.Image | undefined;
       let factionField: Phaser.GameObjects.Rectangle | undefined;
       if (hasArt) {
-        const flagAnchorY = city.y + size * 0.14;
+        // The pole base sits in the inner keep, matching the center courtyard of the city art.
+        const flagAnchorY = city.y - size * 0.25;
         flag = this.add.image(city.x, flagAnchorY, 'faction-flag-reference');
         const flagWidth = flagHeight * 0.55;
         flag.setDisplaySize(flagWidth, flagHeight);
