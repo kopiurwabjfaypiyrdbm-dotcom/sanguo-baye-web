@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-29",
+  "style": "realistic Chinese ink-wash historical strategy UI",
+  "usage": "Reference-aligned layered art for the city information drawer; text and values remain DOM-rendered.",
+  "assets": [
+    {
+      "id": "city-panel-background-v1",
+      "role": "city information panel background",
+      "path": "assets/production/city-panel/city-panel-background-v1.png",
+      "sourcePath": "assets/production/city-panel/city-panel-background-v1.png",
+      "format": "png",
+      "colorMode": "RGB",
+      "notes": "Opaque aged-paper plate with antique-gold border and restrained landscape ornament; intended as a replaceable panel base."
+    },
+    {
+      "id": "city-panel-header-v1",
+      "role": "top title ornament",
+      "path": "assets/production/city-panel/city-panel-header-v1.png",
+      "sourcePath": "assets/source/city-panel/city-panel-header-chroma-v1.png",
+      "format": "png",
+      "colorMode": "RGBA",
+      "notes": "Transparent gold-and-slate horizontal title frame; city name and faction text remain code-rendered."
+    },
+    {
+      "id": "city-panel-dividers-v1",
+      "role": "section divider sheet",
+      "path": "assets/production/city-panel/city-panel-dividers-v1.png",
+      "sourcePath": "assets/source/city-panel/city-panel-dividers-chroma-v1.png",
+      "format": "png",
+      "colorMode": "RGBA",
+      "notes": "Transparent sheet containing reusable short, medium, and long section ornaments."
+    },
+    {
+      "id": "city-panel-icons-v1",
+      "role": "city property icon sheet",
+      "path": "assets/production/city-panel/city-panel-icons-v1.png",
+      "sourcePath": "assets/source/city-panel/city-panel-icons-chroma-v1.png",
+      "format": "png",
+      "colorMode": "RGBA",
+      "notes": "Transparent 4x3 sheet for population, finance, food, troops, farming, commerce, loyalty, defense, disaster prevention, status, residents, and commands."
+    },
+    {
+      "id": "city-panel-frame-close-v1",
+      "role": "portrait frame and close button sheet",
+      "path": "assets/production/city-panel/city-panel-frame-close-v1.png",
+      "sourcePath": "assets/source/city-panel/city-panel-frame-close-chroma-v1.png",
+      "format": "png",
+      "colorMode": "RGBA",
+      "notes": "Transparent sheet containing an antique-gold portrait frame and compact close ornament."
+    }
+  ]
+}
