@@ -1,10 +1,5 @@
-// Node types are intentionally not a product dependency; this optional test
-// runs only when a local, non-distributed reference checkout is supplied.
-// @ts-expect-error Node built-in is available to Vitest at runtime.
 import { createHash } from 'node:crypto';
-// @ts-expect-error Node built-in is available to Vitest at runtime.
 import { readFileSync } from 'node:fs';
-// @ts-expect-error Node built-in is available to Vitest at runtime.
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../references/fixtures/lib-original.json';

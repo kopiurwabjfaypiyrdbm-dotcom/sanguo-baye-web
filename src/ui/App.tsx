@@ -93,6 +93,7 @@ import {
   getCampaignRuleset,
   type CampaignRulesetId,
 } from '../core/rulesets';
+import { registerNativeBackHandler } from '../platform/mobileShell';
 
 type AppScreen = 'title' | 'scenario' | 'ruler' | 'game' | 'battle';
 const scenarioOptions = getScenarioOptions();
@@ -131,6 +132,7 @@ export function App() {
   const latestStrategyMapInput = useRef({ state, selectedCityId });
   const aiTurnLogStart = useRef(0);
   const monthResolutionInProgress = useRef(false);
+  const nativeBackAction = useRef<() => boolean>(() => false);
   const bridge = useMemo(() => createGameBridge(), []);
   latestStrategyMapInput.current = { state, selectedCityId };
   const tacticalReachable = useMemo(() => {
@@ -188,6 +190,52 @@ export function App() {
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [isCityPanelOpen, screen]);
+
+  nativeBackAction.current = () => {
+    if (screen === 'battle') {
+      setFeedback({ kind: 'success', message: '战斗中请通过撤退命令离开战场。' });
+      return true;
+    }
+    if (state.pendingSuccession) {
+      setFeedback({ kind: 'success', message: '请先选择继承人，当前决策不能跳过。' });
+      return true;
+    }
+    if (pendingAttack) {
+      setPendingAttack(undefined);
+      return true;
+    }
+    if (monthAdvanceReview) {
+      setMonthAdvanceReview(undefined);
+      return true;
+    }
+    if (isMonthReportOpen) {
+      setIsMonthReportOpen(false);
+      return true;
+    }
+    if (activeNavView) {
+      setActiveNavView(undefined);
+      return true;
+    }
+    if (isCityPanelOpen) {
+      setIsCityPanelOpen(false);
+      return true;
+    }
+    if (screen === 'ruler') {
+      setScreen('scenario');
+      return true;
+    }
+    if (screen === 'scenario') {
+      setScreen('title');
+      return true;
+    }
+    if (screen === 'game') {
+      setScreen('title');
+      return true;
+    }
+    return false;
+  };
+
+  useEffect(() => registerNativeBackHandler(() => nativeBackAction.current()), []);
 
   useEffect(() => {
     if (screen !== 'game' || !mapHost.current) return;

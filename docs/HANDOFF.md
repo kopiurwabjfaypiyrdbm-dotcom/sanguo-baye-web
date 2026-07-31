@@ -1,6 +1,6 @@
 # 项目交接：sanguo-baye-web
 
-更新日期：2026-07-28
+更新日期：2026-08-01
 
 最新开发日志：`docs/DEVELOPMENT_LOG.md`
 
@@ -44,6 +44,8 @@
 - 玩家君主被俘或死亡且仍有继承候选时进入可保存的强制继承阶段；城池命令、月末和 AI 推进冻结，但保存、导出和返回标题仍可用。AI 按稳定属性顺序自动继承；无人可继时势力瓦解，玩家势力结束战役。
 - 道具按唯一实例校验；schema 1–4 会迁移历史重复，schema 5–6 的重复损坏会拒绝载入。战术已支持后装备槽覆盖前槽的攻击形状替换，但临时目录尚未绑定原版逐道具掩码。
 - 自动化基线既覆盖四时期最长 48 个月的完整 AI 推演（允许战役提前合法结束），也用不发生终局的结算夹具逐时期完整推进 48 次、经历 4 次年度更新，并比较每 6 个月重载与不中断结果；一城弱势君主最长 48 个月双跑保持确定。
+- 已加入可安装 PWA 壳：核心 JS、CSS、地图模块、结构化剧本和正式小型图片会预缓存；超过默认 Workbox 上限的入口视频与选时期大图按需缓存。新 Service Worker 必须由玩家确认后才刷新，不会自动打断正在进行的战役。
+- 已加入 Capacitor 8 Android 工程，临时包名为 `com.sumo91.sanguobaye.debug`。原生壳锁定正反横屏、进入沉浸式全屏、允许内容延伸到刘海短边，并处理系统返回键的弹层/页面层级。工程生成、同步和 Debug APK 编译均已通过，包名、API 24/36、`sensorLandscape` 与 v2 调试签名已核验；真机安装与触控验收仍待设备连接。
 
 内置 12 城示例状态仍作为测试夹具保留；正式开局流程默认使用四时期完整剧本。
 
@@ -75,7 +77,10 @@ src/core/          战略领域状态、命令、AI、经济、战斗、回合�
 src/compat/baye/   有独立参考输出支持的原版兼容算法
 src/data/          四时期数据、CSV/JSON 与原版资源解析转换
 src/game/          Phaser 场景、战略地图和 React/Phaser 事件桥
-src/ui/            React 开局流程、城池面板和应用编排
+src/ui/            React 开局流程、城池面板、PWA 状态和应用编排
+src/platform/      Capacitor 平台识别与 Android 返回键适配
+android/           可版本化的 Capacitor Android 工程；构建产物与本机 SDK 配置忽略
+public/            PWA 安装图标与静态资源
 references/        上游锁定、来源边界、一致性矩阵、夹具和研究记录
 data/source/       可编辑的数据整理表
 docs/design/       已确认的设计和兼容策略
@@ -130,7 +135,20 @@ npm run check
 npm run dev
 ```
 
-`npm run check` 是一次性验证命令，不是常驻服务。它会依次验证已入库参考源码的提交与哈希、并行运行 Vitest，并执行 TypeScript 和 Vite 生产构建；短暂使用多个 CPU 核心属于正常现象，完成后所有测试工作进程应退出。当前交接基线为 345 项测试通过、4 项需要额外本地原版资料的条件测试跳过，51 个锁定 C 参考文件校验和生产构建通过。
+PWA 与 Android 壳：
+
+```bash
+npm run build            # 生成 manifest.webmanifest 与 Service Worker
+npm run preview          # 在生产形态检查安装、更新与离线重载
+npm run android:doctor   # 检查 Capacitor 依赖
+npm run android:assets   # 重建原生图标和启动图
+npm run android:sync     # 生产构建并同步到 android/
+npm run android:apk      # 同步并用 Gradle 生成 Debug APK
+```
+
+Android 侧要求 Node 22+、近期 Android Studio、SDK Platform 36、Build Tools、Platform Tools 与 JDK 21+。`android:apk` 会优先发现 Android Studio JBR，也可通过 `ANDROID_STUDIO_JBR` 指向非标准安装路径。当前 Debug APK 已成功编译；正式发布前必须把临时包名替换为拥有者确认的永久 application ID，并完成签名、备份政策和版本号决策。
+
+`npm run check` 是一次性验证命令，不是常驻服务。它会依次验证已入库参考源码的提交与哈希、并行运行 Vitest，并执行 TypeScript 和 Vite 生产构建；短暂使用多个 CPU 核心属于正常现象，完成后所有测试工作进程应退出。当前交接基线为 356 项测试通过、4 项需要额外本地原版资料的条件测试跳过，51 个锁定 C 参考文件校验和生产构建通过。
 
 只能保留一个 `npm run dev`。Vite 开发服务器会持续监视仓库文件，应在原终端按 `Ctrl+C` 关闭。项目启用了严格端口检查；若端口占用，应复用或关闭原实例，不要改用连续的新端口启动多个服务器。
 
@@ -184,6 +202,8 @@ npm run reference:setup:offline  # 完整参考再加 GPL 离线运行壳
 - 原版时期人物包含在职、在野和未登场状态；不能假设每个人都有势力或城市。
 - 中立城市使用非玩家中立势力桶，不获得普通 AI 回合。
 - Phaser 战略地图由 React 创建一次，再通过 controller 更新。新增战场场景时需要明确场景销毁和返回地图的生命周期。
+- Capacitor 原生壳不注册 PWA Service Worker；它直接使用 APK 内嵌的 `dist`，避免 APK 升级后仍受旧 Web 缓存控制。PWA 状态组件只在非原生环境挂载。
+- `android/app/src/main/assets/public` 和 Capacitor 配置 JSON 是同步产物，已由 Android `.gitignore` 排除；不得手工编辑。原生行为修改保留在 Manifest、MainActivity 和资源目录，再用 `npm run android:sync` 验证不会被覆盖。
 - 上游存在 Windows 保留文件名 `con.py`；参考初始化脚本已经通过安全落盘规避，不要恢复为直接稀疏检出整个工作树。
 - “测试通过”不等于“原版一致”。一致性状态必须同时有源码定位或可重复参考输出。
 
