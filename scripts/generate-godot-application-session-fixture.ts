@@ -29,7 +29,8 @@ if (writeMode) {
 
 function transactionCaseCount(value: ReturnType<typeof buildFixture>) {
   return value.steps.length + value.internalAffairsSequence.steps.length
-    + value.internalAffairsBoundaryCases.length + value.validationCases.length;
+    + value.internalAffairsBoundaryCases.length + value.officerManagementSequence.steps.length
+    + value.officerManagementBoundaryCases.length + value.validationCases.length;
 }
 
 export function buildFixture() {
@@ -124,9 +125,141 @@ export function buildFixture() {
     },
     internalAffairsSequence,
     internalAffairsBoundaryCases: buildInternalAffairsBoundaryCases(),
+    officerManagementSequence: buildOfficerManagementSequence(),
+    officerManagementBoundaryCases: buildOfficerManagementBoundaryCases(),
     validationCases: buildValidationCases(),
     modernRulesetCase: buildModernRulesetCase(),
   };
+}
+
+function buildOfficerManagementSequence() {
+  const initialState = createProductionSessionState(1, 1);
+  const initialPatches: StatePatch[] = [
+    { path: ['cities', 'city-12', 'itemIds'], value: ['item-16', 'item-32'] },
+    { path: ['cities', 'city-12', 'hiddenItemIds'], value: ['item-20'] },
+    { path: ['cities', 'city-2', 'hiddenItemIds'], value: [] },
+  ];
+  applyStatePatches(initialState as unknown as Record<string, unknown>, initialPatches);
+  const session = new OracleApplicationSession(initialState);
+  const steps: { id: string; command: ApplicationCommandEnvelope; expectedCore: unknown }[] = [];
+  let serial = 1;
+  const apply = (id: string, kind: string, parameters: Record<string, unknown>) => {
+    const command: ApplicationCommandEnvelope = {
+      commandEnvelopeVersion: 1,
+      commandId: `mb06-${String(serial).padStart(4, '0')}`,
+      expectedStateSha256: canonicalSha256(session.snapshot()),
+      kind,
+      parameters,
+    };
+    serial += 1;
+    const { state: _stateEvidence, ...expectedCore } = session.execute(command);
+    steps.push({ id, command, expectedCore });
+  };
+  apply('reward-success', 'reward_officer', { cityId: 'city-12', officerId: 'officer-34' });
+  apply('give-normal-item-success', 'give_item', {
+    cityId: 'city-12', officerId: 'officer-34', itemId: 'item-16',
+  });
+  apply('unequip-success', 'unequip_item', {
+    cityId: 'city-12', officerId: 'officer-34', itemId: 'item-16',
+  });
+  apply('give-arms-token-success', 'give_item', {
+    cityId: 'city-12', officerId: 'officer-36', itemId: 'item-32',
+  });
+  apply('classic-appointment-rejected', 'appoint_satrap', {
+    cityId: 'city-12', officerId: 'officer-32',
+  });
+  apply('ruler-reward-rejected', 'reward_officer', {
+    cityId: 'city-12', officerId: 'officer-1',
+  });
+  return {
+    initialPatches,
+    initialStateSha256: canonicalSha256(initialState),
+    steps,
+    finalStateSha256: canonicalSha256(session.snapshot()),
+  };
+}
+
+function buildOfficerManagementBoundaryCases() {
+  const cases: unknown[] = [];
+  let serial = 1;
+  const add = (
+    id: string,
+    kind: string,
+    parameters: Record<string, unknown>,
+    patches: StatePatch[],
+  ) => {
+    const input = createProductionSessionState(1, 1);
+    applyStatePatches(input as unknown as Record<string, unknown>, patches);
+    const session = new OracleApplicationSession(input);
+    const command: ApplicationCommandEnvelope = {
+      commandEnvelopeVersion: 1,
+      commandId: `mb06-boundary-${String(serial).padStart(3, '0')}`,
+      expectedStateSha256: canonicalSha256(input),
+      kind,
+      parameters,
+    };
+    serial += 1;
+    const expected = session.execute(command);
+    const { state: _stateEvidence, ...expectedCore } = expected;
+    cases.push({ id, patches, command, expectedCore, expectedStateSha256: canonicalSha256(expected.state) });
+  };
+  add('modern-appointment-success', 'appoint_satrap', {
+    cityId: 'city-12', officerId: 'officer-32',
+  }, [{ path: ['rulesetId'], value: 'modern-balanced-v1' }]);
+  add('reward-loyalty-cap', 'reward_officer', {
+    cityId: 'city-12', officerId: 'officer-34',
+  }, [{ path: ['officers', 'officer-34', 'loyalty'], value: 97 }]);
+  add('reward-money-rejected-before-officer', 'reward_officer', {
+    cityId: 'city-12', officerId: 'unknown-officer',
+  }, [{ path: ['cities', 'city-12', 'money'], value: 0 }]);
+  add('ruler-give-preserves-loyalty', 'give_item', {
+    cityId: 'city-12', officerId: 'officer-1', itemId: 'item-16',
+  }, [
+    { path: ['cities', 'city-12', 'itemIds'], value: ['item-16'] },
+    { path: ['cities', 'city-12', 'hiddenItemIds'], value: ['item-20'] },
+  ]);
+  add('elite-token-threshold-rejected', 'give_item', {
+    cityId: 'city-12', officerId: 'officer-32', itemId: 'item-30',
+  }, [
+    { path: ['cities', 'city-12', 'itemIds'], value: ['item-30'] },
+    { path: ['cities', 'city-9', 'hiddenItemIds'], value: [] },
+  ]);
+  add('elite-token-success', 'give_item', {
+    cityId: 'city-12', officerId: 'officer-32', itemId: 'item-30',
+  }, [
+    { path: ['cities', 'city-12', 'itemIds'], value: ['item-30'] },
+    { path: ['cities', 'city-9', 'hiddenItemIds'], value: [] },
+    { path: ['officers', 'officer-32', 'force'], value: 106 },
+  ]);
+  add('mystic-token-success', 'give_item', {
+    cityId: 'city-12', officerId: 'officer-34', itemId: 'item-31',
+  }, [
+    { path: ['cities', 'city-12', 'itemIds'], value: ['item-31'] },
+    { path: ['cities', 'city-1', 'hiddenItemIds'], value: [] },
+    { path: ['officers', 'officer-34', 'intelligence'], value: 106 },
+  ]);
+  add('arms-token-full-slots-rejected', 'give_item', {
+    cityId: 'city-12', officerId: 'officer-32', itemId: 'item-32',
+  }, [
+    { path: ['cities', 'city-12', 'itemIds'], value: ['item-32'] },
+    { path: ['cities', 'city-12', 'hiddenItemIds'], value: [] },
+    { path: ['cities', 'city-2', 'hiddenItemIds'], value: [] },
+    { path: ['officers', 'officer-32', 'equipmentItemIds'], value: ['item-16', 'item-20'] },
+  ]);
+  add('ordered-unequip-success', 'unequip_item', {
+    cityId: 'city-12', officerId: 'officer-32', itemId: 'item-16',
+  }, [
+    { path: ['cities', 'city-12', 'hiddenItemIds'], value: [] },
+    { path: ['officers', 'officer-32', 'equipmentItemIds'], value: ['item-16', 'item-20'] },
+  ]);
+  add('unequip-missing-item-rejected', 'unequip_item', {
+    cityId: 'city-12', officerId: 'officer-32', itemId: 'item-16',
+  }, []);
+  add('sorted-officer-parameter-error', 'give_item', {
+    cityId: 'city-12', officerId: 'officer-32', itemId: 'item-16',
+    ['\u{10000}']: true, ['\ue000']: true,
+  }, []);
+  return cases;
 }
 
 type StatePatch = { path: string[]; value: unknown };

@@ -84,6 +84,23 @@ func _test_all_campaign_candidates() -> void:
 			"develop_farming", "develop_commerce", "govern_city", "inspect_city",
 			"trade_food", "banquet_officer", "plunder_city",
 		], "internal-affairs query order must be explicit")
+		var officer_management: Dictionary = city_result["officerManagement"]
+		_assert_equal((officer_management["officers"] as Array).size(), 7, "city query must expose all seven stationed player officers")
+		var management_ids: Array[String] = []
+		for raw_officer: Variant in officer_management["officers"]:
+			management_ids.append(str((raw_officer as Dictionary)["id"]))
+		_assert_equal(management_ids, [
+			"officer-1", "officer-32", "officer-33", "officer-34",
+			"officer-35", "officer-36", "officer-37",
+		], "officer-management query order must follow officerOrder")
+		_assert_equal(officer_management["inventory"], [], "period 1 player city starts without discovered inventory")
+		_assert_equal(officer_management["equipmentLimit"], 2, "query must expose the domain equipment-slot limit")
+		_assert_equal(officer_management["appointmentMode"], "automatic", "classic query must expose automatic appointment mode")
+		_assert_equal(officer_management["officers"][1]["reward"]["moneyCost"], 100, "query must expose reward cost without presentation duplication")
+		_assert_true(
+			not bool(officer_management["officers"][1]["appoint"]["allowed"]),
+			"classic ruleset query must reject manual satrap appointment"
+		)
 		_assert_equal(session.state_sha256(), query_before, "snapshot mutation and query must not mutate session")
 		_assert_true(not session.save_game()["ok"], "production state must not use the MB01 spike save envelope")
 		_assert_equal(session.state_sha256(), query_before, "rejected production save must not mutate session")
@@ -136,6 +153,8 @@ func _test_transaction_fixture() -> void:
 	_assert_equal(session.state_sha256(), fixture["finalStateSha256"], "final state digest must match TypeScript")
 	_test_internal_affairs_sequence(fixture, campaign)
 	_test_internal_affairs_boundary_cases(fixture, campaign)
+	_test_officer_management_sequence(fixture, campaign)
+	_test_officer_management_boundary_cases(fixture, campaign)
 	_test_validation_cases(fixture, campaign)
 	_test_modern_ruleset_case(fixture, campaign)
 
@@ -238,6 +257,66 @@ func _test_internal_affairs_boundary_cases(fixture: Dictionary, campaign: Dictio
 				state_digest["value"], test_case["expectedStateSha256"],
 				"%s boundary state must match TypeScript" % test_case["id"]
 			)
+
+
+func _test_officer_management_sequence(fixture: Dictionary, campaign: Dictionary) -> void:
+	var sequence: Dictionary = fixture.get("officerManagementSequence", {})
+	_assert_true(not sequence.is_empty(), "fixture must include the MB06 officer-management sequence")
+	if sequence.is_empty():
+		return
+	var session: GameSession = GameSession.new()
+	var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+	_assert_true(started["ok"], "officer-management sequence campaign must start")
+	if not started["ok"]:
+		return
+	var input: Dictionary = session.snapshot()
+	_apply_patches(input, sequence["initialPatches"])
+	var restored: Dictionary = session.restore_snapshot(input)
+	_assert_true(restored["ok"], "officer-management sequence state must restore: %s" % restored.get("error", ""))
+	if not restored["ok"]:
+		return
+	_assert_equal(session.state_sha256(), sequence["initialStateSha256"], "officer-management initial digest must match")
+	for raw_step: Variant in sequence["steps"]:
+		var step: Dictionary = raw_step
+		var before_digest: String = session.state_sha256()
+		var actual: Dictionary = session.execute_command(step["command"])
+		var actual_core: Dictionary = actual.duplicate(true)
+		actual_core.erase("state")
+		var expected_core: Dictionary = step["expectedCore"]
+		_assert_canonical_equal(actual_core, expected_core, "%s officer-management result core must match TypeScript" % step["id"])
+		var returned_state_digest: Dictionary = CanonicalJson.try_sha256(actual["state"])
+		_assert_true(returned_state_digest["ok"], "%s officer-management state must hash" % step["id"])
+		if returned_state_digest["ok"]:
+			_assert_equal(returned_state_digest["value"], expected_core["afterStateSha256"], "%s officer-management state must match TypeScript" % step["id"])
+		if not bool(expected_core["stateChanged"]):
+			_assert_equal(session.state_sha256(), before_digest, "%s rejection must not mutate state" % step["id"])
+	_assert_equal(session.state_sha256(), sequence["finalStateSha256"], "officer-management final state must match TypeScript")
+
+
+func _test_officer_management_boundary_cases(fixture: Dictionary, campaign: Dictionary) -> void:
+	var cases: Array = fixture.get("officerManagementBoundaryCases", [])
+	_assert_true(not cases.is_empty(), "fixture must include MB06 boundary cases")
+	for raw_case: Variant in cases:
+		var test_case: Dictionary = raw_case
+		var session: GameSession = GameSession.new()
+		var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+		_assert_true(started["ok"], "%s MB06 boundary campaign must start" % test_case["id"])
+		if not started["ok"]:
+			continue
+		var input: Dictionary = session.snapshot()
+		_apply_patches(input, test_case["patches"])
+		var restored: Dictionary = session.restore_snapshot(input)
+		_assert_true(restored["ok"], "%s patched MB06 state must restore: %s" % [test_case["id"], restored.get("error", "")])
+		if not restored["ok"]:
+			continue
+		var actual: Dictionary = session.execute_command(test_case["command"])
+		var actual_core: Dictionary = actual.duplicate(true)
+		actual_core.erase("state")
+		_assert_canonical_equal(actual_core, test_case["expectedCore"], "%s MB06 result core must match TypeScript" % test_case["id"])
+		var state_digest: Dictionary = CanonicalJson.try_sha256(actual["state"])
+		_assert_true(state_digest["ok"], "%s MB06 returned state must hash" % test_case["id"])
+		if state_digest["ok"]:
+			_assert_equal(state_digest["value"], test_case["expectedStateSha256"], "%s MB06 state must match TypeScript" % test_case["id"])
 
 
 func _test_validation_cases(fixture: Dictionary, campaign: Dictionary) -> void:

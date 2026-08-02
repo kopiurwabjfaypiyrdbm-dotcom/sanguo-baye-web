@@ -19,6 +19,7 @@ func _run() -> void:
 	var map_world: StrategyMapWorld = screen.get_node("%MapWorld")
 	var map_camera: Camera2D = screen.get_node("%MapCamera")
 	var city_card: CityCard = screen.get_node("%CityCard")
+	var officer_panel = screen.get_node("%OfficerManagementPanel")
 	var physical_size := Vector2i(844, 390)
 	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
 	_assert_equal(map_world.get_ordered_city_ids().size(), 38, "main scene must render all 38 cities")
@@ -52,6 +53,57 @@ func _run() -> void:
 	_assert_true(city_card.visible, "touch tap on city-12 must open the spatial city card")
 	var command_option: OptionButton = city_card.get_node("%CommandOption")
 	_assert_equal(command_option.item_count, 7, "city card must expose all seven internal-affairs commands")
+	screen.call("_open_officer_management", "city-12")
+	_assert_true(officer_panel.visible, "city card entry must open the native officer-management panel")
+	_assert_true(not city_card.visible, "officer-management panel must replace rather than overload the city card")
+	var officer_option: OptionButton = officer_panel.get_node("%OfficerOption")
+	_assert_equal(officer_option.item_count, 7, "officer panel must preserve stable stationed-officer order")
+	officer_panel.apply_responsive_layout(true, canvas_scale, physical_size)
+	officer_panel.reset_size()
+	await process_frame
+	var officer_usable := Rect2(Vector2.ZERO, Vector2(1558.0, 278.0 / canvas_scale))
+	officer_panel.place_in(officer_usable)
+	_assert_true(
+		officer_panel.position.y >= officer_usable.position.y - 1.0
+			and officer_panel.position.y + officer_panel.size.y <= officer_usable.end.y + 1.0,
+		"compact officer panel must remain above the bottom status region: panel=%s usable=%s"
+			% [officer_panel.get_rect(), officer_usable]
+	)
+	for control_name: String in [
+		"CloseButton", "PreviousOfficer", "OfficerOption", "NextOfficer",
+		"RewardButton", "AppointButton", "GiveOption", "GiveButton", "UnequipOption", "UnequipButton",
+	]:
+		var control: Control = officer_panel.get_node("%%%s" % control_name)
+		_assert_true(
+			control.custom_minimum_size.y * canvas_scale >= 47.5,
+			"compact officer %s must retain a 48px-class physical target" % control_name
+		)
+	officer_panel.call("_on_officer_selected", 3)
+	_assert_true(not officer_panel.get_node("%RewardButton").disabled, "eligible non-ruler must expose reward action")
+	_assert_true(officer_panel.get_node("%AppointButton").disabled, "classic ruleset must disable manual satrap appointment")
+	var reward_money_before: int = int(screen.get("_snapshot")["cities"]["city-12"]["money"])
+	var reward_loyalty_before: int = int(screen.get("_snapshot")["officers"]["officer-34"]["loyalty"])
+	officer_panel.call("_request_confirmation", "reward_officer")
+	officer_panel.call("_emit_pending_command")
+	officer_panel.get("_confirmation").hide()
+	_assert_equal(int(screen.get("_snapshot")["cities"]["city-12"]["money"]), reward_money_before - 100, "officer panel reward must spend city money")
+	_assert_equal(int(screen.get("_snapshot")["officers"]["officer-34"]["loyalty"]), reward_loyalty_before + 8, "officer panel reward must raise loyalty")
+	var patched: Dictionary = screen.get("_session").snapshot()
+	patched["cities"]["city-12"]["money"] = 500
+	patched["cities"]["city-12"]["itemIds"] = ["item-16"]
+	patched["cities"]["city-12"]["hiddenItemIds"] = ["item-20"]
+	_assert_true(screen.get("_session").restore_snapshot(patched)["ok"], "presentation harness must restore a valid discovered-item state")
+	screen.call("_refresh_snapshot", false)
+	screen.call("_open_officer_management", "city-12")
+	officer_panel.call("_on_officer_selected", 3)
+	officer_panel.call("_request_confirmation", "give_item")
+	officer_panel.call("_emit_pending_command")
+	officer_panel.get("_confirmation").hide()
+	_assert_equal(screen.get("_snapshot")["officers"]["officer-34"]["equipmentItemIds"], ["item-16"], "officer panel must give an ordered equipment item")
+	officer_panel.call("_emit_item", "unequip_item", officer_panel.get_node("%UnequipOption"))
+	_assert_equal(screen.get("_snapshot")["officers"]["officer-34"]["equipmentItemIds"], [], "officer panel must unequip the selected item")
+	_assert_equal(screen.get("_snapshot")["cities"]["city-12"]["itemIds"], ["item-16"], "unequipped item must return to city inventory")
+	screen.call("_close_officer_management")
 	city_card.call("_step_command", -1)
 	_assert_equal(command_option.get_item_metadata(command_option.selected), "plunder_city", "left command control must wrap to plunder")
 	city_card.call("_on_action_pressed")
@@ -96,7 +148,8 @@ func _run() -> void:
 	var snapshot_after: Dictionary = screen.get("_snapshot")
 	_assert_true(
 		int(snapshot_after["cities"]["city-12"]["farming"]) > farming_before,
-		"main scene must execute develop_farming through the production transaction boundary"
+		"main scene must execute develop_farming through the production transaction boundary: %s"
+			% screen.get_node("%StatusLine").text
 	)
 	_assert_equal(snapshot_after["dataContractVersion"], 2, "main scene must use MB03 production data")
 	var trade_seed_before: int = int(snapshot_after["rngSeed"])

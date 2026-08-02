@@ -29,6 +29,7 @@ const ZOOM_STEP := 1.14
 @onready var save_button: Button = %SaveButton
 @onready var load_button: Button = %LoadButton
 @onready var city_card: CityCard = %CityCard
+@onready var officer_panel = %OfficerManagementPanel
 
 var _session: Object
 var _snapshot: Dictionary = {}
@@ -79,6 +80,8 @@ func _process(_delta: float) -> void:
 			map_world.get_city_screen_position(_selected_city_id),
 			_get_card_usable_rect()
 		)
+	if officer_panel.visible:
+		officer_panel.place_in(_get_card_usable_rect())
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -110,7 +113,10 @@ func _connect_ui() -> void:
 	save_button.pressed.connect(_save_game)
 	load_button.pressed.connect(_load_game)
 	city_card.command_requested.connect(_execute_internal_command)
+	city_card.officer_management_requested.connect(_open_officer_management)
 	city_card.close_requested.connect(_close_city_card)
+	officer_panel.command_requested.connect(_execute_internal_command)
+	officer_panel.close_requested.connect(_close_officer_management)
 
 
 func _refresh_snapshot(keep_card_open: bool = true) -> bool:
@@ -160,6 +166,7 @@ func _select_city(city_id: String) -> void:
 	if city_id.is_empty():
 		return
 	_selected_city_id = city_id
+	_close_officer_management()
 	map_world.set_selected_city(city_id)
 	_show_selected_city_card()
 	var city := _as_dictionary(_as_dictionary(_snapshot.get("cities", {})).get(city_id, {}))
@@ -182,8 +189,41 @@ func _show_selected_city_card() -> void:
 
 func _close_city_card() -> void:
 	city_card.hide()
+	officer_panel.hide()
 	_selected_city_id = ""
 	map_world.set_selected_city("")
+
+
+func _open_officer_management(city_id: String) -> void:
+	if city_id.is_empty() or not is_instance_valid(_session):
+		return
+	var query: Variant = _session.call("city_query", city_id)
+	if not query is Dictionary or not bool(query.get("found", false)):
+		_set_status(tr("人物查询失败"), "error")
+		return
+	var city: Dictionary = query["city"]
+	city_card.hide()
+	officer_panel.show_city(
+		city_id, str(city.get("name", city_id)),
+		_as_dictionary(query.get("officerManagement", {}))
+	)
+	officer_panel.apply_responsive_layout(_compact_layout, _current_canvas_scale(), DisplayServer.window_get_size())
+	officer_panel.place_in(_get_card_usable_rect())
+	_set_status(tr("正在管理 %s 的人物与装备") % city.get("name", city_id), "ready")
+
+
+func _close_officer_management() -> void:
+	officer_panel.hide()
+	if not _selected_city_id.is_empty():
+		_show_selected_city_card()
+
+
+func _refresh_officer_management() -> void:
+	if not officer_panel.visible or _selected_city_id.is_empty():
+		return
+	var query: Variant = _session.call("city_query", _selected_city_id)
+	if query is Dictionary and bool(query.get("found", false)):
+		officer_panel.refresh(_as_dictionary(query.get("officerManagement", {})))
 
 
 func _execute_internal_command(kind: String, parameters: Dictionary) -> void:
@@ -204,6 +244,7 @@ func _execute_internal_command(kind: String, parameters: Dictionary) -> void:
 		_set_status(tr("%s失败：%s") % [label, _result_error(result)], "error")
 		return
 	_refresh_snapshot(true)
+	_refresh_officer_management()
 	var city_id: String = str(parameters.get("cityId", ""))
 	var city := _as_dictionary(_as_dictionary(_snapshot.get("cities", {})).get(city_id, {}))
 	_set_status(
@@ -233,6 +274,10 @@ func _internal_command_label(kind: String) -> String:
 		"trade_food": tr("交易"),
 		"banquet_officer": tr("宴请"),
 		"plunder_city": tr("掠夺"),
+		"reward_officer": tr("奖赏"),
+		"appoint_satrap": tr("任命太守"),
+		"give_item": tr("赏赐道具"),
+		"unequip_item": tr("卸下装备"),
 	}.get(kind, kind)
 
 
@@ -420,6 +465,9 @@ func _mark_all_touches_multitouch() -> void:
 
 
 func _handle_tap(screen_position: Vector2, is_touch: bool) -> void:
+	if officer_panel.visible:
+		_close_officer_management()
+		return
 	if is_touch:
 		map_world.show_touch_ripple(screen_position)
 	var city_id := map_world.pick_city(screen_position)
@@ -548,6 +596,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		status_line.add_theme_font_size_override("font_size", 18)
 	map_world.set_minimum_physical_hit_radius(24.0, canvas_scale)
 	city_card.apply_responsive_layout(compact, canvas_scale, physical_size)
+	officer_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
 	if not _snapshot.is_empty():
 		_update_hud_from_snapshot()
 
@@ -558,6 +607,7 @@ func _set_interaction_busy(busy: bool) -> void:
 	world_button.disabled = busy
 	player_button.disabled = busy
 	city_card.set_busy(busy)
+	officer_panel.set_busy(busy)
 
 
 func _set_status(message: String, tone: String) -> void:
@@ -604,3 +654,12 @@ func _result_error(result: Dictionary) -> String:
 
 func _as_dictionary(value: Variant) -> Dictionary:
 	return value as Dictionary if value is Dictionary else {}
+
+
+func _current_canvas_scale() -> float:
+	var physical_size := DisplayServer.window_get_size()
+	var viewport_size := get_viewport_rect().size
+	return minf(
+		float(physical_size.x) / maxf(viewport_size.x, 1.0),
+		float(physical_size.y) / maxf(viewport_size.y, 1.0)
+	)

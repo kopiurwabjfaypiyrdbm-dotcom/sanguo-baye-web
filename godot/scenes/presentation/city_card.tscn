@@ -139,6 +139,13 @@ rounded = true
 layout_mode = 2
 alignment = 2
 
+[node name="OfficerButton" type="Button" parent="OuterMargin/Content/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 54)
+layout_mode = 2
+focus_mode = 2
+text = "人物"
+
 [node name="DevelopButton" type="Button" parent="OuterMargin/Content/ActionRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 54)

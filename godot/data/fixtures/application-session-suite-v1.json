@@ -89402,6 +89402,1149 @@
       "expectedStateSha256": "8dc0d6209f3c53a4da0532358f31b19b02f7b168708a2cbc782f78b6ea1d8e45"
     }
   ],
+  "officerManagementSequence": {
+    "initialPatches": [
+      {
+        "path": [
+          "cities",
+          "city-12",
+          "itemIds"
+        ],
+        "value": [
+          "item-16",
+          "item-32"
+        ]
+      },
+      {
+        "path": [
+          "cities",
+          "city-12",
+          "hiddenItemIds"
+        ],
+        "value": [
+          "item-20"
+        ]
+      },
+      {
+        "path": [
+          "cities",
+          "city-2",
+          "hiddenItemIds"
+        ],
+        "value": []
+      }
+    ],
+    "initialStateSha256": "a69fc9ed016552a6836b4ed2cbaabb34779831bc235964dce2b420ea0169d93a",
+    "steps": [
+      {
+        "id": "reward-success",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb06-0001",
+          "expectedStateSha256": "a69fc9ed016552a6836b4ed2cbaabb34779831bc235964dce2b420ea0169d93a",
+          "kind": "reward_officer",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-34"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb06-0001",
+          "kind": "reward_officer",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "a69fc9ed016552a6836b4ed2cbaabb34779831bc235964dce2b420ea0169d93a",
+          "afterStateSha256": "42781d1aaa02b0bad2ca8800c6d3569a67ae4d711d57810e84030a3cb864aec6",
+          "receipt": {
+            "kind": "reward_officer",
+            "state": {
+              "turn": 1,
+              "rngSeed": 48641,
+              "campaignStarted": true,
+              "actedOfficerIds": [],
+              "logCount": 2
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "money": 135,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [
+                  "item-16",
+                  "item-32"
+                ]
+              },
+              "after": {
+                "money": 35,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [
+                  "item-16",
+                  "item-32"
+                ]
+              }
+            },
+            "officer": {
+              "id": "officer-34",
+              "before": {
+                "loyalty": 85,
+                "armsTypeId": "infantry",
+                "equipmentItemIds": []
+              },
+              "after": {
+                "loyalty": 93,
+                "armsTypeId": "infantry",
+                "equipmentItemIds": []
+              }
+            },
+            "appendedLog": {
+              "id": "log-1-002",
+              "kind": "map",
+              "message": "奖赏李典金钱 100，忠诚由 85 提高至 93。",
+              "turn": 1
+            }
+          }
+        }
+      },
+      {
+        "id": "give-normal-item-success",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb06-0002",
+          "expectedStateSha256": "42781d1aaa02b0bad2ca8800c6d3569a67ae4d711d57810e84030a3cb864aec6",
+          "kind": "give_item",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-34",
+            "itemId": "item-16"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb06-0002",
+          "kind": "give_item",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "42781d1aaa02b0bad2ca8800c6d3569a67ae4d711d57810e84030a3cb864aec6",
+          "afterStateSha256": "ea31f719c8eb496a10fd049e788573f5828d04ba76854050bf41d1419d84ed59",
+          "receipt": {
+            "kind": "give_item",
+            "state": {
+              "turn": 1,
+              "rngSeed": 48641,
+              "campaignStarted": true,
+              "actedOfficerIds": [],
+              "logCount": 3
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "money": 35,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [
+                  "item-16",
+                  "item-32"
+                ]
+              },
+              "after": {
+                "money": 35,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [
+                  "item-32"
+                ]
+              }
+            },
+            "officer": {
+              "id": "officer-34",
+              "before": {
+                "loyalty": 93,
+                "armsTypeId": "infantry",
+                "equipmentItemIds": []
+              },
+              "after": {
+                "loyalty": 100,
+                "armsTypeId": "infantry",
+                "equipmentItemIds": [
+                  "item-16"
+                ]
+              }
+            },
+            "appendedLog": {
+              "id": "log-1-003",
+              "kind": "map",
+              "message": "赏赐李典吴子兵法：装备吴子兵法，忠诚提高至 100。",
+              "turn": 1
+            }
+          }
+        }
+      },
+      {
+        "id": "unequip-success",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb06-0003",
+          "expectedStateSha256": "ea31f719c8eb496a10fd049e788573f5828d04ba76854050bf41d1419d84ed59",
+          "kind": "unequip_item",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-34",
+            "itemId": "item-16"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb06-0003",
+          "kind": "unequip_item",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "ea31f719c8eb496a10fd049e788573f5828d04ba76854050bf41d1419d84ed59",
+          "afterStateSha256": "53ad6f871ac586f43d9c753de69976cbc2bbbd2124b41f50429a631845b939c9",
+          "receipt": {
+            "kind": "unequip_item",
+            "state": {
+              "turn": 1,
+              "rngSeed": 48641,
+              "campaignStarted": true,
+              "actedOfficerIds": [],
+              "logCount": 4
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "money": 35,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [
+                  "item-32"
+                ]
+              },
+              "after": {
+                "money": 35,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [
+                  "item-32",
+                  "item-16"
+                ]
+              }
+            },
+            "officer": {
+              "id": "officer-34",
+              "before": {
+                "loyalty": 100,
+                "armsTypeId": "infantry",
+                "equipmentItemIds": [
+                  "item-16"
+                ]
+              },
+              "after": {
+                "loyalty": 100,
+                "armsTypeId": "infantry",
+                "equipmentItemIds": []
+              }
+            },
+            "appendedLog": {
+              "id": "log-1-004",
+              "kind": "map",
+              "message": "李典卸下吴子兵法，道具返回濮阳库存。",
+              "turn": 1
+            }
+          }
+        }
+      },
+      {
+        "id": "give-arms-token-success",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb06-0004",
+          "expectedStateSha256": "53ad6f871ac586f43d9c753de69976cbc2bbbd2124b41f50429a631845b939c9",
+          "kind": "give_item",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-36",
+            "itemId": "item-32"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb06-0004",
+          "kind": "give_item",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "53ad6f871ac586f43d9c753de69976cbc2bbbd2124b41f50429a631845b939c9",
+          "afterStateSha256": "8516dd21f810e4c9b73b82e30b2995616ac2a92fb7d000cb652ee7ca3b23ce12",
+          "receipt": {
+            "kind": "give_item",
+            "state": {
+              "turn": 1,
+              "rngSeed": 48641,
+              "campaignStarted": true,
+              "actedOfficerIds": [],
+              "logCount": 5
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "money": 35,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [
+                  "item-32",
+                  "item-16"
+                ]
+              },
+              "after": {
+                "money": 35,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [
+                  "item-16"
+                ]
+              }
+            },
+            "officer": {
+              "id": "officer-36",
+              "before": {
+                "loyalty": 92,
+                "armsTypeId": "archer",
+                "equipmentItemIds": []
+              },
+              "after": {
+                "loyalty": 100,
+                "armsTypeId": "navy",
+                "equipmentItemIds": []
+              }
+            },
+            "appendedLog": {
+              "id": "log-1-005",
+              "kind": "map",
+              "message": "赏赐曹洪水战兵符：使用水战兵符，兵种变为水兵，忠诚提高至 100。",
+              "turn": 1
+            }
+          }
+        }
+      },
+      {
+        "id": "classic-appointment-rejected",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb06-0005",
+          "expectedStateSha256": "8516dd21f810e4c9b73b82e30b2995616ac2a92fb7d000cb652ee7ca3b23ce12",
+          "kind": "appoint_satrap",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-32"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb06-0005",
+          "kind": "appoint_satrap",
+          "ok": false,
+          "code": "domain_rejected",
+          "error": "经典校准规则由君主或城内智力最高者自动担任太守",
+          "stateChanged": false,
+          "beforeStateSha256": "8516dd21f810e4c9b73b82e30b2995616ac2a92fb7d000cb652ee7ca3b23ce12",
+          "afterStateSha256": "8516dd21f810e4c9b73b82e30b2995616ac2a92fb7d000cb652ee7ca3b23ce12",
+          "receipt": {}
+        }
+      },
+      {
+        "id": "ruler-reward-rejected",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb06-0006",
+          "expectedStateSha256": "8516dd21f810e4c9b73b82e30b2995616ac2a92fb7d000cb652ee7ca3b23ce12",
+          "kind": "reward_officer",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-1"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb06-0006",
+          "kind": "reward_officer",
+          "ok": false,
+          "code": "domain_rejected",
+          "error": "城中金钱不足，需要 100",
+          "stateChanged": false,
+          "beforeStateSha256": "8516dd21f810e4c9b73b82e30b2995616ac2a92fb7d000cb652ee7ca3b23ce12",
+          "afterStateSha256": "8516dd21f810e4c9b73b82e30b2995616ac2a92fb7d000cb652ee7ca3b23ce12",
+          "receipt": {}
+        }
+      }
+    ],
+    "finalStateSha256": "8516dd21f810e4c9b73b82e30b2995616ac2a92fb7d000cb652ee7ca3b23ce12"
+  },
+  "officerManagementBoundaryCases": [
+    {
+      "id": "modern-appointment-success",
+      "patches": [
+        {
+          "path": [
+            "rulesetId"
+          ],
+          "value": "modern-balanced-v1"
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-001",
+        "expectedStateSha256": "f10cff8dc8702dfba3660c48b7d4fd5af4aee551cb85d6a0d115783729063bcd",
+        "kind": "appoint_satrap",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-32"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-001",
+        "kind": "appoint_satrap",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "f10cff8dc8702dfba3660c48b7d4fd5af4aee551cb85d6a0d115783729063bcd",
+        "afterStateSha256": "85e419355b79dfeb146f27b92dd6ef5465469883ee339ac8c9111b05a2154263",
+        "receipt": {
+          "kind": "appoint_satrap",
+          "state": {
+            "turn": 1,
+            "rngSeed": 48641,
+            "campaignStarted": true,
+            "actedOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "money": 135,
+              "satrapOfficerId": "officer-1",
+              "itemIds": []
+            },
+            "after": {
+              "money": 135,
+              "satrapOfficerId": "officer-32",
+              "itemIds": []
+            }
+          },
+          "officer": {
+            "id": "officer-32",
+            "before": {
+              "loyalty": 94,
+              "armsTypeId": "cavalry",
+              "equipmentItemIds": []
+            },
+            "after": {
+              "loyalty": 94,
+              "armsTypeId": "cavalry",
+              "equipmentItemIds": []
+            }
+          },
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "任命夏侯惇为濮阳太守。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "85e419355b79dfeb146f27b92dd6ef5465469883ee339ac8c9111b05a2154263"
+    },
+    {
+      "id": "reward-loyalty-cap",
+      "patches": [
+        {
+          "path": [
+            "officers",
+            "officer-34",
+            "loyalty"
+          ],
+          "value": 97
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-002",
+        "expectedStateSha256": "37b5a826249e2640fa8d0700c6bcc8edc39532b2af9b0aa086583b3964f27463",
+        "kind": "reward_officer",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-34"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-002",
+        "kind": "reward_officer",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "37b5a826249e2640fa8d0700c6bcc8edc39532b2af9b0aa086583b3964f27463",
+        "afterStateSha256": "614f4a988b12b2d873fd7cd4f7cfd27ab4c96f0758c0742efe36aca64efbd86f",
+        "receipt": {
+          "kind": "reward_officer",
+          "state": {
+            "turn": 1,
+            "rngSeed": 48641,
+            "campaignStarted": true,
+            "actedOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "money": 135,
+              "satrapOfficerId": "officer-1",
+              "itemIds": []
+            },
+            "after": {
+              "money": 35,
+              "satrapOfficerId": "officer-1",
+              "itemIds": []
+            }
+          },
+          "officer": {
+            "id": "officer-34",
+            "before": {
+              "loyalty": 97,
+              "armsTypeId": "infantry",
+              "equipmentItemIds": []
+            },
+            "after": {
+              "loyalty": 100,
+              "armsTypeId": "infantry",
+              "equipmentItemIds": []
+            }
+          },
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "奖赏李典金钱 100，忠诚由 97 提高至 100。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "614f4a988b12b2d873fd7cd4f7cfd27ab4c96f0758c0742efe36aca64efbd86f"
+    },
+    {
+      "id": "reward-money-rejected-before-officer",
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "money"
+          ],
+          "value": 0
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-003",
+        "expectedStateSha256": "b975890856c3e212a591411634148e228c5168ed6ce771fd2ecbf2c4c0c8929e",
+        "kind": "reward_officer",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "unknown-officer"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-003",
+        "kind": "reward_officer",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "城中金钱不足，需要 100",
+        "stateChanged": false,
+        "beforeStateSha256": "b975890856c3e212a591411634148e228c5168ed6ce771fd2ecbf2c4c0c8929e",
+        "afterStateSha256": "b975890856c3e212a591411634148e228c5168ed6ce771fd2ecbf2c4c0c8929e",
+        "receipt": {}
+      },
+      "expectedStateSha256": "b975890856c3e212a591411634148e228c5168ed6ce771fd2ecbf2c4c0c8929e"
+    },
+    {
+      "id": "ruler-give-preserves-loyalty",
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "itemIds"
+          ],
+          "value": [
+            "item-16"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-20"
+          ]
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-004",
+        "expectedStateSha256": "2578715a9304fb6b7532014448da45d071223d5716a94df20407aed00f8812fd",
+        "kind": "give_item",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-1",
+          "itemId": "item-16"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-004",
+        "kind": "give_item",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "2578715a9304fb6b7532014448da45d071223d5716a94df20407aed00f8812fd",
+        "afterStateSha256": "b0a21188ff63c6b973062fb6764a1a1eb796aaa8d87814f91dfd49fd3d4f1a63",
+        "receipt": {
+          "kind": "give_item",
+          "state": {
+            "turn": 1,
+            "rngSeed": 48641,
+            "campaignStarted": true,
+            "actedOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "money": 135,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [
+                "item-16"
+              ]
+            },
+            "after": {
+              "money": 135,
+              "satrapOfficerId": "officer-1",
+              "itemIds": []
+            }
+          },
+          "officer": {
+            "id": "officer-1",
+            "before": {
+              "loyalty": 100,
+              "armsTypeId": "cavalry",
+              "equipmentItemIds": []
+            },
+            "after": {
+              "loyalty": 100,
+              "armsTypeId": "cavalry",
+              "equipmentItemIds": [
+                "item-16"
+              ]
+            }
+          },
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "赏赐曹操吴子兵法：装备吴子兵法。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "b0a21188ff63c6b973062fb6764a1a1eb796aaa8d87814f91dfd49fd3d4f1a63"
+    },
+    {
+      "id": "elite-token-threshold-rejected",
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "itemIds"
+          ],
+          "value": [
+            "item-30"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "hiddenItemIds"
+          ],
+          "value": []
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-005",
+        "expectedStateSha256": "0f63c1928493b87fa43f84179eb833381571713bbfb42690603c4565979fe5df",
+        "kind": "give_item",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-32",
+          "itemId": "item-30"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-005",
+        "kind": "give_item",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "武力超过 105 才能使用铁骑兵符",
+        "stateChanged": false,
+        "beforeStateSha256": "0f63c1928493b87fa43f84179eb833381571713bbfb42690603c4565979fe5df",
+        "afterStateSha256": "0f63c1928493b87fa43f84179eb833381571713bbfb42690603c4565979fe5df",
+        "receipt": {}
+      },
+      "expectedStateSha256": "0f63c1928493b87fa43f84179eb833381571713bbfb42690603c4565979fe5df"
+    },
+    {
+      "id": "elite-token-success",
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "itemIds"
+          ],
+          "value": [
+            "item-30"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "force"
+          ],
+          "value": 106
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-006",
+        "expectedStateSha256": "21f12e3596db6f2002cc5d113a393b338391c03522d0ada7632f21a1101b5cff",
+        "kind": "give_item",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-32",
+          "itemId": "item-30"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-006",
+        "kind": "give_item",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "21f12e3596db6f2002cc5d113a393b338391c03522d0ada7632f21a1101b5cff",
+        "afterStateSha256": "9fab084f06a8326e3d927464500227ac7aca10ab2636f0aa87419e9c4156bf78",
+        "receipt": {
+          "kind": "give_item",
+          "state": {
+            "turn": 1,
+            "rngSeed": 48641,
+            "campaignStarted": true,
+            "actedOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "money": 135,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [
+                "item-30"
+              ]
+            },
+            "after": {
+              "money": 135,
+              "satrapOfficerId": "officer-1",
+              "itemIds": []
+            }
+          },
+          "officer": {
+            "id": "officer-32",
+            "before": {
+              "loyalty": 94,
+              "armsTypeId": "cavalry",
+              "equipmentItemIds": []
+            },
+            "after": {
+              "loyalty": 100,
+              "armsTypeId": "elite",
+              "equipmentItemIds": []
+            }
+          },
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "赏赐夏侯惇铁骑兵符：使用铁骑兵符，兵种变为极兵，忠诚提高至 100。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "9fab084f06a8326e3d927464500227ac7aca10ab2636f0aa87419e9c4156bf78"
+    },
+    {
+      "id": "mystic-token-success",
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "itemIds"
+          ],
+          "value": [
+            "item-31"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "officers",
+            "officer-34",
+            "intelligence"
+          ],
+          "value": 106
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-007",
+        "expectedStateSha256": "e59e3a90e332a28eed702d3871381f55898a787f4d486b7550f51f64262955fe",
+        "kind": "give_item",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-34",
+          "itemId": "item-31"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-007",
+        "kind": "give_item",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "e59e3a90e332a28eed702d3871381f55898a787f4d486b7550f51f64262955fe",
+        "afterStateSha256": "85635fae8ffcb47c19ac3202dfa3b8ec423277260d34107c990c0806f02114be",
+        "receipt": {
+          "kind": "give_item",
+          "state": {
+            "turn": 1,
+            "rngSeed": 48641,
+            "campaignStarted": true,
+            "actedOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "money": 135,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [
+                "item-31"
+              ]
+            },
+            "after": {
+              "money": 135,
+              "satrapOfficerId": "officer-1",
+              "itemIds": []
+            }
+          },
+          "officer": {
+            "id": "officer-34",
+            "before": {
+              "loyalty": 85,
+              "armsTypeId": "infantry",
+              "equipmentItemIds": []
+            },
+            "after": {
+              "loyalty": 93,
+              "armsTypeId": "mystic",
+              "equipmentItemIds": []
+            }
+          },
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "赏赐李典太玄兵符：使用太玄兵符，兵种变为玄兵，忠诚提高至 93。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "85635fae8ffcb47c19ac3202dfa3b8ec423277260d34107c990c0806f02114be"
+    },
+    {
+      "id": "arms-token-full-slots-rejected",
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "itemIds"
+          ],
+          "value": [
+            "item-32"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "equipmentItemIds"
+          ],
+          "value": [
+            "item-16",
+            "item-20"
+          ]
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-008",
+        "expectedStateSha256": "2ec6f82240af4d47db3abcbc5d137fb1d73b48ae9f1f343ed023da5b474f3252",
+        "kind": "give_item",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-32",
+          "itemId": "item-32"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-008",
+        "kind": "give_item",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "该武将的 2 个装备位置已经占满",
+        "stateChanged": false,
+        "beforeStateSha256": "2ec6f82240af4d47db3abcbc5d137fb1d73b48ae9f1f343ed023da5b474f3252",
+        "afterStateSha256": "2ec6f82240af4d47db3abcbc5d137fb1d73b48ae9f1f343ed023da5b474f3252",
+        "receipt": {}
+      },
+      "expectedStateSha256": "2ec6f82240af4d47db3abcbc5d137fb1d73b48ae9f1f343ed023da5b474f3252"
+    },
+    {
+      "id": "ordered-unequip-success",
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "equipmentItemIds"
+          ],
+          "value": [
+            "item-16",
+            "item-20"
+          ]
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-009",
+        "expectedStateSha256": "61265e9dfda7ee83f852fe2bbbe5b9958d1bb1dc66319e78b6f753f114a2d576",
+        "kind": "unequip_item",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-32",
+          "itemId": "item-16"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-009",
+        "kind": "unequip_item",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "61265e9dfda7ee83f852fe2bbbe5b9958d1bb1dc66319e78b6f753f114a2d576",
+        "afterStateSha256": "13d5f5266dadbd4e1fa977971cd20b7afb30f68fd8cca2520b90cb1a48191ef0",
+        "receipt": {
+          "kind": "unequip_item",
+          "state": {
+            "turn": 1,
+            "rngSeed": 48641,
+            "campaignStarted": true,
+            "actedOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "money": 135,
+              "satrapOfficerId": "officer-1",
+              "itemIds": []
+            },
+            "after": {
+              "money": 135,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [
+                "item-16"
+              ]
+            }
+          },
+          "officer": {
+            "id": "officer-32",
+            "before": {
+              "loyalty": 94,
+              "armsTypeId": "cavalry",
+              "equipmentItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "loyalty": 94,
+              "armsTypeId": "cavalry",
+              "equipmentItemIds": [
+                "item-20"
+              ]
+            }
+          },
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "夏侯惇卸下吴子兵法，道具返回濮阳库存。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "13d5f5266dadbd4e1fa977971cd20b7afb30f68fd8cca2520b90cb1a48191ef0"
+    },
+    {
+      "id": "unequip-missing-item-rejected",
+      "patches": [],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-010",
+        "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "kind": "unequip_item",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-32",
+          "itemId": "item-16"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-010",
+        "kind": "unequip_item",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "该武将没有装备指定道具",
+        "stateChanged": false,
+        "beforeStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "afterStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "receipt": {}
+      },
+      "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38"
+    },
+    {
+      "id": "sorted-officer-parameter-error",
+      "patches": [],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-011",
+        "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "kind": "give_item",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-32",
+          "itemId": "item-16",
+          "𐀀": true,
+          "": true
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-011",
+        "kind": "give_item",
+        "ok": false,
+        "code": "invalid_parameters",
+        "error": "unknown give_item parameter: ",
+        "stateChanged": false,
+        "beforeStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "afterStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "receipt": {}
+      },
+      "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38"
+    }
+  ],
   "validationCases": [
     {
       "id": "unsafe-city-money",

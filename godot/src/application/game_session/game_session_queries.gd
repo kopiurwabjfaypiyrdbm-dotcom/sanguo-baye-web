@@ -3,6 +3,7 @@ extends RefCounted
 
 const DevelopFarming = preload("res://src/domain/commands/develop_farming_command.gd")
 const InternalAffairs = preload("res://src/domain/commands/internal_affairs_commands.gd")
+const OfficerManagement = preload("res://src/domain/commands/officer_management_commands.gd")
 
 const INTERNAL_COMMANDS: Array[Dictionary] = [
 	{"kind": "develop_farming", "label": "开垦", "mode": "executor", "dangerous": false},
@@ -19,13 +20,17 @@ static func city(state: RefCounted, city_id: String) -> Dictionary:
 	var data: Dictionary = state.snapshot()
 	var cities: Dictionary = data["cities"]
 	if not cities.has(city_id):
-		return {"found": false, "city": {}, "developFarming": _unavailable("未知城池"), "internalAffairs": []}
+		return {
+			"found": false, "city": {}, "developFarming": _unavailable("未知城池"),
+			"internalAffairs": [], "officerManagement": _unavailable_management("未知城池"),
+		}
 	var develop_farming: Dictionary = _develop_farming(state, data, city_id)
 	return {
 		"found": true,
 		"city": (cities[city_id] as Dictionary).duplicate(true),
 		"developFarming": develop_farming,
 		"internalAffairs": _internal_affairs(state, data, city_id, develop_farming),
+		"officerManagement": _officer_management(state, data, city_id),
 	}
 
 
@@ -134,5 +139,79 @@ static func _banquet(data: Dictionary, domain_query: Dictionary) -> Dictionary:
 	}
 
 
+static func _officer_management(state: RefCounted, data: Dictionary, city_id: String) -> Dictionary:
+	var catalog: Dictionary = OfficerManagement.query_city_catalog(state, city_id)
+	var officers: Array[Dictionary] = []
+	for raw_row: Variant in catalog.get("officers", []):
+		var row: Dictionary = raw_row
+		var officer_id: String = row["officerId"]
+		var officer: Dictionary = data["officers"][officer_id]
+		var arms_type: Dictionary = data["armsTypes"].get(officer["armsTypeId"], {})
+		var equipment: Array[Dictionary] = []
+		for raw_item_id: Variant in officer.get("equipmentItemIds", []):
+			equipment.append(_item_view(data, str(raw_item_id)))
+		var give_items: Array[Dictionary] = []
+		for raw_availability: Variant in row["giveItems"]:
+			var availability: Dictionary = raw_availability
+			var item_view: Dictionary = _item_view(data, availability["itemId"])
+			item_view["allowed"] = availability["allowed"]
+			item_view["reason"] = availability["reason"]
+			give_items.append(item_view)
+		var unequip_items: Array[Dictionary] = []
+		for raw_availability: Variant in row["unequipItems"]:
+			var availability: Dictionary = raw_availability
+			var item_view: Dictionary = _item_view(data, availability["itemId"])
+			item_view["allowed"] = availability["allowed"]
+			item_view["reason"] = availability["reason"]
+			unequip_items.append(item_view)
+		var effective: Dictionary = row["effective"]
+		officers.append({
+			"id": officer_id, "name": officer["name"],
+			"loyalty": int(officer["loyalty"]), "stamina": int(officer["stamina"]),
+			"force": int(officer["force"]), "intelligence": int(officer["intelligence"]),
+			"effectiveForce": int(effective["force"]),
+			"effectiveIntelligence": int(effective["intelligence"]),
+			"effectiveMoveBonus": int(effective["moveBonus"]),
+			"armsTypeId": officer["armsTypeId"],
+			"armsTypeName": arms_type.get("name", officer["armsTypeId"]),
+			"isSatrap": data["cities"][city_id].get("satrapOfficerId", null) == officer_id,
+			"equipment": equipment,
+			"reward": (row["reward"] as Dictionary).duplicate(true),
+			"appoint": (row["appoint"] as Dictionary).duplicate(true),
+			"giveItems": give_items,
+			"unequipItems": unequip_items,
+		})
+	var inventory: Array[Dictionary] = []
+	for raw_item_id: Variant in catalog.get("inventoryItemIds", []):
+		inventory.append(_item_view(data, str(raw_item_id)))
+	return {
+		"allowed": bool(catalog.get("allowed", false)),
+		"reason": str(catalog.get("reason", "")),
+		"satrapOfficerId": data["cities"][city_id].get("satrapOfficerId", null),
+		"equipmentLimit": int(catalog.get("equipmentLimit", 0)),
+		"appointmentMode": str(catalog.get("appointmentMode", "automatic")),
+		"officers": officers,
+		"inventory": inventory,
+	}
+
+
+static func _item_view(data: Dictionary, item_id: String) -> Dictionary:
+	var item: Dictionary = data["items"].get(item_id, {})
+	return {
+		"id": item_id, "name": item.get("name", item_id),
+		"forceBonus": int(item.get("forceBonus", 0)),
+		"intelligenceBonus": int(item.get("intelligenceBonus", 0)),
+		"moveBonus": int(item.get("moveBonus", 0)),
+		"armsTypeOverride": item.get("armsTypeOverride", null),
+	}
+
+
 static func _unavailable(reason: String) -> Dictionary:
 	return {"allowed": false, "reason": reason, "defaultOfficerId": "", "executors": []}
+
+
+static func _unavailable_management(reason: String) -> Dictionary:
+	return {
+		"allowed": false, "reason": reason, "satrapOfficerId": null,
+		"equipmentLimit": 0, "appointmentMode": "automatic", "officers": [], "inventory": [],
+	}

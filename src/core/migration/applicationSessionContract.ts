@@ -7,6 +7,12 @@ import {
   plunderCity,
   tradeFood,
 } from '../cityCommands';
+import {
+  appointSatrap,
+  giveItemToOfficer,
+  rewardOfficer,
+  unequipOfficerItem,
+} from '../personnelCommands';
 import type { GameState } from '../types';
 import { selectPlayerFaction } from '../../data/legacyScenario';
 import { canonicalSha256, compareUnicodeScalar } from './canonicalJson';
@@ -167,6 +173,10 @@ export function validateEnvelope(raw: unknown):
     trade_food: ['cityId', 'officerId', 'direction', 'amount'],
     banquet_officer: ['cityId', 'targetOfficerId'],
     plunder_city: ['cityId', 'officerId'],
+    reward_officer: ['cityId', 'officerId'],
+    appoint_satrap: ['cityId', 'officerId'],
+    give_item: ['cityId', 'officerId', 'itemId'],
+    unequip_item: ['cityId', 'officerId', 'itemId'],
   };
   const parameterKeys = parameterKeysByKind[raw.kind];
   if (!parameterKeys) return rejected('unknown_command', `unsupported command kind: ${raw.kind}`);
@@ -193,7 +203,7 @@ export function validateEnvelope(raw: unknown):
     for (const key of parameterKeys) {
       if (!(key in raw.parameters)) return rejected('invalid_parameters', `${key} is required`);
     }
-    for (const key of ['cityId', 'officerId', 'targetOfficerId']) {
+    for (const key of ['cityId', 'officerId', 'targetOfficerId', 'itemId']) {
       if (!parameterKeys.includes(key)) continue;
       if (!isNonBlank(raw.parameters[key])) return rejected('invalid_parameters', `${key} must be a non-blank string`);
       if (!isUnicodeScalarSequence(raw.parameters[key] as string)) {
@@ -231,6 +241,14 @@ function executeDomainCommand(before: GameState, envelope: ApplicationCommandEnv
       return banquetOfficer(before, parameters as { cityId: string; targetOfficerId: string });
     case 'plunder_city':
       return plunderCity(before, parameters as { cityId: string; officerId: string });
+    case 'reward_officer':
+      return rewardOfficer(before, parameters as { cityId: string; officerId: string });
+    case 'appoint_satrap':
+      return appointSatrap(before, parameters as { cityId: string; officerId: string });
+    case 'give_item':
+      return giveItemToOfficer(before, parameters as { cityId: string; officerId: string; itemId: string });
+    case 'unequip_item':
+      return unequipOfficerItem(before, parameters as { cityId: string; officerId: string; itemId: string });
     default:
       throw new Error(`unsupported command kind: ${envelope.kind}`);
   }
@@ -242,6 +260,9 @@ function projectReceipt(
   after: GameState,
   command: Record<string, unknown>,
 ): Record<string, unknown> {
+  if (['reward_officer', 'appoint_satrap', 'give_item', 'unequip_item'].includes(kind)) {
+    return projectOfficerManagementReceipt(kind, before, after, command);
+  }
   if (kind === 'develop_farming') {
     return projectDevelopFarmingReceipt(
       before,
@@ -287,6 +308,61 @@ function projectReceipt(
     };
   }
   return receipt;
+}
+
+function projectOfficerManagementReceipt(
+  kind: string,
+  before: GameState,
+  after: GameState,
+  command: Record<string, unknown>,
+): Record<string, unknown> {
+  const cityId = command.cityId as string;
+  const officerId = command.officerId as string;
+  const beforeCity = before.cities[cityId];
+  const afterCity = after.cities[cityId];
+  const beforeOfficer = before.officers[officerId];
+  const afterOfficer = after.officers[officerId];
+  const appendedLog = after.logs.at(-1);
+  if (!beforeCity || !afterCity || !beforeOfficer || !afterOfficer || !appendedLog) {
+    throw new Error(`Successful ${kind} transaction is missing observable output`);
+  }
+  return {
+    kind,
+    state: {
+      turn: after.turn,
+      rngSeed: after.rngSeed,
+      campaignStarted: after.campaignStarted,
+      actedOfficerIds: [...after.actedOfficerIds],
+      logCount: after.logs.length,
+    },
+    city: {
+      id: cityId,
+      before: {
+        money: beforeCity.money,
+        satrapOfficerId: beforeCity.satrapOfficerId ?? null,
+        itemIds: [...(beforeCity.itemIds ?? [])],
+      },
+      after: {
+        money: afterCity.money,
+        satrapOfficerId: afterCity.satrapOfficerId ?? null,
+        itemIds: [...(afterCity.itemIds ?? [])],
+      },
+    },
+    officer: {
+      id: officerId,
+      before: {
+        loyalty: beforeOfficer.loyalty,
+        armsTypeId: beforeOfficer.armsTypeId,
+        equipmentItemIds: [...(beforeOfficer.equipmentItemIds ?? [])],
+      },
+      after: {
+        loyalty: afterOfficer.loyalty,
+        armsTypeId: afterOfficer.armsTypeId,
+        equipmentItemIds: [...(afterOfficer.equipmentItemIds ?? [])],
+      },
+    },
+    appendedLog: structuredClone(appendedLog),
+  };
 }
 
 function projectCityResources(city: GameState['cities'][string]) {
