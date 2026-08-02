@@ -90145,17 +90145,38 @@
         },
         {
           "path": [
+            "cities",
+            "city-16",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-8",
+            "item-12"
+          ]
+        },
+        {
+          "path": [
             "officers",
             "officer-32",
             "force"
           ],
-          "value": 106
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "equipmentItemIds"
+          ],
+          "value": [
+            "item-7"
+          ]
         }
       ],
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "mb06-boundary-006",
-        "expectedStateSha256": "21f12e3596db6f2002cc5d113a393b338391c03522d0ada7632f21a1101b5cff",
+        "expectedStateSha256": "58225c0423a3100f0ffe693b55a7a7cb757c9a4b9e220d477ee5473720a14096",
         "kind": "give_item",
         "parameters": {
           "cityId": "city-12",
@@ -90172,8 +90193,8 @@
         "code": "ok",
         "error": "",
         "stateChanged": true,
-        "beforeStateSha256": "21f12e3596db6f2002cc5d113a393b338391c03522d0ada7632f21a1101b5cff",
-        "afterStateSha256": "9fab084f06a8326e3d927464500227ac7aca10ab2636f0aa87419e9c4156bf78",
+        "beforeStateSha256": "58225c0423a3100f0ffe693b55a7a7cb757c9a4b9e220d477ee5473720a14096",
+        "afterStateSha256": "42765c895871370deeaf99828cffe0bd9759eb9f381a673d253b5bafa6481a2a",
         "receipt": {
           "kind": "give_item",
           "state": {
@@ -90203,12 +90224,16 @@
             "before": {
               "loyalty": 94,
               "armsTypeId": "cavalry",
-              "equipmentItemIds": []
+              "equipmentItemIds": [
+                "item-7"
+              ]
             },
             "after": {
               "loyalty": 100,
               "armsTypeId": "elite",
-              "equipmentItemIds": []
+              "equipmentItemIds": [
+                "item-7"
+              ]
             }
           },
           "appendedLog": {
@@ -90219,7 +90244,55 @@
           }
         }
       },
-      "expectedStateSha256": "9fab084f06a8326e3d927464500227ac7aca10ab2636f0aa87419e9c4156bf78"
+      "expectedStateSha256": "42765c895871370deeaf99828cffe0bd9759eb9f381a673d253b5bafa6481a2a"
+    },
+    {
+      "id": "mystic-token-threshold-rejected",
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "itemIds"
+          ],
+          "value": [
+            "item-31"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "hiddenItemIds"
+          ],
+          "value": []
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-007",
+        "expectedStateSha256": "187e76ad4ceba39338c26a5a18af6a82296902504245cfb399075bc867211b11",
+        "kind": "give_item",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-34",
+          "itemId": "item-31"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-007",
+        "kind": "give_item",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "智力超过 105 才能使用太玄兵符",
+        "stateChanged": false,
+        "beforeStateSha256": "187e76ad4ceba39338c26a5a18af6a82296902504245cfb399075bc867211b11",
+        "afterStateSha256": "187e76ad4ceba39338c26a5a18af6a82296902504245cfb399075bc867211b11",
+        "receipt": {}
+      },
+      "expectedStateSha256": "187e76ad4ceba39338c26a5a18af6a82296902504245cfb399075bc867211b11"
     },
     {
       "id": "mystic-token-success",
@@ -90244,17 +90317,37 @@
         },
         {
           "path": [
+            "cities",
+            "city-17",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-15"
+          ]
+        },
+        {
+          "path": [
             "officers",
             "officer-34",
             "intelligence"
           ],
-          "value": 106
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-34",
+            "equipmentItemIds"
+          ],
+          "value": [
+            "item-11"
+          ]
         }
       ],
       "command": {
         "commandEnvelopeVersion": 1,
-        "commandId": "mb06-boundary-007",
-        "expectedStateSha256": "e59e3a90e332a28eed702d3871381f55898a787f4d486b7550f51f64262955fe",
+        "commandId": "mb06-boundary-008",
+        "expectedStateSha256": "5af5e3a16d5b13334b56847d6f10bbe5c19b5451c044e5bdbafc81e38bfeb8a7",
         "kind": "give_item",
         "parameters": {
           "cityId": "city-12",
@@ -90265,14 +90358,14 @@
       "expectedCore": {
         "resultEnvelopeVersion": 1,
         "commandEnvelopeVersion": 1,
-        "commandId": "mb06-boundary-007",
+        "commandId": "mb06-boundary-008",
         "kind": "give_item",
         "ok": true,
         "code": "ok",
         "error": "",
         "stateChanged": true,
-        "beforeStateSha256": "e59e3a90e332a28eed702d3871381f55898a787f4d486b7550f51f64262955fe",
-        "afterStateSha256": "85635fae8ffcb47c19ac3202dfa3b8ec423277260d34107c990c0806f02114be",
+        "beforeStateSha256": "5af5e3a16d5b13334b56847d6f10bbe5c19b5451c044e5bdbafc81e38bfeb8a7",
+        "afterStateSha256": "356684813c07fc61dfbd6d56acd59c23ba108d51c13f23fb3704a169d2522d9e",
         "receipt": {
           "kind": "give_item",
           "state": {
@@ -90302,12 +90395,16 @@
             "before": {
               "loyalty": 85,
               "armsTypeId": "infantry",
-              "equipmentItemIds": []
+              "equipmentItemIds": [
+                "item-11"
+              ]
             },
             "after": {
               "loyalty": 93,
               "armsTypeId": "mystic",
-              "equipmentItemIds": []
+              "equipmentItemIds": [
+                "item-11"
+              ]
             }
           },
           "appendedLog": {
@@ -90318,7 +90415,7 @@
           }
         }
       },
-      "expectedStateSha256": "85635fae8ffcb47c19ac3202dfa3b8ec423277260d34107c990c0806f02114be"
+      "expectedStateSha256": "356684813c07fc61dfbd6d56acd59c23ba108d51c13f23fb3704a169d2522d9e"
     },
     {
       "id": "arms-token-full-slots-rejected",
@@ -90363,7 +90460,7 @@
       ],
       "command": {
         "commandEnvelopeVersion": 1,
-        "commandId": "mb06-boundary-008",
+        "commandId": "mb06-boundary-009",
         "expectedStateSha256": "2ec6f82240af4d47db3abcbc5d137fb1d73b48ae9f1f343ed023da5b474f3252",
         "kind": "give_item",
         "parameters": {
@@ -90375,7 +90472,7 @@
       "expectedCore": {
         "resultEnvelopeVersion": 1,
         "commandEnvelopeVersion": 1,
-        "commandId": "mb06-boundary-008",
+        "commandId": "mb06-boundary-009",
         "kind": "give_item",
         "ok": false,
         "code": "domain_rejected",
@@ -90412,7 +90509,7 @@
       ],
       "command": {
         "commandEnvelopeVersion": 1,
-        "commandId": "mb06-boundary-009",
+        "commandId": "mb06-boundary-010",
         "expectedStateSha256": "61265e9dfda7ee83f852fe2bbbe5b9958d1bb1dc66319e78b6f753f114a2d576",
         "kind": "unequip_item",
         "parameters": {
@@ -90424,7 +90521,7 @@
       "expectedCore": {
         "resultEnvelopeVersion": 1,
         "commandEnvelopeVersion": 1,
-        "commandId": "mb06-boundary-009",
+        "commandId": "mb06-boundary-010",
         "kind": "unequip_item",
         "ok": true,
         "code": "ok",
@@ -90489,7 +90586,7 @@
       "patches": [],
       "command": {
         "commandEnvelopeVersion": 1,
-        "commandId": "mb06-boundary-010",
+        "commandId": "mb06-boundary-011",
         "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
         "kind": "unequip_item",
         "parameters": {
@@ -90501,7 +90598,7 @@
       "expectedCore": {
         "resultEnvelopeVersion": 1,
         "commandEnvelopeVersion": 1,
-        "commandId": "mb06-boundary-010",
+        "commandId": "mb06-boundary-011",
         "kind": "unequip_item",
         "ok": false,
         "code": "domain_rejected",
@@ -90518,7 +90615,7 @@
       "patches": [],
       "command": {
         "commandEnvelopeVersion": 1,
-        "commandId": "mb06-boundary-011",
+        "commandId": "mb06-boundary-012",
         "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
         "kind": "give_item",
         "parameters": {
@@ -90532,11 +90629,39 @@
       "expectedCore": {
         "resultEnvelopeVersion": 1,
         "commandEnvelopeVersion": 1,
-        "commandId": "mb06-boundary-011",
+        "commandId": "mb06-boundary-012",
         "kind": "give_item",
         "ok": false,
         "code": "invalid_parameters",
         "error": "unknown give_item parameter: ",
+        "stateChanged": false,
+        "beforeStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "afterStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "receipt": {}
+      },
+      "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38"
+    },
+    {
+      "id": "missing-item-precedes-blank-city",
+      "patches": [],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-013",
+        "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "kind": "give_item",
+        "parameters": {
+          "cityId": "",
+          "officerId": "officer-32"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb06-boundary-013",
+        "kind": "give_item",
+        "ok": false,
+        "code": "invalid_parameters",
+        "error": "itemId is required",
         "stateChanged": false,
         "beforeStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
         "afterStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",

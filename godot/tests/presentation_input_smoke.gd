@@ -78,6 +78,12 @@ func _run() -> void:
 			control.custom_minimum_size.y * canvas_scale >= 47.5,
 			"compact officer %s must retain a 48px-class physical target" % control_name
 		)
+	for control_name: String in ["PreviousOfficer", "NextOfficer"]:
+		var control: Control = officer_panel.get_node("%%%s" % control_name)
+		_assert_true(
+			control.custom_minimum_size.x * canvas_scale >= 47.5,
+			"compact officer %s must retain a 48px-class physical width" % control_name
+		)
 	officer_panel.call("_on_officer_selected", 3)
 	_assert_true(not officer_panel.get_node("%RewardButton").disabled, "eligible non-ruler must expose reward action")
 	_assert_true(officer_panel.get_node("%AppointButton").disabled, "classic ruleset must disable manual satrap appointment")
@@ -100,6 +106,10 @@ func _run() -> void:
 	officer_panel.call("_emit_pending_command")
 	officer_panel.get("_confirmation").hide()
 	_assert_equal(screen.get("_snapshot")["officers"]["officer-34"]["equipmentItemIds"], ["item-16"], "officer panel must give an ordered equipment item")
+	_assert_equal(
+		screen.get("_session").city_query("city-12")["officerManagement"]["officers"][3]["effectiveIntelligence"],
+		85, "officer panel query must show normal-item effective intelligence"
+	)
 	officer_panel.call("_emit_item", "unequip_item", officer_panel.get_node("%UnequipOption"))
 	_assert_equal(screen.get("_snapshot")["officers"]["officer-34"]["equipmentItemIds"], [], "officer panel must unequip the selected item")
 	_assert_equal(screen.get("_snapshot")["cities"]["city-12"]["itemIds"], ["item-16"], "unequipped item must return to city inventory")

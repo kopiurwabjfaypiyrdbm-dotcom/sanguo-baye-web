@@ -129,6 +129,9 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 	]:
 		control.custom_minimum_size.y = touch_size
 		control.add_theme_font_size_override("font_size", action_size)
+	if compact:
+		previous_officer.custom_minimum_size = Vector2(touch_size, touch_size)
+		next_officer.custom_minimum_size = Vector2(touch_size, touch_size)
 	for popup: PopupMenu in [officer_option.get_popup(), give_option.get_popup(), unequip_option.get_popup()]:
 		popup.add_theme_font_size_override("font_size", action_size)
 		popup.add_theme_constant_override("v_separation", ceili(31.0 / _canvas_scale) if compact else 8)

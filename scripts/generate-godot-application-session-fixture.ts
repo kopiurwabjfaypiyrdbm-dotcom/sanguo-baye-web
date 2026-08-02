@@ -229,14 +229,24 @@ function buildOfficerManagementBoundaryCases() {
   }, [
     { path: ['cities', 'city-12', 'itemIds'], value: ['item-30'] },
     { path: ['cities', 'city-9', 'hiddenItemIds'], value: [] },
-    { path: ['officers', 'officer-32', 'force'], value: 106 },
+    { path: ['cities', 'city-16', 'hiddenItemIds'], value: ['item-8', 'item-12'] },
+    { path: ['officers', 'officer-32', 'force'], value: 100 },
+    { path: ['officers', 'officer-32', 'equipmentItemIds'], value: ['item-7'] },
+  ]);
+  add('mystic-token-threshold-rejected', 'give_item', {
+    cityId: 'city-12', officerId: 'officer-34', itemId: 'item-31',
+  }, [
+    { path: ['cities', 'city-12', 'itemIds'], value: ['item-31'] },
+    { path: ['cities', 'city-1', 'hiddenItemIds'], value: [] },
   ]);
   add('mystic-token-success', 'give_item', {
     cityId: 'city-12', officerId: 'officer-34', itemId: 'item-31',
   }, [
     { path: ['cities', 'city-12', 'itemIds'], value: ['item-31'] },
     { path: ['cities', 'city-1', 'hiddenItemIds'], value: [] },
-    { path: ['officers', 'officer-34', 'intelligence'], value: 106 },
+    { path: ['cities', 'city-17', 'hiddenItemIds'], value: ['item-15'] },
+    { path: ['officers', 'officer-34', 'intelligence'], value: 100 },
+    { path: ['officers', 'officer-34', 'equipmentItemIds'], value: ['item-11'] },
   ]);
   add('arms-token-full-slots-rejected', 'give_item', {
     cityId: 'city-12', officerId: 'officer-32', itemId: 'item-32',
@@ -258,6 +268,9 @@ function buildOfficerManagementBoundaryCases() {
   add('sorted-officer-parameter-error', 'give_item', {
     cityId: 'city-12', officerId: 'officer-32', itemId: 'item-16',
     ['\u{10000}']: true, ['\ue000']: true,
+  }, []);
+  add('missing-item-precedes-blank-city', 'give_item', {
+    cityId: '', officerId: 'officer-32',
   }, []);
   return cases;
 }

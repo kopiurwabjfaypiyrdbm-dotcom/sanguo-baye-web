@@ -26,6 +26,7 @@ static func validate_parameters(kind: String, parameters: Dictionary) -> Diction
 	for key: String in allowed:
 		if not parameters.has(key):
 			return _failure("%s is required" % key)
+	for key: String in allowed:
 		if not StringContract.is_non_blank(parameters[key]):
 			return _failure("%s must be a non-blank string" % key)
 	return {"ok": true, "error": ""}

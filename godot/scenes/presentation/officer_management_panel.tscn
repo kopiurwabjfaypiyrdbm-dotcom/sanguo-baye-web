@@ -90,7 +90,7 @@ text = "›"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(140, 52)
 layout_mode = 2
-text = "奖赏 100 金"
+text = "奖赏"
 
 [node name="AppointButton" type="Button" parent="OuterMargin/Content/OfficerRow"]
 unique_name_in_owner = true

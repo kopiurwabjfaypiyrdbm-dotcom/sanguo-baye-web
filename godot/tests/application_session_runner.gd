@@ -121,6 +121,12 @@ func _test_all_campaign_candidates() -> void:
 		wrong_scenario["scenario"]["id"] = "wrong-period-id"
 		_assert_true(not session.restore_snapshot(wrong_scenario)["ok"], "snapshot with changed scenario identity must fail")
 		_assert_equal(session.state_sha256(), query_before, "changed scenario identity must not partially restore")
+		var move_bonus_state: Dictionary = session.snapshot()
+		(move_bonus_state["cities"]["city-27"]["hiddenItemIds"] as Array).erase("item-23")
+		move_bonus_state["officers"]["officer-34"]["equipmentItemIds"] = ["item-23"]
+		_assert_true(session.restore_snapshot(move_bonus_state)["ok"], "move-bonus query fixture must restore")
+		var move_bonus_query: Dictionary = session.city_query("city-12")["officerManagement"]
+		_assert_equal(move_bonus_query["officers"][3]["effectiveMoveBonus"], 2, "query must project effective equipment move bonus")
 
 
 func _test_transaction_fixture() -> void:
