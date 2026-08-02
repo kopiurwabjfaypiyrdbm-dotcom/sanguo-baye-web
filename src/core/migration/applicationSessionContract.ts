@@ -10,9 +10,17 @@ import {
 import {
   appointSatrap,
   giveItemToOfficer,
+  recruitFreeOfficer,
   rewardOfficer,
+  searchCity,
   unequipOfficerItem,
 } from '../personnelCommands';
+import { recruitCaptive, releaseCaptive } from '../captiveCommands';
+import {
+  banishOfficer,
+  confiscateOfficerEquipment,
+  executeCaptive,
+} from '../officerLifecycle';
 import type { GameState } from '../types';
 import { selectPlayerFaction } from '../../data/legacyScenario';
 import { canonicalSha256, compareUnicodeScalar } from './canonicalJson';
@@ -177,6 +185,13 @@ export function validateEnvelope(raw: unknown):
     appoint_satrap: ['cityId', 'officerId'],
     give_item: ['cityId', 'officerId', 'itemId'],
     unequip_item: ['cityId', 'officerId', 'itemId'],
+    search_city: ['cityId', 'officerId'],
+    recruit_free_officer: ['cityId', 'executorOfficerId', 'targetOfficerId'],
+    recruit_captive: ['cityId', 'executorOfficerId', 'captiveOfficerId'],
+    release_captive: ['cityId', 'captiveOfficerId'],
+    execute_captive: ['cityId', 'captiveOfficerId'],
+    banish_officer: ['cityId', 'officerId'],
+    confiscate_equipment: ['cityId', 'officerId', 'itemId'],
   };
   const parameterKeys = parameterKeysByKind[raw.kind];
   if (!parameterKeys) return rejected('unknown_command', `unsupported command kind: ${raw.kind}`);
@@ -203,7 +218,9 @@ export function validateEnvelope(raw: unknown):
     for (const key of parameterKeys) {
       if (!(key in raw.parameters)) return rejected('invalid_parameters', `${key} is required`);
     }
-    for (const key of ['cityId', 'officerId', 'targetOfficerId', 'itemId']) {
+    for (const key of [
+      'cityId', 'officerId', 'executorOfficerId', 'targetOfficerId', 'captiveOfficerId', 'itemId',
+    ]) {
       if (!parameterKeys.includes(key)) continue;
       if (!isNonBlank(raw.parameters[key])) return rejected('invalid_parameters', `${key} must be a non-blank string`);
       if (!isUnicodeScalarSequence(raw.parameters[key] as string)) {
@@ -249,6 +266,26 @@ function executeDomainCommand(before: GameState, envelope: ApplicationCommandEnv
       return giveItemToOfficer(before, parameters as { cityId: string; officerId: string; itemId: string });
     case 'unequip_item':
       return unequipOfficerItem(before, parameters as { cityId: string; officerId: string; itemId: string });
+    case 'search_city':
+      return searchCity(before, parameters as { cityId: string; officerId: string });
+    case 'recruit_free_officer':
+      return recruitFreeOfficer(before, parameters as {
+        cityId: string; executorOfficerId: string; targetOfficerId: string;
+      });
+    case 'recruit_captive':
+      return recruitCaptive(before, parameters as {
+        cityId: string; executorOfficerId: string; captiveOfficerId: string;
+      });
+    case 'release_captive':
+      return releaseCaptive(before, parameters as { cityId: string; captiveOfficerId: string });
+    case 'execute_captive':
+      return executeCaptive(before, parameters as { cityId: string; captiveOfficerId: string });
+    case 'banish_officer':
+      return banishOfficer(before, parameters as { cityId: string; officerId: string });
+    case 'confiscate_equipment':
+      return confiscateOfficerEquipment(before, parameters as {
+        cityId: string; officerId: string; itemId: string;
+      });
     default:
       throw new Error(`unsupported command kind: ${envelope.kind}`);
   }
@@ -260,6 +297,12 @@ function projectReceipt(
   after: GameState,
   command: Record<string, unknown>,
 ): Record<string, unknown> {
+  if ([
+    'search_city', 'recruit_free_officer', 'recruit_captive', 'release_captive',
+    'execute_captive', 'banish_officer', 'confiscate_equipment',
+  ].includes(kind)) {
+    return projectPersonnelLifecycleReceipt(kind, before, after, command);
+  }
   if (['reward_officer', 'appoint_satrap', 'give_item', 'unequip_item'].includes(kind)) {
     return projectOfficerManagementReceipt(kind, before, after, command);
   }
@@ -362,6 +405,91 @@ function projectOfficerManagementReceipt(
       },
     },
     appendedLog: structuredClone(appendedLog),
+  };
+}
+
+function projectPersonnelLifecycleReceipt(
+  kind: string,
+  before: GameState,
+  after: GameState,
+  command: Record<string, unknown>,
+): Record<string, unknown> {
+  const cityId = command.cityId as string;
+  const beforeCity = before.cities[cityId];
+  const afterCity = after.cities[cityId];
+  const appendedLog = after.logs.at(-1);
+  if (!beforeCity || !afterCity || !appendedLog) {
+    throw new Error(`Successful ${kind} transaction is missing observable output`);
+  }
+  let participantIds: string[];
+  switch (kind) {
+    case 'search_city':
+    case 'banish_officer':
+    case 'confiscate_equipment':
+      participantIds = [command.officerId as string];
+      break;
+    case 'recruit_free_officer':
+      participantIds = [command.executorOfficerId as string, command.targetOfficerId as string];
+      break;
+    case 'recruit_captive':
+      participantIds = [command.executorOfficerId as string, command.captiveOfficerId as string];
+      break;
+    case 'release_captive':
+    case 'execute_captive':
+      participantIds = [command.captiveOfficerId as string];
+      break;
+    default:
+      throw new Error(`Unsupported personnel lifecycle receipt: ${kind}`);
+  }
+  return {
+    kind,
+    state: {
+      turn: after.turn,
+      rngSeed: after.rngSeed,
+      campaignStarted: after.campaignStarted,
+      actedOfficerIds: [...after.actedOfficerIds],
+      discoveredOfficerIds: [...after.discoveredOfficerIds],
+      logCount: after.logs.length,
+    },
+    city: {
+      id: cityId,
+      before: projectPersonnelCity(beforeCity),
+      after: projectPersonnelCity(afterCity),
+    },
+    officers: participantIds.map((officerId) => ({
+      id: officerId,
+      before: projectLifecycleOfficer(before.officers[officerId]),
+      after: projectLifecycleOfficer(after.officers[officerId]),
+    })),
+    appendedLog: structuredClone(appendedLog),
+  };
+}
+
+function projectPersonnelCity(city: GameState['cities'][string]) {
+  return {
+    farming: city.farming,
+    commerce: city.commerce,
+    money: city.money,
+    food: city.food,
+    satrapOfficerId: city.satrapOfficerId ?? null,
+    itemIds: [...(city.itemIds ?? [])],
+    hiddenItemIds: [...(city.hiddenItemIds ?? [])],
+  };
+}
+
+function projectLifecycleOfficer(officer: GameState['officers'][string]) {
+  if (!officer) throw new Error('Successful personnel transaction is missing an officer');
+  return {
+    status: officer.status,
+    factionId: officer.factionId,
+    cityId: officer.cityId ?? null,
+    captorFactionId: officer.captorFactionId ?? null,
+    formerFactionId: officer.formerFactionId ?? null,
+    loyalty: officer.loyalty,
+    stamina: officer.stamina,
+    troops: officer.troops,
+    equipmentItemIds: [...(officer.equipmentItemIds ?? [])],
+    death: officer.death ? structuredClone(officer.death) : null,
   };
 }
 

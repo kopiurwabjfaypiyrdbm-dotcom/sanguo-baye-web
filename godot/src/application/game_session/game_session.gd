@@ -312,6 +312,24 @@ func city_query(city_id: String) -> Dictionary:
 	return GameSessionQueries.city(_state, city_id)
 
 
+func internal_affairs_query(city_id: String) -> Dictionary:
+	if _state == null:
+		return {"found": false, "city": {}, "internalAffairs": []}
+	return GameSessionQueries.internal_affairs_city(_state, city_id)
+
+
+func officer_management_query(city_id: String) -> Dictionary:
+	if _state == null:
+		return {"found": false, "city": {}, "officerManagement": {}}
+	return GameSessionQueries.officer_management_city(_state, city_id)
+
+
+func personnel_lifecycle_query(city_id: String) -> Dictionary:
+	if _state == null:
+		return {"found": false, "city": {}, "personnelLifecycle": {}}
+	return GameSessionQueries.personnel_lifecycle_city(_state, city_id)
+
+
 func save_game() -> Dictionary:
 	if _state == null:
 		return _failure("尚未载入战役")

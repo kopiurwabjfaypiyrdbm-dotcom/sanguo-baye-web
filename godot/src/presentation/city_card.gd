@@ -5,6 +5,7 @@ extends PanelContainer
 
 signal command_requested(kind: String, parameters: Dictionary)
 signal officer_management_requested(city_id: String)
+signal personnel_lifecycle_requested(city_id: String)
 signal close_requested
 
 @onready var title_label: Label = %TitleLabel
@@ -23,6 +24,7 @@ signal close_requested
 @onready var trade_amount: SpinBox = %TradeAmount
 @onready var develop_button: Button = %DevelopButton
 @onready var officer_button: Button = %OfficerButton
+@onready var personnel_button: Button = %PersonnelButton
 @onready var close_button: Button = %CloseButton
 
 var _city_id := ""
@@ -45,6 +47,7 @@ const DEFAULT_DEVELOP_MINIMUM := Vector2(132.0, 54.0)
 func _ready() -> void:
 	close_button.pressed.connect(func() -> void: close_requested.emit())
 	officer_button.pressed.connect(func() -> void: officer_management_requested.emit(_city_id))
+	personnel_button.pressed.connect(func() -> void: personnel_lifecycle_requested.emit(_city_id))
 	develop_button.pressed.connect(_on_action_pressed)
 	command_option.item_selected.connect(_on_command_selected)
 	trade_direction.item_selected.connect(_on_trade_direction_selected)
@@ -59,6 +62,7 @@ func _ready() -> void:
 	add_child(_confirm_dialog)
 	close_button.text = tr("关闭")
 	officer_button.text = tr("人物")
+	personnel_button.text = tr("人才")
 	command_label.text = tr("内政命令")
 	executor_label.text = tr("执行武将")
 	hide()
@@ -112,6 +116,7 @@ func set_busy(value: bool) -> void:
 	trade_amount.editable = not value and _base_action_enabled
 	develop_button.disabled = value or not _base_action_enabled
 	officer_button.disabled = value or _city_id.is_empty()
+	personnel_button.disabled = value or _city_id.is_empty()
 
 
 func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: Vector2i) -> void:
@@ -132,15 +137,16 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 		executor_option.custom_minimum_size = Vector2(0.0, touch_size)
 		trade_direction.custom_minimum_size = Vector2(ceilf(92.0 / scale), touch_size)
 		trade_amount.custom_minimum_size = Vector2(0.0, touch_size)
-		develop_button.custom_minimum_size = Vector2(ceilf(112.0 / scale), touch_size)
-		officer_button.custom_minimum_size = Vector2(ceilf(112.0 / scale), touch_size)
+		officer_button.custom_minimum_size = Vector2(ceilf(80.0 / scale), touch_size)
+		personnel_button.custom_minimum_size = Vector2(ceilf(80.0 / scale), touch_size)
+		develop_button.custom_minimum_size = Vector2(ceilf(80.0 / scale), touch_size)
 		var body_font_size := ceili(16.0 / scale)
 		var action_font_size := ceili(17.0 / scale)
 		title_label.add_theme_font_size_override("font_size", ceili(20.0 / scale))
 		for label: Label in [ownership_label, stats_label, command_label, executor_label]:
 			label.add_theme_font_size_override("font_size", body_font_size)
 		stats_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-		for control: Control in [close_button, previous_command, command_option, next_command, executor_option, trade_direction, trade_amount, officer_button, develop_button]:
+		for control: Control in [close_button, previous_command, command_option, next_command, executor_option, trade_direction, trade_amount, personnel_button, officer_button, develop_button]:
 			control.add_theme_font_size_override("font_size", action_font_size)
 		for popup: PopupMenu in [command_option.get_popup(), executor_option.get_popup(), trade_direction.get_popup()]:
 			popup.add_theme_font_size_override("font_size", action_font_size)
@@ -164,13 +170,14 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 		executor_option.custom_minimum_size = DEFAULT_EXECUTOR_MINIMUM
 		trade_direction.custom_minimum_size = Vector2(92.0, 48.0)
 		trade_amount.custom_minimum_size = Vector2(0.0, 48.0)
-		develop_button.custom_minimum_size = DEFAULT_DEVELOP_MINIMUM
-		officer_button.custom_minimum_size = DEFAULT_DEVELOP_MINIMUM
+		officer_button.custom_minimum_size = Vector2(112.0, 54.0)
+		personnel_button.custom_minimum_size = Vector2(112.0, 54.0)
+		develop_button.custom_minimum_size = Vector2(112.0, 54.0)
 		title_label.add_theme_font_size_override("font_size", 24)
 		for label: Label in [ownership_label, stats_label, command_label, executor_label]:
 			label.add_theme_font_size_override("font_size", 18)
 		stats_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-		for control: Control in [close_button, previous_command, command_option, next_command, executor_option, trade_direction, trade_amount, officer_button, develop_button]:
+		for control: Control in [close_button, previous_command, command_option, next_command, executor_option, trade_direction, trade_amount, personnel_button, officer_button, develop_button]:
 			control.add_theme_font_size_override("font_size", 18)
 		for popup: PopupMenu in [command_option.get_popup(), executor_option.get_popup(), trade_direction.get_popup()]:
 			popup.add_theme_font_size_override("font_size", 18)

@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const godotProject = resolve(root, 'godot');
-const exactWindowsEngine = 'D:\\03_Godot\\01_Engine\\Godot_v4.7.1-stable_win64_console.exe';
+const exactWindowsEngine = 'D:\\03_Godot\\01_Engine\\Godot_v4.7.1-stable_win64.exe';
 const engine = process.env.GODOT_BIN
   || (existsSync(exactWindowsEngine) ? exactWindowsEngine : 'godot');
 const runtimeRoot = resolve(godotProject, '.godot/runtime');

@@ -8,7 +8,8 @@ const JS_MAX_SAFE_INTEGER: int = 9_007_199_254_740_991
 const EQUIPMENT_LIMIT: int = 2
 const SUPPORTED_DATA_CONTRACT_VERSIONS: Array[int] = [1, 2]
 const INITIAL_PHASE: String = "player"
-const OFFICER_STATUSES: Array[String] = ["serving", "free", "hidden"]
+const OFFICER_STATUSES: Array[String] = ["serving", "free", "hidden", "captive", "dead"]
+const DEATH_CAUSES: Array[String] = ["battle-death", "natural-death", "execution"]
 const LOG_KINDS: Array[String] = ["system", "map", "turn", "battle", "ai"]
 const CITY_CONDITIONS: Array[String] = ["normal", "famine", "drought", "flood", "rebellion"]
 
@@ -129,14 +130,15 @@ static func _validate(state: Dictionary, initial_contract: bool) -> Array[Dictio
 	_validate_logs(state.get("logs"), issues)
 	_validate_id_list(state.get("actedOfficerIds"), "actedOfficerIds", officers, issues)
 	_validate_id_list(state.get("discoveredOfficerIds"), "discoveredOfficerIds", officers, issues)
-	if typeof(state.get("discoveredOfficerIds")) == TYPE_ARRAY \
-			and not (state["discoveredOfficerIds"] as Array).is_empty():
-		_add(
-			issues,
-			"discoveredOfficerIds",
-			"must remain empty in the initial-state contract"
-					if initial_contract else "is not supported by the current runtime validator"
-		)
+	if typeof(state.get("discoveredOfficerIds")) == TYPE_ARRAY:
+		var discovered: Array = state["discoveredOfficerIds"]
+		if initial_contract and not discovered.is_empty():
+			_add(issues, "discoveredOfficerIds", "must remain empty in the initial-state contract")
+		for raw_officer_id: Variant in discovered:
+			var officer_id: String = str(raw_officer_id)
+			if officers.has(officer_id) and typeof(officers[officer_id]) == TYPE_DICTIONARY \
+					and (officers[officer_id] as Dictionary).get("status", "") != "free":
+				_add(issues, "discoveredOfficerIds", "officer is not free: %s" % officer_id)
 	_validate_serial(state.get("nextStrategicOrderSerial"), "nextStrategicOrderSerial", initial_contract, issues)
 	_validate_serial(state.get("nextDiplomaticOrderSerial"), "nextDiplomaticOrderSerial", initial_contract, issues)
 	_validate_graph(state.get("graph"), cities, graph_facts, issues)
@@ -440,6 +442,35 @@ static func _validate_officers(
 				and typeof(factions[faction_id]) == TYPE_DICTIONARY \
 				and (factions[faction_id] as Dictionary).get("isNeutral", false):
 			_add(issues, "%s.factionId" % path, "serving officer must belong to a playable faction")
+		if status == "captive":
+			if not faction_id.is_empty() and factions.has(faction_id) \
+					and typeof(factions[faction_id]) == TYPE_DICTIONARY \
+					and not (factions[faction_id] as Dictionary).get("isNeutral", false):
+				_add(issues, "%s.factionId" % path, "captive officer must be neutral")
+			if int(officer.get("troops", -1)) != 0:
+				_add(issues, "%s.troops" % path, "captive officer must have zero troops")
+			if int(officer.get("stamina", -1)) != 0:
+				_add(issues, "%s.stamina" % path, "captive officer must have zero stamina")
+			var captor_id: String = _required_reference(
+				officer.get("captorFactionId"), "%s.captorFactionId" % path, factions, issues
+			)
+			var former_id: String = _required_reference(
+				officer.get("formerFactionId"), "%s.formerFactionId" % path, factions, issues
+			)
+			if not captor_id.is_empty() and factions.has(captor_id) \
+					and (factions[captor_id] as Dictionary).get("isNeutral", false):
+				_add(issues, "%s.captorFactionId" % path, "captive officer must name a playable captor faction")
+			if not former_id.is_empty() and factions.has(former_id) \
+					and (factions[former_id] as Dictionary).get("isNeutral", false):
+				_add(issues, "%s.formerFactionId" % path, "captive officer must retain a playable former faction")
+			if not captor_id.is_empty() and former_id == captor_id:
+				_add(issues, "%s.formerFactionId" % path, "captive officer cannot be held by their former faction")
+			if not captor_id.is_empty() and cities.has(city_id) \
+					and (cities[city_id] as Dictionary).get("ownerId", "") != captor_id:
+				_add(issues, "%s.cityId" % path, "captive officer must be held in a city owned by the captor")
+		elif (officer.has("captorFactionId") and officer["captorFactionId"] != null) \
+				or (officer.has("formerFactionId") and officer["formerFactionId"] != null):
+			_add(issues, "%s.captorFactionId" % path, "capture metadata is only valid for captive officers")
 
 		for field: String in [
 			"force", "intelligence", "leadership", "troops", "loyalty", "age", "stamina"
@@ -460,6 +491,19 @@ static func _validate_officers(
 				_add(issues, "%s.appearanceCityId" % path, "requires appearanceYear")
 		if status == "dead" and acted_ids.has(key):
 			_add(issues, "%s.status" % path, "dead officer cannot be marked as acted")
+		if status == "dead":
+			if int(officer.get("troops", -1)) != 0:
+				_add(issues, "%s.troops" % path, "dead officer must have zero troops")
+			if int(officer.get("stamina", -1)) != 0:
+				_add(issues, "%s.stamina" % path, "dead officer must have zero stamina")
+			if typeof(officer.get("death")) != TYPE_DICTIONARY:
+				_add(issues, "%s.death" % path, "dead officer must retain a death record")
+			else:
+				_validate_death_record(
+					officer["death"], path, factions, cities, state, issues
+				)
+		elif officer.has("death") and officer["death"] != null:
+			_add(issues, "%s.death" % path, "only dead officers may retain a death record")
 
 		var equipment_path: String = "%s.equipmentItemIds" % path
 		var raw_equipment: Variant = officer.get("equipmentItemIds")
@@ -474,6 +518,35 @@ static func _validate_officers(
 			)
 			if status == "dead" and not equipment.is_empty():
 				_add(issues, equipment_path, "dead officer cannot retain equipment")
+
+
+static func _validate_death_record(
+		death: Dictionary, officer_path: String, factions: Dictionary, cities: Dictionary,
+		state: Dictionary, issues: Array[Dictionary]
+) -> void:
+	var path: String = "%s.death" % officer_path
+	if not DEATH_CAUSES.has(str(death.get("cause", ""))):
+		_add(issues, "%s.cause" % path, "must be a supported death cause")
+	if not _is_positive_integer(death.get("turn")) \
+			or (_is_positive_integer(state.get("turn")) and int(death.get("turn", 0)) > int(state["turn"])):
+		_add(issues, "%s.turn" % path, "must be within the current campaign")
+	if not _is_positive_integer(death.get("year")):
+		_add(issues, "%s.year" % path, "must be a positive integer")
+	if not _is_integer_number(death.get("month")) \
+			or int(death.get("month", 0)) < 1 or int(death.get("month", 0)) > 12:
+		_add(issues, "%s.month" % path, "must be from 1 to 12")
+	var calendar: Dictionary = state.get("calendar", {}) if state.get("calendar") is Dictionary else {}
+	if _is_positive_integer(death.get("year")) and _is_integer_number(death.get("month")) \
+			and _is_positive_integer(calendar.get("year")) and _is_integer_number(calendar.get("month")) \
+			and int(death["year"]) * 12 + int(death["month"]) \
+			> int(calendar["year"]) * 12 + int(calendar["month"]):
+		_add(issues, "%s.year" % path, "must not be later than the current calendar")
+	if death.has("cityId"):
+		_required_reference(death.get("cityId"), "%s.cityId" % path, cities, issues)
+	if death.has("responsibleFactionId"):
+		_required_reference(
+			death.get("responsibleFactionId"), "%s.responsibleFactionId" % path, factions, issues
+		)
 
 
 static func _validate_items(

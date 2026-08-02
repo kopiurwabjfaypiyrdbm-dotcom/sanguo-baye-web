@@ -125,8 +125,38 @@ func _test_all_campaign_candidates() -> void:
 		(move_bonus_state["cities"]["city-27"]["hiddenItemIds"] as Array).erase("item-23")
 		move_bonus_state["officers"]["officer-34"]["equipmentItemIds"] = ["item-23"]
 		_assert_true(session.restore_snapshot(move_bonus_state)["ok"], "move-bonus query fixture must restore")
-		var move_bonus_query: Dictionary = session.city_query("city-12")["officerManagement"]
+		var move_bonus_query: Dictionary = session.officer_management_query("city-12")["officerManagement"]
 		_assert_equal(move_bonus_query["officers"][3]["effectiveMoveBonus"], 2, "query must project effective equipment move bonus")
+		_assert_true(session.start_campaign(1, 1)["ok"], "personnel query campaign must restart")
+		var personnel_state: Dictionary = session.snapshot()
+		personnel_state["discoveredOfficerIds"] = ["officer-126"]
+		var captive: Dictionary = personnel_state["officers"]["officer-30"]
+		captive["status"] = "captive"
+		captive["factionId"] = "neutral"
+		captive["cityId"] = "city-12"
+		captive["captorFactionId"] = "ruler-1"
+		captive["formerFactionId"] = "ruler-0"
+		captive["troops"] = 0
+		captive["stamina"] = 0
+		_assert_true(session.restore_snapshot(personnel_state)["ok"], "personnel query fixture must restore")
+		var personnel_before: String = session.state_sha256()
+		var personnel: Dictionary = session.personnel_lifecycle_query("city-12")["personnelLifecycle"]
+		var personnel_kinds: Array[String] = []
+		for raw_command: Variant in personnel["commands"]:
+			personnel_kinds.append(str((raw_command as Dictionary)["kind"]))
+		_assert_equal(personnel_kinds, [
+			"search_city", "recruit_free_officer", "recruit_captive", "release_captive",
+			"execute_captive", "banish_officer", "confiscate_equipment",
+		], "personnel query command order must be explicit")
+		_assert_equal(personnel["commands"][0]["defaultExecutorId"], "officer-1", "personnel query must select stable search executor")
+		_assert_equal(personnel["commands"][1]["defaultTargetId"], "officer-126", "personnel query must expose discovered free target")
+		_assert_equal(personnel["commands"][2]["defaultTargetId"], "officer-30", "personnel query must expose held captive")
+		_assert_equal(personnel["commands"][2]["cost"], {"stamina": 15, "money": 100, "usesAction": true}, "personnel query must expose classic surrender cost")
+		_assert_true(
+			"降低 20" in personnel["commands"][6]["confirmationTemplate"],
+			"personnel query must consume domain-owned confiscation impact text"
+		)
+		_assert_equal(session.state_sha256(), personnel_before, "personnel query must not mutate session")
 
 
 func _test_transaction_fixture() -> void:
@@ -161,6 +191,8 @@ func _test_transaction_fixture() -> void:
 	_test_internal_affairs_boundary_cases(fixture, campaign)
 	_test_officer_management_sequence(fixture, campaign)
 	_test_officer_management_boundary_cases(fixture, campaign)
+	_test_personnel_lifecycle_sequence(fixture, campaign)
+	_test_personnel_lifecycle_boundary_cases(fixture, campaign)
 	_test_validation_cases(fixture, campaign)
 	_test_modern_ruleset_case(fixture, campaign)
 
@@ -323,6 +355,66 @@ func _test_officer_management_boundary_cases(fixture: Dictionary, campaign: Dict
 		_assert_true(state_digest["ok"], "%s MB06 returned state must hash" % test_case["id"])
 		if state_digest["ok"]:
 			_assert_equal(state_digest["value"], test_case["expectedStateSha256"], "%s MB06 state must match TypeScript" % test_case["id"])
+
+
+func _test_personnel_lifecycle_sequence(fixture: Dictionary, campaign: Dictionary) -> void:
+	var sequence: Dictionary = fixture.get("personnelLifecycleSequence", {})
+	_assert_true(not sequence.is_empty(), "fixture must include the MB07 personnel-lifecycle sequence")
+	if sequence.is_empty():
+		return
+	var session: GameSession = GameSession.new()
+	var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+	_assert_true(started["ok"], "personnel-lifecycle sequence campaign must start")
+	if not started["ok"]:
+		return
+	var input: Dictionary = session.snapshot()
+	_apply_patches(input, sequence["initialPatches"])
+	var restored: Dictionary = session.restore_snapshot(input)
+	_assert_true(restored["ok"], "personnel-lifecycle sequence state must restore: %s" % restored.get("error", ""))
+	if not restored["ok"]:
+		return
+	_assert_equal(session.state_sha256(), sequence["initialStateSha256"], "personnel-lifecycle initial digest must match")
+	for raw_step: Variant in sequence["steps"]:
+		var step: Dictionary = raw_step
+		var before_digest: String = session.state_sha256()
+		var actual: Dictionary = session.execute_command(step["command"])
+		var actual_core: Dictionary = actual.duplicate(true)
+		actual_core.erase("state")
+		var expected_core: Dictionary = step["expectedCore"]
+		_assert_canonical_equal(actual_core, expected_core, "%s personnel-lifecycle result core must match TypeScript" % step["id"])
+		var returned_state_digest: Dictionary = CanonicalJson.try_sha256(actual["state"])
+		_assert_true(returned_state_digest["ok"], "%s personnel-lifecycle state must hash" % step["id"])
+		if returned_state_digest["ok"]:
+			_assert_equal(returned_state_digest["value"], expected_core["afterStateSha256"], "%s personnel-lifecycle state must match TypeScript" % step["id"])
+		if not bool(expected_core["stateChanged"]):
+			_assert_equal(session.state_sha256(), before_digest, "%s personnel-lifecycle rejection must not mutate state" % step["id"])
+	_assert_equal(session.state_sha256(), sequence["finalStateSha256"], "personnel-lifecycle final state must match TypeScript")
+
+
+func _test_personnel_lifecycle_boundary_cases(fixture: Dictionary, campaign: Dictionary) -> void:
+	var cases: Array = fixture.get("personnelLifecycleBoundaryCases", [])
+	_assert_true(not cases.is_empty(), "fixture must include MB07 boundary cases")
+	for raw_case: Variant in cases:
+		var test_case: Dictionary = raw_case
+		var session: GameSession = GameSession.new()
+		var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+		_assert_true(started["ok"], "%s MB07 boundary campaign must start" % test_case["id"])
+		if not started["ok"]:
+			continue
+		var input: Dictionary = session.snapshot()
+		_apply_patches(input, test_case["patches"])
+		var restored: Dictionary = session.restore_snapshot(input)
+		_assert_true(restored["ok"], "%s patched MB07 state must restore: %s" % [test_case["id"], restored.get("error", "")])
+		if not restored["ok"]:
+			continue
+		var actual: Dictionary = session.execute_command(test_case["command"])
+		var actual_core: Dictionary = actual.duplicate(true)
+		actual_core.erase("state")
+		_assert_canonical_equal(actual_core, test_case["expectedCore"], "%s MB07 result core must match TypeScript" % test_case["id"])
+		var state_digest: Dictionary = CanonicalJson.try_sha256(actual["state"])
+		_assert_true(state_digest["ok"], "%s MB07 returned state must hash" % test_case["id"])
+		if state_digest["ok"]:
+			_assert_equal(state_digest["value"], test_case["expectedStateSha256"], "%s MB07 state must match TypeScript" % test_case["id"])
 
 
 func _test_validation_cases(fixture: Dictionary, campaign: Dictionary) -> void:

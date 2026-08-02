@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const engineCandidate = 'D:\\03_Godot\\01_Engine\\Godot_v4.7.1-stable_win64_console.exe';
+const engineCandidate = 'D:\\03_Godot\\01_Engine\\Godot_v4.7.1-stable_win64.exe';
 const engine = process.env.GODOT_BIN || (existsSync(engineCandidate) ? engineCandidate : 'godot');
 const runtimeRoot = resolve(root, 'godot/.godot/runtime');
 const appData = resolve(runtimeRoot, 'appdata');

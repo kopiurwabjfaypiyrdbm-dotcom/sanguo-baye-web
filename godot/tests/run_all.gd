@@ -228,8 +228,8 @@ func _test_spike_contract_rejects_unmigrated_web_states() -> void:
 	captive_state["officers"] = captive_officers
 	_assert_issue_contains(
 		Validator.validate(captive_state),
-		"known officer status",
-		"unmigrated captive semantics must be rejected by the spike contract"
+		"must be an id",
+		"incomplete captive metadata must be rejected by the production contract"
 	)
 
 	var ordered_state: Dictionary = period.duplicate(true)

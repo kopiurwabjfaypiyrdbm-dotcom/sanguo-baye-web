@@ -90670,6 +90670,3460 @@
       "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38"
     }
   ],
+  "personnelLifecycleSequence": {
+    "initialPatches": [
+      {
+        "path": [
+          "discoveredOfficerIds"
+        ],
+        "value": [
+          "officer-126"
+        ]
+      },
+      {
+        "path": [
+          "officers",
+          "officer-30",
+          "status"
+        ],
+        "value": "captive"
+      },
+      {
+        "path": [
+          "officers",
+          "officer-30",
+          "factionId"
+        ],
+        "value": "neutral"
+      },
+      {
+        "path": [
+          "officers",
+          "officer-30",
+          "cityId"
+        ],
+        "value": "city-12"
+      },
+      {
+        "path": [
+          "officers",
+          "officer-30",
+          "captorFactionId"
+        ],
+        "value": "ruler-1"
+      },
+      {
+        "path": [
+          "officers",
+          "officer-30",
+          "formerFactionId"
+        ],
+        "value": "ruler-0"
+      },
+      {
+        "path": [
+          "officers",
+          "officer-30",
+          "loyalty"
+        ],
+        "value": 0
+      },
+      {
+        "path": [
+          "officers",
+          "officer-30",
+          "troops"
+        ],
+        "value": 0
+      },
+      {
+        "path": [
+          "officers",
+          "officer-30",
+          "stamina"
+        ],
+        "value": 0
+      },
+      {
+        "path": [
+          "officers",
+          "officer-33",
+          "intelligence"
+        ],
+        "value": 255
+      }
+    ],
+    "initialStateSha256": "4170f5eb7a8d1ecf9094b93927fcfc8c224693daff743e9632d5aa34cd343512",
+    "steps": [
+      {
+        "id": "explicit-recruit-attempt",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb07-0001",
+          "expectedStateSha256": "4170f5eb7a8d1ecf9094b93927fcfc8c224693daff743e9632d5aa34cd343512",
+          "kind": "recruit_free_officer",
+          "parameters": {
+            "cityId": "city-12",
+            "executorOfficerId": "officer-1",
+            "targetOfficerId": "officer-126"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb07-0001",
+          "kind": "recruit_free_officer",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "4170f5eb7a8d1ecf9094b93927fcfc8c224693daff743e9632d5aa34cd343512",
+          "afterStateSha256": "221f02781d99ee97799fec0615a8b16438029a8cf54ab71ed90bd5a17df72f07",
+          "receipt": {
+            "kind": "recruit_free_officer",
+            "state": {
+              "turn": 1,
+              "rngSeed": 860746715,
+              "campaignStarted": true,
+              "actedOfficerIds": [
+                "officer-1"
+              ],
+              "discoveredOfficerIds": [],
+              "logCount": 2
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "farming": 1238,
+                "commerce": 1223,
+                "money": 135,
+                "food": 309,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [],
+                "hiddenItemIds": [
+                  "item-16",
+                  "item-20"
+                ]
+              },
+              "after": {
+                "farming": 1238,
+                "commerce": 1223,
+                "money": 135,
+                "food": 309,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [],
+                "hiddenItemIds": [
+                  "item-16",
+                  "item-20"
+                ]
+              }
+            },
+            "officers": [
+              {
+                "id": "officer-1",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "captorFactionId": null,
+                  "formerFactionId": null,
+                  "loyalty": 100,
+                  "stamina": 100,
+                  "troops": 100,
+                  "equipmentItemIds": [],
+                  "death": null
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "captorFactionId": null,
+                  "formerFactionId": null,
+                  "loyalty": 100,
+                  "stamina": 92,
+                  "troops": 100,
+                  "equipmentItemIds": [],
+                  "death": null
+                }
+              },
+              {
+                "id": "officer-126",
+                "before": {
+                  "status": "free",
+                  "factionId": "neutral",
+                  "cityId": "city-12",
+                  "captorFactionId": null,
+                  "formerFactionId": null,
+                  "loyalty": 0,
+                  "stamina": 100,
+                  "troops": 0,
+                  "equipmentItemIds": [],
+                  "death": null
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "captorFactionId": null,
+                  "formerFactionId": null,
+                  "loyalty": 76,
+                  "stamina": 100,
+                  "troops": 0,
+                  "equipmentItemIds": [],
+                  "death": null
+                }
+              }
+            ],
+            "appendedLog": {
+              "id": "log-1-002",
+              "kind": "map",
+              "message": "曹操成功说服郭嘉在濮阳出仕，忠诚为 76。",
+              "turn": 1
+            }
+          }
+        }
+      },
+      {
+        "id": "search-real-city",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb07-0002",
+          "expectedStateSha256": "221f02781d99ee97799fec0615a8b16438029a8cf54ab71ed90bd5a17df72f07",
+          "kind": "search_city",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-32"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb07-0002",
+          "kind": "search_city",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "221f02781d99ee97799fec0615a8b16438029a8cf54ab71ed90bd5a17df72f07",
+          "afterStateSha256": "2451680ae5b352b48b77c03b3c3f7393f3f9b730840f44e097795f7892a4e990",
+          "receipt": {
+            "kind": "search_city",
+            "state": {
+              "turn": 1,
+              "rngSeed": 777050309,
+              "campaignStarted": true,
+              "actedOfficerIds": [
+                "officer-1",
+                "officer-32"
+              ],
+              "discoveredOfficerIds": [],
+              "logCount": 3
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "farming": 1238,
+                "commerce": 1223,
+                "money": 135,
+                "food": 309,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [],
+                "hiddenItemIds": [
+                  "item-16",
+                  "item-20"
+                ]
+              },
+              "after": {
+                "farming": 1238,
+                "commerce": 1223,
+                "money": 166,
+                "food": 309,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [],
+                "hiddenItemIds": [
+                  "item-16",
+                  "item-20"
+                ]
+              }
+            },
+            "officers": [
+              {
+                "id": "officer-32",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "captorFactionId": null,
+                  "formerFactionId": null,
+                  "loyalty": 94,
+                  "stamina": 100,
+                  "troops": 100,
+                  "equipmentItemIds": [],
+                  "death": null
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "captorFactionId": null,
+                  "formerFactionId": null,
+                  "loyalty": 94,
+                  "stamina": 92,
+                  "troops": 100,
+                  "equipmentItemIds": [],
+                  "death": null
+                }
+              }
+            ],
+            "appendedLog": {
+              "id": "log-1-003",
+              "kind": "map",
+              "message": "夏侯惇在濮阳搜得金钱 31。",
+              "turn": 1
+            }
+          }
+        }
+      },
+      {
+        "id": "captive-surrender-success",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb07-0003",
+          "expectedStateSha256": "2451680ae5b352b48b77c03b3c3f7393f3f9b730840f44e097795f7892a4e990",
+          "kind": "recruit_captive",
+          "parameters": {
+            "cityId": "city-12",
+            "executorOfficerId": "officer-33",
+            "captiveOfficerId": "officer-30"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb07-0003",
+          "kind": "recruit_captive",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "2451680ae5b352b48b77c03b3c3f7393f3f9b730840f44e097795f7892a4e990",
+          "afterStateSha256": "791e48f0dea1d0b095a718de619dd9cc9a86af2a09f7f85fd58c34c32fea9dc3",
+          "receipt": {
+            "kind": "recruit_captive",
+            "state": {
+              "turn": 1,
+              "rngSeed": 1786762130,
+              "campaignStarted": true,
+              "actedOfficerIds": [
+                "officer-1",
+                "officer-32",
+                "officer-33"
+              ],
+              "discoveredOfficerIds": [],
+              "logCount": 4
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "farming": 1238,
+                "commerce": 1223,
+                "money": 166,
+                "food": 309,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [],
+                "hiddenItemIds": [
+                  "item-16",
+                  "item-20"
+                ]
+              },
+              "after": {
+                "farming": 1238,
+                "commerce": 1223,
+                "money": 66,
+                "food": 309,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [],
+                "hiddenItemIds": [
+                  "item-16",
+                  "item-20"
+                ]
+              }
+            },
+            "officers": [
+              {
+                "id": "officer-33",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "captorFactionId": null,
+                  "formerFactionId": null,
+                  "loyalty": 98,
+                  "stamina": 100,
+                  "troops": 100,
+                  "equipmentItemIds": [],
+                  "death": null
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "captorFactionId": null,
+                  "formerFactionId": null,
+                  "loyalty": 98,
+                  "stamina": 85,
+                  "troops": 100,
+                  "equipmentItemIds": [],
+                  "death": null
+                }
+              },
+              {
+                "id": "officer-30",
+                "before": {
+                  "status": "captive",
+                  "factionId": "neutral",
+                  "cityId": "city-12",
+                  "captorFactionId": "ruler-1",
+                  "formerFactionId": "ruler-0",
+                  "loyalty": 0,
+                  "stamina": 0,
+                  "troops": 0,
+                  "equipmentItemIds": [],
+                  "death": null
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "captorFactionId": null,
+                  "formerFactionId": null,
+                  "loyalty": 56,
+                  "stamina": 0,
+                  "troops": 0,
+                  "equipmentItemIds": [],
+                  "death": null
+                }
+              }
+            ],
+            "appendedLog": {
+              "id": "log-1-004",
+              "kind": "map",
+              "message": "夏侯渊说服王允归顺，忠诚为 56。",
+              "turn": 1
+            }
+          }
+        }
+      },
+      {
+        "id": "banish-recruited-captive",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb07-0004",
+          "expectedStateSha256": "791e48f0dea1d0b095a718de619dd9cc9a86af2a09f7f85fd58c34c32fea9dc3",
+          "kind": "banish_officer",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-30"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb07-0004",
+          "kind": "banish_officer",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "791e48f0dea1d0b095a718de619dd9cc9a86af2a09f7f85fd58c34c32fea9dc3",
+          "afterStateSha256": "ec92cbf646633ecbc80578d0fc2b849a40d07ae98b4c02424b271e976c3d0eaf",
+          "receipt": {
+            "kind": "banish_officer",
+            "state": {
+              "turn": 1,
+              "rngSeed": 1014685129,
+              "campaignStarted": true,
+              "actedOfficerIds": [
+                "officer-1",
+                "officer-32",
+                "officer-33"
+              ],
+              "discoveredOfficerIds": [
+                "officer-30"
+              ],
+              "logCount": 5
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "farming": 1238,
+                "commerce": 1223,
+                "money": 66,
+                "food": 309,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [],
+                "hiddenItemIds": [
+                  "item-16",
+                  "item-20"
+                ]
+              },
+              "after": {
+                "farming": 1238,
+                "commerce": 1223,
+                "money": 66,
+                "food": 309,
+                "satrapOfficerId": "officer-1",
+                "itemIds": [],
+                "hiddenItemIds": [
+                  "item-16",
+                  "item-20"
+                ]
+              }
+            },
+            "officers": [
+              {
+                "id": "officer-30",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "captorFactionId": null,
+                  "formerFactionId": null,
+                  "loyalty": 56,
+                  "stamina": 0,
+                  "troops": 0,
+                  "equipmentItemIds": [],
+                  "death": null
+                },
+                "after": {
+                  "status": "free",
+                  "factionId": "neutral",
+                  "cityId": "city-8",
+                  "captorFactionId": null,
+                  "formerFactionId": null,
+                  "loyalty": 56,
+                  "stamina": 0,
+                  "troops": 0,
+                  "equipmentItemIds": [],
+                  "death": null
+                }
+              }
+            ],
+            "appendedLog": {
+              "id": "log-1-005",
+              "kind": "map",
+              "message": "流放王允，其流落至天水。",
+              "turn": 1
+            }
+          }
+        }
+      }
+    ],
+    "finalStateSha256": "ec92cbf646633ecbc80578d0fc2b849a40d07ae98b4c02424b271e976c3d0eaf"
+  },
+  "personnelLifecycleBoundaryCases": [
+    {
+      "id": "search-direct-recruit-branch",
+      "patches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 43
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-001",
+        "expectedStateSha256": "ace6996c1fad2b7883048e2ba27f8130ff8760fcf83eb279435e9139d1d49874",
+        "kind": "search_city",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-1"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-001",
+        "kind": "search_city",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "ace6996c1fad2b7883048e2ba27f8130ff8760fcf83eb279435e9139d1d49874",
+        "afterStateSha256": "7137c868433da3b6b9495d1aae4936984d75dd2bb597486ab5bca71f998d19c2",
+        "receipt": {
+          "kind": "search_city",
+          "state": {
+            "turn": 1,
+            "rngSeed": 180931746,
+            "campaignStarted": true,
+            "actedOfficerIds": [
+              "officer-1"
+            ],
+            "discoveredOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-1",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 92,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "曹操在濮阳访得王修，成功请其出仕，忠诚为 71。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "7137c868433da3b6b9495d1aae4936984d75dd2bb597486ab5bca71f998d19c2"
+    },
+    {
+      "id": "search-hidden-item-branch",
+      "patches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 42
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-002",
+        "expectedStateSha256": "59c0148f33f46b390fde07f33c87e7d05fdb03a68e78c63e2e755357b4a34b0e",
+        "kind": "search_city",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-1"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-002",
+        "kind": "search_city",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "59c0148f33f46b390fde07f33c87e7d05fdb03a68e78c63e2e755357b4a34b0e",
+        "afterStateSha256": "8126cfae41433e4544b315cca24f1417148879f5ffa32007899f208376928020",
+        "receipt": {
+          "kind": "search_city",
+          "state": {
+            "turn": 1,
+            "rngSeed": 2479403867,
+            "campaignStarted": true,
+            "actedOfficerIds": [
+              "officer-1"
+            ],
+            "discoveredOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [
+                "item-20"
+              ],
+              "hiddenItemIds": [
+                "item-16"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-1",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 92,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "曹操在濮阳搜得商君书。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "8126cfae41433e4544b315cca24f1417148879f5ffa32007899f208376928020"
+    },
+    {
+      "id": "search-no-result-branch",
+      "patches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-003",
+        "expectedStateSha256": "13745b9f49798d88b86f510bbe6a18a1afcd80b85ba7ae609702eaa065ab8fed",
+        "kind": "search_city",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-1"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-003",
+        "kind": "search_city",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "13745b9f49798d88b86f510bbe6a18a1afcd80b85ba7ae609702eaa065ab8fed",
+        "afterStateSha256": "96e64f599ac12ea1136c487534b11068f893dc30669f4485d18877d66c7e0d53",
+        "receipt": {
+          "kind": "search_city",
+          "state": {
+            "turn": 1,
+            "rngSeed": 1015568748,
+            "campaignStarted": true,
+            "actedOfficerIds": [
+              "officer-1"
+            ],
+            "discoveredOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-1",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 92,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "曹操在濮阳四处查访，没有得到有用的消息。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "96e64f599ac12ea1136c487534b11068f893dc30669f4485d18877d66c7e0d53"
+    },
+    {
+      "id": "search-food-branch",
+      "patches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1327
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-004",
+        "expectedStateSha256": "31f8d867e715ac3531ac86bad9e2bfd5048b2f2a63e4134b82fb24a91b6b9e32",
+        "kind": "search_city",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-1"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-004",
+        "kind": "search_city",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "31f8d867e715ac3531ac86bad9e2bfd5048b2f2a63e4134b82fb24a91b6b9e32",
+        "afterStateSha256": "c2ad9ecb517ed2c8864cb400b15568ce0e84a2d0f96c6bb527709a648bf925e1",
+        "receipt": {
+          "kind": "search_city",
+          "state": {
+            "turn": 1,
+            "rngSeed": 2759358777,
+            "campaignStarted": true,
+            "actedOfficerIds": [
+              "officer-1"
+            ],
+            "discoveredOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 434,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-1",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 92,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "曹操在濮阳搜得粮草 125。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "c2ad9ecb517ed2c8864cb400b15568ce0e84a2d0f96c6bb527709a648bf925e1"
+    },
+    {
+      "id": "search-discovery-recruit-failure",
+      "patches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 53
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "intelligence"
+          ],
+          "value": 20
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-005",
+        "expectedStateSha256": "49e83e5d8f4e9d939908815b2861a971c2cddb90ab793d72f28bc8d82ac20e00",
+        "kind": "search_city",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-1"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-005",
+        "kind": "search_city",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "49e83e5d8f4e9d939908815b2861a971c2cddb90ab793d72f28bc8d82ac20e00",
+        "afterStateSha256": "4bd7b0339ca172ca94f87c2662f93e3db73e312552489a95847b2050af028d5e",
+        "receipt": {
+          "kind": "search_city",
+          "state": {
+            "turn": 1,
+            "rngSeed": 2704688185,
+            "campaignStarted": true,
+            "actedOfficerIds": [
+              "officer-1"
+            ],
+            "discoveredOfficerIds": [
+              "officer-126"
+            ],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-1",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 92,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "曹操在濮阳听闻郭嘉之名，但未能请其出仕。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "4bd7b0339ca172ca94f87c2662f93e3db73e312552489a95847b2050af028d5e"
+    },
+    {
+      "id": "search-money-soft-cap",
+      "patches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 682
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "money"
+          ],
+          "value": 30000
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-006",
+        "expectedStateSha256": "db73e00f7ed9f865c98bba473686e7f6effad8ec2390ebfd035b448cd2caaf22",
+        "kind": "search_city",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-1"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-006",
+        "kind": "search_city",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "db73e00f7ed9f865c98bba473686e7f6effad8ec2390ebfd035b448cd2caaf22",
+        "afterStateSha256": "51dd317c96dcbef9cf70ba1c8ec3e7fc4d9749d28974472d069e9585d5789027",
+        "receipt": {
+          "kind": "search_city",
+          "state": {
+            "turn": 1,
+            "rngSeed": 595002220,
+            "campaignStarted": true,
+            "actedOfficerIds": [
+              "officer-1"
+            ],
+            "discoveredOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 30000,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 30000,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-1",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 92,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "曹操在濮阳搜得金钱 34。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "51dd317c96dcbef9cf70ba1c8ec3e7fc4d9749d28974472d069e9585d5789027"
+    },
+    {
+      "id": "explicit-recruit-failure",
+      "patches": [
+        {
+          "path": [
+            "discoveredOfficerIds"
+          ],
+          "value": [
+            "officer-126"
+          ]
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "intelligence"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-007",
+        "expectedStateSha256": "5a78ed93a78a6f12d95b095733ff154e2064fe7ff7007eeb456ee05df5690f90",
+        "kind": "recruit_free_officer",
+        "parameters": {
+          "cityId": "city-12",
+          "executorOfficerId": "officer-1",
+          "targetOfficerId": "officer-126"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-007",
+        "kind": "recruit_free_officer",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "5a78ed93a78a6f12d95b095733ff154e2064fe7ff7007eeb456ee05df5690f90",
+        "afterStateSha256": "5fcab1caa2fbf778cd0b0dfd5147024ae345b0d56d61f2b2ba29c519abb3eb10",
+        "receipt": {
+          "kind": "recruit_free_officer",
+          "state": {
+            "turn": 1,
+            "rngSeed": 1015568748,
+            "campaignStarted": true,
+            "actedOfficerIds": [
+              "officer-1"
+            ],
+            "discoveredOfficerIds": [
+              "officer-126"
+            ],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-1",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 92,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            },
+            {
+              "id": "officer-126",
+              "before": {
+                "status": "free",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 0,
+                "stamina": 100,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "free",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 0,
+                "stamina": 100,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "曹操劝说郭嘉出仕，但对方暂未应允。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "5fcab1caa2fbf778cd0b0dfd5147024ae345b0d56d61f2b2ba29c519abb3eb10"
+    },
+    {
+      "id": "surrender-intelligence-gate-failure",
+      "patches": [
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "status"
+          ],
+          "value": "captive"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "cityId"
+          ],
+          "value": "city-12"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "captorFactionId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "formerFactionId"
+          ],
+          "value": "ruler-0"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "loyalty"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "intelligence"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "intelligence"
+          ],
+          "value": 255
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-008",
+        "expectedStateSha256": "35482ca2f1ba54103ebb8e90121594066b7b4e33b79d6f0a22fd5d423062907d",
+        "kind": "recruit_captive",
+        "parameters": {
+          "cityId": "city-12",
+          "executorOfficerId": "officer-32",
+          "captiveOfficerId": "officer-30"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-008",
+        "kind": "recruit_captive",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "35482ca2f1ba54103ebb8e90121594066b7b4e33b79d6f0a22fd5d423062907d",
+        "afterStateSha256": "ce37fd84f84fb19936a74e57327cac448f3efb38d3870e82e8c1f75f0e8ee158",
+        "receipt": {
+          "kind": "recruit_captive",
+          "state": {
+            "turn": 1,
+            "rngSeed": 373686124,
+            "campaignStarted": true,
+            "actedOfficerIds": [
+              "officer-32"
+            ],
+            "discoveredOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 35,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-32",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 94,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 94,
+                "stamina": 85,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            },
+            {
+              "id": "officer-30",
+              "before": {
+                "status": "captive",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": "ruler-1",
+                "formerFactionId": "ruler-0",
+                "loyalty": 50,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "captive",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": "ruler-1",
+                "formerFactionId": "ruler-0",
+                "loyalty": 50,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "夏侯惇招降王允未果，未能动摇其忠诚。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "ce37fd84f84fb19936a74e57327cac448f3efb38d3870e82e8c1f75f0e8ee158"
+    },
+    {
+      "id": "surrender-high-loyalty-reduction",
+      "patches": [
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "status"
+          ],
+          "value": "captive"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "cityId"
+          ],
+          "value": "city-12"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "captorFactionId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "formerFactionId"
+          ],
+          "value": "ruler-0"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "loyalty"
+          ],
+          "value": 90
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "intelligence"
+          ],
+          "value": 255
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "intelligence"
+          ],
+          "value": 0
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-009",
+        "expectedStateSha256": "c8798600205f7b44a5d6456f3c482e16a2870e85c8fb8255a018b0d316501868",
+        "kind": "recruit_captive",
+        "parameters": {
+          "cityId": "city-12",
+          "executorOfficerId": "officer-32",
+          "captiveOfficerId": "officer-30"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-009",
+        "kind": "recruit_captive",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "c8798600205f7b44a5d6456f3c482e16a2870e85c8fb8255a018b0d316501868",
+        "afterStateSha256": "a14969ba7d998f108a858a2f3ad3d4bf296ed5fb1f45fbd3b18776581d0b8038",
+        "receipt": {
+          "kind": "recruit_captive",
+          "state": {
+            "turn": 1,
+            "rngSeed": 373686124,
+            "campaignStarted": true,
+            "actedOfficerIds": [
+              "officer-32"
+            ],
+            "discoveredOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 35,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-32",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 94,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 94,
+                "stamina": 85,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            },
+            {
+              "id": "officer-30",
+              "before": {
+                "status": "captive",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": "ruler-1",
+                "formerFactionId": "ruler-0",
+                "loyalty": 90,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "captive",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": "ruler-1",
+                "formerFactionId": "ruler-0",
+                "loyalty": 81,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "夏侯惇招降王允未果，其旧部忠诚降至 81。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "a14969ba7d998f108a858a2f3ad3d4bf296ed5fb1f45fbd3b18776581d0b8038"
+    },
+    {
+      "id": "surrender-effective-intelligence-equipment-flip",
+      "patches": [
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "status"
+          ],
+          "value": "captive"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "cityId"
+          ],
+          "value": "city-12"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "captorFactionId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "formerFactionId"
+          ],
+          "value": "ruler-0"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "loyalty"
+          ],
+          "value": 90
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 707
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "intelligence"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "intelligence"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-4",
+            "equipmentItemIds"
+          ],
+          "value": [
+            "item-10"
+          ]
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "equipmentItemIds"
+          ],
+          "value": [
+            "item-13"
+          ]
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-010",
+        "expectedStateSha256": "d99257fce04a07c54699652c4c392823c520802a68ffc95a6644e27dc96d9a0a",
+        "kind": "recruit_captive",
+        "parameters": {
+          "cityId": "city-12",
+          "executorOfficerId": "officer-32",
+          "captiveOfficerId": "officer-30"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-010",
+        "kind": "recruit_captive",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "d99257fce04a07c54699652c4c392823c520802a68ffc95a6644e27dc96d9a0a",
+        "afterStateSha256": "11d5b8b0cd96e66f6ea60c3a085432b9960ded8171e0c8680b1eedeb7bb7f0cd",
+        "receipt": {
+          "kind": "recruit_captive",
+          "state": {
+            "turn": 1,
+            "rngSeed": 2190723398,
+            "campaignStarted": true,
+            "actedOfficerIds": [
+              "officer-32"
+            ],
+            "discoveredOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 35,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-32",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 94,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [
+                  "item-13"
+                ],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 94,
+                "stamina": 85,
+                "troops": 100,
+                "equipmentItemIds": [
+                  "item-13"
+                ],
+                "death": null
+              }
+            },
+            {
+              "id": "officer-30",
+              "before": {
+                "status": "captive",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": "ruler-1",
+                "formerFactionId": "ruler-0",
+                "loyalty": 90,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "captive",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": "ruler-1",
+                "formerFactionId": "ruler-0",
+                "loyalty": 81,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "夏侯惇招降王允未果，其旧部忠诚降至 81。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "11d5b8b0cd96e66f6ea60c3a085432b9960ded8171e0c8680b1eedeb7bb7f0cd"
+    },
+    {
+      "id": "surrender-character-resistance-two-draw-failure",
+      "patches": [
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "status"
+          ],
+          "value": "captive"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "cityId"
+          ],
+          "value": "city-12"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "captorFactionId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "formerFactionId"
+          ],
+          "value": "ruler-0"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "loyalty"
+          ],
+          "value": 60
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "intelligence"
+          ],
+          "value": 255
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "intelligence"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "character"
+          ],
+          "value": 4
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-011",
+        "expectedStateSha256": "0f083408fe5aef00d5a26cff91e530875ee9532d114c3e0a4c78b52990c2b78a",
+        "kind": "recruit_captive",
+        "parameters": {
+          "cityId": "city-12",
+          "executorOfficerId": "officer-32",
+          "captiveOfficerId": "officer-30"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-011",
+        "kind": "recruit_captive",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "0f083408fe5aef00d5a26cff91e530875ee9532d114c3e0a4c78b52990c2b78a",
+        "afterStateSha256": "24eaa83b28cae80b53682769c6a257c7f53c8fc3dd025409b5608d91f941df64",
+        "receipt": {
+          "kind": "recruit_captive",
+          "state": {
+            "turn": 1,
+            "rngSeed": 1586005467,
+            "campaignStarted": true,
+            "actedOfficerIds": [
+              "officer-32"
+            ],
+            "discoveredOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 35,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-32",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 94,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 94,
+                "stamina": 85,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            },
+            {
+              "id": "officer-30",
+              "before": {
+                "status": "captive",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": "ruler-1",
+                "formerFactionId": "ruler-0",
+                "loyalty": 60,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "captive",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": "ruler-1",
+                "formerFactionId": "ruler-0",
+                "loyalty": 54,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "夏侯惇招降王允未果，其旧部忠诚降至 54。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "24eaa83b28cae80b53682769c6a257c7f53c8fc3dd025409b5608d91f941df64"
+    },
+    {
+      "id": "modern-surrender-cost",
+      "patches": [
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "status"
+          ],
+          "value": "captive"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "cityId"
+          ],
+          "value": "city-12"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "captorFactionId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "formerFactionId"
+          ],
+          "value": "ruler-0"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "loyalty"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "rulesetId"
+          ],
+          "value": "modern-balanced-v1"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "intelligence"
+          ],
+          "value": 255
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-012",
+        "expectedStateSha256": "d617f31305c0d285673c4967be11811b40a9790556308e5042f0167f19b3b196",
+        "kind": "recruit_captive",
+        "parameters": {
+          "cityId": "city-12",
+          "executorOfficerId": "officer-32",
+          "captiveOfficerId": "officer-30"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-012",
+        "kind": "recruit_captive",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "d617f31305c0d285673c4967be11811b40a9790556308e5042f0167f19b3b196",
+        "afterStateSha256": "01092c6cea08d78ce493530fcbc8c82457d3399a93a033147d214afc5cff93c1",
+        "receipt": {
+          "kind": "recruit_captive",
+          "state": {
+            "turn": 1,
+            "rngSeed": 3069220734,
+            "campaignStarted": true,
+            "actedOfficerIds": [
+              "officer-32"
+            ],
+            "discoveredOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-32",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 94,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 94,
+                "stamina": 96,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            },
+            {
+              "id": "officer-30",
+              "before": {
+                "status": "captive",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": "ruler-1",
+                "formerFactionId": "ruler-0",
+                "loyalty": 0,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 68,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "夏侯惇说服王允归顺，忠诚为 68。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "01092c6cea08d78ce493530fcbc8c82457d3399a93a033147d214afc5cff93c1"
+    },
+    {
+      "id": "release-captive",
+      "patches": [
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "status"
+          ],
+          "value": "captive"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "cityId"
+          ],
+          "value": "city-12"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "captorFactionId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "formerFactionId"
+          ],
+          "value": "ruler-0"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "loyalty"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "stamina"
+          ],
+          "value": 0
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-013",
+        "expectedStateSha256": "3e520c29c261cc6326c640101e8a5212e7bb988c48a2022c781d1facc95e7d96",
+        "kind": "release_captive",
+        "parameters": {
+          "cityId": "city-12",
+          "captiveOfficerId": "officer-30"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-013",
+        "kind": "release_captive",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "3e520c29c261cc6326c640101e8a5212e7bb988c48a2022c781d1facc95e7d96",
+        "afterStateSha256": "32b86228246d4e016d396c739db877e6b8670df6a63a111035f6a995e61a2195",
+        "receipt": {
+          "kind": "release_captive",
+          "state": {
+            "turn": 1,
+            "rngSeed": 48641,
+            "campaignStarted": true,
+            "actedOfficerIds": [],
+            "discoveredOfficerIds": [
+              "officer-30"
+            ],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-30",
+              "before": {
+                "status": "captive",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": "ruler-1",
+                "formerFactionId": "ruler-0",
+                "loyalty": 50,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "free",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 50,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "释放王允，其成为濮阳在野人物。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "32b86228246d4e016d396c739db877e6b8670df6a63a111035f6a995e61a2195"
+    },
+    {
+      "id": "execute-equipped-captive",
+      "patches": [
+        {
+          "path": [
+            "officers",
+            "officer-20",
+            "status"
+          ],
+          "value": "captive"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-20",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-20",
+            "cityId"
+          ],
+          "value": "city-12"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-20",
+            "captorFactionId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-20",
+            "formerFactionId"
+          ],
+          "value": "ruler-0"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-20",
+            "loyalty"
+          ],
+          "value": 95
+        },
+        {
+          "path": [
+            "officers",
+            "officer-20",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-20",
+            "stamina"
+          ],
+          "value": 0
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-014",
+        "expectedStateSha256": "009d8e25666846fea03b98c222af789ea6185f683cd26f84980594ddad027421",
+        "kind": "execute_captive",
+        "parameters": {
+          "cityId": "city-12",
+          "captiveOfficerId": "officer-20"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-014",
+        "kind": "execute_captive",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "009d8e25666846fea03b98c222af789ea6185f683cd26f84980594ddad027421",
+        "afterStateSha256": "289a503ec5692faec5c9735a58ab3eb4a59474394daa89127bd96f589a32039e",
+        "receipt": {
+          "kind": "execute_captive",
+          "state": {
+            "turn": 1,
+            "rngSeed": 373686124,
+            "campaignStarted": true,
+            "actedOfficerIds": [],
+            "discoveredOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [
+                "item-0",
+                "item-22"
+              ],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-20",
+              "before": {
+                "status": "captive",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": "ruler-1",
+                "formerFactionId": "ruler-0",
+                "loyalty": 95,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [
+                  "item-0",
+                  "item-22"
+                ],
+                "death": null
+              },
+              "after": {
+                "status": "dead",
+                "factionId": "neutral",
+                "cityId": null,
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 95,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": {
+                  "cause": "execution",
+                  "turn": 1,
+                  "year": 190,
+                  "month": 1,
+                  "cityId": "city-12",
+                  "responsibleFactionId": "ruler-1"
+                }
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "处斩吕布；其装备由濮阳收存。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "289a503ec5692faec5c9735a58ab3eb4a59474394daa89127bd96f589a32039e"
+    },
+    {
+      "id": "banish-captive-stable-destination",
+      "patches": [
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "status"
+          ],
+          "value": "captive"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "cityId"
+          ],
+          "value": "city-12"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "captorFactionId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "formerFactionId"
+          ],
+          "value": "ruler-0"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "loyalty"
+          ],
+          "value": 35
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-015",
+        "expectedStateSha256": "c3c6562ca43ab52f77708caa05ec2017af333526791b2c1aabb9de98c3afca12",
+        "kind": "banish_officer",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-30"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-015",
+        "kind": "banish_officer",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "c3c6562ca43ab52f77708caa05ec2017af333526791b2c1aabb9de98c3afca12",
+        "afterStateSha256": "31f2801a8e4bc8afec3531b68e6421dae10c77bb1b0a652e9ec62d17bf904e9d",
+        "receipt": {
+          "kind": "banish_officer",
+          "state": {
+            "turn": 1,
+            "rngSeed": 1015568748,
+            "campaignStarted": true,
+            "actedOfficerIds": [],
+            "discoveredOfficerIds": [
+              "officer-30"
+            ],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-30",
+              "before": {
+                "status": "captive",
+                "factionId": "neutral",
+                "cityId": "city-12",
+                "captorFactionId": "ruler-1",
+                "formerFactionId": "ruler-0",
+                "loyalty": 35,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "free",
+                "factionId": "neutral",
+                "cityId": "city-8",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 35,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "流放王允，其流落至天水。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "31f2801a8e4bc8afec3531b68e6421dae10c77bb1b0a652e9ec62d17bf904e9d"
+    },
+    {
+      "id": "banish-manual-satrap-repairs-city",
+      "patches": [
+        {
+          "path": [
+            "rulesetId"
+          ],
+          "value": "modern-balanced-v1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "satrapOfficerId"
+          ],
+          "value": "officer-32"
+        },
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-016",
+        "expectedStateSha256": "9749148bd09131e09570b7c5174d99c5c7f837360d855a423f5fe4106be85adc",
+        "kind": "banish_officer",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-32"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-016",
+        "kind": "banish_officer",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "9749148bd09131e09570b7c5174d99c5c7f837360d855a423f5fe4106be85adc",
+        "afterStateSha256": "5b704e64134e6d853aee8e94cf575dc98d5dd4373734c4cd8de01252568194a4",
+        "receipt": {
+          "kind": "banish_officer",
+          "state": {
+            "turn": 1,
+            "rngSeed": 1015568748,
+            "campaignStarted": true,
+            "actedOfficerIds": [],
+            "discoveredOfficerIds": [
+              "officer-32"
+            ],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-32",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-16",
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-32",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 94,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              },
+              "after": {
+                "status": "free",
+                "factionId": "neutral",
+                "cityId": "city-8",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 94,
+                "stamina": 0,
+                "troops": 0,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "流放夏侯惇，其流落至天水。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "5b704e64134e6d853aee8e94cf575dc98d5dd4373734c4cd8de01252568194a4"
+    },
+    {
+      "id": "confiscate-non-ruler-equipment",
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-20"
+          ]
+        },
+        {
+          "path": [
+            "officers",
+            "officer-34",
+            "equipmentItemIds"
+          ],
+          "value": [
+            "item-16"
+          ]
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-017",
+        "expectedStateSha256": "4b7057886810248ffb1532e3b48f28f909dbcfd0f1d22311fe41920eeaa91e4d",
+        "kind": "confiscate_equipment",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-34",
+          "itemId": "item-16"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-017",
+        "kind": "confiscate_equipment",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "4b7057886810248ffb1532e3b48f28f909dbcfd0f1d22311fe41920eeaa91e4d",
+        "afterStateSha256": "7f38823305caa4429f4e1c9268daecfaa6dfd430ff42ff3be055d54096d26b1e",
+        "receipt": {
+          "kind": "confiscate_equipment",
+          "state": {
+            "turn": 1,
+            "rngSeed": 373686124,
+            "campaignStarted": true,
+            "actedOfficerIds": [],
+            "discoveredOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [
+                "item-16"
+              ],
+              "hiddenItemIds": [
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-34",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 85,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [
+                  "item-16"
+                ],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 65,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "没收李典的吴子兵法，装备收入濮阳；忠诚降至 65。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "7f38823305caa4429f4e1c9268daecfaa6dfd430ff42ff3be055d54096d26b1e"
+    },
+    {
+      "id": "confiscate-player-ruler-preserves-seed",
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-20"
+          ]
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "equipmentItemIds"
+          ],
+          "value": [
+            "item-16"
+          ]
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-018",
+        "expectedStateSha256": "60a973f2e483f253b74ceb7f1b0a59cf3c92cc764de62078a72815b98afb3f97",
+        "kind": "confiscate_equipment",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-1",
+          "itemId": "item-16"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-018",
+        "kind": "confiscate_equipment",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "60a973f2e483f253b74ceb7f1b0a59cf3c92cc764de62078a72815b98afb3f97",
+        "afterStateSha256": "f5564aa4713f59a9b3f2eaca435c66de810add01de0d5374a9489a56a11f1c91",
+        "receipt": {
+          "kind": "confiscate_equipment",
+          "state": {
+            "turn": 1,
+            "rngSeed": 48641,
+            "campaignStarted": true,
+            "actedOfficerIds": [],
+            "discoveredOfficerIds": [],
+            "logCount": 2
+          },
+          "city": {
+            "id": "city-12",
+            "before": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [],
+              "hiddenItemIds": [
+                "item-20"
+              ]
+            },
+            "after": {
+              "farming": 1238,
+              "commerce": 1223,
+              "money": 135,
+              "food": 309,
+              "satrapOfficerId": "officer-1",
+              "itemIds": [
+                "item-16"
+              ],
+              "hiddenItemIds": [
+                "item-20"
+              ]
+            }
+          },
+          "officers": [
+            {
+              "id": "officer-1",
+              "before": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [
+                  "item-16"
+                ],
+                "death": null
+              },
+              "after": {
+                "status": "serving",
+                "factionId": "ruler-1",
+                "cityId": "city-12",
+                "captorFactionId": null,
+                "formerFactionId": null,
+                "loyalty": 100,
+                "stamina": 100,
+                "troops": 100,
+                "equipmentItemIds": [],
+                "death": null
+              }
+            }
+          ],
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "没收曹操的吴子兵法，装备收入濮阳。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "f5564aa4713f59a9b3f2eaca435c66de810add01de0d5374a9489a56a11f1c91"
+    },
+    {
+      "id": "ruler-banish-rejected",
+      "patches": [],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-019",
+        "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "kind": "banish_officer",
+        "parameters": {
+          "cityId": "city-12",
+          "officerId": "officer-1"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-019",
+        "kind": "banish_officer",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "不能流放当前君主",
+        "stateChanged": false,
+        "beforeStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "afterStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "receipt": {}
+      },
+      "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38"
+    },
+    {
+      "id": "sorted-personnel-parameter-error",
+      "patches": [],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-020",
+        "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "kind": "recruit_captive",
+        "parameters": {
+          "cityId": "city-12",
+          "executorOfficerId": "officer-32",
+          "captiveOfficerId": "officer-30",
+          "𐀀": true,
+          "": true
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-020",
+        "kind": "recruit_captive",
+        "ok": false,
+        "code": "invalid_parameters",
+        "error": "unknown recruit_captive parameter: ",
+        "stateChanged": false,
+        "beforeStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "afterStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "receipt": {}
+      },
+      "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38"
+    },
+    {
+      "id": "missing-captive-precedes-blank-city",
+      "patches": [],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-021",
+        "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "kind": "recruit_captive",
+        "parameters": {
+          "cityId": "",
+          "executorOfficerId": "officer-32"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb07-boundary-021",
+        "kind": "recruit_captive",
+        "ok": false,
+        "code": "invalid_parameters",
+        "error": "captiveOfficerId is required",
+        "stateChanged": false,
+        "beforeStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "afterStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "receipt": {}
+      },
+      "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38"
+    }
+  ],
   "validationCases": [
     {
       "id": "unsafe-city-money",
@@ -90685,6 +94139,140 @@
       ],
       "expectedPath": "cities.city-12.money",
       "expectedMessage": "must be a non-negative safe integer"
+    },
+    {
+      "id": "captive-former-faction-cannot-be-captor",
+      "patches": [
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "status"
+          ],
+          "value": "captive"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "cityId"
+          ],
+          "value": "city-12"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "captorFactionId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "formerFactionId"
+          ],
+          "value": "ruler-0"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "loyalty"
+          ],
+          "value": 35
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "formerFactionId"
+          ],
+          "value": "ruler-1"
+        }
+      ],
+      "expectedPath": "officers.officer-30.formerFactionId",
+      "expectedMessage": "captive officer cannot be held by their former faction"
+    },
+    {
+      "id": "dead-officer-requires-death-record",
+      "patches": [
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "status"
+          ],
+          "value": "dead"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "cityId"
+          ],
+          "value": null
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-30",
+            "equipmentItemIds"
+          ],
+          "value": []
+        }
+      ],
+      "expectedPath": "officers.officer-30.death",
+      "expectedMessage": "dead officer must retain a death record"
     }
   ],
   "modernRulesetCase": {

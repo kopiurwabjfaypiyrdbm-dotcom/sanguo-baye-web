@@ -5,7 +5,9 @@ import { spawnSync } from 'node:child_process';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const project = resolve(root, 'godot');
-const exactEngine = 'D:\\03_Godot\\01_Engine\\Godot_v4.7.1-stable_win64_console.exe';
+// The 4.7.1 console launcher can crash in Windows headless startup while the
+// paired engine binary is stable. Both report the same official engine build.
+const exactEngine = 'D:\\03_Godot\\01_Engine\\Godot_v4.7.1-stable_win64.exe';
 const engine = process.env.GODOT_BIN || (existsSync(exactEngine) ? exactEngine : 'godot');
 const runtime = resolve(project, '.godot/runtime');
 const paths = {

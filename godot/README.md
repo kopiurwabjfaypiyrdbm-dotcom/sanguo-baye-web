@@ -31,8 +31,8 @@ tests/               领域/存档断言与表现输入烟测
 
 ```powershell
 npm run godot:spike-data
-& 'D:\03_Godot\01_Engine\Godot_v4.7.1-stable_win64_console.exe' --headless --path godot --script res://tests/run_all.gd
-& 'D:\03_Godot\01_Engine\Godot_v4.7.1-stable_win64_console.exe' --headless --path godot --script res://tests/presentation_input_smoke.gd
+& 'D:\03_Godot\01_Engine\Godot_v4.7.1-stable_win64.exe' --headless --path godot --script res://tests/run_all.gd
+& 'D:\03_Godot\01_Engine\Godot_v4.7.1-stable_win64.exe' --headless --path godot --script res://tests/presentation_input_smoke.gd
 ```
 
 打开编辑器或直接运行主场景：
@@ -47,7 +47,7 @@ npm run godot:spike-data
 安装 Godot 4.7.1 Android export templates，并在编辑器设置中配置 Android SDK 与 JDK 17 后，可导出本地 Debug APK：
 
 ```powershell
-& 'D:\03_Godot\01_Engine\Godot_v4.7.1-stable_win64_console.exe' --headless --path godot --export-debug 'Android Debug' builds/sanguo-baye-godot-spike-debug.apk
+& 'D:\03_Godot\01_Engine\Godot_v4.7.1-stable_win64.exe' --headless --path godot --export-debug 'Android Debug' builds/sanguo-baye-godot-spike-debug.apk
 ```
 
 `godot/builds/` 被 Git 忽略；APK 是本地验收产物，不是发布包。

@@ -30,7 +30,8 @@ if (writeMode) {
 function transactionCaseCount(value: ReturnType<typeof buildFixture>) {
   return value.steps.length + value.internalAffairsSequence.steps.length
     + value.internalAffairsBoundaryCases.length + value.officerManagementSequence.steps.length
-    + value.officerManagementBoundaryCases.length + value.validationCases.length;
+    + value.officerManagementBoundaryCases.length + value.personnelLifecycleSequence.steps.length
+    + value.personnelLifecycleBoundaryCases.length + value.validationCases.length;
 }
 
 export function buildFixture() {
@@ -127,9 +128,207 @@ export function buildFixture() {
     internalAffairsBoundaryCases: buildInternalAffairsBoundaryCases(),
     officerManagementSequence: buildOfficerManagementSequence(),
     officerManagementBoundaryCases: buildOfficerManagementBoundaryCases(),
+    personnelLifecycleSequence: buildPersonnelLifecycleSequence(),
+    personnelLifecycleBoundaryCases: buildPersonnelLifecycleBoundaryCases(),
     validationCases: buildValidationCases(),
     modernRulesetCase: buildModernRulesetCase(),
   };
+}
+
+function buildPersonnelLifecycleSequence() {
+  const initialState = createProductionSessionState(1, 1);
+  const initialPatches: StatePatch[] = [
+    { path: ['discoveredOfficerIds'], value: ['officer-126'] },
+    ...captivePatches('officer-30', 0),
+    { path: ['officers', 'officer-33', 'intelligence'], value: 255 },
+  ];
+  applyStatePatches(initialState as unknown as Record<string, unknown>, initialPatches);
+  const session = new OracleApplicationSession(initialState);
+  const steps: { id: string; command: ApplicationCommandEnvelope; expectedCore: unknown }[] = [];
+  let serial = 1;
+  const apply = (id: string, kind: string, parameters: Record<string, unknown>) => {
+    const command: ApplicationCommandEnvelope = {
+      commandEnvelopeVersion: 1,
+      commandId: `mb07-${String(serial).padStart(4, '0')}`,
+      expectedStateSha256: canonicalSha256(session.snapshot()),
+      kind,
+      parameters,
+    };
+    serial += 1;
+    const { state: _stateEvidence, ...expectedCore } = session.execute(command);
+    steps.push({ id, command, expectedCore });
+  };
+  apply('explicit-recruit-attempt', 'recruit_free_officer', {
+    cityId: 'city-12', executorOfficerId: 'officer-1', targetOfficerId: 'officer-126',
+  });
+  apply('search-real-city', 'search_city', { cityId: 'city-12', officerId: 'officer-32' });
+  apply('captive-surrender-success', 'recruit_captive', {
+    cityId: 'city-12', executorOfficerId: 'officer-33', captiveOfficerId: 'officer-30',
+  });
+  apply('banish-recruited-captive', 'banish_officer', {
+    cityId: 'city-12', officerId: 'officer-30',
+  });
+  return {
+    initialPatches,
+    initialStateSha256: canonicalSha256(initialState),
+    steps,
+    finalStateSha256: canonicalSha256(session.snapshot()),
+  };
+}
+
+function buildPersonnelLifecycleBoundaryCases() {
+  const cases: unknown[] = [];
+  let serial = 1;
+  const add = (
+    id: string,
+    kind: string,
+    parameters: Record<string, unknown>,
+    patches: StatePatch[],
+  ) => {
+    const input = createProductionSessionState(1, 1);
+    applyStatePatches(input as unknown as Record<string, unknown>, patches);
+    const session = new OracleApplicationSession(input);
+    const command: ApplicationCommandEnvelope = {
+      commandEnvelopeVersion: 1,
+      commandId: `mb07-boundary-${String(serial).padStart(3, '0')}`,
+      expectedStateSha256: canonicalSha256(input),
+      kind,
+      parameters,
+    };
+    serial += 1;
+    const expected = session.execute(command);
+    const { state: _stateEvidence, ...expectedCore } = expected;
+    cases.push({ id, patches, command, expectedCore, expectedStateSha256: canonicalSha256(expected.state) });
+  };
+  add('search-direct-recruit-branch', 'search_city', {
+    cityId: 'city-12', officerId: 'officer-1',
+  }, [{ path: ['rngSeed'], value: 43 }]);
+  add('search-hidden-item-branch', 'search_city', {
+    cityId: 'city-12', officerId: 'officer-1',
+  }, [{ path: ['rngSeed'], value: 42 }]);
+  add('search-no-result-branch', 'search_city', {
+    cityId: 'city-12', officerId: 'officer-1',
+  }, [{ path: ['rngSeed'], value: 1 }]);
+  add('search-food-branch', 'search_city', {
+    cityId: 'city-12', officerId: 'officer-1',
+  }, [{ path: ['rngSeed'], value: 1327 }]);
+  add('search-discovery-recruit-failure', 'search_city', {
+    cityId: 'city-12', officerId: 'officer-1',
+  }, [
+    { path: ['rngSeed'], value: 53 },
+    { path: ['officers', 'officer-1', 'intelligence'], value: 20 },
+  ]);
+  add('search-money-soft-cap', 'search_city', {
+    cityId: 'city-12', officerId: 'officer-1',
+  }, [
+    { path: ['rngSeed'], value: 682 },
+    { path: ['cities', 'city-12', 'money'], value: 30_000 },
+  ]);
+  add('explicit-recruit-failure', 'recruit_free_officer', {
+    cityId: 'city-12', executorOfficerId: 'officer-1', targetOfficerId: 'officer-126',
+  }, [
+    { path: ['discoveredOfficerIds'], value: ['officer-126'] },
+    { path: ['officers', 'officer-1', 'intelligence'], value: 0 },
+    { path: ['rngSeed'], value: 1 },
+  ]);
+  add('surrender-intelligence-gate-failure', 'recruit_captive', {
+    cityId: 'city-12', executorOfficerId: 'officer-32', captiveOfficerId: 'officer-30',
+  }, [
+    ...captivePatches('officer-30', 50),
+    { path: ['officers', 'officer-32', 'intelligence'], value: 0 },
+    { path: ['officers', 'officer-30', 'intelligence'], value: 255 },
+  ]);
+  add('surrender-high-loyalty-reduction', 'recruit_captive', {
+    cityId: 'city-12', executorOfficerId: 'officer-32', captiveOfficerId: 'officer-30',
+  }, [
+    ...captivePatches('officer-30', 90),
+    { path: ['officers', 'officer-32', 'intelligence'], value: 255 },
+    { path: ['officers', 'officer-30', 'intelligence'], value: 0 },
+  ]);
+  add('surrender-effective-intelligence-equipment-flip', 'recruit_captive', {
+    cityId: 'city-12', executorOfficerId: 'officer-32', captiveOfficerId: 'officer-30',
+  }, [
+    ...captivePatches('officer-30', 90),
+    { path: ['rngSeed'], value: 707 },
+    { path: ['officers', 'officer-32', 'intelligence'], value: 50 },
+    { path: ['officers', 'officer-30', 'intelligence'], value: 50 },
+    { path: ['officers', 'officer-4', 'equipmentItemIds'], value: ['item-10'] },
+    { path: ['officers', 'officer-32', 'equipmentItemIds'], value: ['item-13'] },
+  ]);
+  add('surrender-character-resistance-two-draw-failure', 'recruit_captive', {
+    cityId: 'city-12', executorOfficerId: 'officer-32', captiveOfficerId: 'officer-30',
+  }, [
+    ...captivePatches('officer-30', 60),
+    { path: ['rngSeed'], value: 1 },
+    { path: ['officers', 'officer-32', 'intelligence'], value: 255 },
+    { path: ['officers', 'officer-30', 'intelligence'], value: 0 },
+    { path: ['officers', 'officer-30', 'character'], value: 4 },
+  ]);
+  add('modern-surrender-cost', 'recruit_captive', {
+    cityId: 'city-12', executorOfficerId: 'officer-32', captiveOfficerId: 'officer-30',
+  }, [
+    ...captivePatches('officer-30', 0),
+    { path: ['rulesetId'], value: 'modern-balanced-v1' },
+    { path: ['officers', 'officer-32', 'intelligence'], value: 255 },
+  ]);
+  add('release-captive', 'release_captive', {
+    cityId: 'city-12', captiveOfficerId: 'officer-30',
+  }, captivePatches('officer-30', 50));
+  add('execute-equipped-captive', 'execute_captive', {
+    cityId: 'city-12', captiveOfficerId: 'officer-20',
+  }, captivePatches('officer-20', 95));
+  add('banish-captive-stable-destination', 'banish_officer', {
+    cityId: 'city-12', officerId: 'officer-30',
+  }, [...captivePatches('officer-30', 35), { path: ['rngSeed'], value: 1 }]);
+  add('banish-manual-satrap-repairs-city', 'banish_officer', {
+    cityId: 'city-12', officerId: 'officer-32',
+  }, [
+    { path: ['rulesetId'], value: 'modern-balanced-v1' },
+    { path: ['cities', 'city-12', 'satrapOfficerId'], value: 'officer-32' },
+    { path: ['rngSeed'], value: 1 },
+  ]);
+  add('confiscate-non-ruler-equipment', 'confiscate_equipment', {
+    cityId: 'city-12', officerId: 'officer-34', itemId: 'item-16',
+  }, equipmentPatches('officer-34', 'item-16'));
+  add('confiscate-player-ruler-preserves-seed', 'confiscate_equipment', {
+    cityId: 'city-12', officerId: 'officer-1', itemId: 'item-16',
+  }, equipmentPatches('officer-1', 'item-16'));
+  add('ruler-banish-rejected', 'banish_officer', {
+    cityId: 'city-12', officerId: 'officer-1',
+  }, []);
+  add('sorted-personnel-parameter-error', 'recruit_captive', {
+    cityId: 'city-12', executorOfficerId: 'officer-32', captiveOfficerId: 'officer-30',
+    ['\u{10000}']: true, ['\ue000']: true,
+  }, []);
+  add('missing-captive-precedes-blank-city', 'recruit_captive', {
+    cityId: '', executorOfficerId: 'officer-32',
+  }, []);
+  return cases;
+}
+
+function captivePatches(officerId: string, loyalty: number): StatePatch[] {
+  const initial = createProductionSessionState(1, 1).officers[officerId];
+  return [
+    { path: ['officers', officerId, 'status'], value: 'captive' },
+    { path: ['officers', officerId, 'factionId'], value: 'neutral' },
+    { path: ['officers', officerId, 'cityId'], value: 'city-12' },
+    { path: ['officers', officerId, 'captorFactionId'], value: 'ruler-1' },
+    { path: ['officers', officerId, 'formerFactionId'], value: initial.factionId },
+    { path: ['officers', officerId, 'loyalty'], value: loyalty },
+    { path: ['officers', officerId, 'troops'], value: 0 },
+    { path: ['officers', officerId, 'stamina'], value: 0 },
+  ];
+}
+
+function equipmentPatches(officerId: string, itemId: string): StatePatch[] {
+  const state = createProductionSessionState(1, 1);
+  return [
+    {
+      path: ['cities', 'city-12', 'hiddenItemIds'],
+      value: (state.cities['city-12'].hiddenItemIds ?? []).filter((candidate) => candidate !== itemId),
+    },
+    { path: ['officers', officerId, 'equipmentItemIds'], value: [itemId] },
+  ];
 }
 
 function buildOfficerManagementSequence() {
@@ -339,12 +538,36 @@ function buildInternalAffairsBoundaryCases() {
 }
 
 function buildValidationCases() {
-  return [{
-    id: 'unsafe-city-money',
-    patches: [{ path: ['cities', 'city-12', 'money'], value: '9007199254740992' }],
-    expectedPath: 'cities.city-12.money',
-    expectedMessage: 'must be a non-negative safe integer',
-  }];
+  return [
+    {
+      id: 'unsafe-city-money',
+      patches: [{ path: ['cities', 'city-12', 'money'], value: '9007199254740992' }],
+      expectedPath: 'cities.city-12.money',
+      expectedMessage: 'must be a non-negative safe integer',
+    },
+    {
+      id: 'captive-former-faction-cannot-be-captor',
+      patches: [
+        ...captivePatches('officer-30', 35),
+        { path: ['officers', 'officer-30', 'formerFactionId'], value: 'ruler-1' },
+      ],
+      expectedPath: 'officers.officer-30.formerFactionId',
+      expectedMessage: 'captive officer cannot be held by their former faction',
+    },
+    {
+      id: 'dead-officer-requires-death-record',
+      patches: [
+        { path: ['officers', 'officer-30', 'status'], value: 'dead' },
+        { path: ['officers', 'officer-30', 'factionId'], value: 'neutral' },
+        { path: ['officers', 'officer-30', 'cityId'], value: null },
+        { path: ['officers', 'officer-30', 'troops'], value: 0 },
+        { path: ['officers', 'officer-30', 'stamina'], value: 0 },
+        { path: ['officers', 'officer-30', 'equipmentItemIds'], value: [] },
+      ],
+      expectedPath: 'officers.officer-30.death',
+      expectedMessage: 'dead officer must retain a death record',
+    },
+  ];
 }
 
 function applyStatePatches(target: Record<string, unknown>, patches: StatePatch[]) {

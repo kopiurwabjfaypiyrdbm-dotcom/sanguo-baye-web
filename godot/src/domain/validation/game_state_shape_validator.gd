@@ -27,7 +27,9 @@ const ALLOWED: Dictionary = {
 		"id", "sourceId", "name", "age", "force", "intelligence", "leadership", "character",
 		"factionId", "cityId", "status", "loyalty", "stamina", "level", "experience", "troops",
 		"armsTypeId", "equipmentItemIds", "appearanceYear", "appearanceCityId",
+		"captorFactionId", "formerFactionId", "death",
 	],
+	"death": ["cause", "turn", "year", "month", "cityId", "responsibleFactionId"],
 	"item": [
 		"id", "sourceId", "name", "forceBonus", "intelligenceBonus", "moveBonus",
 		"armsTypeOverride", "appearanceYear", "appearanceCityId",
@@ -49,6 +51,20 @@ static func validate(state: Dictionary) -> Array[Dictionary]:
 	_validate_record(state.get("factions"), ALLOWED["faction"], "factions", issues)
 	_validate_record(state.get("cities"), ALLOWED["city"], "cities", issues)
 	_validate_record(state.get("officers"), ALLOWED["officer"], "officers", issues)
+	var raw_officers: Variant = state.get("officers")
+	if raw_officers is Dictionary:
+		var officers: Dictionary = raw_officers
+		var officer_ids: Array[String] = []
+		for raw_officer_id: Variant in officers.keys():
+			officer_ids.append(str(raw_officer_id))
+		officer_ids.sort()
+		for officer_id: String in officer_ids:
+			var raw_officer: Variant = officers[officer_id]
+			if raw_officer is Dictionary and (raw_officer as Dictionary).has("death"):
+				_validate_object(
+					(raw_officer as Dictionary)["death"], ALLOWED["death"],
+					"officers.%s.death" % officer_id, issues
+				)
 	_validate_record(state.get("items"), ALLOWED["item"], "items", issues)
 	_validate_record(state.get("armsTypes"), ALLOWED["armsType"], "armsTypes", issues)
 	var logs: Variant = state.get("logs")

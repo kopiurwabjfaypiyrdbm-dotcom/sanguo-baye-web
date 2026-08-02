@@ -20,6 +20,7 @@ func _run() -> void:
 	var map_camera: Camera2D = screen.get_node("%MapCamera")
 	var city_card: CityCard = screen.get_node("%CityCard")
 	var officer_panel = screen.get_node("%OfficerManagementPanel")
+	var personnel_panel = screen.get_node("%PersonnelLifecyclePanel")
 	var physical_size := Vector2i(844, 390)
 	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
 	_assert_equal(map_world.get_ordered_city_ids().size(), 38, "main scene must render all 38 cities")
@@ -107,13 +108,99 @@ func _run() -> void:
 	officer_panel.get("_confirmation").hide()
 	_assert_equal(screen.get("_snapshot")["officers"]["officer-34"]["equipmentItemIds"], ["item-16"], "officer panel must give an ordered equipment item")
 	_assert_equal(
-		screen.get("_session").city_query("city-12")["officerManagement"]["officers"][3]["effectiveIntelligence"],
+		screen.get("_session").officer_management_query("city-12")["officerManagement"]["officers"][3]["effectiveIntelligence"],
 		85, "officer panel query must show normal-item effective intelligence"
 	)
 	officer_panel.call("_emit_item", "unequip_item", officer_panel.get_node("%UnequipOption"))
 	_assert_equal(screen.get("_snapshot")["officers"]["officer-34"]["equipmentItemIds"], [], "officer panel must unequip the selected item")
 	_assert_equal(screen.get("_snapshot")["cities"]["city-12"]["itemIds"], ["item-16"], "unequipped item must return to city inventory")
 	screen.call("_close_officer_management")
+
+	var personnel_state: Dictionary = screen.get("_session").snapshot()
+	personnel_state["discoveredOfficerIds"] = ["officer-126"]
+	personnel_state["officers"]["officer-30"]["status"] = "captive"
+	personnel_state["officers"]["officer-30"]["factionId"] = "neutral"
+	personnel_state["officers"]["officer-30"]["cityId"] = "city-12"
+	personnel_state["officers"]["officer-30"]["captorFactionId"] = "ruler-1"
+	personnel_state["officers"]["officer-30"]["formerFactionId"] = "ruler-0"
+	personnel_state["officers"]["officer-30"]["troops"] = 0
+	personnel_state["officers"]["officer-30"]["stamina"] = 0
+	personnel_state["officers"]["officer-34"]["equipmentItemIds"] = ["item-16"]
+	personnel_state["cities"]["city-12"]["itemIds"] = []
+	_assert_true(
+		screen.get("_session").restore_snapshot(personnel_state)["ok"],
+		"presentation harness must restore valid free-officer, captive and equipment state"
+	)
+	screen.call("_refresh_snapshot", false)
+	screen.call("_open_personnel_lifecycle", "city-12")
+	_assert_true(personnel_panel.visible, "city card entry must open the native personnel-lifecycle panel")
+	_assert_true(not city_card.visible, "personnel-lifecycle panel must replace rather than overload the city card")
+	var personnel_commands: OptionButton = personnel_panel.get_node("%CommandOption")
+	_assert_equal(personnel_commands.item_count, 7, "personnel panel must expose all seven lifecycle commands")
+	var expected_personnel_order := [
+		"search_city", "recruit_free_officer", "recruit_captive", "release_captive",
+		"execute_captive", "banish_officer", "confiscate_equipment",
+	]
+	for command_index: int in range(expected_personnel_order.size()):
+		_assert_equal(
+			personnel_commands.get_item_metadata(command_index), expected_personnel_order[command_index],
+			"personnel command order must be explicit and stable at index %d" % command_index
+		)
+	personnel_panel.apply_responsive_layout(true, canvas_scale, physical_size)
+	personnel_panel.reset_size()
+	await process_frame
+	var personnel_usable := Rect2(Vector2.ZERO, Vector2(1558.0, 278.0 / canvas_scale))
+	personnel_panel.place_in(personnel_usable)
+	_assert_true(
+		personnel_panel.position.y >= personnel_usable.position.y - 1.0
+			and personnel_panel.position.y + personnel_panel.size.y <= personnel_usable.end.y + 1.0,
+		"compact personnel panel must remain above the bottom status region: panel=%s usable=%s"
+			% [personnel_panel.get_rect(), personnel_usable]
+	)
+	for control_name: String in [
+		"CloseButton", "PreviousCommand", "CommandOption", "NextCommand",
+		"TargetOption", "ExecutorOption", "ItemOption", "ExecuteButton",
+	]:
+		var control: Control = personnel_panel.get_node("%%%s" % control_name)
+		_assert_true(
+			control.custom_minimum_size.y * canvas_scale >= 47.5,
+			"compact personnel %s must retain a 48px-class physical target" % control_name
+		)
+	personnel_panel.call("_on_command_selected", 1)
+	_assert_equal(
+		personnel_panel.get_node("%TargetOption").get_item_metadata(0)["id"], "officer-126",
+		"recruit UI must preserve query-selected free-officer target"
+	)
+	personnel_panel.call("_on_command_selected", 2)
+	_assert_equal(
+		personnel_panel.get_node("%TargetOption").get_item_metadata(0)["id"], "officer-30",
+		"surrender UI must preserve query-selected captive target"
+	)
+	personnel_panel.call("_on_command_selected", 6)
+	_assert_true(
+		personnel_panel.get_node("%ItemOption").item_count > 0,
+		"confiscation UI must expose the selected officer's equipment"
+	)
+	personnel_panel.call("_on_execute_pressed")
+	var personnel_confirmation: ConfirmationDialog = personnel_panel.get("_confirmation")
+	_assert_true(personnel_confirmation.visible, "dangerous personnel action must open native confirmation")
+	_assert_true(
+		personnel_confirmation.get_ok_button().custom_minimum_size.y * canvas_scale >= 47.5,
+		"compact personnel confirmation must retain a 48px-class physical target: logical=%s scale=%s"
+			% [personnel_confirmation.get_ok_button().custom_minimum_size.y, canvas_scale]
+	)
+	personnel_confirmation.hide()
+	personnel_panel.call("_on_command_selected", 3)
+	personnel_panel.call("_on_execute_pressed")
+	_assert_equal(
+		screen.get("_snapshot")["officers"]["officer-30"]["status"], "free",
+		"personnel panel release must execute through the production transaction boundary"
+	)
+	_assert_true(
+		"officer-30" in screen.get("_snapshot")["discoveredOfficerIds"],
+		"released captive must remain visible as a discovered free officer"
+	)
+	screen.call("_close_personnel_lifecycle")
 	city_card.call("_step_command", -1)
 	_assert_equal(command_option.get_item_metadata(command_option.selected), "plunder_city", "left command control must wrap to plunder")
 	city_card.call("_on_action_pressed")
@@ -124,7 +211,7 @@ func _run() -> void:
 	var compact_card: CityCard = load("res://scenes/presentation/city_card.tscn").instantiate()
 	root.add_child(compact_card)
 	await process_frame
-	var compact_query: Dictionary = screen.get("_session").city_query("city-12")
+	var compact_query: Dictionary = screen.get("_session").internal_affairs_query("city-12")
 	compact_card.show_city(screen.get("_snapshot"), "city-12", compact_query["internalAffairs"])
 	compact_card.apply_responsive_layout(true, canvas_scale, physical_size)
 	compact_card.call("_on_command_selected", 6)

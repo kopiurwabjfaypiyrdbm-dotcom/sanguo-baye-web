@@ -4,6 +4,7 @@ extends RefCounted
 const DevelopFarmingAdapter = preload("res://src/application/commands/develop_farming_adapter.gd")
 const InternalAffairsAdapter = preload("res://src/application/commands/internal_affairs_adapter.gd")
 const OfficerManagementAdapter = preload("res://src/application/commands/officer_management_adapter.gd")
+const PersonnelLifecycleAdapter = preload("res://src/application/commands/personnel_lifecycle_adapter.gd")
 const StringContract = preload("res://src/application/commands/application_string_contract.gd")
 
 const ENVELOPE_VERSION: int = 1
@@ -22,6 +23,13 @@ const ADAPTERS: Dictionary = {
 	"appoint_satrap": {"module": OfficerManagementAdapter, "generic": true},
 	"give_item": {"module": OfficerManagementAdapter, "generic": true},
 	"unequip_item": {"module": OfficerManagementAdapter, "generic": true},
+	"search_city": {"module": PersonnelLifecycleAdapter, "generic": true},
+	"recruit_free_officer": {"module": PersonnelLifecycleAdapter, "generic": true},
+	"recruit_captive": {"module": PersonnelLifecycleAdapter, "generic": true},
+	"release_captive": {"module": PersonnelLifecycleAdapter, "generic": true},
+	"execute_captive": {"module": PersonnelLifecycleAdapter, "generic": true},
+	"banish_officer": {"module": PersonnelLifecycleAdapter, "generic": true},
+	"confiscate_equipment": {"module": PersonnelLifecycleAdapter, "generic": true},
 }
 
 
