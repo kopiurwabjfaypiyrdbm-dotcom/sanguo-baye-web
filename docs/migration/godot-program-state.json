@@ -7,9 +7,9 @@
   "roadmapPath": "docs/migration/godot-program-roadmap.json",
   "branch": "codex/godot-migration-spike",
   "status": "active",
-  "phase": "brief_pending",
+  "phase": "implementation_pending",
   "currentMissionId": "MB03",
-  "currentBriefPath": null,
+  "currentBriefPath": "docs/mission-briefs/MB03-production-domain-data-contract.md",
   "readyMissionIds": ["MB03"],
   "completedMissions": [
     {
@@ -31,7 +31,7 @@
     "commit": "9156cda",
     "date": "2026-08-02"
   },
-  "nextAction": "Use $mission-brief in a separate step to create only the MB03 production domain data contract brief, then set implementation_pending and execute it.",
+  "nextAction": "Implement MB03 by defining the production envelope and generating/validating all four periods through the existing MB02 canonical platform without expanding gameplay rules.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
