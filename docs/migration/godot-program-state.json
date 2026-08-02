@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB06",
-  "currentBriefPath": "docs/mission-briefs/MB06-officer-management-appointments-equipment.md",
-  "readyMissionIds": ["MB06"],
+  "currentMissionId": "MB07",
+  "currentBriefPath": "docs/mission-briefs/MB07-recruitment-captives-surrender-banishment.md",
+  "readyMissionIds": ["MB07"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -41,15 +41,21 @@
       "briefPath": "docs/mission-briefs/MB05-city-economy-and-development-rules.md",
       "reportPath": "docs/migration/mission-reports/MB05-city-economy-and-development-rules.md",
       "commit": "ad2f431"
+    },
+    {
+      "id": "MB06",
+      "briefPath": "docs/mission-briefs/MB06-officer-management-appointments-equipment.md",
+      "reportPath": "docs/migration/mission-reports/MB06-officer-management-appointments-equipment.md",
+      "commit": "6fbc8d6"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB05",
-    "commit": "ad2f431",
+    "missionId": "MB06",
+    "commit": "6fbc8d6",
     "date": "2026-08-03"
   },
-  "nextAction": "Implement MB06 by migrating reward, satrap appointment, item grant, and equipment removal through the production domain/application/query boundary, then expose a reusable native officer-management surface with shared deterministic fixture evidence.",
+  "nextAction": "Implement MB07 by migrating deterministic search and recruitment plus captive surrender, release, execution, banishment, and equipment confiscation through the production domain/application/query boundary, then expose safe native personnel and captive interactions with shared fixture evidence.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
