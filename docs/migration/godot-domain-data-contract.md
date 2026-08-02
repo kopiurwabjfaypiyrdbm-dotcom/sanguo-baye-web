@@ -54,4 +54,4 @@ npm run godot:domain-data:verify
 
 ## 兼容关系
 
-MB01 的 `godot/data/period-1.json` 与 `dataContractVersion: 1` 保留，主场景继续使用它，因此既有技术样片和回放证据不变。生产文件使用 version 2；`GameStateValidator` 明确接受 v1 样片初态和 v2 生产初态。MB04 应让应用层 `GameSession` 使用生产 repository，而不是删除 v1 基线。
+MB01 的 `godot/data/period-1.json` 与 `dataContractVersion: 1` 保留，旧 runner、fixture 和显式 `start_spike_period_1()` 继续使用它，因此历史技术样片证据不变。生产文件使用 version 2；`GameStateValidator` 明确接受 v1 样片初态和 v2 生产初态。自 MB04 起，主场景通过生产 `GameSession` 固定启动时期 1、曹操候选。

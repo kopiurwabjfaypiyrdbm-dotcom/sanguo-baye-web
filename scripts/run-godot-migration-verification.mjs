@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
@@ -8,9 +8,15 @@ const godotProject = resolve(root, 'godot');
 const exactWindowsEngine = 'D:\\03_Godot\\01_Engine\\Godot_v4.7.1-stable_win64_console.exe';
 const engine = process.env.GODOT_BIN
   || (existsSync(exactWindowsEngine) ? exactWindowsEngine : 'godot');
+const runtimeRoot = resolve(godotProject, '.godot/runtime');
+const appData = resolve(runtimeRoot, 'appdata');
+const localAppData = resolve(runtimeRoot, 'localappdata');
+mkdirSync(appData, { recursive: true });
+mkdirSync(localAppData, { recursive: true });
+const godotEnv = { ...process.env, APPDATA: appData, LOCALAPPDATA: localAppData };
 const common = ['--headless', '--path', godotProject, '--script', 'res://tests/migration_replay_runner.gd'];
 
-const version = spawnSync(engine, ['--version'], { cwd: root, encoding: 'utf8', timeout: 60_000 });
+const version = spawnSync(engine, ['--version'], { cwd: root, env: godotEnv, encoding: 'utf8', timeout: 60_000 });
 const versionStdout = String(version.stdout ?? '').trim();
 const versionStderr = String(version.stderr ?? '').trim();
 if (version.error || version.signal || version.status !== 0 || !/^4\.7\.1(?:\.|$)/u.test(versionStdout)) {
@@ -72,7 +78,7 @@ run('missing fixture argument rejection', [...common, '--', '--fixture'], false,
 process.stdout.write('[Godot migration verification] PASSED positive replay and negative tamper rehearsal\n');
 
 function run(label, arguments_, shouldSucceed, expectedFailureText = '') {
-  const result = spawnSync(engine, arguments_, { cwd: root, encoding: 'utf8', timeout: 60_000 });
+  const result = spawnSync(engine, arguments_, { cwd: root, env: godotEnv, encoding: 'utf8', timeout: 60_000 });
   if (result.stdout) process.stdout.write(result.stdout);
   if (result.stderr) process.stderr.write(result.stderr);
   const succeeded = result.status === 0;

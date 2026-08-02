@@ -48,6 +48,15 @@ func _run() -> void:
 	screen.call("_handle_screen_touch", _touch(4, true, player_city_position))
 	screen.call("_handle_screen_touch", _touch(4, false, player_city_position))
 	_assert_true(city_card.visible, "touch tap on city-12 must open the spatial city card")
+	var snapshot_before: Dictionary = screen.get("_snapshot")
+	var farming_before: int = int(snapshot_before["cities"]["city-12"]["farming"])
+	screen.call("_execute_develop_farming", "city-12", "officer-1")
+	var snapshot_after: Dictionary = screen.get("_snapshot")
+	_assert_true(
+		int(snapshot_after["cities"]["city-12"]["farming"]) > farming_before,
+		"main scene must execute develop_farming through the production transaction boundary"
+	)
+	_assert_equal(snapshot_after["dataContractVersion"], 2, "main scene must use MB03 production data")
 
 	if _failures > 0:
 		push_error(

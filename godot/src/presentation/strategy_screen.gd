@@ -35,6 +35,7 @@ var _snapshot: Dictionary = {}
 var _selected_city_id := ""
 var _camera_tween: Tween
 var _compact_layout := false
+var _command_serial := 0
 
 var _mouse_pressed := false
 var _mouse_dragging := false
@@ -162,8 +163,10 @@ func _select_city(city_id: String) -> void:
 
 func _show_selected_city_card() -> void:
 	var default_executor := ""
-	if is_instance_valid(_session) and _session.has_method("find_default_executor"):
-		default_executor = str(_session.call("find_default_executor", _selected_city_id))
+	if is_instance_valid(_session) and _session.has_method("city_query"):
+		var query: Variant = _session.call("city_query", _selected_city_id)
+		if query is Dictionary:
+			default_executor = str(_as_dictionary(query.get("developFarming", {})).get("defaultOfficerId", ""))
 	city_card.show_city(_snapshot, _selected_city_id, default_executor)
 	city_card.place_near(map_world.get_city_screen_position(_selected_city_id), _get_card_usable_rect())
 
@@ -177,7 +180,15 @@ func _close_city_card() -> void:
 func _execute_develop_farming(city_id: String, officer_id: String) -> void:
 	_set_interaction_busy(true)
 	_set_status(tr("正在执行开垦……"), "busy")
-	var result := _call_session("execute_develop_farming", [city_id, officer_id])
+	_command_serial += 1
+	var before_digest: String = str(_session.call("state_sha256"))
+	var result := _call_session("execute_command", [{
+		"commandEnvelopeVersion": 1,
+		"commandId": "strategy-screen-%06d" % _command_serial,
+		"expectedStateSha256": before_digest,
+		"kind": "develop_farming",
+		"parameters": {"cityId": city_id, "officerId": officer_id},
+	}])
 	_set_interaction_busy(false)
 	if not bool(result.get("ok", false)):
 		_set_status(tr("开垦失败：%s") % _result_error(result), "error")

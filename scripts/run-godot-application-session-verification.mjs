@@ -13,15 +13,16 @@ mkdirSync(appData, { recursive: true });
 mkdirSync(localAppData, { recursive: true });
 const godotEnv = { ...process.env, APPDATA: appData, LOCALAPPDATA: localAppData };
 const version = spawnSync(engine, ['--version'], { cwd: root, env: godotEnv, encoding: 'utf8', timeout: 60_000 });
-const stdout = String(version.stdout ?? '').trim();
-if (version.error || version.signal || version.status !== 0 || !/^4\.7\.1(?:\.|$)/u.test(stdout)) {
-  throw new Error(`Godot 4.7.1 is required: ${stdout || version.error?.message || String(version.stderr ?? '').trim()}`);
+const versionText = String(version.stdout ?? '').trim();
+if (version.error || version.signal || version.status !== 0 || !/^4\.7\.1(?:\.|$)/u.test(versionText)) {
+  throw new Error(`Godot 4.7.1 is required: ${versionText || version.error?.message || String(version.stderr ?? '').trim()}`);
 }
+process.stdout.write(`[Godot application session] engine=${versionText}\n`);
 const result = spawnSync(engine, [
-  '--headless', '--path', resolve(root, 'godot'), '--script', 'res://tests/production_data_runner.gd',
-], { cwd: root, env: godotEnv, encoding: 'utf8', timeout: 60_000 });
+  '--headless', '--path', resolve(root, 'godot'), '--script', 'res://tests/application_session_runner.gd',
+], { cwd: root, env: godotEnv, encoding: 'utf8', timeout: 180_000 });
 if (result.stdout) process.stdout.write(result.stdout);
 if (result.stderr) process.stderr.write(result.stderr);
 if (result.error || result.signal || result.status !== 0) {
-  throw new Error(`Godot production data verification failed: ${result.error?.message ?? result.signal ?? result.status}`);
+  throw new Error(`Godot application session verification failed: ${result.error?.message ?? result.signal ?? result.status}`);
 }
