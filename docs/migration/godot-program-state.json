@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB04",
-  "currentBriefPath": "docs/mission-briefs/MB04-production-application-game-session.md",
-  "readyMissionIds": ["MB04"],
+  "currentMissionId": "MB05",
+  "currentBriefPath": "docs/mission-briefs/MB05-city-economy-and-development-rules.md",
+  "readyMissionIds": ["MB05"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -29,15 +29,21 @@
       "briefPath": "docs/mission-briefs/MB03-production-domain-data-contract.md",
       "reportPath": "docs/migration/mission-reports/MB03-production-domain-data-contract.md",
       "commit": "eca357e"
+    },
+    {
+      "id": "MB04",
+      "briefPath": "docs/mission-briefs/MB04-production-application-game-session.md",
+      "reportPath": "docs/migration/mission-reports/MB04-production-application-game-session.md",
+      "commit": "3ba163c"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB03",
-    "commit": "eca357e",
+    "missionId": "MB04",
+    "commit": "3ba163c",
     "date": "2026-08-02"
   },
-  "nextAction": "Implement MB04 by replacing the spike-only application session with the production four-period/candidate lifecycle and versioned transactional command boundary, without adding new strategic rules.",
+  "nextAction": "Implement MB05 by migrating the complete internal-affairs command group through the MB04 domain/application/query boundary and shared deterministic fixture platform, then expose it in the native spatial city menu.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
