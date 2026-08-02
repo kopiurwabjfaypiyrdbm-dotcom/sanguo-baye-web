@@ -91,7 +91,7 @@ static func _validate(state: Dictionary, initial_contract: bool) -> Array[Dictio
 		_validate_empty_spike_record(diplomatic_orders, "diplomaticOrders", issues)
 		_validate_empty_spike_record(intel_reports, "intelReports", issues)
 	else:
-		_validate_empty_runtime_record(strategic_orders, "strategicOrders", issues)
+		_validate_strategic_orders(strategic_orders, factions, cities, officers, state, issues)
 		_validate_empty_runtime_record(diplomatic_orders, "diplomaticOrders", issues)
 		_validate_empty_runtime_record(intel_reports, "intelReports", issues)
 
@@ -283,6 +283,107 @@ static func _validate_active_orders(
 						order.get(city_field), "%s.%s" % [path, city_field], cities, issues
 					)
 	return officer_orders
+
+
+static func _validate_strategic_orders(
+		orders: Dictionary, factions: Dictionary, cities: Dictionary, officers: Dictionary,
+		state: Dictionary, issues: Array[Dictionary]
+) -> void:
+	var highest_serial: int = 0
+	for key: String in _sorted_string_keys(orders):
+		var path: String = "strategicOrders.%s" % key
+		var raw: Variant = orders[key]
+		if typeof(raw) != TYPE_DICTIONARY:
+			continue
+		var order: Dictionary = raw
+		if not key.begins_with("strategic-order-") or not key.trim_prefix("strategic-order-").is_valid_int() \
+				or int(key.trim_prefix("strategic-order-")) < 1:
+			_add(issues, "%s.id" % path, "must use strategic-order-N format")
+		else:
+			highest_serial = maxi(highest_serial, int(key.trim_prefix("strategic-order-")))
+		if not ["move", "transport"].has(order.get("kind")):
+			_add(issues, "%s.kind" % path, "must be move or transport")
+		var faction_id: String = str(order.get("factionId", ""))
+		var officer_id: String = str(order.get("officerId", ""))
+		if factions.has(faction_id) and officers.has(officer_id) \
+				and typeof(officers[officer_id]) == TYPE_DICTIONARY:
+			var officer: Dictionary = officers[officer_id]
+			if officer.get("status") != "serving" or officer.get("factionId") != faction_id:
+				_add(issues, "%s.officerId" % path, "executor must be a serving officer of the order faction")
+		for field: String in ["createdTurn", "createdYear", "durationMonths", "remainingMonths"]:
+			if not _is_positive_integer(order.get(field)):
+				_add(issues, "%s.%s" % [path, field], "must be a positive integer")
+		if _is_positive_integer(order.get("durationMonths")) and _is_positive_integer(order.get("remainingMonths")) \
+				and int(order["remainingMonths"]) > int(order["durationMonths"]):
+			_add(issues, "%s.remainingMonths" % path, "must not exceed durationMonths")
+		if not _is_integer_number(order.get("createdMonth")) or int(order.get("createdMonth", 0)) < 1 \
+				or int(order.get("createdMonth", 0)) > 12:
+			_add(issues, "%s.createdMonth" % path, "must be an integer from 1 to 12")
+		if _is_positive_integer(order.get("createdTurn")) and int(order["createdTurn"]) > int(state.get("turn", 0)):
+			_add(issues, "%s.createdTurn" % path, "must not be later than the current turn")
+		if _is_positive_integer(order.get("createdYear")) and _is_integer_number(order.get("createdMonth")) \
+				and int(order["createdYear"]) * 12 + int(order["createdMonth"]) \
+				> int(state.get("calendar", {}).get("year", 0)) * 12 + int(state.get("calendar", {}).get("month", 0)):
+			_add(issues, "%s.createdYear" % path, "creation date must not be later than the current calendar")
+		if _is_positive_integer(order.get("createdTurn")) and _is_positive_integer(order.get("durationMonths")) \
+				and _is_positive_integer(order.get("remainingMonths")):
+			var elapsed_turns: int = int(state.get("turn", 0)) - int(order["createdTurn"])
+			if int(order["remainingMonths"]) != int(order["durationMonths"]) - elapsed_turns:
+				_add(issues, "%s.remainingMonths" % path, "must agree with durationMonths and elapsed campaign turns")
+			if _is_positive_integer(order.get("createdYear")) and _is_integer_number(order.get("createdMonth")):
+				var created_calendar_index: int = int(order["createdYear"]) * 12 + int(order["createdMonth"]) - 1
+				var calendar: Dictionary = state.get("calendar", {})
+				var current_calendar_index: int = int(calendar.get("year", 0)) * 12 + int(calendar.get("month", 0)) - 1
+				if current_calendar_index - created_calendar_index != elapsed_turns:
+					_add(issues, "%s.createdYear" % path, "creation date must agree with createdTurn and the current calendar")
+		var source_id: String = str(order.get("sourceCityId", ""))
+		var target_id: String = str(order.get("targetCityId", ""))
+		if source_id == target_id and not source_id.is_empty():
+			_add(issues, "%s.targetCityId" % path, "must differ from sourceCityId")
+		var raw_route: Variant = order.get("routeCityIds")
+		if typeof(raw_route) != TYPE_ARRAY:
+			_add(issues, "%s.routeCityIds" % path, "must be an array")
+		else:
+			var route: Array = raw_route
+			if route.size() < 2:
+				_add(issues, "%s.routeCityIds" % path, "must contain source and target")
+			else:
+				if str(route[0]) != source_id:
+					_add(issues, "%s.routeCityIds" % path, "must start at sourceCityId")
+				if str(route[-1]) != target_id:
+					_add(issues, "%s.routeCityIds" % path, "must end at targetCityId")
+			var seen: Dictionary = {}
+			for index: int in range(route.size()):
+				var city_id: String = str(route[index])
+				if not cities.has(city_id):
+					_add(issues, "%s.routeCityIds.%d" % [path, index], "unknown city: %s" % city_id)
+				if seen.has(city_id):
+					_add(issues, "%s.routeCityIds" % path, "must not repeat a city")
+				seen[city_id] = true
+				if index > 0 and cities.has(str(route[index - 1])) and cities.has(city_id) \
+						and not (cities[str(route[index - 1])].get("neighbors", []) as Array).has(city_id):
+					_add(issues, "%s.routeCityIds.%d" % [path, index], "must follow an existing road")
+			if _is_positive_integer(order.get("durationMonths")) and route.size() >= 2 \
+					and int(order["durationMonths"]) != route.size() - 1:
+				_add(issues, "%s.durationMonths" % path, "must equal route road count")
+		var raw_cargo: Variant = order.get("cargo")
+		if typeof(raw_cargo) != TYPE_DICTIONARY:
+			_add(issues, "%s.cargo" % path, "must be an object")
+		else:
+			var cargo: Dictionary = raw_cargo
+			for field: String in ["money", "food", "reserveTroops"]:
+				_validate_non_negative_integer(cargo.get(field), "%s.cargo.%s" % [path, field], issues)
+			if cargo.size() != 3:
+				_add(issues, "%s.cargo" % path, "must contain exactly money, food, and reserveTroops")
+			var total_positive: bool = int(cargo.get("money", 0)) > 0 or int(cargo.get("food", 0)) > 0 \
+					or int(cargo.get("reserveTroops", 0)) > 0
+			if order.get("kind") == "move" and total_positive:
+				_add(issues, "%s.cargo" % path, "move cargo must be empty")
+			if order.get("kind") == "transport" and not total_positive:
+				_add(issues, "%s.cargo" % path, "transport cargo must not be empty")
+	if _is_positive_integer(state.get("nextStrategicOrderSerial")) \
+			and int(state["nextStrategicOrderSerial"]) <= highest_serial:
+		_add(issues, "nextStrategicOrderSerial", "must exceed every active strategic order serial")
 
 
 static func _validate_cities(

@@ -5,6 +5,7 @@ const GameState = preload("res://src/domain/game_state/game_state.gd")
 const Validator = preload("res://src/domain/validation/game_state_validator.gd")
 const CoreLcg = preload("res://src/domain/random/core_lcg.gd")
 const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
+const StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
 
 const SEARCH_STAMINA_COST: int = 8
 const RECRUIT_OFFICER_STAMINA_COST: int = 8
@@ -582,7 +583,7 @@ static func _execute_execution(data: Dictionary, parameters: Dictionary) -> Dict
 	var city: Dictionary = availability["city"]
 	var captive: Dictionary = availability["target"]
 	var random: Dictionary = CoreLcg.next_random(int(data["rngSeed"]))
-	var next: Dictionary = data.duplicate(true)
+	var next: Dictionary = StrategicOrders.cancel_officer_orders(data, captive["id"], "执行者失效")
 	var next_city: Dictionary = city.duplicate(true)
 	var recovered_items: Array = (city.get("itemIds", []) as Array).duplicate(true)
 	for raw_item_id: Variant in captive.get("equipmentItemIds", []):
@@ -623,7 +624,7 @@ static func _execute_banish(data: Dictionary, parameters: Dictionary) -> Diction
 	var ordered_cities: Array[Dictionary] = _ordered_cities(data)
 	var random: Dictionary = _draw(int(data["rngSeed"]), ordered_cities.size())
 	var destination: Dictionary = ordered_cities[int(random["result"])]
-	var next: Dictionary = data.duplicate(true)
+	var next: Dictionary = StrategicOrders.cancel_officer_orders(data, target["id"], "执行者失效")
 	var released: Dictionary = target.duplicate(true)
 	released["status"] = "free"
 	released["factionId"] = _neutral_faction_id(data)

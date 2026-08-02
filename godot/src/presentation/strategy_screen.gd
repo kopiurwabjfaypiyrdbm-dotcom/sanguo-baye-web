@@ -31,6 +31,7 @@ const ZOOM_STEP := 1.14
 @onready var city_card: CityCard = %CityCard
 @onready var officer_panel = %OfficerManagementPanel
 @onready var personnel_panel = %PersonnelLifecyclePanel
+@onready var logistics_panel = %StrategicLogisticsPanel
 
 var _session: Object
 var _snapshot: Dictionary = {}
@@ -85,6 +86,8 @@ func _process(_delta: float) -> void:
 		officer_panel.place_in(_get_card_usable_rect())
 	if personnel_panel.visible:
 		personnel_panel.place_in(_get_card_usable_rect())
+	if logistics_panel.visible:
+		logistics_panel.place_in(_get_card_usable_rect())
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -118,11 +121,17 @@ func _connect_ui() -> void:
 	city_card.command_requested.connect(_execute_internal_command)
 	city_card.officer_management_requested.connect(_open_officer_management)
 	city_card.personnel_lifecycle_requested.connect(_open_personnel_lifecycle)
+	city_card.strategic_logistics_requested.connect(_open_strategic_logistics)
 	city_card.close_requested.connect(_close_city_card)
 	officer_panel.command_requested.connect(_execute_internal_command)
 	officer_panel.close_requested.connect(_close_officer_management)
 	personnel_panel.command_requested.connect(_execute_internal_command)
 	personnel_panel.close_requested.connect(_close_personnel_lifecycle)
+	logistics_panel.command_requested.connect(_execute_internal_command)
+	logistics_panel.advance_requested.connect(_advance_strategic_logistics)
+	logistics_panel.demo_campaign_requested.connect(_start_logistics_demo)
+	logistics_panel.route_preview_requested.connect(_preview_logistics_route)
+	logistics_panel.close_requested.connect(_close_strategic_logistics)
 
 
 func _refresh_snapshot(keep_card_open: bool = true) -> bool:
@@ -174,6 +183,7 @@ func _select_city(city_id: String) -> void:
 	_selected_city_id = city_id
 	_close_officer_management()
 	_close_personnel_lifecycle(false)
+	_close_strategic_logistics(false)
 	map_world.set_selected_city(city_id)
 	_show_selected_city_card()
 	var city := _as_dictionary(_as_dictionary(_snapshot.get("cities", {})).get(city_id, {}))
@@ -198,6 +208,8 @@ func _close_city_card() -> void:
 	city_card.hide()
 	officer_panel.hide()
 	personnel_panel.hide()
+	logistics_panel.hide()
+	_preview_logistics_route([])
 	_selected_city_id = ""
 	map_world.set_selected_city("")
 
@@ -212,6 +224,7 @@ func _open_officer_management(city_id: String) -> void:
 	var city: Dictionary = query["city"]
 	city_card.hide()
 	personnel_panel.hide()
+	logistics_panel.hide()
 	officer_panel.show_city(
 		city_id, str(city.get("name", city_id)),
 		_as_dictionary(query.get("officerManagement", {}))
@@ -237,6 +250,7 @@ func _open_personnel_lifecycle(city_id: String) -> void:
 	var city: Dictionary = query["city"]
 	city_card.hide()
 	officer_panel.hide()
+	logistics_panel.hide()
 	personnel_panel.show_city(
 		city_id, str(city.get("name", city_id)),
 		_as_dictionary(query.get("personnelLifecycle", {}))
@@ -250,6 +264,70 @@ func _close_personnel_lifecycle(show_card: bool = true) -> void:
 	personnel_panel.hide()
 	if show_card and not _selected_city_id.is_empty():
 		_show_selected_city_card()
+
+
+func _open_strategic_logistics(city_id: String) -> void:
+	if city_id.is_empty() or not is_instance_valid(_session):
+		return
+	var query: Variant = _session.call("strategic_logistics_query", city_id)
+	if not query is Dictionary or not bool(query.get("found", false)):
+		_set_status(tr("战略后勤查询失败"), "error")
+		return
+	var city: Dictionary = query["city"]
+	city_card.hide()
+	officer_panel.hide()
+	personnel_panel.hide()
+	logistics_panel.show_city(city_id, str(city.get("name", city_id)), _as_dictionary(query.get("strategicLogistics", {})))
+	logistics_panel.apply_responsive_layout(_compact_layout, _current_canvas_scale(), DisplayServer.window_get_size())
+	logistics_panel.place_in(_get_card_usable_rect())
+	_set_status(tr("正在规划 %s 的跨城调动与输送") % city.get("name", city_id), "ready")
+
+
+func _close_strategic_logistics(show_card: bool = true) -> void:
+	logistics_panel.hide()
+	_preview_logistics_route([])
+	if show_card and not _selected_city_id.is_empty():
+		_show_selected_city_card()
+
+
+func _refresh_strategic_logistics() -> void:
+	if not logistics_panel.visible or _selected_city_id.is_empty():
+		return
+	var query: Variant = _session.call("strategic_logistics_query", _selected_city_id)
+	if query is Dictionary and bool(query.get("found", false)):
+		logistics_panel.refresh(_as_dictionary(query.get("strategicLogistics", {})))
+
+
+func _start_logistics_demo() -> void:
+	_set_interaction_busy(true)
+	var result := _call_session("start_campaign", [1, 5])
+	_set_interaction_busy(false)
+	if not bool(result.get("ok", false)):
+		_set_status(tr("多城样例载入失败：%s") % _result_error(result), "error")
+		return
+	_selected_city_id = "city-0"
+	_refresh_snapshot(false)
+	map_world.set_selected_city(_selected_city_id)
+	_open_strategic_logistics(_selected_city_id)
+	_set_status(tr("已载入时期 1 · 马腾多城后勤样例"), "success")
+
+
+func _advance_strategic_logistics() -> void:
+	_set_interaction_busy(true)
+	_set_status(tr("正在推进战略订单一月……"), "busy")
+	var result := _call_session("advance_strategic_orders")
+	_set_interaction_busy(false)
+	if not bool(result.get("ok", false)):
+		_set_status(tr("订单推进失败：%s") % _result_error(result), "error")
+		return
+	_refresh_snapshot(true)
+	_refresh_strategic_logistics()
+	_set_status(tr("战略订单已推进 · 种子 %d") % int(_snapshot.get("rngSeed", 0)), "success")
+
+
+func _preview_logistics_route(route_city_ids: Array) -> void:
+	if map_world.has_method("set_route_preview"):
+		map_world.call("set_route_preview", route_city_ids)
 
 
 func _refresh_personnel_lifecycle() -> void:
@@ -288,7 +366,8 @@ func _execute_internal_command(kind: String, parameters: Dictionary) -> void:
 	_refresh_snapshot(true)
 	_refresh_officer_management()
 	_refresh_personnel_lifecycle()
-	var city_id: String = str(parameters.get("cityId", ""))
+	_refresh_strategic_logistics()
+	var city_id: String = str(parameters.get("cityId", parameters.get("sourceCityId", "")))
 	var city := _as_dictionary(_as_dictionary(_snapshot.get("cities", {})).get(city_id, {}))
 	_set_status(
 		tr("%s %s完成 · 金 %d · 粮 %d · 种子 %d") % [
@@ -328,6 +407,8 @@ func _internal_command_label(kind: String) -> String:
 		"execute_captive": tr("处斩"),
 		"banish_officer": tr("流放"),
 		"confiscate_equipment": tr("没收装备"),
+		"issue_move_order": tr("调动"),
+		"issue_transport_order": tr("输送"),
 	}.get(kind, kind)
 
 
@@ -521,6 +602,9 @@ func _handle_tap(screen_position: Vector2, is_touch: bool) -> void:
 	if personnel_panel.visible:
 		_close_personnel_lifecycle()
 		return
+	if logistics_panel.visible:
+		_close_strategic_logistics()
+		return
 	if is_touch:
 		map_world.show_touch_ripple(screen_position)
 	var city_id := map_world.pick_city(screen_position)
@@ -651,6 +735,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	city_card.apply_responsive_layout(compact, canvas_scale, physical_size)
 	officer_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
 	personnel_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
+	logistics_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
 	if not _snapshot.is_empty():
 		_update_hud_from_snapshot()
 
@@ -663,6 +748,7 @@ func _set_interaction_busy(busy: bool) -> void:
 	city_card.set_busy(busy)
 	officer_panel.set_busy(busy)
 	personnel_panel.set_busy(busy)
+	logistics_panel.set_busy(busy)
 
 
 func _set_status(message: String, tone: String) -> void:

@@ -21,6 +21,7 @@ import {
   confiscateOfficerEquipment,
   executeCaptive,
 } from '../officerLifecycle';
+import { advanceStrategicOrders, issueMoveOrder, issueTransportOrder } from '../strategicOrders';
 import type { GameState } from '../types';
 import { selectPlayerFaction } from '../../data/legacyScenario';
 import { canonicalSha256, compareUnicodeScalar } from './canonicalJson';
@@ -44,6 +45,16 @@ export type ApplicationCommandResult = {
   kind: unknown;
   ok: boolean;
   code: string;
+  error: string;
+  stateChanged: boolean;
+  beforeStateSha256: string;
+  afterStateSha256: string;
+  receipt: Record<string, unknown>;
+  state: GameState;
+};
+
+export type ApplicationAdvanceResult = {
+  ok: boolean;
   error: string;
   stateChanged: boolean;
   beforeStateSha256: string;
@@ -77,6 +88,62 @@ export class OracleApplicationSession {
   constructor(initialState: GameState) { this.state = structuredClone(initialState); }
 
   snapshot(): GameState { return structuredClone(this.state); }
+
+  restoreSnapshot(snapshot: GameState): void {
+    this.state = structuredClone(snapshot);
+    this.completed.clear();
+    this.completedOrder.length = 0;
+  }
+
+  advanceStrategicOrders(): ApplicationAdvanceResult {
+    const before = this.snapshot();
+    const beforeDigest = canonicalSha256(before);
+    try {
+      const settling: GameState = {
+        ...before,
+        turn: before.turn + 1,
+        calendar: before.calendar.month === 12
+          ? { year: before.calendar.year + 1, month: 1 }
+          : { year: before.calendar.year, month: before.calendar.month + 1 },
+        phase: 'player',
+        activeFactionId: before.playerFactionId,
+        actedOfficerIds: [],
+      };
+      const next = JSON.parse(JSON.stringify(advanceStrategicOrders(settling))) as GameState;
+      const afterDigest = canonicalSha256(next);
+      const beforeOrderIds = Object.keys(before.strategicOrders).sort(compareUnicodeScalar);
+      const completedOrderIds = beforeOrderIds.filter((id) => !next.strategicOrders[id]);
+      const receipt = {
+        kind: 'advance_strategic_orders',
+        state: projectStrategicState(next),
+        completedOrderIds,
+        activeOrders: Object.values(next.strategicOrders)
+          .sort((left, right) => compareUnicodeScalar(left.id, right.id))
+          .map((order) => structuredClone(order)),
+        appendedLogs: structuredClone(next.logs.slice(before.logs.length)),
+      };
+      this.state = structuredClone(next);
+      return {
+        ok: true,
+        error: '',
+        stateChanged: afterDigest !== beforeDigest,
+        beforeStateSha256: beforeDigest,
+        afterStateSha256: afterDigest,
+        receipt,
+        state: structuredClone(next),
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+        stateChanged: false,
+        beforeStateSha256: beforeDigest,
+        afterStateSha256: beforeDigest,
+        receipt: {},
+        state: before,
+      };
+    }
+  }
 
   execute(raw: unknown): ApplicationCommandResult {
     const before = this.snapshot();
@@ -192,6 +259,8 @@ export function validateEnvelope(raw: unknown):
     execute_captive: ['cityId', 'captiveOfficerId'],
     banish_officer: ['cityId', 'officerId'],
     confiscate_equipment: ['cityId', 'officerId', 'itemId'],
+    issue_move_order: ['sourceCityId', 'targetCityId', 'officerId'],
+    issue_transport_order: ['sourceCityId', 'targetCityId', 'officerId', 'cargo'],
   };
   const parameterKeys = parameterKeysByKind[raw.kind];
   if (!parameterKeys) return rejected('unknown_command', `unsupported command kind: ${raw.kind}`);
@@ -219,7 +288,8 @@ export function validateEnvelope(raw: unknown):
       if (!(key in raw.parameters)) return rejected('invalid_parameters', `${key} is required`);
     }
     for (const key of [
-      'cityId', 'officerId', 'executorOfficerId', 'targetOfficerId', 'captiveOfficerId', 'itemId',
+      'cityId', 'sourceCityId', 'targetCityId', 'officerId', 'executorOfficerId',
+      'targetOfficerId', 'captiveOfficerId', 'itemId',
     ]) {
       if (!parameterKeys.includes(key)) continue;
       if (!isNonBlank(raw.parameters[key])) return rejected('invalid_parameters', `${key} must be a non-blank string`);
@@ -235,6 +305,9 @@ export function validateEnvelope(raw: unknown):
     if (!Number.isSafeInteger(raw.parameters.amount) || (raw.parameters.amount as number) <= 0) {
       return rejected('invalid_parameters', 'amount must be a positive safe integer');
     }
+  }
+  if (raw.kind === 'issue_transport_order' && !isRecord(raw.parameters.cargo)) {
+    return rejected('invalid_parameters', 'cargo must be an object');
   }
   return { ok: true, envelope: structuredClone(raw) as ApplicationCommandEnvelope };
 }
@@ -286,6 +359,21 @@ function executeDomainCommand(before: GameState, envelope: ApplicationCommandEnv
       return confiscateOfficerEquipment(before, parameters as {
         cityId: string; officerId: string; itemId: string;
       });
+    case 'issue_move_order':
+      return issueMoveOrder(before, parameters as {
+        sourceCityId: string; targetCityId: string; officerId: string;
+      });
+    case 'issue_transport_order': {
+      const input = parameters as {
+        sourceCityId: string; targetCityId: string; officerId: string;
+        cargo: Record<string, unknown>;
+      };
+      const cargoKeys = Object.keys(input.cargo).sort(compareUnicodeScalar);
+      if (cargoKeys.length !== 3 || !['money', 'food', 'reserveTroops'].every((key) => cargoKeys.includes(key))) {
+        throw new Error('输送物资必须且只能包含 money、food、reserveTroops');
+      }
+      return issueTransportOrder(before, input as unknown as Parameters<typeof issueTransportOrder>[1]);
+    }
     default:
       throw new Error(`unsupported command kind: ${envelope.kind}`);
   }
@@ -297,6 +385,9 @@ function projectReceipt(
   after: GameState,
   command: Record<string, unknown>,
 ): Record<string, unknown> {
+  if (kind === 'issue_move_order' || kind === 'issue_transport_order') {
+    return projectStrategicOrderReceipt(kind, before, after, command);
+  }
   if ([
     'search_city', 'recruit_free_officer', 'recruit_captive', 'release_captive',
     'execute_captive', 'banish_officer', 'confiscate_equipment',
@@ -351,6 +442,71 @@ function projectReceipt(
     };
   }
   return receipt;
+}
+
+function projectStrategicOrderReceipt(
+  kind: string,
+  before: GameState,
+  after: GameState,
+  command: Record<string, unknown>,
+): Record<string, unknown> {
+  const order = Object.values(after.strategicOrders)
+    .filter((candidate) => !before.strategicOrders[candidate.id])
+    .sort((left, right) => compareUnicodeScalar(left.id, right.id))[0];
+  const sourceCityId = command.sourceCityId as string;
+  const targetCityId = command.targetCityId as string;
+  const officerId = command.officerId as string;
+  const appendedLog = after.logs.at(-1);
+  if (!order || !appendedLog) throw new Error(`Successful ${kind} transaction is missing observable output`);
+  return {
+    kind,
+    state: projectStrategicState(after),
+    order: structuredClone(order),
+    sourceCity: {
+      id: sourceCityId,
+      before: projectStrategicCity(before.cities[sourceCityId]),
+      after: projectStrategicCity(after.cities[sourceCityId]),
+    },
+    targetCity: {
+      id: targetCityId,
+      before: projectStrategicCity(before.cities[targetCityId]),
+      after: projectStrategicCity(after.cities[targetCityId]),
+    },
+    officer: {
+      id: officerId,
+      before: projectTransitOfficer(before.officers[officerId]),
+      after: projectTransitOfficer(after.officers[officerId]),
+    },
+    appendedLog: structuredClone(appendedLog),
+  };
+}
+
+function projectStrategicState(state: GameState) {
+  return {
+    turn: state.turn,
+    rngSeed: state.rngSeed,
+    campaignStarted: state.campaignStarted,
+    actedOfficerIds: [...state.actedOfficerIds],
+    logCount: state.logs.length,
+  };
+}
+
+function projectStrategicCity(city: GameState['cities'][string]) {
+  return {
+    money: city.money,
+    food: city.food,
+    reserveTroops: city.reserveTroops,
+    satrapOfficerId: city.satrapOfficerId ?? null,
+  };
+}
+
+function projectTransitOfficer(officer: GameState['officers'][string]) {
+  return {
+    status: officer.status,
+    factionId: officer.factionId,
+    cityId: officer.cityId ?? null,
+    stamina: officer.stamina,
+  };
 }
 
 function projectOfficerManagementReceipt(

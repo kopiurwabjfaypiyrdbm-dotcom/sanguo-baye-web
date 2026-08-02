@@ -5,6 +5,7 @@ const DevelopFarming = preload("res://src/domain/commands/develop_farming_comman
 const InternalAffairs = preload("res://src/domain/commands/internal_affairs_commands.gd")
 const OfficerManagement = preload("res://src/domain/commands/officer_management_commands.gd")
 const PersonnelLifecycle = preload("res://src/domain/commands/personnel_lifecycle_commands.gd")
+const StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
 
 const INTERNAL_COMMANDS: Array[Dictionary] = [
 	{"kind": "develop_farming", "label": "开垦", "mode": "executor", "dangerous": false},
@@ -75,6 +76,35 @@ static func personnel_lifecycle_city(state: RefCounted, city_id: String) -> Dict
 		"city": (data["cities"][city_id] as Dictionary).duplicate(true),
 		"personnelLifecycle": _personnel_lifecycle(state, data, city_id),
 	}
+
+
+static func strategic_logistics_city(state: RefCounted, city_id: String) -> Dictionary:
+	var data: Dictionary = state.snapshot()
+	if not data["cities"].has(city_id):
+		return {"found": false, "city": {}, "strategicLogistics": {}}
+	var catalog: Dictionary = StrategicOrders.query_city_catalog(state, city_id)
+	var destinations: Array[Dictionary] = []
+	for raw_destination: Variant in catalog.get("destinations", []):
+		var destination: Dictionary = raw_destination
+		var route_names: Array[String] = []
+		for raw_route_id: Variant in destination["routeCityIds"]:
+			route_names.append(str(data["cities"][raw_route_id]["name"]))
+		var row: Dictionary = destination.duplicate(true)
+		row["routeCityNames"] = route_names
+		destinations.append(row)
+	var active_orders: Array[Dictionary] = []
+	for raw_order: Variant in catalog.get("activeOrders", []):
+		var order: Dictionary = raw_order
+		var row: Dictionary = order.duplicate(true)
+		row["officerName"] = data["officers"][order["officerId"]]["name"]
+		row["sourceCityName"] = data["cities"][order["sourceCityId"]]["name"]
+		row["targetCityName"] = data["cities"][order["targetCityId"]]["name"]
+		active_orders.append(row)
+	var logistics: Dictionary = catalog.duplicate(true)
+	logistics["destinations"] = destinations
+	logistics["activeOrders"] = active_orders
+	return {"found": true, "city": (data["cities"][city_id] as Dictionary).duplicate(true),
+		"strategicLogistics": logistics}
 
 
 static func find_default_executor(state: RefCounted, city_id: String) -> String:

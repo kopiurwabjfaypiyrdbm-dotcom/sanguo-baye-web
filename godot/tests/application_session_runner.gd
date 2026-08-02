@@ -193,6 +193,8 @@ func _test_transaction_fixture() -> void:
 	_test_officer_management_boundary_cases(fixture, campaign)
 	_test_personnel_lifecycle_sequence(fixture, campaign)
 	_test_personnel_lifecycle_boundary_cases(fixture, campaign)
+	_test_strategic_logistics_sequences(fixture, campaign)
+	_test_strategic_logistics_boundary_cases(fixture, campaign)
 	_test_validation_cases(fixture, campaign)
 	_test_modern_ruleset_case(fixture, campaign)
 
@@ -415,6 +417,76 @@ func _test_personnel_lifecycle_boundary_cases(fixture: Dictionary, campaign: Dic
 		_assert_true(state_digest["ok"], "%s MB07 returned state must hash" % test_case["id"])
 		if state_digest["ok"]:
 			_assert_equal(state_digest["value"], test_case["expectedStateSha256"], "%s MB07 state must match TypeScript" % test_case["id"])
+
+
+func _test_strategic_logistics_sequences(fixture: Dictionary, campaign: Dictionary) -> void:
+	var sequences: Array = fixture.get("strategicLogisticsSequences", [])
+	_assert_true(not sequences.is_empty(), "fixture must include MB08 strategic-logistics sequences")
+	for raw_sequence: Variant in sequences:
+		var sequence: Dictionary = raw_sequence
+		var session: GameSession = GameSession.new()
+		var sequence_campaign: Dictionary = sequence.get("campaign", campaign)
+		var started: Dictionary = session.start_campaign(sequence_campaign["periodId"], sequence_campaign["rulerSourceIndex"])
+		_assert_true(started["ok"], "%s MB08 sequence campaign must start" % sequence["id"])
+		if not started["ok"]:
+			continue
+		var input: Dictionary = session.snapshot()
+		_apply_patches(input, sequence["initialPatches"])
+		var restored: Dictionary = session.restore_snapshot(input)
+		_assert_true(restored["ok"], "%s MB08 sequence state must restore: %s" % [sequence["id"], restored.get("error", "")])
+		if not restored["ok"]:
+			continue
+		_assert_equal(session.state_sha256(), sequence["initialStateSha256"], "%s MB08 initial digest must match" % sequence["id"])
+		for raw_step: Variant in sequence["steps"]:
+			var step: Dictionary = raw_step
+			if not (step.get("prePatches", []) as Array).is_empty():
+				var patched: Dictionary = session.snapshot()
+				_apply_patches(patched, step["prePatches"])
+				var pre_restore: Dictionary = session.restore_snapshot(patched)
+				_assert_true(pre_restore["ok"], "%s MB08 pre-advance state must restore: %s" % [step["id"], pre_restore.get("error", "")])
+				if not pre_restore["ok"]:
+					continue
+				_assert_equal(session.state_sha256(), step["preStateSha256"], "%s MB08 pre-advance digest must match" % step["id"])
+			var before_digest: String = session.state_sha256()
+			var actual: Dictionary = session.execute_command(step["command"]) \
+					if step["operation"] == "command" else session.advance_strategic_orders()
+			var actual_core: Dictionary = actual.duplicate(true)
+			actual_core.erase("state")
+			_assert_canonical_equal(actual_core, step["expectedCore"], "%s MB08 result core must match TypeScript" % step["id"])
+			var state_digest: Dictionary = CanonicalJson.try_sha256(actual["state"])
+			_assert_true(state_digest["ok"], "%s MB08 returned state must hash" % step["id"])
+			if state_digest["ok"]:
+				_assert_equal(state_digest["value"], step["expectedCore"]["afterStateSha256"], "%s MB08 state must match TypeScript" % step["id"])
+			if not bool(step["expectedCore"]["stateChanged"]):
+				_assert_equal(session.state_sha256(), before_digest, "%s MB08 rejection/no-op must remain atomic" % step["id"])
+		_assert_equal(session.state_sha256(), sequence["finalStateSha256"], "%s MB08 final state must match TypeScript" % sequence["id"])
+
+
+func _test_strategic_logistics_boundary_cases(fixture: Dictionary, campaign: Dictionary) -> void:
+	var cases: Array = fixture.get("strategicLogisticsBoundaryCases", [])
+	_assert_true(not cases.is_empty(), "fixture must include MB08 strategic-logistics boundary cases")
+	for raw_case: Variant in cases:
+		var test_case: Dictionary = raw_case
+		var session: GameSession = GameSession.new()
+		var case_campaign: Dictionary = test_case.get("campaign", campaign)
+		var started: Dictionary = session.start_campaign(case_campaign["periodId"], case_campaign["rulerSourceIndex"])
+		_assert_true(started["ok"], "%s MB08 boundary campaign must start" % test_case["id"])
+		if not started["ok"]:
+			continue
+		var input: Dictionary = session.snapshot()
+		_apply_patches(input, test_case["patches"])
+		var restored: Dictionary = session.restore_snapshot(input)
+		_assert_true(restored["ok"], "%s patched MB08 state must restore: %s" % [test_case["id"], restored.get("error", "")])
+		if not restored["ok"]:
+			continue
+		var actual: Dictionary = session.execute_command(test_case["command"])
+		var actual_core: Dictionary = actual.duplicate(true)
+		actual_core.erase("state")
+		_assert_canonical_equal(actual_core, test_case["expectedCore"], "%s MB08 boundary result core must match TypeScript" % test_case["id"])
+		var state_digest: Dictionary = CanonicalJson.try_sha256(actual["state"])
+		_assert_true(state_digest["ok"], "%s MB08 boundary state must hash" % test_case["id"])
+		if state_digest["ok"]:
+			_assert_equal(state_digest["value"], test_case["expectedStateSha256"], "%s MB08 boundary state must match TypeScript" % test_case["id"])
 
 
 func _test_validation_cases(fixture: Dictionary, campaign: Dictionary) -> void:

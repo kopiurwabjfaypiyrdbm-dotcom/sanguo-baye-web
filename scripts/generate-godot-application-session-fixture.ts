@@ -31,7 +31,9 @@ function transactionCaseCount(value: ReturnType<typeof buildFixture>) {
   return value.steps.length + value.internalAffairsSequence.steps.length
     + value.internalAffairsBoundaryCases.length + value.officerManagementSequence.steps.length
     + value.officerManagementBoundaryCases.length + value.personnelLifecycleSequence.steps.length
-    + value.personnelLifecycleBoundaryCases.length + value.validationCases.length;
+    + value.personnelLifecycleBoundaryCases.length + value.strategicLogisticsSequences
+      .reduce((total, sequence) => total + sequence.steps.length, 0)
+    + value.strategicLogisticsBoundaryCases.length + value.validationCases.length;
 }
 
 export function buildFixture() {
@@ -130,9 +132,190 @@ export function buildFixture() {
     officerManagementBoundaryCases: buildOfficerManagementBoundaryCases(),
     personnelLifecycleSequence: buildPersonnelLifecycleSequence(),
     personnelLifecycleBoundaryCases: buildPersonnelLifecycleBoundaryCases(),
+    strategicLogisticsSequences: buildStrategicLogisticsSequences(),
+    strategicLogisticsBoundaryCases: buildStrategicLogisticsBoundaryCases(),
     validationCases: buildValidationCases(),
     modernRulesetCase: buildModernRulesetCase(),
   };
+}
+
+function buildStrategicLogisticsSequences() {
+  const build = (
+    id: string,
+    seed: number,
+    transportOnly = false,
+    advancePatches: StatePatch[] = [],
+  ) => {
+    const initialState = createProductionSessionState(1, 5);
+    const initialPatches: StatePatch[] = [
+      { path: ['rngSeed'], value: seed },
+      { path: ['cities', 'city-0', 'reserveTroops'], value: 500 },
+    ];
+    applyStatePatches(initialState as unknown as Record<string, unknown>, initialPatches);
+    const session = new OracleApplicationSession(initialState);
+    const steps: Array<{ id: string; operation: 'command' | 'advance'; command?: ApplicationCommandEnvelope; expectedCore: unknown }> = [];
+    let serial = 1;
+    const command = (stepId: string, kind: string, parameters: Record<string, unknown>) => {
+      const envelope: ApplicationCommandEnvelope = {
+        commandEnvelopeVersion: 1,
+        commandId: `mb08-${id}-${String(serial).padStart(3, '0')}`,
+        expectedStateSha256: canonicalSha256(session.snapshot()),
+        kind,
+        parameters,
+      };
+      serial += 1;
+      const { state: _stateEvidence, ...expectedCore } = session.execute(envelope);
+      steps.push({ id: stepId, operation: 'command', command: envelope, expectedCore });
+    };
+    const advance = (stepId: string, prePatches: StatePatch[] = []) => {
+      let preStateSha256 = canonicalSha256(session.snapshot());
+      if (prePatches.length > 0) {
+        const patched = session.snapshot();
+        applyStatePatches(patched as unknown as Record<string, unknown>, prePatches);
+        session.restoreSnapshot(patched);
+        preStateSha256 = canonicalSha256(patched);
+      }
+      const { state: _stateEvidence, ...expectedCore } = session.advanceStrategicOrders();
+      steps.push({ id: stepId, operation: 'advance', prePatches, preStateSha256, expectedCore } as typeof steps[number]);
+    };
+    if (!transportOnly) {
+      command('issue-multihop-move', 'issue_move_order', {
+        sourceCityId: 'city-0', targetCityId: 'city-8', officerId: 'officer-56',
+      });
+      advance('move-month-1');
+      advance('move-arrival');
+    }
+    command(transportOnly ? 'issue-loss-transport' : 'issue-success-transport', 'issue_transport_order', {
+      sourceCityId: 'city-0', targetCityId: 'city-3', officerId: transportOnly ? 'officer-56' : 'officer-57',
+      cargo: { money: 10, food: 20, reserveTroops: 30 },
+    });
+    advance(transportOnly ? `transport-${id}` : 'transport-success', advancePatches);
+    return {
+      id,
+      campaign: { periodId: 1, rulerSourceIndex: 5 },
+      initialPatches,
+      initialStateSha256: canonicalSha256(initialState),
+      steps,
+      finalStateSha256: canonicalSha256(session.snapshot()),
+    };
+  };
+  const targetCapturedPatches: StatePatch[] = [
+    { path: ['cities', 'city-3', 'ownerId'], value: 'ruler-0' },
+    { path: ['cities', 'city-3', 'satrapOfficerId'], value: 'officer-19' },
+    { path: ['officers', 'officer-19', 'cityId'], value: 'city-3' },
+    { path: ['officers', 'officer-64', 'cityId'], value: 'city-8' },
+  ];
+  const buildMultiOrder = () => {
+    const initialState = createProductionSessionState(1, 5);
+    const initialPatches: StatePatch[] = [{ path: ['cities', 'city-8', 'reserveTroops'], value: 500 }];
+    applyStatePatches(initialState as unknown as Record<string, unknown>, initialPatches);
+    const session = new OracleApplicationSession(initialState);
+    const steps: Array<{ id: string; operation: 'command' | 'advance'; command?: ApplicationCommandEnvelope; expectedCore: unknown }> = [];
+    for (const [index, officerId, cargo] of [
+      [1, 'officer-58', { money: 11, food: 21, reserveTroops: 31 }],
+      [2, 'officer-60', { money: 12, food: 22, reserveTroops: 32 }],
+    ] as const) {
+      const command: ApplicationCommandEnvelope = {
+        commandEnvelopeVersion: 1,
+        commandId: `mb08-multi-${index}`,
+        expectedStateSha256: canonicalSha256(session.snapshot()),
+        kind: 'issue_transport_order',
+        parameters: { sourceCityId: 'city-8', targetCityId: 'city-3', officerId, cargo },
+      };
+      const { state: _stateEvidence, ...expectedCore } = session.execute(command);
+      steps.push({ id: `issue-transport-${index}`, operation: 'command', command, expectedCore });
+    }
+    // Rename the two valid orders to 2 and 10 so the fixture distinguishes the
+    // constrained-ASCII ordinal contract (10 before 2) from numeric sorting.
+    const beforeAdvance = session.snapshot();
+    const firstOrder = { ...beforeAdvance.strategicOrders['strategic-order-1'], id: 'strategic-order-2' };
+    const secondOrder = { ...beforeAdvance.strategicOrders['strategic-order-2'], id: 'strategic-order-10' };
+    const prePatches: StatePatch[] = [
+      { path: ['strategicOrders'], value: { 'strategic-order-2': firstOrder, 'strategic-order-10': secondOrder } },
+      { path: ['nextStrategicOrderSerial'], value: 11 },
+    ];
+    applyStatePatches(beforeAdvance as unknown as Record<string, unknown>, prePatches);
+    session.restoreSnapshot(beforeAdvance);
+    const preStateSha256 = canonicalSha256(beforeAdvance);
+    const { state: _stateEvidence, ...expectedCore } = session.advanceStrategicOrders();
+    steps.push({ id: 'advance-stable-order-ids', operation: 'advance', prePatches, preStateSha256, expectedCore } as typeof steps[number]);
+    return {
+      id: 'multi-order', campaign: { periodId: 1, rulerSourceIndex: 5 },
+      initialPatches, initialStateSha256: canonicalSha256(initialState), steps,
+      finalStateSha256: canonicalSha256(session.snapshot()),
+    };
+  };
+  return [
+    build('success', 48_641),
+    build('loss', 1_972, true),
+    build('target-full', 48_641, true, [{ path: ['cities', 'city-3', 'money'], value: Number.MAX_SAFE_INTEGER }]),
+    build('target-captured', 48_641, true, targetCapturedPatches),
+    buildMultiOrder(),
+  ];
+}
+
+function buildStrategicLogisticsBoundaryCases() {
+  const cases: unknown[] = [];
+  let serial = 1;
+  const add = (
+    id: string,
+    kind: string,
+    parameters: Record<string, unknown>,
+    patches: StatePatch[] = [],
+  ) => {
+    const input = createProductionSessionState(1, 5);
+    applyStatePatches(input as unknown as Record<string, unknown>, patches);
+    const session = new OracleApplicationSession(input);
+    const command: ApplicationCommandEnvelope = {
+      commandEnvelopeVersion: 1,
+      commandId: `mb08-boundary-${String(serial).padStart(3, '0')}`,
+      expectedStateSha256: canonicalSha256(input),
+      kind,
+      parameters,
+    };
+    serial += 1;
+    const expected = session.execute(command);
+    const { state: _stateEvidence, ...expectedCore } = expected;
+    cases.push({ id, campaign: { periodId: 1, rulerSourceIndex: 5 }, patches, command, expectedCore, expectedStateSha256: canonicalSha256(expected.state) });
+  };
+  const directRoute: StatePatch[] = [
+    { path: ['cities', 'city-0', 'reserveTroops'], value: 100 },
+  ];
+  add('non-owned-target', 'issue_move_order', {
+    sourceCityId: 'city-0', targetCityId: 'city-9', officerId: 'officer-56',
+  });
+  add('negative-cargo', 'issue_transport_order', {
+    sourceCityId: 'city-0', targetCityId: 'city-3', officerId: 'officer-56',
+    cargo: { money: -1, food: 0, reserveTroops: 0 },
+  }, directRoute);
+  add('fractional-cargo', 'issue_transport_order', {
+    sourceCityId: 'city-0', targetCityId: 'city-3', officerId: 'officer-56',
+    cargo: { money: 0.5, food: 0, reserveTroops: 0 },
+  }, directRoute);
+  add('empty-cargo', 'issue_transport_order', {
+    sourceCityId: 'city-0', targetCityId: 'city-3', officerId: 'officer-56',
+    cargo: { money: 0, food: 0, reserveTroops: 0 },
+  }, directRoute);
+  add('insufficient-cargo', 'issue_transport_order', {
+    sourceCityId: 'city-0', targetCityId: 'city-3', officerId: 'officer-56',
+    cargo: { money: 203, food: 0, reserveTroops: 0 },
+  }, directRoute);
+  add('extra-cargo-field', 'issue_transport_order', {
+    sourceCityId: 'city-0', targetCityId: 'city-3', officerId: 'officer-56',
+    cargo: { money: 1, food: 0, reserveTroops: 0, gems: 1 },
+  }, directRoute);
+  add('target-safe-integer-overflow', 'issue_transport_order', {
+    sourceCityId: 'city-0', targetCityId: 'city-3', officerId: 'officer-56',
+    cargo: { money: 1, food: 0, reserveTroops: 0 },
+  }, [...directRoute, { path: ['cities', 'city-3', 'money'], value: Number.MAX_SAFE_INTEGER }]);
+  add('acted-officer', 'issue_move_order', {
+    sourceCityId: 'city-0', targetCityId: 'city-3', officerId: 'officer-56',
+  }, [...directRoute, { path: ['actedOfficerIds'], value: ['officer-56'] }]);
+  add('stamina-insufficient', 'issue_transport_order', {
+    sourceCityId: 'city-0', targetCityId: 'city-3', officerId: 'officer-56',
+    cargo: { money: 1, food: 0, reserveTroops: 0 },
+  }, [...directRoute, { path: ['officers', 'officer-56', 'stamina'], value: 7 }]);
+  return cases;
 }
 
 function buildPersonnelLifecycleSequence() {

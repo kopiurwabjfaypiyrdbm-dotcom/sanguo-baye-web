@@ -5,6 +5,7 @@ const DevelopFarmingAdapter = preload("res://src/application/commands/develop_fa
 const InternalAffairsAdapter = preload("res://src/application/commands/internal_affairs_adapter.gd")
 const OfficerManagementAdapter = preload("res://src/application/commands/officer_management_adapter.gd")
 const PersonnelLifecycleAdapter = preload("res://src/application/commands/personnel_lifecycle_adapter.gd")
+const StrategicOrderAdapter = preload("res://src/application/commands/strategic_order_adapter.gd")
 const StringContract = preload("res://src/application/commands/application_string_contract.gd")
 
 const ENVELOPE_VERSION: int = 1
@@ -30,6 +31,8 @@ const ADAPTERS: Dictionary = {
 	"execute_captive": {"module": PersonnelLifecycleAdapter, "generic": true},
 	"banish_officer": {"module": PersonnelLifecycleAdapter, "generic": true},
 	"confiscate_equipment": {"module": PersonnelLifecycleAdapter, "generic": true},
+	"issue_move_order": {"module": StrategicOrderAdapter, "generic": true},
+	"issue_transport_order": {"module": StrategicOrderAdapter, "generic": true},
 }
 
 

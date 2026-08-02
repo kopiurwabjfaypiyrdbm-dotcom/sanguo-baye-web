@@ -330,6 +330,52 @@ func personnel_lifecycle_query(city_id: String) -> Dictionary:
 	return GameSessionQueries.personnel_lifecycle_city(_state, city_id)
 
 
+func strategic_logistics_query(city_id: String) -> Dictionary:
+	if _state == null:
+		return {"found": false, "city": {}, "strategicLogistics": {}}
+	return GameSessionQueries.strategic_logistics_city(_state, city_id)
+
+
+func advance_strategic_orders() -> Dictionary:
+	var before: Dictionary = snapshot()
+	var before_digest: String = state_sha256()
+	if _state == null:
+		return {"ok": false, "error": "campaign session has not started", "stateChanged": false,
+			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
+			"receipt": {}, "state": before}
+	var StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
+	var settling: Dictionary = before.duplicate(true)
+	settling["turn"] = int(before["turn"]) + 1
+	var calendar: Dictionary = before["calendar"]
+	settling["calendar"] = {"year": int(calendar["year"]) + 1, "month": 1} \
+			if int(calendar["month"]) == 12 else {"year": int(calendar["year"]), "month": int(calendar["month"]) + 1}
+	settling["phase"] = "player"
+	settling["activeFactionId"] = before["playerFactionId"]
+	settling["actedOfficerIds"] = []
+	var domain_result: Dictionary = StrategicOrders.advance(GameState.new(settling))
+	if not domain_result["ok"]:
+		return {"ok": false, "error": domain_result["error"], "stateChanged": false,
+			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
+			"receipt": {}, "state": before}
+	var next_state: GameState = domain_result["next_state"]
+	var next_snapshot: Dictionary = next_state.snapshot()
+	var issues: Array[Dictionary] = Validator.validate_runtime(next_snapshot)
+	if not issues.is_empty():
+		return {"ok": false, "error": Validator.first_error(issues), "stateChanged": false,
+			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
+			"receipt": {}, "state": before}
+	var digest: Dictionary = CanonicalJson.try_sha256(next_snapshot)
+	if not digest["ok"]:
+		return {"ok": false, "error": digest["error"], "stateChanged": false,
+			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
+			"receipt": {}, "state": before}
+	_state = next_state
+	return {"ok": true, "error": "", "stateChanged": digest["value"] != before_digest,
+		"beforeStateSha256": before_digest, "afterStateSha256": digest["value"],
+		"receipt": (domain_result["receipt"] as Dictionary).duplicate(true),
+		"state": next_snapshot}
+
+
 func save_game() -> Dictionary:
 	if _state == null:
 		return _failure("尚未载入战役")

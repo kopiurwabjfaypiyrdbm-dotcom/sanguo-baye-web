@@ -21,6 +21,7 @@ func _run() -> void:
 	var city_card: CityCard = screen.get_node("%CityCard")
 	var officer_panel = screen.get_node("%OfficerManagementPanel")
 	var personnel_panel = screen.get_node("%PersonnelLifecyclePanel")
+	var logistics_panel = screen.get_node("%StrategicLogisticsPanel")
 	var physical_size := Vector2i(844, 390)
 	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
 	_assert_equal(map_world.get_ordered_city_ids().size(), 38, "main scene must render all 38 cities")
@@ -259,6 +260,57 @@ func _run() -> void:
 	_assert_equal(int(trade_after["rngSeed"]), trade_seed_before, "trade must not advance the deterministic seed")
 	_assert_equal(int(trade_after["cities"]["city-12"]["money"]), trade_money_before + 20, "trade sell must credit money")
 	_assert_equal(int(trade_after["cities"]["city-12"]["food"]), trade_food_before - 10, "trade sell must debit food")
+
+	# MB08 uses a legitimate period-1 multi-city candidate so the device path can
+	# issue real road orders without mutating ownership in presentation code.
+	screen.call("_start_logistics_demo")
+	_assert_equal(screen.get("_snapshot")["playerFactionId"], "ruler-5", "logistics sample must start the legitimate Ma Teng campaign candidate")
+	_assert_true(logistics_panel.visible, "logistics sample must open the native strategic-logistics panel")
+	var target_option: OptionButton = logistics_panel.get_node("%TargetOption")
+	_assert_equal(target_option.item_count, 2, "Xiliang logistics must expose two reachable owned destinations")
+	var selected_target: Dictionary = target_option.get_item_metadata(target_option.selected)
+	_assert_equal(selected_target["routeCityIds"], ["city-0", "city-3"], "logistics query must freeze the stable direct route first")
+	logistics_panel.apply_responsive_layout(true, canvas_scale, physical_size)
+	logistics_panel.reset_size()
+	await process_frame
+	var logistics_usable := Rect2(Vector2.ZERO, Vector2(1558.0, 278.0 / canvas_scale))
+	logistics_panel.place_in(logistics_usable)
+	_assert_true(logistics_panel.position.y + logistics_panel.size.y <= logistics_usable.end.y + 1.0, "compact logistics panel must remain above the status region")
+	for control_name: String in ["CloseButton", "ModeOption", "TargetOption", "ExecutorOption", "MoneyAmount", "FoodAmount", "TroopsAmount", "ExecuteButton", "AdvanceButton", "CargoPresetButton", "DemoButton"]:
+		var control: Control = logistics_panel.get_node("%%%s" % control_name)
+		_assert_true(control.custom_minimum_size.y * canvas_scale >= 47.5, "compact logistics %s must retain a 48px-class physical target" % control_name)
+	# Select the two-road destination and issue a real move through the application envelope.
+	target_option.select(1)
+	logistics_panel.call("_render_selection")
+	var moving_officer_id: String = logistics_panel.get_node("%ExecutorOption").get_item_metadata(0)["id"]
+	logistics_panel.call("_emit_command")
+	_assert_equal(screen.get("_snapshot")["strategicOrders"]["strategic-order-1"]["routeCityIds"], ["city-0", "city-3", "city-8"], "native move must preserve the frozen two-road route")
+	_assert_equal(screen.get("_snapshot")["officers"][moving_officer_id].get("cityId", null), null, "issued move executor must become in-transit")
+	screen.call("_advance_strategic_logistics")
+	_assert_equal(screen.get("_snapshot")["strategicOrders"]["strategic-order-1"]["remainingMonths"], 1, "first month must decrement a multi-road order")
+	screen.call("_advance_strategic_logistics")
+	_assert_true(not screen.get("_snapshot")["strategicOrders"].has("strategic-order-1"), "second month must complete the move")
+	_assert_equal(screen.get("_snapshot")["officers"][moving_officer_id]["cityId"], "city-8", "completed move must station the executor at the target")
+	# Reopen at Xiliang and issue transport; cargo is debited immediately and RNG only advances on valid arrival.
+	screen.set("_selected_city_id", "city-0")
+	screen.call("_open_strategic_logistics", "city-0")
+	logistics_panel.get_node("%ModeOption").select(1)
+	logistics_panel.get_node("%TargetOption").select(0)
+	logistics_panel.call("_render_selection")
+	var transport_money_before: int = int(screen.get("_snapshot")["cities"]["city-0"]["money"])
+	var transport_food_before: int = int(screen.get("_snapshot")["cities"]["city-0"]["food"])
+	var transport_troops_before: int = int(screen.get("_snapshot")["cities"]["city-0"]["reserveTroops"])
+	var transport_seed_before: int = int(screen.get("_snapshot")["rngSeed"])
+	logistics_panel.call("_apply_small_mixed_cargo")
+	_assert_equal(int(logistics_panel.get_node("%MoneyAmount").value), mini(10, transport_money_before), "touch preset must fill a safe money batch")
+	_assert_equal(int(logistics_panel.get_node("%FoodAmount").value), mini(10, transport_food_before), "touch preset must fill a safe food batch")
+	_assert_equal(int(logistics_panel.get_node("%TroopsAmount").value), mini(10, transport_troops_before), "touch preset must fill a safe reserve-troop batch")
+	logistics_panel.call("_emit_command")
+	_assert_equal(int(screen.get("_snapshot")["cities"]["city-0"]["money"]), transport_money_before - mini(10, transport_money_before), "transport must debit money atomically on issue")
+	_assert_equal(int(screen.get("_snapshot")["cities"]["city-0"]["food"]), transport_food_before - mini(10, transport_food_before), "transport must debit food atomically on issue")
+	_assert_equal(int(screen.get("_snapshot")["cities"]["city-0"]["reserveTroops"]), transport_troops_before - mini(10, transport_troops_before), "transport must debit reserve troops atomically on issue")
+	screen.call("_advance_strategic_logistics")
+	_assert_true(int(screen.get("_snapshot")["rngSeed"]) != transport_seed_before, "valid transport arrival must consume exactly the deterministic loss roll")
 
 	if _failures > 0:
 		push_error(

@@ -18,6 +18,8 @@ var _roads: Array[PackedStringArray] = []
 var _map_bounds := Rect2(Vector2.ZERO, Vector2(1280.0, 720.0))
 var _selected_city_id := ""
 var _city_hit_radius := CITY_HIT_RADIUS
+var _route_preview: Array[String] = []
+var _active_order_routes: Array[Array] = []
 
 
 func rebuild(snapshot: Dictionary) -> void:
@@ -25,6 +27,7 @@ func rebuild(snapshot: Dictionary) -> void:
 	_city_order = _ordered_city_ids(snapshot)
 	_city_positions.clear()
 	_roads.clear()
+	_active_order_routes.clear()
 
 	for child in cities_layer.get_children():
 		cities_layer.remove_child(child)
@@ -51,6 +54,14 @@ func rebuild(snapshot: Dictionary) -> void:
 		_markers[city_id] = marker
 
 	_roads = _build_reciprocal_roads(cities)
+	var strategic_orders: Dictionary = _as_dictionary(snapshot.get("strategicOrders", {}))
+	var order_ids: Array[String] = []
+	for raw_order_id: Variant in strategic_orders.keys(): order_ids.append(str(raw_order_id))
+	order_ids.sort()
+	for order_id: String in order_ids:
+		var order: Dictionary = _as_dictionary(strategic_orders[order_id])
+		if order.get("factionId", "") == player_faction_id:
+			_active_order_routes.append((order.get("routeCityIds", []) as Array).duplicate())
 	_map_bounds = _calculate_bounds()
 	queue_redraw()
 
@@ -61,6 +72,14 @@ func set_selected_city(city_id: String) -> void:
 		var marker := _markers.get(marker_id) as CityMarker
 		if is_instance_valid(marker):
 			marker.set_selected(marker_id == city_id)
+
+
+func set_route_preview(route_city_ids: Array) -> void:
+	_route_preview.clear()
+	for raw_city_id: Variant in route_city_ids:
+		var city_id: String = str(raw_city_id)
+		if _city_positions.has(city_id): _route_preview.append(city_id)
+	queue_redraw()
 
 
 func pick_city(screen_position: Vector2) -> String:
@@ -131,7 +150,29 @@ func _draw() -> void:
 		draw_line(from, to, Color(0.01, 0.02, 0.02, 0.62), 8.0, true)
 		draw_line(from, to, Color(0.49, 0.57, 0.43, 0.82), 3.0, true)
 
+	for route: Array in _active_order_routes:
+		_draw_route(route, Color(0.24, 0.78, 0.82, 0.72), 5.0)
+	_draw_route(_route_preview, Color(1.0, 0.72, 0.18, 0.96), 7.0)
+	for city_id: String in _route_preview:
+		draw_circle(Vector2(_city_positions[city_id]), 12.0, Color(1.0, 0.72, 0.18, 0.25))
+		draw_arc(Vector2(_city_positions[city_id]), 15.0, 0.0, TAU, 28, Color(1.0, 0.82, 0.38, 0.95), 2.0, true)
+
 	draw_rect(_map_bounds, Color(0.55, 0.68, 0.56, 0.55), false, 2.0)
+
+
+func _draw_route(route: Array, color: Color, width: float) -> void:
+	for index: int in range(route.size() - 1):
+		var from_id: String = str(route[index])
+		var to_id: String = str(route[index + 1])
+		if not _city_positions.has(from_id) or not _city_positions.has(to_id): continue
+		var from: Vector2 = _city_positions[from_id]
+		var to: Vector2 = _city_positions[to_id]
+		draw_line(from, to, Color(0.03, 0.04, 0.03, 0.82), width + 5.0, true)
+		draw_line(from, to, color, width, true)
+		var direction: Vector2 = (to - from).normalized()
+		var tip: Vector2 = from.lerp(to, 0.72)
+		var normal: Vector2 = Vector2(-direction.y, direction.x)
+		draw_colored_polygon(PackedVector2Array([tip + direction * 10.0, tip - direction * 7.0 + normal * 6.0, tip - direction * 7.0 - normal * 6.0]), color)
 
 
 func _ordered_city_ids(snapshot: Dictionary) -> Array[String]:

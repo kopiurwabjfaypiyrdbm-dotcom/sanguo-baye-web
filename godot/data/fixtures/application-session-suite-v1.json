@@ -94124,6 +94124,1757 @@
       "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38"
     }
   ],
+  "strategicLogisticsSequences": [
+    {
+      "id": "success",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 48641
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 500
+        }
+      ],
+      "initialStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+      "steps": [
+        {
+          "id": "issue-multihop-move",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-success-001",
+            "expectedStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+            "kind": "issue_move_order",
+            "parameters": {
+              "sourceCityId": "city-0",
+              "targetCityId": "city-8",
+              "officerId": "officer-56"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-success-001",
+            "kind": "issue_move_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+            "afterStateSha256": "7bf8d3e7e9ad948e4b78a1bba625878f99ba179bb118da2b506a561973d9e8d8",
+            "receipt": {
+              "kind": "issue_move_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-56"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "strategic-order-1",
+                "kind": "move",
+                "factionId": "ruler-5",
+                "officerId": "officer-56",
+                "sourceCityId": "city-0",
+                "targetCityId": "city-8",
+                "routeCityIds": [
+                  "city-0",
+                  "city-3",
+                  "city-8"
+                ],
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 2,
+                "remainingMonths": 2,
+                "cargo": {
+                  "money": 0,
+                  "food": 0,
+                  "reserveTroops": 0
+                }
+              },
+              "sourceCity": {
+                "id": "city-0",
+                "before": {
+                  "money": 202,
+                  "food": 436,
+                  "reserveTroops": 500,
+                  "satrapOfficerId": "officer-56"
+                },
+                "after": {
+                  "money": 202,
+                  "food": 436,
+                  "reserveTroops": 500,
+                  "satrapOfficerId": "officer-57"
+                }
+              },
+              "targetCity": {
+                "id": "city-8",
+                "before": {
+                  "money": 237,
+                  "food": 505,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-5"
+                },
+                "after": {
+                  "money": 237,
+                  "food": 505,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-5"
+                }
+              },
+              "officer": {
+                "id": "officer-56",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": "city-0",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": null,
+                  "stamina": 100
+                }
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "韩遂从西凉启程前往天水，预计 2 个月抵达。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "move-month-1",
+          "operation": "advance",
+          "prePatches": [],
+          "preStateSha256": "7bf8d3e7e9ad948e4b78a1bba625878f99ba179bb118da2b506a561973d9e8d8",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "7bf8d3e7e9ad948e4b78a1bba625878f99ba179bb118da2b506a561973d9e8d8",
+            "afterStateSha256": "f4845c493dc026a4d4a6fd718624f2e82add44f191fca0e0bc911790af49eef4",
+            "receipt": {
+              "kind": "advance_strategic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 2
+              },
+              "completedOrderIds": [],
+              "activeOrders": [
+                {
+                  "id": "strategic-order-1",
+                  "kind": "move",
+                  "factionId": "ruler-5",
+                  "officerId": "officer-56",
+                  "sourceCityId": "city-0",
+                  "targetCityId": "city-8",
+                  "routeCityIds": [
+                    "city-0",
+                    "city-3",
+                    "city-8"
+                  ],
+                  "createdTurn": 1,
+                  "createdYear": 190,
+                  "createdMonth": 1,
+                  "durationMonths": 2,
+                  "remainingMonths": 1,
+                  "cargo": {
+                    "money": 0,
+                    "food": 0,
+                    "reserveTroops": 0
+                  }
+                }
+              ],
+              "appendedLogs": []
+            }
+          }
+        },
+        {
+          "id": "move-arrival",
+          "operation": "advance",
+          "prePatches": [],
+          "preStateSha256": "f4845c493dc026a4d4a6fd718624f2e82add44f191fca0e0bc911790af49eef4",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "f4845c493dc026a4d4a6fd718624f2e82add44f191fca0e0bc911790af49eef4",
+            "afterStateSha256": "04fd0f68350ea44d97c2ecfd1a4f7c35353e208a288ddcfcc6ddcf1a543f004b",
+            "receipt": {
+              "kind": "advance_strategic_orders",
+              "state": {
+                "turn": 3,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "strategic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-3-003",
+                  "kind": "turn",
+                  "message": "韩遂抵达天水。",
+                  "turn": 3
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "issue-success-transport",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-success-002",
+            "expectedStateSha256": "04fd0f68350ea44d97c2ecfd1a4f7c35353e208a288ddcfcc6ddcf1a543f004b",
+            "kind": "issue_transport_order",
+            "parameters": {
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "officerId": "officer-57",
+              "cargo": {
+                "money": 10,
+                "food": 20,
+                "reserveTroops": 30
+              }
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-success-002",
+            "kind": "issue_transport_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "04fd0f68350ea44d97c2ecfd1a4f7c35353e208a288ddcfcc6ddcf1a543f004b",
+            "afterStateSha256": "a35e9a34c6efd6d34eb0684a09d5a0f3036ae3a843d59b9ba91a5213d1510a25",
+            "receipt": {
+              "kind": "issue_transport_order",
+              "state": {
+                "turn": 3,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-57"
+                ],
+                "logCount": 4
+              },
+              "order": {
+                "id": "strategic-order-2",
+                "kind": "transport",
+                "factionId": "ruler-5",
+                "officerId": "officer-57",
+                "sourceCityId": "city-0",
+                "targetCityId": "city-3",
+                "routeCityIds": [
+                  "city-0",
+                  "city-3"
+                ],
+                "createdTurn": 3,
+                "createdYear": 190,
+                "createdMonth": 3,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "cargo": {
+                  "money": 10,
+                  "food": 20,
+                  "reserveTroops": 30
+                }
+              },
+              "sourceCity": {
+                "id": "city-0",
+                "before": {
+                  "money": 202,
+                  "food": 436,
+                  "reserveTroops": 500,
+                  "satrapOfficerId": "officer-57"
+                },
+                "after": {
+                  "money": 192,
+                  "food": 416,
+                  "reserveTroops": 470,
+                  "satrapOfficerId": null
+                }
+              },
+              "targetCity": {
+                "id": "city-3",
+                "before": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                },
+                "after": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                }
+              },
+              "officer": {
+                "id": "officer-57",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": "city-0",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": null,
+                  "stamina": 92
+                }
+              },
+              "appendedLog": {
+                "id": "log-3-004",
+                "kind": "map",
+                "message": "马超从西凉向安定输送10 金、20 粮、30 后备兵，预计 1 个月完成。",
+                "turn": 3
+              }
+            }
+          }
+        },
+        {
+          "id": "transport-success",
+          "operation": "advance",
+          "prePatches": [],
+          "preStateSha256": "a35e9a34c6efd6d34eb0684a09d5a0f3036ae3a843d59b9ba91a5213d1510a25",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "a35e9a34c6efd6d34eb0684a09d5a0f3036ae3a843d59b9ba91a5213d1510a25",
+            "afterStateSha256": "3b5a1760355272a55f0fa16ff4ab45a17606ad579e6f73a97e9a644a65b1e767",
+            "receipt": {
+              "kind": "advance_strategic_orders",
+              "state": {
+                "turn": 4,
+                "rngSeed": 373686124,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 5
+              },
+              "completedOrderIds": [
+                "strategic-order-2"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-4-005",
+                  "kind": "turn",
+                  "message": "马超的输送途中受损，10 金、20 粮、30 后备兵全部损失，人员返回西凉。",
+                  "turn": 4
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "3b5a1760355272a55f0fa16ff4ab45a17606ad579e6f73a97e9a644a65b1e767"
+    },
+    {
+      "id": "loss",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1972
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 500
+        }
+      ],
+      "initialStateSha256": "278252c86280a5fc0ce213598d3fc8bc9c9c1a36038e49b0ae1e028ecb67582f",
+      "steps": [
+        {
+          "id": "issue-loss-transport",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-loss-001",
+            "expectedStateSha256": "278252c86280a5fc0ce213598d3fc8bc9c9c1a36038e49b0ae1e028ecb67582f",
+            "kind": "issue_transport_order",
+            "parameters": {
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "officerId": "officer-56",
+              "cargo": {
+                "money": 10,
+                "food": 20,
+                "reserveTroops": 30
+              }
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-loss-001",
+            "kind": "issue_transport_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "278252c86280a5fc0ce213598d3fc8bc9c9c1a36038e49b0ae1e028ecb67582f",
+            "afterStateSha256": "193ae9793f887e7248a6177810c6ab1385d5257e9dabe85b090853414e346534",
+            "receipt": {
+              "kind": "issue_transport_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 1972,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-56"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "strategic-order-1",
+                "kind": "transport",
+                "factionId": "ruler-5",
+                "officerId": "officer-56",
+                "sourceCityId": "city-0",
+                "targetCityId": "city-3",
+                "routeCityIds": [
+                  "city-0",
+                  "city-3"
+                ],
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "cargo": {
+                  "money": 10,
+                  "food": 20,
+                  "reserveTroops": 30
+                }
+              },
+              "sourceCity": {
+                "id": "city-0",
+                "before": {
+                  "money": 202,
+                  "food": 436,
+                  "reserveTroops": 500,
+                  "satrapOfficerId": "officer-56"
+                },
+                "after": {
+                  "money": 192,
+                  "food": 416,
+                  "reserveTroops": 470,
+                  "satrapOfficerId": "officer-57"
+                }
+              },
+              "targetCity": {
+                "id": "city-3",
+                "before": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                },
+                "after": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                }
+              },
+              "officer": {
+                "id": "officer-56",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": "city-0",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": null,
+                  "stamina": 92
+                }
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "韩遂从西凉向安定输送10 金、20 粮、30 后备兵，预计 1 个月完成。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "transport-loss",
+          "operation": "advance",
+          "prePatches": [],
+          "preStateSha256": "193ae9793f887e7248a6177810c6ab1385d5257e9dabe85b090853414e346534",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "193ae9793f887e7248a6177810c6ab1385d5257e9dabe85b090853414e346534",
+            "afterStateSha256": "0fbeab1898c49176fd80c64345febf25f7fd6240ac081383f95574a656f5c01c",
+            "receipt": {
+              "kind": "advance_strategic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 1380227,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "strategic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "turn",
+                  "message": "韩遂的输送途中受损，10 金、20 粮、30 后备兵全部损失，人员返回西凉。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "0fbeab1898c49176fd80c64345febf25f7fd6240ac081383f95574a656f5c01c"
+    },
+    {
+      "id": "target-full",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 48641
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 500
+        }
+      ],
+      "initialStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+      "steps": [
+        {
+          "id": "issue-loss-transport",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-target-full-001",
+            "expectedStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+            "kind": "issue_transport_order",
+            "parameters": {
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "officerId": "officer-56",
+              "cargo": {
+                "money": 10,
+                "food": 20,
+                "reserveTroops": 30
+              }
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-target-full-001",
+            "kind": "issue_transport_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+            "afterStateSha256": "da5a2c14572de14358756a3a4881e81ac57331a18fc01552680c5ce1240802c9",
+            "receipt": {
+              "kind": "issue_transport_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-56"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "strategic-order-1",
+                "kind": "transport",
+                "factionId": "ruler-5",
+                "officerId": "officer-56",
+                "sourceCityId": "city-0",
+                "targetCityId": "city-3",
+                "routeCityIds": [
+                  "city-0",
+                  "city-3"
+                ],
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "cargo": {
+                  "money": 10,
+                  "food": 20,
+                  "reserveTroops": 30
+                }
+              },
+              "sourceCity": {
+                "id": "city-0",
+                "before": {
+                  "money": 202,
+                  "food": 436,
+                  "reserveTroops": 500,
+                  "satrapOfficerId": "officer-56"
+                },
+                "after": {
+                  "money": 192,
+                  "food": 416,
+                  "reserveTroops": 470,
+                  "satrapOfficerId": "officer-57"
+                }
+              },
+              "targetCity": {
+                "id": "city-3",
+                "before": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                },
+                "after": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                }
+              },
+              "officer": {
+                "id": "officer-56",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": "city-0",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": null,
+                  "stamina": 92
+                }
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "韩遂从西凉向安定输送10 金、20 粮、30 后备兵，预计 1 个月完成。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "transport-target-full",
+          "operation": "advance",
+          "prePatches": [
+            {
+              "path": [
+                "cities",
+                "city-3",
+                "money"
+              ],
+              "value": 9007199254740991
+            }
+          ],
+          "preStateSha256": "24cf6d88e684a40828fd098bb177be796972f9275a16a89768cdbb05f464b744",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "24cf6d88e684a40828fd098bb177be796972f9275a16a89768cdbb05f464b744",
+            "afterStateSha256": "c62fa240db94aed4ff82f1d962fe4c0b198b3a49def9a0de8990e8e10eda32f5",
+            "receipt": {
+              "kind": "advance_strategic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 4
+              },
+              "completedOrderIds": [
+                "strategic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "turn",
+                  "message": "strategic-order-1因安定库存已满失效，10 金、20 粮、30 后备兵退回西凉。",
+                  "turn": 2
+                },
+                {
+                  "id": "log-2-004",
+                  "kind": "turn",
+                  "message": "韩遂返回西凉。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "c62fa240db94aed4ff82f1d962fe4c0b198b3a49def9a0de8990e8e10eda32f5"
+    },
+    {
+      "id": "target-captured",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 48641
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 500
+        }
+      ],
+      "initialStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+      "steps": [
+        {
+          "id": "issue-loss-transport",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-target-captured-001",
+            "expectedStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+            "kind": "issue_transport_order",
+            "parameters": {
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "officerId": "officer-56",
+              "cargo": {
+                "money": 10,
+                "food": 20,
+                "reserveTroops": 30
+              }
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-target-captured-001",
+            "kind": "issue_transport_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+            "afterStateSha256": "da5a2c14572de14358756a3a4881e81ac57331a18fc01552680c5ce1240802c9",
+            "receipt": {
+              "kind": "issue_transport_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-56"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "strategic-order-1",
+                "kind": "transport",
+                "factionId": "ruler-5",
+                "officerId": "officer-56",
+                "sourceCityId": "city-0",
+                "targetCityId": "city-3",
+                "routeCityIds": [
+                  "city-0",
+                  "city-3"
+                ],
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "cargo": {
+                  "money": 10,
+                  "food": 20,
+                  "reserveTroops": 30
+                }
+              },
+              "sourceCity": {
+                "id": "city-0",
+                "before": {
+                  "money": 202,
+                  "food": 436,
+                  "reserveTroops": 500,
+                  "satrapOfficerId": "officer-56"
+                },
+                "after": {
+                  "money": 192,
+                  "food": 416,
+                  "reserveTroops": 470,
+                  "satrapOfficerId": "officer-57"
+                }
+              },
+              "targetCity": {
+                "id": "city-3",
+                "before": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                },
+                "after": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                }
+              },
+              "officer": {
+                "id": "officer-56",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": "city-0",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": null,
+                  "stamina": 92
+                }
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "韩遂从西凉向安定输送10 金、20 粮、30 后备兵，预计 1 个月完成。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "transport-target-captured",
+          "operation": "advance",
+          "prePatches": [
+            {
+              "path": [
+                "cities",
+                "city-3",
+                "ownerId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "cities",
+                "city-3",
+                "satrapOfficerId"
+              ],
+              "value": "officer-19"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-19",
+                "cityId"
+              ],
+              "value": "city-3"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-64",
+                "cityId"
+              ],
+              "value": "city-8"
+            }
+          ],
+          "preStateSha256": "7fc1e19ddc90256390d072eea26e5f3c763d14eb51bd6e2cabc3f34c5b31dea9",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "7fc1e19ddc90256390d072eea26e5f3c763d14eb51bd6e2cabc3f34c5b31dea9",
+            "afterStateSha256": "64adfb6e1d46cbf2b20e7d2e79570aed50b2b6c0046c68875771788ee75b3ea9",
+            "receipt": {
+              "kind": "advance_strategic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "strategic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "turn",
+                  "message": "韩遂因输送目标易主，携10 金、20 粮、30 后备兵返回西凉。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "64adfb6e1d46cbf2b20e7d2e79570aed50b2b6c0046c68875771788ee75b3ea9"
+    },
+    {
+      "id": "multi-order",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "reserveTroops"
+          ],
+          "value": 500
+        }
+      ],
+      "initialStateSha256": "f0ce9a742e8cb994d98131871b2d79fb853902b675c8afab00ff3f94b1b8b626",
+      "steps": [
+        {
+          "id": "issue-transport-1",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-multi-1",
+            "expectedStateSha256": "f0ce9a742e8cb994d98131871b2d79fb853902b675c8afab00ff3f94b1b8b626",
+            "kind": "issue_transport_order",
+            "parameters": {
+              "sourceCityId": "city-8",
+              "targetCityId": "city-3",
+              "officerId": "officer-58",
+              "cargo": {
+                "money": 11,
+                "food": 21,
+                "reserveTroops": 31
+              }
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-multi-1",
+            "kind": "issue_transport_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "f0ce9a742e8cb994d98131871b2d79fb853902b675c8afab00ff3f94b1b8b626",
+            "afterStateSha256": "62a42eb1af5d7e26b388f0d54d66e4cd37c5740a8d416f7e89f32fb5b106fed1",
+            "receipt": {
+              "kind": "issue_transport_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-58"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "strategic-order-1",
+                "kind": "transport",
+                "factionId": "ruler-5",
+                "officerId": "officer-58",
+                "sourceCityId": "city-8",
+                "targetCityId": "city-3",
+                "routeCityIds": [
+                  "city-8",
+                  "city-3"
+                ],
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "cargo": {
+                  "money": 11,
+                  "food": 21,
+                  "reserveTroops": 31
+                }
+              },
+              "sourceCity": {
+                "id": "city-8",
+                "before": {
+                  "money": 237,
+                  "food": 505,
+                  "reserveTroops": 500,
+                  "satrapOfficerId": "officer-5"
+                },
+                "after": {
+                  "money": 226,
+                  "food": 484,
+                  "reserveTroops": 469,
+                  "satrapOfficerId": "officer-5"
+                }
+              },
+              "targetCity": {
+                "id": "city-3",
+                "before": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                },
+                "after": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                }
+              },
+              "officer": {
+                "id": "officer-58",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": "city-8",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": null,
+                  "stamina": 92
+                }
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "庞德从天水向安定输送11 金、21 粮、31 后备兵，预计 1 个月完成。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "issue-transport-2",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-multi-2",
+            "expectedStateSha256": "62a42eb1af5d7e26b388f0d54d66e4cd37c5740a8d416f7e89f32fb5b106fed1",
+            "kind": "issue_transport_order",
+            "parameters": {
+              "sourceCityId": "city-8",
+              "targetCityId": "city-3",
+              "officerId": "officer-60",
+              "cargo": {
+                "money": 12,
+                "food": 22,
+                "reserveTroops": 32
+              }
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-multi-2",
+            "kind": "issue_transport_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "62a42eb1af5d7e26b388f0d54d66e4cd37c5740a8d416f7e89f32fb5b106fed1",
+            "afterStateSha256": "342cd68a5b4802f7f762cf5c09607d006de96a7caf985b499965d03fd29f04c6",
+            "receipt": {
+              "kind": "issue_transport_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-58",
+                  "officer-60"
+                ],
+                "logCount": 3
+              },
+              "order": {
+                "id": "strategic-order-2",
+                "kind": "transport",
+                "factionId": "ruler-5",
+                "officerId": "officer-60",
+                "sourceCityId": "city-8",
+                "targetCityId": "city-3",
+                "routeCityIds": [
+                  "city-8",
+                  "city-3"
+                ],
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "cargo": {
+                  "money": 12,
+                  "food": 22,
+                  "reserveTroops": 32
+                }
+              },
+              "sourceCity": {
+                "id": "city-8",
+                "before": {
+                  "money": 226,
+                  "food": 484,
+                  "reserveTroops": 469,
+                  "satrapOfficerId": "officer-5"
+                },
+                "after": {
+                  "money": 214,
+                  "food": 462,
+                  "reserveTroops": 437,
+                  "satrapOfficerId": "officer-5"
+                }
+              },
+              "targetCity": {
+                "id": "city-3",
+                "before": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                },
+                "after": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                }
+              },
+              "officer": {
+                "id": "officer-60",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": "city-8",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": null,
+                  "stamina": 92
+                }
+              },
+              "appendedLog": {
+                "id": "log-1-003",
+                "kind": "map",
+                "message": "程银从天水向安定输送12 金、22 粮、32 后备兵，预计 1 个月完成。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance-stable-order-ids",
+          "operation": "advance",
+          "prePatches": [
+            {
+              "path": [
+                "strategicOrders"
+              ],
+              "value": {
+                "strategic-order-2": {
+                  "id": "strategic-order-2",
+                  "kind": "transport",
+                  "factionId": "ruler-5",
+                  "officerId": "officer-58",
+                  "sourceCityId": "city-8",
+                  "targetCityId": "city-3",
+                  "routeCityIds": [
+                    "city-8",
+                    "city-3"
+                  ],
+                  "createdTurn": 1,
+                  "createdYear": 190,
+                  "createdMonth": 1,
+                  "durationMonths": 1,
+                  "remainingMonths": 1,
+                  "cargo": {
+                    "money": 11,
+                    "food": 21,
+                    "reserveTroops": 31
+                  }
+                },
+                "strategic-order-10": {
+                  "id": "strategic-order-10",
+                  "kind": "transport",
+                  "factionId": "ruler-5",
+                  "officerId": "officer-60",
+                  "sourceCityId": "city-8",
+                  "targetCityId": "city-3",
+                  "routeCityIds": [
+                    "city-8",
+                    "city-3"
+                  ],
+                  "createdTurn": 1,
+                  "createdYear": 190,
+                  "createdMonth": 1,
+                  "durationMonths": 1,
+                  "remainingMonths": 1,
+                  "cargo": {
+                    "money": 12,
+                    "food": 22,
+                    "reserveTroops": 32
+                  }
+                }
+              }
+            },
+            {
+              "path": [
+                "nextStrategicOrderSerial"
+              ],
+              "value": 11
+            }
+          ],
+          "preStateSha256": "da98491bfb2d842c1d625ddd973e23c89adc4a99d2d97804ac0b15f3bfe5532a",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "da98491bfb2d842c1d625ddd973e23c89adc4a99d2d97804ac0b15f3bfe5532a",
+            "afterStateSha256": "8f7163f58ae98cd4d0bba06a9ae3d5a85297fa4cca23ba779cb3413aef158d95",
+            "receipt": {
+              "kind": "advance_strategic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 860746715,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 5
+              },
+              "completedOrderIds": [
+                "strategic-order-10",
+                "strategic-order-2"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-004",
+                  "kind": "turn",
+                  "message": "程银的输送途中受损，12 金、22 粮、32 后备兵全部损失，人员返回天水。",
+                  "turn": 2
+                },
+                {
+                  "id": "log-2-005",
+                  "kind": "turn",
+                  "message": "庞德的输送途中受损，11 金、21 粮、31 后备兵全部损失，人员返回天水。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "8f7163f58ae98cd4d0bba06a9ae3d5a85297fa4cca23ba779cb3413aef158d95"
+    }
+  ],
+  "strategicLogisticsBoundaryCases": [
+    {
+      "id": "non-owned-target",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "patches": [],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-001",
+        "expectedStateSha256": "ace11832c6da3428d68c7394952ae78e40694992984caa4587f90c19768677a4",
+        "kind": "issue_move_order",
+        "parameters": {
+          "sourceCityId": "city-0",
+          "targetCityId": "city-9",
+          "officerId": "officer-56"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-001",
+        "kind": "issue_move_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "只能在己方城池之间调动武将",
+        "stateChanged": false,
+        "beforeStateSha256": "ace11832c6da3428d68c7394952ae78e40694992984caa4587f90c19768677a4",
+        "afterStateSha256": "ace11832c6da3428d68c7394952ae78e40694992984caa4587f90c19768677a4",
+        "receipt": {}
+      },
+      "expectedStateSha256": "ace11832c6da3428d68c7394952ae78e40694992984caa4587f90c19768677a4"
+    },
+    {
+      "id": "negative-cargo",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 100
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-002",
+        "expectedStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "kind": "issue_transport_order",
+        "parameters": {
+          "sourceCityId": "city-0",
+          "targetCityId": "city-3",
+          "officerId": "officer-56",
+          "cargo": {
+            "money": -1,
+            "food": 0,
+            "reserveTroops": 0
+          }
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-002",
+        "kind": "issue_transport_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "输送数量必须是非负整数",
+        "stateChanged": false,
+        "beforeStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "afterStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "receipt": {}
+      },
+      "expectedStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07"
+    },
+    {
+      "id": "fractional-cargo",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 100
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-003",
+        "expectedStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "kind": "issue_transport_order",
+        "parameters": {
+          "sourceCityId": "city-0",
+          "targetCityId": "city-3",
+          "officerId": "officer-56",
+          "cargo": {
+            "money": 0.5,
+            "food": 0,
+            "reserveTroops": 0
+          }
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-003",
+        "kind": "issue_transport_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "输送数量必须是非负整数",
+        "stateChanged": false,
+        "beforeStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "afterStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "receipt": {}
+      },
+      "expectedStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07"
+    },
+    {
+      "id": "empty-cargo",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 100
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-004",
+        "expectedStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "kind": "issue_transport_order",
+        "parameters": {
+          "sourceCityId": "city-0",
+          "targetCityId": "city-3",
+          "officerId": "officer-56",
+          "cargo": {
+            "money": 0,
+            "food": 0,
+            "reserveTroops": 0
+          }
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-004",
+        "kind": "issue_transport_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "请至少输送一种资源",
+        "stateChanged": false,
+        "beforeStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "afterStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "receipt": {}
+      },
+      "expectedStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07"
+    },
+    {
+      "id": "insufficient-cargo",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 100
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-005",
+        "expectedStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "kind": "issue_transport_order",
+        "parameters": {
+          "sourceCityId": "city-0",
+          "targetCityId": "city-3",
+          "officerId": "officer-56",
+          "cargo": {
+            "money": 203,
+            "food": 0,
+            "reserveTroops": 0
+          }
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-005",
+        "kind": "issue_transport_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "出发城金钱不足",
+        "stateChanged": false,
+        "beforeStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "afterStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "receipt": {}
+      },
+      "expectedStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07"
+    },
+    {
+      "id": "extra-cargo-field",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 100
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-006",
+        "expectedStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "kind": "issue_transport_order",
+        "parameters": {
+          "sourceCityId": "city-0",
+          "targetCityId": "city-3",
+          "officerId": "officer-56",
+          "cargo": {
+            "money": 1,
+            "food": 0,
+            "reserveTroops": 0,
+            "gems": 1
+          }
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-006",
+        "kind": "issue_transport_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "输送物资必须且只能包含 money、food、reserveTroops",
+        "stateChanged": false,
+        "beforeStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "afterStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07",
+        "receipt": {}
+      },
+      "expectedStateSha256": "c1fa9a36e372e55f4dc9a938f6337cb2144701b26a6f5742e8de4a84bba87d07"
+    },
+    {
+      "id": "target-safe-integer-overflow",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "money"
+          ],
+          "value": 9007199254740991
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-007",
+        "expectedStateSha256": "4099f92743e547e40a82e3ec6e3666a8f5a64960e837af9ba6ae536a03863668",
+        "kind": "issue_transport_order",
+        "parameters": {
+          "sourceCityId": "city-0",
+          "targetCityId": "city-3",
+          "officerId": "officer-56",
+          "cargo": {
+            "money": 1,
+            "food": 0,
+            "reserveTroops": 0
+          }
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-007",
+        "kind": "issue_transport_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "目标城资源过多，无法安全接收本批物资",
+        "stateChanged": false,
+        "beforeStateSha256": "4099f92743e547e40a82e3ec6e3666a8f5a64960e837af9ba6ae536a03863668",
+        "afterStateSha256": "4099f92743e547e40a82e3ec6e3666a8f5a64960e837af9ba6ae536a03863668",
+        "receipt": {}
+      },
+      "expectedStateSha256": "4099f92743e547e40a82e3ec6e3666a8f5a64960e837af9ba6ae536a03863668"
+    },
+    {
+      "id": "acted-officer",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "actedOfficerIds"
+          ],
+          "value": [
+            "officer-56"
+          ]
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-008",
+        "expectedStateSha256": "0e61c1a8eacaa6baa1a1148cbe1669b89a66f7b6a0698868ae47be86f2b36eba",
+        "kind": "issue_move_order",
+        "parameters": {
+          "sourceCityId": "city-0",
+          "targetCityId": "city-3",
+          "officerId": "officer-56"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-008",
+        "kind": "issue_move_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "该武将本月已经执行过命令",
+        "stateChanged": false,
+        "beforeStateSha256": "0e61c1a8eacaa6baa1a1148cbe1669b89a66f7b6a0698868ae47be86f2b36eba",
+        "afterStateSha256": "0e61c1a8eacaa6baa1a1148cbe1669b89a66f7b6a0698868ae47be86f2b36eba",
+        "receipt": {}
+      },
+      "expectedStateSha256": "0e61c1a8eacaa6baa1a1148cbe1669b89a66f7b6a0698868ae47be86f2b36eba"
+    },
+    {
+      "id": "stamina-insufficient",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "stamina"
+          ],
+          "value": 7
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-009",
+        "expectedStateSha256": "5e1a51e2ee2f27510d47b37a1b78b13eb694627be149536253d68ab037c69895",
+        "kind": "issue_transport_order",
+        "parameters": {
+          "sourceCityId": "city-0",
+          "targetCityId": "city-3",
+          "officerId": "officer-56",
+          "cargo": {
+            "money": 1,
+            "food": 0,
+            "reserveTroops": 0
+          }
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-009",
+        "kind": "issue_transport_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "武将体力不足，需要 8",
+        "stateChanged": false,
+        "beforeStateSha256": "5e1a51e2ee2f27510d47b37a1b78b13eb694627be149536253d68ab037c69895",
+        "afterStateSha256": "5e1a51e2ee2f27510d47b37a1b78b13eb694627be149536253d68ab037c69895",
+        "receipt": {}
+      },
+      "expectedStateSha256": "5e1a51e2ee2f27510d47b37a1b78b13eb694627be149536253d68ab037c69895"
+    }
+  ],
   "validationCases": [
     {
       "id": "unsafe-city-money",

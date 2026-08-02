@@ -14,6 +14,8 @@ const COMMAND_COSTS: Dictionary = {
 		"banquet": {"stamina": 0, "money": 100},
 		"plunder": {"stamina": 20, "money": 0},
 		"surrender": {"stamina": 15, "money": 100},
+		"move": {"stamina": 0, "money": 0},
+		"transport": {"stamina": 8, "money": 0},
 	},
 	"modern-balanced-v1": {
 		"develop": {"stamina": 8, "money": 50},
@@ -23,6 +25,8 @@ const COMMAND_COSTS: Dictionary = {
 		"banquet": {"stamina": 0, "money": 50},
 		"plunder": {"stamina": 4, "money": 0},
 		"surrender": {"stamina": 4, "money": 0},
+		"move": {"stamina": 4, "money": 0},
+		"transport": {"stamina": 4, "money": 0},
 	},
 }
 

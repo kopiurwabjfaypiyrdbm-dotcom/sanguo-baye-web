@@ -147,6 +147,13 @@ layout_mode = 2
 focus_mode = 2
 text = "人才"
 
+[node name="LogisticsButton" type="Button" parent="OuterMargin/Content/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 54)
+layout_mode = 2
+focus_mode = 2
+text = "后勤"
+
 [node name="OfficerButton" type="Button" parent="OuterMargin/Content/ActionRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(112, 54)
