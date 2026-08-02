@@ -7,9 +7,9 @@
   "roadmapPath": "docs/migration/godot-program-roadmap.json",
   "branch": "codex/godot-migration-spike",
   "status": "active",
-  "phase": "brief_pending",
+  "phase": "implementation_pending",
   "currentMissionId": "MB02",
-  "currentBriefPath": null,
+  "currentBriefPath": "docs/mission-briefs/MB02-deterministic-migration-verification-platform.md",
   "readyMissionIds": ["MB02"],
   "completedMissions": [
     {
@@ -25,7 +25,7 @@
     "commit": "0cdcc3f",
     "date": "2026-08-02"
   },
-  "nextAction": "Use $mission-brief to create exactly one self-contained MB02 brief, then update this ledger to phase implementation_pending before implementing it.",
+  "nextAction": "Read MB02, inspect the existing single-command fixture path, and implement the deterministic migration verification platform without expanding the MB03 data contract.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
