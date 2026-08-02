@@ -16,14 +16,18 @@ const fixture = buildFixture();
 if (writeMode) {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(fixture, null, 2)}\n`, 'utf8');
-  process.stdout.write(`[Godot application session] generated ${fixture.steps.length} transaction cases\n`);
+  process.stdout.write(`[Godot application session] generated ${transactionCaseCount(fixture)} transaction cases\n`);
 } else {
   let current: unknown;
   try { current = JSON.parse(readFileSync(path, 'utf8')); } catch { current = null; }
   if (canonicalJson(current) !== canonicalJson(fixture)) {
     throw new Error('godot/data/fixtures/application-session-suite-v1.json differs from TypeScript oracle');
   }
-  process.stdout.write(`[Godot application session] PASSED ${fixture.steps.length} transaction cases\n`);
+  process.stdout.write(`[Godot application session] PASSED ${transactionCaseCount(fixture)} transaction cases\n`);
+}
+
+function transactionCaseCount(value: ReturnType<typeof buildFixture>) {
+  return value.steps.length + value.internalAffairsSequence.steps.length;
 }
 
 export function buildFixture() {
@@ -101,6 +105,7 @@ export function buildFixture() {
   const continuationExpected = restoredSession.execute(continuationCommand);
   apply('second-success', continuationCommand);
   apply('advanced-duplicate', success);
+  const internalAffairsSequence = buildInternalAffairsSequence();
   return {
     applicationSessionFixtureVersion: 1,
     algorithms: {
@@ -115,5 +120,51 @@ export function buildFixture() {
       command: continuationCommand,
       expected: continuationExpected,
     },
+    internalAffairsSequence,
+  };
+}
+
+function buildInternalAffairsSequence() {
+  const initialState = createProductionSessionState(1, 1);
+  const session = new OracleApplicationSession(initialState);
+  const steps: { id: string; command: ApplicationCommandEnvelope; expectedCore: unknown }[] = [];
+  let serial = 1;
+  const apply = (id: string, kind: string, parameters: Record<string, unknown>) => {
+    const command: ApplicationCommandEnvelope = {
+      commandEnvelopeVersion: 1,
+      commandId: `mb05-${String(serial).padStart(4, '0')}`,
+      expectedStateSha256: canonicalSha256(session.snapshot()),
+      kind,
+      parameters,
+    };
+    serial += 1;
+    const { state: _stateEvidence, ...expectedCore } = session.execute(command);
+    steps.push({ id, command, expectedCore });
+  };
+  apply('trade-sell-success', 'trade_food', {
+    cityId: 'city-12', officerId: 'officer-1', direction: 'sell', amount: 100,
+  });
+  apply('farming-success', 'develop_farming', { cityId: 'city-12', officerId: 'officer-32' });
+  apply('commerce-success', 'develop_commerce', { cityId: 'city-12', officerId: 'officer-33' });
+  apply('govern-success', 'govern_city', { cityId: 'city-12', officerId: 'officer-34' });
+  apply('inspect-success', 'inspect_city', { cityId: 'city-12', officerId: 'officer-35' });
+  apply('banquet-success', 'banquet_officer', { cityId: 'city-12', targetOfficerId: 'officer-36' });
+  apply('plunder-success', 'plunder_city', { cityId: 'city-12', officerId: 'officer-37' });
+  apply('trade-buy-resource-rejected', 'trade_food', {
+    cityId: 'city-12', officerId: 'officer-36', direction: 'buy', amount: 30000,
+  });
+  apply('trade-buy-success', 'trade_food', {
+    cityId: 'city-12', officerId: 'officer-36', direction: 'buy', amount: 1,
+  });
+  apply('invalid-trade-amount', 'trade_food', {
+    cityId: 'city-12', officerId: 'officer-21', direction: 'buy', amount: 0,
+  });
+  apply('acted-officer-rejected', 'develop_commerce', {
+    cityId: 'city-12', officerId: 'officer-1',
+  });
+  return {
+    initialStateSha256: canonicalSha256(initialState),
+    steps,
+    finalStateSha256: canonicalSha256(session.snapshot()),
   };
 }

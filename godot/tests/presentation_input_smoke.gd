@@ -48,6 +48,11 @@ func _run() -> void:
 	screen.call("_handle_screen_touch", _touch(4, true, player_city_position))
 	screen.call("_handle_screen_touch", _touch(4, false, player_city_position))
 	_assert_true(city_card.visible, "touch tap on city-12 must open the spatial city card")
+	var command_option: OptionButton = city_card.get_node("%CommandOption")
+	_assert_equal(command_option.item_count, 7, "city card must expose all seven internal-affairs commands")
+	city_card.call("_on_command_selected", 4)
+	_assert_true(city_card.get_node("%TradeRow").visible, "trade command must reveal native direction and amount controls")
+	city_card.call("_on_command_selected", 0)
 	var snapshot_before: Dictionary = screen.get("_snapshot")
 	var farming_before: int = int(snapshot_before["cities"]["city-12"]["farming"])
 	screen.call("_execute_develop_farming", "city-12", "officer-1")
@@ -57,6 +62,16 @@ func _run() -> void:
 		"main scene must execute develop_farming through the production transaction boundary"
 	)
 	_assert_equal(snapshot_after["dataContractVersion"], 2, "main scene must use MB03 production data")
+	var trade_seed_before: int = int(snapshot_after["rngSeed"])
+	var trade_money_before: int = int(snapshot_after["cities"]["city-12"]["money"])
+	var trade_food_before: int = int(snapshot_after["cities"]["city-12"]["food"])
+	screen.call("_execute_internal_command", "trade_food", {
+		"cityId": "city-12", "officerId": "officer-32", "direction": "sell", "amount": 10,
+	})
+	var trade_after: Dictionary = screen.get("_snapshot")
+	_assert_equal(int(trade_after["rngSeed"]), trade_seed_before, "trade must not advance the deterministic seed")
+	_assert_equal(int(trade_after["cities"]["city-12"]["money"]), trade_money_before + 20, "trade sell must credit money")
+	_assert_equal(int(trade_after["cities"]["city-12"]["food"]), trade_food_before - 10, "trade sell must debit food")
 
 	if _failures > 0:
 		push_error(

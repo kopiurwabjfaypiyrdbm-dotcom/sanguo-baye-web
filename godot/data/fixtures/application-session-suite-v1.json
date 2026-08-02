@@ -87874,5 +87874,719 @@
         ]
       }
     }
+  },
+  "internalAffairsSequence": {
+    "initialStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+    "steps": [
+      {
+        "id": "trade-sell-success",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0001",
+          "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+          "kind": "trade_food",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-1",
+            "direction": "sell",
+            "amount": 100
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0001",
+          "kind": "trade_food",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+          "afterStateSha256": "abcfbbde3015d702e9a882092dad07eb061fa223190fe9d05325efbaddaae60b",
+          "receipt": {
+            "kind": "trade_food",
+            "state": {
+              "turn": 1,
+              "rngSeed": 48641,
+              "campaignStarted": true,
+              "actedOfficerIds": [
+                "officer-1"
+              ],
+              "logCount": 2
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "farming": 1238,
+                "commerce": 1223,
+                "population": 64139,
+                "publicLoyalty": 48,
+                "disasterPrevention": 30,
+                "condition": "normal",
+                "money": 135,
+                "food": 309
+              },
+              "after": {
+                "farming": 1238,
+                "commerce": 1223,
+                "population": 64139,
+                "publicLoyalty": 48,
+                "disasterPrevention": 30,
+                "condition": "normal",
+                "money": 335,
+                "food": 209
+              }
+            },
+            "appendedLog": {
+              "id": "log-1-002",
+              "kind": "map",
+              "message": "曹操在濮阳卖出 100 粮，获得 200 金，消耗体力 12。",
+              "turn": 1
+            },
+            "officer": {
+              "id": "officer-1",
+              "before": {
+                "stamina": 100,
+                "loyalty": 100
+              },
+              "after": {
+                "stamina": 88,
+                "loyalty": 100
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "farming-success",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0002",
+          "expectedStateSha256": "abcfbbde3015d702e9a882092dad07eb061fa223190fe9d05325efbaddaae60b",
+          "kind": "develop_farming",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-32"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0002",
+          "kind": "develop_farming",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "abcfbbde3015d702e9a882092dad07eb061fa223190fe9d05325efbaddaae60b",
+          "afterStateSha256": "af047a1bbcab8a2dabc447d52b14f4668efec1ea7a4cdfeda921aeb23a3327d9",
+          "receipt": {
+            "gain": 42,
+            "costs": {
+              "money": 50,
+              "stamina": 8
+            },
+            "state": {
+              "turn": 1,
+              "rngSeed": 373686124,
+              "campaignStarted": true,
+              "actedOfficerIds": [
+                "officer-1",
+                "officer-32"
+              ],
+              "logCount": 3
+            },
+            "city": {
+              "id": "city-12",
+              "resources": {
+                "farming": 1280,
+                "money": 285
+              }
+            },
+            "officer": {
+              "id": "officer-32",
+              "stamina": 92
+            },
+            "appendedLog": {
+              "id": "log-1-003",
+              "kind": "map",
+              "message": "夏侯惇在濮阳主持开垦，农业提高 42，消耗金钱 50、体力 8。",
+              "turn": 1
+            }
+          }
+        }
+      },
+      {
+        "id": "commerce-success",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0003",
+          "expectedStateSha256": "af047a1bbcab8a2dabc447d52b14f4668efec1ea7a4cdfeda921aeb23a3327d9",
+          "kind": "develop_commerce",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-33"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0003",
+          "kind": "develop_commerce",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "af047a1bbcab8a2dabc447d52b14f4668efec1ea7a4cdfeda921aeb23a3327d9",
+          "afterStateSha256": "47f2287c90b67fe2c384a7369b4220dc97e5ddaf562fa15f15b420c9171d3632",
+          "receipt": {
+            "kind": "develop_commerce",
+            "state": {
+              "turn": 1,
+              "rngSeed": 860746715,
+              "campaignStarted": true,
+              "actedOfficerIds": [
+                "officer-1",
+                "officer-32",
+                "officer-33"
+              ],
+              "logCount": 4
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "farming": 1280,
+                "commerce": 1223,
+                "population": 64139,
+                "publicLoyalty": 48,
+                "disasterPrevention": 30,
+                "condition": "normal",
+                "money": 285,
+                "food": 209
+              },
+              "after": {
+                "farming": 1280,
+                "commerce": 1255,
+                "population": 64139,
+                "publicLoyalty": 48,
+                "disasterPrevention": 30,
+                "condition": "normal",
+                "money": 235,
+                "food": 209
+              }
+            },
+            "appendedLog": {
+              "id": "log-1-004",
+              "kind": "map",
+              "message": "夏侯渊在濮阳主持招商，商业提高 32，消耗金钱 50、体力 8。",
+              "turn": 1
+            },
+            "officer": {
+              "id": "officer-33",
+              "before": {
+                "stamina": 100,
+                "loyalty": 98
+              },
+              "after": {
+                "stamina": 92,
+                "loyalty": 98
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "govern-success",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0004",
+          "expectedStateSha256": "47f2287c90b67fe2c384a7369b4220dc97e5ddaf562fa15f15b420c9171d3632",
+          "kind": "govern_city",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-34"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0004",
+          "kind": "govern_city",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "47f2287c90b67fe2c384a7369b4220dc97e5ddaf562fa15f15b420c9171d3632",
+          "afterStateSha256": "a1adb140b6af46826e5e96484770c7f02b0f597f6c436211036d30575d029335",
+          "receipt": {
+            "kind": "govern_city",
+            "state": {
+              "turn": 1,
+              "rngSeed": 3069220734,
+              "campaignStarted": true,
+              "actedOfficerIds": [
+                "officer-1",
+                "officer-32",
+                "officer-33",
+                "officer-34"
+              ],
+              "logCount": 5
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "farming": 1280,
+                "commerce": 1255,
+                "population": 64139,
+                "publicLoyalty": 48,
+                "disasterPrevention": 30,
+                "condition": "normal",
+                "money": 235,
+                "food": 209
+              },
+              "after": {
+                "farming": 1280,
+                "commerce": 1255,
+                "population": 64139,
+                "publicLoyalty": 48,
+                "disasterPrevention": 33,
+                "condition": "normal",
+                "money": 185,
+                "food": 209
+              }
+            },
+            "appendedLog": {
+              "id": "log-1-005",
+              "kind": "map",
+              "message": "李典治理濮阳，防灾提高 3，消耗金钱 50、体力 8。",
+              "turn": 1
+            },
+            "officer": {
+              "id": "officer-34",
+              "before": {
+                "stamina": 100,
+                "loyalty": 85
+              },
+              "after": {
+                "stamina": 92,
+                "loyalty": 85
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "inspect-success",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0005",
+          "expectedStateSha256": "a1adb140b6af46826e5e96484770c7f02b0f597f6c436211036d30575d029335",
+          "kind": "inspect_city",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-35"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0005",
+          "kind": "inspect_city",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "a1adb140b6af46826e5e96484770c7f02b0f597f6c436211036d30575d029335",
+          "afterStateSha256": "d1d8a3adc9c4faf4fc2ab9030d9565b3b35fdc0a60a5afd0ea151dfa6a78012d",
+          "receipt": {
+            "kind": "inspect_city",
+            "state": {
+              "turn": 1,
+              "rngSeed": 777050309,
+              "campaignStarted": true,
+              "actedOfficerIds": [
+                "officer-1",
+                "officer-32",
+                "officer-33",
+                "officer-34",
+                "officer-35"
+              ],
+              "logCount": 6
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "farming": 1280,
+                "commerce": 1255,
+                "population": 64139,
+                "publicLoyalty": 48,
+                "disasterPrevention": 33,
+                "condition": "normal",
+                "money": 185,
+                "food": 209
+              },
+              "after": {
+                "farming": 1280,
+                "commerce": 1255,
+                "population": 64239,
+                "publicLoyalty": 49,
+                "disasterPrevention": 33,
+                "condition": "normal",
+                "money": 135,
+                "food": 209
+              }
+            },
+            "appendedLog": {
+              "id": "log-1-006",
+              "kind": "map",
+              "message": "乐进出巡濮阳，民忠提高 1、人口增加 100，消耗金钱 50、体力 8。",
+              "turn": 1
+            },
+            "officer": {
+              "id": "officer-35",
+              "before": {
+                "stamina": 100,
+                "loyalty": 88
+              },
+              "after": {
+                "stamina": 92,
+                "loyalty": 88
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "banquet-success",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0006",
+          "expectedStateSha256": "d1d8a3adc9c4faf4fc2ab9030d9565b3b35fdc0a60a5afd0ea151dfa6a78012d",
+          "kind": "banquet_officer",
+          "parameters": {
+            "cityId": "city-12",
+            "targetOfficerId": "officer-36"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0006",
+          "kind": "banquet_officer",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "d1d8a3adc9c4faf4fc2ab9030d9565b3b35fdc0a60a5afd0ea151dfa6a78012d",
+          "afterStateSha256": "59aedf8a1fab0185cb0e824eb30b549ea140b3ccd678b267fab988e19cc8610b",
+          "receipt": {
+            "kind": "banquet_officer",
+            "state": {
+              "turn": 1,
+              "rngSeed": 777050309,
+              "campaignStarted": true,
+              "actedOfficerIds": [
+                "officer-1",
+                "officer-32",
+                "officer-33",
+                "officer-34",
+                "officer-35"
+              ],
+              "logCount": 7
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "farming": 1280,
+                "commerce": 1255,
+                "population": 64239,
+                "publicLoyalty": 49,
+                "disasterPrevention": 33,
+                "condition": "normal",
+                "money": 135,
+                "food": 209
+              },
+              "after": {
+                "farming": 1280,
+                "commerce": 1255,
+                "population": 64239,
+                "publicLoyalty": 49,
+                "disasterPrevention": 33,
+                "condition": "normal",
+                "money": 35,
+                "food": 209
+              }
+            },
+            "appendedLog": {
+              "id": "log-1-007",
+              "kind": "map",
+              "message": "濮阳宴请曹洪，体力恢复 0、忠诚提高 1，花费 100 金。",
+              "turn": 1
+            },
+            "targetOfficer": {
+              "id": "officer-36",
+              "before": {
+                "stamina": 100,
+                "loyalty": 92
+              },
+              "after": {
+                "stamina": 100,
+                "loyalty": 93
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "plunder-success",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0007",
+          "expectedStateSha256": "59aedf8a1fab0185cb0e824eb30b549ea140b3ccd678b267fab988e19cc8610b",
+          "kind": "plunder_city",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-37"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0007",
+          "kind": "plunder_city",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "59aedf8a1fab0185cb0e824eb30b549ea140b3ccd678b267fab988e19cc8610b",
+          "afterStateSha256": "c36c58f62779778b9b4b50ed36deb5feaa8aec8b18a68fd07abd5cedfe4f8601",
+          "receipt": {
+            "kind": "plunder_city",
+            "state": {
+              "turn": 1,
+              "rngSeed": 777050309,
+              "campaignStarted": true,
+              "actedOfficerIds": [
+                "officer-1",
+                "officer-32",
+                "officer-33",
+                "officer-34",
+                "officer-35",
+                "officer-37"
+              ],
+              "logCount": 8
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "farming": 1280,
+                "commerce": 1255,
+                "population": 64239,
+                "publicLoyalty": 49,
+                "disasterPrevention": 33,
+                "condition": "normal",
+                "money": 35,
+                "food": 209
+              },
+              "after": {
+                "farming": 640,
+                "commerce": 627,
+                "population": 64239,
+                "publicLoyalty": 24,
+                "disasterPrevention": 33,
+                "condition": "normal",
+                "money": 329,
+                "food": 944
+              }
+            },
+            "appendedLog": {
+              "id": "log-1-008",
+              "kind": "map",
+              "message": "曹仁掠夺濮阳，获得 294 金、735 粮；民忠、农业与商业折半。",
+              "turn": 1
+            },
+            "officer": {
+              "id": "officer-37",
+              "before": {
+                "stamina": 100,
+                "loyalty": 94
+              },
+              "after": {
+                "stamina": 80,
+                "loyalty": 94
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "trade-buy-resource-rejected",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0008",
+          "expectedStateSha256": "c36c58f62779778b9b4b50ed36deb5feaa8aec8b18a68fd07abd5cedfe4f8601",
+          "kind": "trade_food",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-36",
+            "direction": "buy",
+            "amount": 30000
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0008",
+          "kind": "trade_food",
+          "ok": false,
+          "code": "domain_rejected",
+          "error": "城中金钱不足，需要 150000",
+          "stateChanged": false,
+          "beforeStateSha256": "c36c58f62779778b9b4b50ed36deb5feaa8aec8b18a68fd07abd5cedfe4f8601",
+          "afterStateSha256": "c36c58f62779778b9b4b50ed36deb5feaa8aec8b18a68fd07abd5cedfe4f8601",
+          "receipt": {}
+        }
+      },
+      {
+        "id": "trade-buy-success",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0009",
+          "expectedStateSha256": "c36c58f62779778b9b4b50ed36deb5feaa8aec8b18a68fd07abd5cedfe4f8601",
+          "kind": "trade_food",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-36",
+            "direction": "buy",
+            "amount": 1
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0009",
+          "kind": "trade_food",
+          "ok": true,
+          "code": "ok",
+          "error": "",
+          "stateChanged": true,
+          "beforeStateSha256": "c36c58f62779778b9b4b50ed36deb5feaa8aec8b18a68fd07abd5cedfe4f8601",
+          "afterStateSha256": "8c38aafe1fdac854668cd9dae5501088bdbfe2db592a57f2ea16aea67d969bb0",
+          "receipt": {
+            "kind": "trade_food",
+            "state": {
+              "turn": 1,
+              "rngSeed": 777050309,
+              "campaignStarted": true,
+              "actedOfficerIds": [
+                "officer-1",
+                "officer-32",
+                "officer-33",
+                "officer-34",
+                "officer-35",
+                "officer-37",
+                "officer-36"
+              ],
+              "logCount": 9
+            },
+            "city": {
+              "id": "city-12",
+              "before": {
+                "farming": 640,
+                "commerce": 627,
+                "population": 64239,
+                "publicLoyalty": 24,
+                "disasterPrevention": 33,
+                "condition": "normal",
+                "money": 329,
+                "food": 944
+              },
+              "after": {
+                "farming": 640,
+                "commerce": 627,
+                "population": 64239,
+                "publicLoyalty": 24,
+                "disasterPrevention": 33,
+                "condition": "normal",
+                "money": 324,
+                "food": 945
+              }
+            },
+            "appendedLog": {
+              "id": "log-1-009",
+              "kind": "map",
+              "message": "曹洪在濮阳买入 1 粮，花费 5 金，消耗体力 12。",
+              "turn": 1
+            },
+            "officer": {
+              "id": "officer-36",
+              "before": {
+                "stamina": 100,
+                "loyalty": 93
+              },
+              "after": {
+                "stamina": 88,
+                "loyalty": 93
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "invalid-trade-amount",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0010",
+          "expectedStateSha256": "8c38aafe1fdac854668cd9dae5501088bdbfe2db592a57f2ea16aea67d969bb0",
+          "kind": "trade_food",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-21",
+            "direction": "buy",
+            "amount": 0
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0010",
+          "kind": "trade_food",
+          "ok": false,
+          "code": "invalid_parameters",
+          "error": "amount must be a positive safe integer",
+          "stateChanged": false,
+          "beforeStateSha256": "8c38aafe1fdac854668cd9dae5501088bdbfe2db592a57f2ea16aea67d969bb0",
+          "afterStateSha256": "8c38aafe1fdac854668cd9dae5501088bdbfe2db592a57f2ea16aea67d969bb0",
+          "receipt": {}
+        }
+      },
+      {
+        "id": "acted-officer-rejected",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0011",
+          "expectedStateSha256": "8c38aafe1fdac854668cd9dae5501088bdbfe2db592a57f2ea16aea67d969bb0",
+          "kind": "develop_commerce",
+          "parameters": {
+            "cityId": "city-12",
+            "officerId": "officer-1"
+          }
+        },
+        "expectedCore": {
+          "resultEnvelopeVersion": 1,
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb05-0011",
+          "kind": "develop_commerce",
+          "ok": false,
+          "code": "domain_rejected",
+          "error": "该武将本月已经执行过命令",
+          "stateChanged": false,
+          "beforeStateSha256": "8c38aafe1fdac854668cd9dae5501088bdbfe2db592a57f2ea16aea67d969bb0",
+          "afterStateSha256": "8c38aafe1fdac854668cd9dae5501088bdbfe2db592a57f2ea16aea67d969bb0",
+          "receipt": {}
+        }
+      }
+    ],
+    "finalStateSha256": "8c38aafe1fdac854668cd9dae5501088bdbfe2db592a57f2ea16aea67d969bb0"
   }
 }

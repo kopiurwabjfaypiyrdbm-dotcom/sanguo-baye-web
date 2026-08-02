@@ -2,13 +2,22 @@ class_name CommandDispatcher
 extends RefCounted
 
 const DevelopFarmingAdapter = preload("res://src/application/commands/develop_farming_adapter.gd")
+const InternalAffairsAdapter = preload("res://src/application/commands/internal_affairs_adapter.gd")
 const StringContract = preload("res://src/application/commands/application_string_contract.gd")
 
 const ENVELOPE_VERSION: int = 1
 const ENVELOPE_KEYS: Array[String] = [
 	"commandEnvelopeVersion", "commandId", "expectedStateSha256", "kind", "parameters",
 ]
-const ADAPTERS: Dictionary = {"develop_farming": DevelopFarmingAdapter}
+const ADAPTERS: Dictionary = {
+	"develop_farming": {"module": DevelopFarmingAdapter, "generic": false},
+	"develop_commerce": {"module": InternalAffairsAdapter, "generic": true},
+	"govern_city": {"module": InternalAffairsAdapter, "generic": true},
+	"inspect_city": {"module": InternalAffairsAdapter, "generic": true},
+	"trade_food": {"module": InternalAffairsAdapter, "generic": true},
+	"banquet_officer": {"module": InternalAffairsAdapter, "generic": true},
+	"plunder_city": {"module": InternalAffairsAdapter, "generic": true},
+}
 
 
 static func validate_envelope(raw: Variant) -> Dictionary:
@@ -37,7 +46,9 @@ static func validate_envelope(raw: Variant) -> Dictionary:
 	if not ADAPTERS.has(kind):
 		return _failure("unknown_command", "unsupported command kind: %s" % kind)
 	var parameters: Dictionary = envelope["parameters"]
-	var parameter_result: Dictionary = ADAPTERS[kind].validate_parameters(parameters)
+	var adapter: Dictionary = ADAPTERS[kind]
+	var parameter_result: Dictionary = adapter["module"].validate_parameters(kind, parameters) \
+			if adapter["generic"] else adapter["module"].validate_parameters(parameters)
 	if not parameter_result["ok"]:
 		return _failure("invalid_parameters", parameter_result["error"])
 	return {
@@ -52,7 +63,9 @@ static func dispatch(state: RefCounted, envelope: Dictionary) -> Dictionary:
 	var kind: String = envelope["kind"]
 	if not ADAPTERS.has(kind):
 		return _failure("unknown_command", "unsupported command kind: %s" % kind)
-	return ADAPTERS[kind].execute(state, envelope["parameters"])
+	var adapter: Dictionary = ADAPTERS[kind]
+	return adapter["module"].execute(kind, state, envelope["parameters"]) \
+			if adapter["generic"] else adapter["module"].execute(state, envelope["parameters"])
 
 
 static func _unknown_keys(record: Dictionary, allowed: Array[String]) -> Array[String]:

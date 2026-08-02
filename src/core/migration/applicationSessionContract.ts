@@ -1,4 +1,12 @@
-import { developFarming } from '../cityCommands';
+import {
+  banquetOfficer,
+  developCommerce,
+  developFarming,
+  governCity,
+  inspectCity,
+  plunderCity,
+  tradeFood,
+} from '../cityCommands';
 import type { GameState } from '../types';
 import { selectPlayerFaction } from '../../data/legacyScenario';
 import { canonicalSha256, compareUnicodeScalar } from './canonicalJson';
@@ -94,16 +102,15 @@ export class OracleApplicationSession {
       return failure(envelope, 'stale_state', 'expectedStateSha256 does not match current state', before, beforeDigest);
     }
 
-    const parameters = envelope.parameters as { cityId: string; officerId: string };
     try {
-      const next = JSON.parse(JSON.stringify(developFarming(before, parameters))) as GameState;
+      const next = JSON.parse(JSON.stringify(executeDomainCommand(before, envelope))) as GameState;
       const afterDigest = canonicalSha256(next);
       const result: ApplicationCommandResult = {
         ...base(envelope, true, 'ok', ''),
         stateChanged: true,
         beforeStateSha256: beforeDigest,
         afterStateSha256: afterDigest,
-        receipt: projectReceipt(before, next, parameters),
+        receipt: projectReceipt(envelope.kind, before, next, envelope.parameters as Record<string, unknown>),
         state: structuredClone(next),
       };
       this.state = structuredClone(next);
@@ -152,8 +159,17 @@ export function validateEnvelope(raw: unknown):
   if (!isNonBlank(raw.kind)) return rejected('invalid_kind', 'kind must be a non-blank string');
   if (!isUnicodeScalarSequence(raw.kind)) return rejected('invalid_envelope', 'kind must be a Unicode scalar sequence');
   if (!isRecord(raw.parameters)) return rejected('invalid_parameters', 'parameters must be an object');
-  if (raw.kind !== 'develop_farming') return rejected('unknown_command', `unsupported command kind: ${raw.kind}`);
-  const parameterKeys = ['cityId', 'officerId'];
+  const parameterKeysByKind: Record<string, string[]> = {
+    develop_farming: ['cityId', 'officerId'],
+    develop_commerce: ['cityId', 'officerId'],
+    govern_city: ['cityId', 'officerId'],
+    inspect_city: ['cityId', 'officerId'],
+    trade_food: ['cityId', 'officerId', 'direction', 'amount'],
+    banquet_officer: ['cityId', 'targetOfficerId'],
+    plunder_city: ['cityId', 'officerId'],
+  };
+  const parameterKeys = parameterKeysByKind[raw.kind];
+  if (!parameterKeys) return rejected('unknown_command', `unsupported command kind: ${raw.kind}`);
   const parameterRecordKeys = Object.keys(raw.parameters);
   if (parameterRecordKeys.some((key) => !isUnicodeScalarSequence(key))) {
     return rejected('invalid_parameters', 'parameter field names must be Unicode scalar sequences');
@@ -161,18 +177,137 @@ export function validateEnvelope(raw: unknown):
   const unknownParameters = parameterRecordKeys
     .filter((key) => !parameterKeys.includes(key)).sort(compareUnicodeScalar);
   if (unknownParameters.length > 0) {
-    return rejected('invalid_parameters', `unknown develop_farming parameter: ${unknownParameters[0]}`);
+    return rejected(
+      'invalid_parameters',
+      `unknown ${raw.kind} parameter: ${unknownParameters[0]}`,
+    );
   }
-  for (const key of parameterKeys) {
-    if (!isNonBlank(raw.parameters[key])) return rejected('invalid_parameters', `${key} must be a non-blank string`);
-    if (!isUnicodeScalarSequence(raw.parameters[key])) {
-      return rejected('invalid_parameters', `${key} must be a Unicode scalar sequence`);
+  if (raw.kind === 'develop_farming') {
+    for (const key of parameterKeys) {
+      if (!isNonBlank(raw.parameters[key])) return rejected('invalid_parameters', `${key} must be a non-blank string`);
+      if (!isUnicodeScalarSequence(raw.parameters[key])) {
+        return rejected('invalid_parameters', `${key} must be a Unicode scalar sequence`);
+      }
+    }
+  } else {
+    for (const key of parameterKeys) {
+      if (!(key in raw.parameters)) return rejected('invalid_parameters', `${key} is required`);
+    }
+    for (const key of ['cityId', 'officerId', 'targetOfficerId']) {
+      if (!parameterKeys.includes(key)) continue;
+      if (!isNonBlank(raw.parameters[key])) return rejected('invalid_parameters', `${key} must be a non-blank string`);
+      if (!isUnicodeScalarSequence(raw.parameters[key] as string)) {
+        return rejected('invalid_parameters', `${key} must be a Unicode scalar sequence`);
+      }
+    }
+  }
+  if (raw.kind === 'trade_food') {
+    if (raw.parameters.direction !== 'buy' && raw.parameters.direction !== 'sell') {
+      return rejected('invalid_parameters', 'direction must be buy or sell');
+    }
+    if (!Number.isSafeInteger(raw.parameters.amount) || (raw.parameters.amount as number) <= 0) {
+      return rejected('invalid_parameters', 'amount must be a positive safe integer');
     }
   }
   return { ok: true, envelope: structuredClone(raw) as ApplicationCommandEnvelope };
 }
 
+function executeDomainCommand(before: GameState, envelope: ApplicationCommandEnvelope): GameState {
+  const parameters = envelope.parameters as Record<string, unknown>;
+  switch (envelope.kind) {
+    case 'develop_farming':
+      return developFarming(before, parameters as { cityId: string; officerId: string });
+    case 'develop_commerce':
+      return developCommerce(before, parameters as { cityId: string; officerId: string });
+    case 'govern_city':
+      return governCity(before, parameters as { cityId: string; officerId: string });
+    case 'inspect_city':
+      return inspectCity(before, parameters as { cityId: string; officerId: string });
+    case 'trade_food':
+      return tradeFood(before, parameters as {
+        cityId: string; officerId: string; direction: 'buy' | 'sell'; amount: number;
+      });
+    case 'banquet_officer':
+      return banquetOfficer(before, parameters as { cityId: string; targetOfficerId: string });
+    case 'plunder_city':
+      return plunderCity(before, parameters as { cityId: string; officerId: string });
+    default:
+      throw new Error(`unsupported command kind: ${envelope.kind}`);
+  }
+}
+
 function projectReceipt(
+  kind: string,
+  before: GameState,
+  after: GameState,
+  command: Record<string, unknown>,
+): Record<string, unknown> {
+  if (kind === 'develop_farming') {
+    return projectDevelopFarmingReceipt(
+      before,
+      after,
+      command as { cityId: string; officerId: string },
+    );
+  }
+  const cityId = command.cityId as string;
+  const beforeCity = before.cities[cityId];
+  const afterCity = after.cities[cityId];
+  const appendedLog = after.logs.at(-1);
+  if (!beforeCity || !afterCity || !appendedLog) {
+    throw new Error(`Successful ${kind} transaction is missing observable output`);
+  }
+  const receipt: Record<string, unknown> = {
+    kind,
+    state: {
+      turn: after.turn,
+      rngSeed: after.rngSeed,
+      campaignStarted: after.campaignStarted,
+      actedOfficerIds: [...after.actedOfficerIds],
+      logCount: after.logs.length,
+    },
+    city: {
+      id: cityId,
+      before: projectCityResources(beforeCity),
+      after: projectCityResources(afterCity),
+    },
+    appendedLog: structuredClone(appendedLog),
+  };
+  if (typeof command.officerId === 'string') {
+    receipt.officer = {
+      id: command.officerId,
+      before: projectOfficerValues(before.officers[command.officerId]),
+      after: projectOfficerValues(after.officers[command.officerId]),
+    };
+  }
+  if (typeof command.targetOfficerId === 'string') {
+    receipt.targetOfficer = {
+      id: command.targetOfficerId,
+      before: projectOfficerValues(before.officers[command.targetOfficerId]),
+      after: projectOfficerValues(after.officers[command.targetOfficerId]),
+    };
+  }
+  return receipt;
+}
+
+function projectCityResources(city: GameState['cities'][string]) {
+  return {
+    farming: city.farming,
+    commerce: city.commerce,
+    population: city.population,
+    publicLoyalty: city.publicLoyalty,
+    disasterPrevention: city.disasterPrevention,
+    condition: city.condition ?? 'normal',
+    money: city.money,
+    food: city.food,
+  };
+}
+
+function projectOfficerValues(officer: GameState['officers'][string]) {
+  if (!officer) throw new Error('Successful internal-affairs transaction is missing an officer');
+  return { stamina: officer.stamina, loyalty: officer.loyalty };
+}
+
+function projectDevelopFarmingReceipt(
   before: GameState,
   after: GameState,
   command: { cityId: string; officerId: string },

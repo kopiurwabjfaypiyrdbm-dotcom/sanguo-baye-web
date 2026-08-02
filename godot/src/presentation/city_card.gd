@@ -3,20 +3,28 @@
 class_name CityCard
 extends PanelContainer
 
-signal develop_requested(city_id: String, officer_id: String)
+signal command_requested(kind: String, parameters: Dictionary)
 signal close_requested
 
 @onready var title_label: Label = %TitleLabel
 @onready var ownership_label: Label = %OwnershipLabel
 @onready var stats_label: Label = %StatsLabel
+@onready var command_label: Label = %CommandLabel
+@onready var command_option: OptionButton = %CommandOption
 @onready var executor_label: Label = %ExecutorLabel
 @onready var executor_option: OptionButton = %ExecutorOption
+@onready var trade_row: HBoxContainer = %TradeRow
+@onready var trade_direction: OptionButton = %TradeDirection
+@onready var trade_amount: SpinBox = %TradeAmount
 @onready var develop_button: Button = %DevelopButton
 @onready var close_button: Button = %CloseButton
 
 var _city_id := ""
 var _base_action_enabled := false
 var _busy := false
+var _command_queries: Array[Dictionary] = []
+var _selected_query: Dictionary = {}
+var _confirm_dialog: ConfirmationDialog
 
 const DEFAULT_CARD_MINIMUM := Vector2(334.0, 254.0)
 const DEFAULT_CLOSE_MINIMUM := Vector2(52.0, 48.0)
@@ -26,14 +34,19 @@ const DEFAULT_DEVELOP_MINIMUM := Vector2(132.0, 54.0)
 
 func _ready() -> void:
 	close_button.pressed.connect(func() -> void: close_requested.emit())
-	develop_button.pressed.connect(_on_develop_pressed)
+	develop_button.pressed.connect(_on_action_pressed)
+	command_option.item_selected.connect(_on_command_selected)
+	_confirm_dialog = ConfirmationDialog.new()
+	_confirm_dialog.title = tr("确认危险命令")
+	_confirm_dialog.confirmed.connect(_emit_selected_command)
+	add_child(_confirm_dialog)
 	close_button.text = tr("关闭")
-	develop_button.text = tr("开垦")
+	command_label.text = tr("内政命令")
 	executor_label.text = tr("执行武将")
 	hide()
 
 
-func show_city(snapshot: Dictionary, city_id: String, command_query: Dictionary = {}) -> void:
+func show_city(snapshot: Dictionary, city_id: String, command_queries: Array = []) -> void:
 	var cities := _as_dictionary(snapshot.get("cities", {}))
 	var city := _as_dictionary(cities.get(city_id, {}))
 	if city.is_empty():
@@ -54,13 +67,16 @@ func show_city(snapshot: Dictionary, city_id: String, command_query: Dictionary 
 		tr("金：%d") % int(city.get("money", 0)),
 		tr("粮：%d") % int(city.get("food", 0)),
 	]
-	_populate_executors(command_query)
+	_populate_commands(command_queries)
 	show()
 
 
 func set_busy(value: bool) -> void:
 	_busy = value
+	command_option.disabled = value or _command_queries.is_empty()
 	executor_option.disabled = value or not _base_action_enabled
+	trade_direction.disabled = value or not _base_action_enabled
+	trade_amount.editable = not value and _base_action_enabled
 	develop_button.disabled = value or not _base_action_enabled
 
 
@@ -76,9 +92,9 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 		var body_font_size := ceili(16.0 / scale)
 		var action_font_size := ceili(17.0 / scale)
 		title_label.add_theme_font_size_override("font_size", ceili(20.0 / scale))
-		for label: Label in [ownership_label, stats_label, executor_label]:
+		for label: Label in [ownership_label, stats_label, command_label, executor_label]:
 			label.add_theme_font_size_override("font_size", body_font_size)
-		for control: Control in [close_button, executor_option, develop_button]:
+		for control: Control in [close_button, command_option, executor_option, trade_direction, trade_amount, develop_button]:
 			control.add_theme_font_size_override("font_size", action_font_size)
 	else:
 		custom_minimum_size = DEFAULT_CARD_MINIMUM
@@ -86,9 +102,9 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 		executor_option.custom_minimum_size = DEFAULT_EXECUTOR_MINIMUM
 		develop_button.custom_minimum_size = DEFAULT_DEVELOP_MINIMUM
 		title_label.add_theme_font_size_override("font_size", 24)
-		for label: Label in [ownership_label, stats_label, executor_label]:
+		for label: Label in [ownership_label, stats_label, command_label, executor_label]:
 			label.add_theme_font_size_override("font_size", 18)
-		for control: Control in [close_button, executor_option, develop_button]:
+		for control: Control in [close_button, command_option, executor_option, trade_direction, trade_amount, develop_button]:
 			control.add_theme_font_size_override("font_size", 18)
 
 
@@ -107,40 +123,107 @@ func place_near(anchor_position: Vector2, usable_rect: Rect2) -> void:
 	position = desired.round()
 
 
-func _populate_executors(command_query: Dictionary) -> void:
+func _populate_commands(raw_queries: Array) -> void:
+	_command_queries.clear()
+	command_option.clear()
+	for raw_query: Variant in raw_queries:
+		if not raw_query is Dictionary:
+			continue
+		var query: Dictionary = raw_query
+		var kind: String = str(query.get("kind", ""))
+		if kind.is_empty():
+			continue
+		_command_queries.append(query.duplicate(true))
+		command_option.add_item(str(query.get("label", kind)))
+		command_option.set_item_metadata(command_option.item_count - 1, kind)
+	if _command_queries.is_empty():
+		_selected_query = {}
+		command_option.add_item(tr("无可用内政命令"))
+		_render_selected_command()
+		return
+	command_option.select(0)
+	_on_command_selected(0)
+
+
+func _on_command_selected(index: int) -> void:
+	if index < 0 or index >= _command_queries.size():
+		_selected_query = {}
+	else:
+		_selected_query = _command_queries[index].duplicate(true)
+	_render_selected_command()
+
+
+func _render_selected_command() -> void:
 	executor_option.clear()
-	var executors: Variant = command_query.get("executors", [])
-	if executors is Array:
-		for raw_executor: Variant in executors:
+	var mode: String = str(_selected_query.get("mode", "executor"))
+	executor_label.text = tr("宴请目标") if mode == "target" else tr("执行武将")
+	var candidates: Variant = _selected_query.get("targets", []) if mode == "target" \
+			else _selected_query.get("executors", [])
+	if candidates is Array:
+		for raw_executor: Variant in candidates:
 			if not raw_executor is Dictionary:
 				continue
 			var executor: Dictionary = raw_executor
 			var officer_id: String = str(executor.get("id", ""))
 			if officer_id.is_empty():
 				continue
-			executor_option.add_item("%s · %s %d" % [
+			var suffix: String = "%s %d" % [tr("体"), int(executor.get("stamina", 0))]
+			if mode == "target":
+				suffix += " · %s %d" % [tr("忠"), int(executor.get("loyalty", 0))]
+			executor_option.add_item("%s · %s" % [
 				str(executor.get("name", officer_id)),
-				tr("体"),
-				int(executor.get("stamina", 0)),
+				suffix,
 			])
 			var index := executor_option.item_count - 1
 			executor_option.set_item_metadata(index, officer_id)
 
-	_base_action_enabled = bool(command_query.get("allowed", false)) and executor_option.item_count > 0
+	_base_action_enabled = bool(_selected_query.get("allowed", false)) and executor_option.item_count > 0
 	if executor_option.item_count == 0:
-		executor_option.add_item(str(command_query.get("reason", tr("无可用在职武将"))))
+		executor_option.add_item(str(_selected_query.get("reason", tr("无可用在职武将"))))
 	else:
 		executor_option.select(0)
+	trade_row.visible = mode == "trade"
+	if mode == "trade":
+		trade_direction.clear()
+		for raw_direction: Variant in _selected_query.get("directions", []):
+			var allowed_direction: String = str(raw_direction)
+			trade_direction.add_item(tr("买入") if allowed_direction == "buy" else tr("卖出"))
+			trade_direction.set_item_metadata(trade_direction.item_count - 1, allowed_direction)
+		var direction: String = str(_selected_query.get("defaultDirection", "sell"))
+		for index: int in range(trade_direction.item_count):
+			if str(trade_direction.get_item_metadata(index)) == direction:
+				trade_direction.select(index)
+				break
+		trade_amount.value = float(_selected_query.get("defaultAmount", 100))
+	develop_button.text = str(_selected_query.get("label", tr("执行")))
 	set_busy(_busy)
 
 
-func _on_develop_pressed() -> void:
+func _on_action_pressed() -> void:
 	if executor_option.disabled or executor_option.selected < 0:
 		return
+	if bool(_selected_query.get("dangerous", false)):
+		_confirm_dialog.dialog_text = tr("掠夺会降低民忠、农业和商业。确定继续？")
+		_confirm_dialog.popup_centered()
+		return
+	_emit_selected_command()
+
+
+func _emit_selected_command() -> void:
 	var officer_id := str(executor_option.get_item_metadata(executor_option.selected))
 	if officer_id.is_empty():
 		return
-	develop_requested.emit(_city_id, officer_id)
+	var kind: String = str(_selected_query.get("kind", ""))
+	var mode: String = str(_selected_query.get("mode", "executor"))
+	var parameters: Dictionary = {"cityId": _city_id}
+	if mode == "target":
+		parameters["targetOfficerId"] = officer_id
+	else:
+		parameters["officerId"] = officer_id
+	if mode == "trade":
+		parameters["direction"] = str(trade_direction.get_item_metadata(trade_direction.selected))
+		parameters["amount"] = int(trade_amount.value)
+	command_requested.emit(kind, parameters)
 
 
 func _format_number(value: int) -> String:

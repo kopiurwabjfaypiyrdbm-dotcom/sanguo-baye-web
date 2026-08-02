@@ -73,6 +73,15 @@ func _test_all_campaign_candidates() -> void:
 		var city_result: Dictionary = session.city_query("city-12")
 		_assert_true(city_result["found"], "city query must find city-12")
 		_assert_equal(city_result["developFarming"]["defaultOfficerId"], "officer-1", "query must select stable default executor")
+		var internal_affairs: Array = city_result["internalAffairs"]
+		_assert_equal(internal_affairs.size(), 7, "city query must expose the seven internal-affairs commands")
+		var internal_kinds: Array[String] = []
+		for raw_command: Variant in internal_affairs:
+			internal_kinds.append(str((raw_command as Dictionary)["kind"]))
+		_assert_equal(internal_kinds, [
+			"develop_farming", "develop_commerce", "govern_city", "inspect_city",
+			"trade_food", "banquet_officer", "plunder_city",
+		], "internal-affairs query order must be explicit")
 		_assert_equal(session.state_sha256(), query_before, "snapshot mutation and query must not mutate session")
 		_assert_true(not session.save_game()["ok"], "production state must not use the MB01 spike save envelope")
 		_assert_equal(session.state_sha256(), query_before, "rejected production save must not mutate session")
@@ -123,6 +132,7 @@ func _test_transaction_fixture() -> void:
 		if not bool(expected["stateChanged"]):
 			_assert_equal(session.state_sha256(), before_digest, "%s failure must not mutate state" % step["id"])
 	_assert_equal(session.state_sha256(), fixture["finalStateSha256"], "final state digest must match TypeScript")
+	_test_internal_affairs_sequence(fixture, campaign)
 
 	var restored: GameSession = GameSession.new()
 	var restored_result: Dictionary = restored.restore_snapshot(first_result["state"])
@@ -159,6 +169,31 @@ func _test_transaction_fixture() -> void:
 		_assert_equal(guarded.campaign_descriptor(), guarded_campaign, "canonical hash failure must not mutate campaign")
 		var duplicate_after_failure: Dictionary = guarded.execute_command(fixture["steps"][0]["command"])
 		_assert_canonical_equal(duplicate_after_failure, guarded_success, "canonical hash failure must preserve idempotency cache")
+
+
+func _test_internal_affairs_sequence(fixture: Dictionary, campaign: Dictionary) -> void:
+	var sequence: Dictionary = fixture.get("internalAffairsSequence", {})
+	_assert_true(not sequence.is_empty(), "fixture must include the MB05 internal-affairs sequence")
+	if sequence.is_empty():
+		return
+	var session: GameSession = GameSession.new()
+	var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+	_assert_true(started["ok"], "internal-affairs sequence campaign must start")
+	if not started["ok"]:
+		return
+	_assert_equal(session.state_sha256(), sequence["initialStateSha256"], "internal-affairs initial digest must match")
+	for raw_step: Variant in sequence["steps"]:
+		var step: Dictionary = raw_step
+		var before_digest: String = session.state_sha256()
+		var actual: Dictionary = session.execute_command(step["command"])
+		var actual_core: Dictionary = actual.duplicate(true)
+		actual_core.erase("state")
+		var expected_core: Dictionary = step["expectedCore"]
+		_assert_canonical_equal(actual_core, expected_core, "%s internal-affairs result core must match TypeScript" % step["id"])
+		_assert_equal(session.state_sha256(), actual["afterStateSha256"], "%s state must match its result digest" % step["id"])
+		if not bool(expected_core["stateChanged"]):
+			_assert_equal(session.state_sha256(), before_digest, "%s rejection must not mutate state" % step["id"])
+	_assert_equal(session.state_sha256(), sequence["finalStateSha256"], "internal-affairs final state must match TypeScript")
 
 
 func _read_json(path: String) -> Dictionary:

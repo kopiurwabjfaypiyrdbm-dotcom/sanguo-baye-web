@@ -109,7 +109,7 @@ func _connect_ui() -> void:
 	player_button.pressed.connect(_focus_player_city)
 	save_button.pressed.connect(_save_game)
 	load_button.pressed.connect(_load_game)
-	city_card.develop_requested.connect(_execute_develop_farming)
+	city_card.command_requested.connect(_execute_internal_command)
 	city_card.close_requested.connect(_close_city_card)
 
 
@@ -169,12 +169,14 @@ func _select_city(city_id: String) -> void:
 
 
 func _show_selected_city_card() -> void:
-	var command_query: Dictionary = {}
+	var command_queries: Array = []
 	if is_instance_valid(_session) and _session.has_method("city_query"):
 		var query: Variant = _session.call("city_query", _selected_city_id)
 		if query is Dictionary:
-			command_query = _as_dictionary(query.get("developFarming", {}))
-	city_card.show_city(_snapshot, _selected_city_id, command_query)
+			var raw_commands: Variant = query.get("internalAffairs", [])
+			if raw_commands is Array:
+				command_queries = raw_commands
+	city_card.show_city(_snapshot, _selected_city_id, command_queries)
 	city_card.place_near(map_world.get_city_screen_position(_selected_city_id), _get_card_usable_rect())
 
 
@@ -184,32 +186,54 @@ func _close_city_card() -> void:
 	map_world.set_selected_city("")
 
 
-func _execute_develop_farming(city_id: String, officer_id: String) -> void:
+func _execute_internal_command(kind: String, parameters: Dictionary) -> void:
+	var label: String = _internal_command_label(kind)
 	_set_interaction_busy(true)
-	_set_status(tr("正在执行开垦……"), "busy")
+	_set_status(tr("正在执行%s……") % label, "busy")
 	_command_serial += 1
 	var before_digest: String = str(_session.call("state_sha256"))
 	var result := _call_session("execute_command", [{
 		"commandEnvelopeVersion": 1,
 		"commandId": "strategy-screen-%06d" % _command_serial,
 		"expectedStateSha256": before_digest,
-		"kind": "develop_farming",
-		"parameters": {"cityId": city_id, "officerId": officer_id},
+		"kind": kind,
+		"parameters": parameters.duplicate(true),
 	}])
 	_set_interaction_busy(false)
 	if not bool(result.get("ok", false)):
-		_set_status(tr("开垦失败：%s") % _result_error(result), "error")
+		_set_status(tr("%s失败：%s") % [label, _result_error(result)], "error")
 		return
 	_refresh_snapshot(true)
+	var city_id: String = str(parameters.get("cityId", ""))
 	var city := _as_dictionary(_as_dictionary(_snapshot.get("cities", {})).get(city_id, {}))
 	_set_status(
-		tr("%s 开垦完成 · 农业 %d · 后继种子 %d") % [
+		tr("%s %s完成 · 金 %d · 粮 %d · 种子 %d") % [
 			str(city.get("name", city_id)),
-			int(city.get("farming", 0)),
+			label,
+			int(city.get("money", 0)),
+			int(city.get("food", 0)),
 			int(_snapshot.get("rngSeed", 0)),
 		],
 		"success"
 	)
+
+
+func _execute_develop_farming(city_id: String, officer_id: String) -> void:
+	_execute_internal_command(
+		"develop_farming", {"cityId": city_id, "officerId": officer_id}
+	)
+
+
+func _internal_command_label(kind: String) -> String:
+	return {
+		"develop_farming": tr("开垦"),
+		"develop_commerce": tr("招商"),
+		"govern_city": tr("治理"),
+		"inspect_city": tr("出巡"),
+		"trade_food": tr("交易"),
+		"banquet_officer": tr("宴请"),
+		"plunder_city": tr("掠夺"),
+	}.get(kind, kind)
 
 
 func _save_game() -> void:

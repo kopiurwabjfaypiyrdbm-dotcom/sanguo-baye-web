@@ -66,6 +66,22 @@ layout_mode = 2
 size_flags_vertical = 3
 text = "城市信息"
 
+[node name="CommandRow" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CommandLabel" type="Label" parent="OuterMargin/Content/CommandRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "内政命令"
+
+[node name="CommandOption" type="OptionButton" parent="OuterMargin/Content/CommandRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+
 [node name="ExecutorRow" type="HBoxContainer" parent="OuterMargin/Content"]
 layout_mode = 2
 theme_override_constants/separation = 8
@@ -81,6 +97,29 @@ custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 2
+
+[node name="TradeRow" type="HBoxContainer" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TradeDirection" type="OptionButton" parent="OuterMargin/Content/TradeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(92, 48)
+layout_mode = 2
+focus_mode = 2
+
+[node name="TradeAmount" type="SpinBox" parent="OuterMargin/Content/TradeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 30000.0
+value = 100.0
+allow_greater = false
+allow_lesser = false
+rounded = true
 
 [node name="ActionRow" type="HBoxContainer" parent="OuterMargin/Content"]
 layout_mode = 2
