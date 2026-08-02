@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB07",
-  "currentBriefPath": "docs/mission-briefs/MB07-recruitment-captives-surrender-banishment.md",
-  "readyMissionIds": ["MB07"],
+  "currentMissionId": "MB08",
+  "currentBriefPath": "docs/mission-briefs/MB08-movement-transport-strategic-logistics.md",
+  "readyMissionIds": ["MB08"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -47,15 +47,21 @@
       "briefPath": "docs/mission-briefs/MB06-officer-management-appointments-equipment.md",
       "reportPath": "docs/migration/mission-reports/MB06-officer-management-appointments-equipment.md",
       "commit": "6fbc8d6"
+    },
+    {
+      "id": "MB07",
+      "briefPath": "docs/mission-briefs/MB07-recruitment-captives-surrender-banishment.md",
+      "reportPath": "docs/migration/mission-reports/MB07-recruitment-captives-surrender-banishment.md",
+      "commit": "a5a424c"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB06",
-    "commit": "6fbc8d6",
+    "missionId": "MB07",
+    "commit": "a5a424c",
     "date": "2026-08-03"
   },
-  "nextAction": "Implement MB07 by migrating deterministic search and recruitment plus captive surrender, release, execution, banishment, and equipment confiscation through the production domain/application/query boundary, then expose safe native personnel and captive interactions with shared fixture evidence.",
+  "nextAction": "Implement MB08 by migrating deterministic cross-city movement and resource transport, strategic-order validation and advancement, lifecycle cancellation, native touch logistics interaction, and shared TypeScript/Godot fixture evidence.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
