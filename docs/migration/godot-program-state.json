@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB05",
-  "currentBriefPath": "docs/mission-briefs/MB05-city-economy-and-development-rules.md",
-  "readyMissionIds": ["MB05"],
+  "currentMissionId": "MB06",
+  "currentBriefPath": "docs/mission-briefs/MB06-officer-management-appointments-equipment.md",
+  "readyMissionIds": ["MB06"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -35,15 +35,21 @@
       "briefPath": "docs/mission-briefs/MB04-production-application-game-session.md",
       "reportPath": "docs/migration/mission-reports/MB04-production-application-game-session.md",
       "commit": "3ba163c"
+    },
+    {
+      "id": "MB05",
+      "briefPath": "docs/mission-briefs/MB05-city-economy-and-development-rules.md",
+      "reportPath": "docs/migration/mission-reports/MB05-city-economy-and-development-rules.md",
+      "commit": "ad2f431"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB04",
-    "commit": "3ba163c",
-    "date": "2026-08-02"
+    "missionId": "MB05",
+    "commit": "ad2f431",
+    "date": "2026-08-03"
   },
-  "nextAction": "Implement MB05 by migrating the complete internal-affairs command group through the MB04 domain/application/query boundary and shared deterministic fixture platform, then expose it in the native spatial city menu.",
+  "nextAction": "Implement MB06 by migrating reward, satrap appointment, item grant, and equipment removal through the production domain/application/query boundary, then expose a reusable native officer-management surface with shared deterministic fixture evidence.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
