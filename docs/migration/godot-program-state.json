@@ -7,9 +7,9 @@
   "roadmapPath": "docs/migration/godot-program-roadmap.json",
   "branch": "codex/godot-migration-spike",
   "status": "active",
-  "phase": "brief_pending",
+  "phase": "implementation_pending",
   "currentMissionId": "MB04",
-  "currentBriefPath": null,
+  "currentBriefPath": "docs/mission-briefs/MB04-production-application-game-session.md",
   "readyMissionIds": ["MB04"],
   "completedMissions": [
     {
@@ -37,7 +37,7 @@
     "commit": "eca357e",
     "date": "2026-08-02"
   },
-  "nextAction": "Commission exactly one MB04 Mission Brief for the production application GameSession, then set implementation_pending and execute it without expanding strategic rule breadth.",
+  "nextAction": "Implement MB04 by replacing the spike-only application session with the production four-period/candidate lifecycle and versioned transactional command boundary, without adding new strategic rules.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
