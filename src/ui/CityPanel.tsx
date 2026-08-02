@@ -240,10 +240,68 @@ export function CityPanel({
   }, [dangerousConfirmationDismissRequest]);
 
   useEffect(() => {
-    if (!eligibleOfficers.some((officer) => officer.id === selectedOfficerId)) {
-      setSelectedOfficerId(eligibleOfficers[0]?.id ?? '');
-    }
-  }, [eligibleOfficers, selectedOfficerId]);
+    if (eligibleOfficers.some((officer) => officer.id === selectedOfficerId)) return;
+
+    const minimumStamina = (() => {
+      switch (initialCommand) {
+        case 'develop':
+        case 'commerce': return DEVELOP_STAMINA_COST;
+        case 'govern': return GOVERN_STAMINA_COST;
+        case 'inspect': return INSPECT_STAMINA_COST;
+        case 'trade': return TRADE_STAMINA_COST;
+        case 'plunder': return PLUNDER_STAMINA_COST;
+        case 'recruit-troops': return RECRUIT_STAMINA_COST;
+        case 'search': return SEARCH_STAMINA_COST;
+        case 'recruit-officer': return RECRUIT_OFFICER_STAMINA_COST;
+        case 'move': return MOVE_STAMINA_COST;
+        case 'transport': return TRANSPORT_STAMINA_COST;
+        case 'captive': return SURRENDER_STAMINA_COST;
+        case 'recon': return RECON_STAMINA_COST;
+        case 'diplomacy': return DIPLOMACY_STAMINA_COST;
+        default: return 0;
+      }
+    })();
+    const actionConsumingCommand = initialCommand && [
+      'develop', 'commerce', 'govern', 'inspect', 'trade', 'plunder',
+      'recruit-troops', 'search', 'recruit-officer', 'move', 'transport',
+      'captive', 'distribute', 'recon', 'attack', 'diplomacy',
+    ].includes(initialCommand);
+    const rulerOfficerId = state.factions[state.playerFactionId]?.rulerOfficerId;
+    const commandCandidate = eligibleOfficers.find((officer) => {
+      if (actionConsumingCommand && state.actedOfficerIds.includes(officer.id)) return false;
+      if (officer.stamina < minimumStamina) return false;
+      if (initialCommand === 'reward') return officer.id !== rulerOfficerId && officer.loyalty < 100;
+      if (initialCommand === 'appoint') return officer.id !== city.satrapOfficerId;
+      if (initialCommand === 'banish') return officer.id !== rulerOfficerId;
+      if (initialCommand === 'banquet') {
+        return officer.stamina < 100 || (officer.id !== rulerOfficerId && officer.loyalty < 100);
+      }
+      return true;
+    });
+    const fallbackCandidate = eligibleOfficers.find(
+      (officer) => !state.actedOfficerIds.includes(officer.id),
+    );
+    setSelectedOfficerId(commandCandidate?.id ?? fallbackCandidate?.id ?? eligibleOfficers[0]?.id ?? '');
+  }, [
+    DEVELOP_STAMINA_COST,
+    DIPLOMACY_STAMINA_COST,
+    GOVERN_STAMINA_COST,
+    INSPECT_STAMINA_COST,
+    MOVE_STAMINA_COST,
+    PLUNDER_STAMINA_COST,
+    RECON_STAMINA_COST,
+    RECRUIT_STAMINA_COST,
+    SURRENDER_STAMINA_COST,
+    TRADE_STAMINA_COST,
+    TRANSPORT_STAMINA_COST,
+    city.satrapOfficerId,
+    eligibleOfficers,
+    initialCommand,
+    selectedOfficerId,
+    state.actedOfficerIds,
+    state.factions,
+    state.playerFactionId,
+  ]);
 
   useEffect(() => {
     if (focusOfficerId && eligibleOfficers.some((officer) => officer.id === focusOfficerId)) {
@@ -614,39 +672,69 @@ export function CityPanel({
     && commandDefinition?.editorSize === 'quick'
     && contextAnchor?.visible
     && contextAnchor.cityId === city.id;
-  const quickCommandOpensBelow = hasQuickCommandAnchor
-    ? contextAnchor.y < contextAnchor.viewportHeight * 0.58
+  const quickCommandMapLeft = hasQuickCommandAnchor ? contextAnchor.mapLeft ?? 8 : 0;
+  const quickCommandMapRight = hasQuickCommandAnchor
+    ? contextAnchor.mapRight ?? contextAnchor.viewportWidth - 8
+    : 0;
+  const quickCommandMapTop = hasQuickCommandAnchor ? contextAnchor.mapTop ?? 8 : 0;
+  const quickCommandMapBottom = hasQuickCommandAnchor
+    ? contextAnchor.mapBottom ?? contextAnchor.viewportHeight - 8
+    : 0;
+  const quickCommandNodeGap = 42;
+  const quickCommandAvailableRight = hasQuickCommandAnchor
+    ? quickCommandMapRight - contextAnchor.x - quickCommandNodeGap
+    : 0;
+  const quickCommandAvailableLeft = hasQuickCommandAnchor
+    ? contextAnchor.x - quickCommandMapLeft - quickCommandNodeGap
+    : 0;
+  const quickCommandOpensRight = hasQuickCommandAnchor
+    ? quickCommandAvailableRight >= 300 || quickCommandAvailableRight >= quickCommandAvailableLeft
     : true;
-  const quickCommandHalfWidth = hasQuickCommandAnchor
-    ? Math.min(240, Math.max(150, contextAnchor.viewportWidth / 2 - 10))
+  const quickCommandAvailableWidth = Math.max(
+    quickCommandOpensRight ? quickCommandAvailableRight : quickCommandAvailableLeft,
+    220,
+  );
+  const quickCommandWidth = hasQuickCommandAnchor
+    ? Math.min(340, quickCommandAvailableWidth)
+    : 0;
+  const quickCommandEstimatedHalfHeight = hasQuickCommandAnchor
+    ? Math.min(180, Math.max(120, (quickCommandMapBottom - quickCommandMapTop - 16) / 2))
     : 0;
   const quickCommandLeft = hasQuickCommandAnchor
-    ? Math.min(
-      Math.max(contextAnchor.x, quickCommandHalfWidth),
-      Math.max(quickCommandHalfWidth, contextAnchor.viewportWidth - quickCommandHalfWidth),
-    )
+    ? contextAnchor.x + (quickCommandOpensRight ? quickCommandNodeGap : -quickCommandNodeGap)
     : 0;
   const quickCommandTop = hasQuickCommandAnchor
-    ? quickCommandOpensBelow ? contextAnchor.y + 38 : contextAnchor.y - 36
+    ? Math.min(
+      Math.max(contextAnchor.y, quickCommandMapTop + quickCommandEstimatedHalfHeight),
+      quickCommandMapBottom - quickCommandEstimatedHalfHeight,
+    )
     : 0;
   const commandPanelStyle = hasQuickCommandAnchor ? {
     '--city-command-left': `${quickCommandLeft}px`,
     '--city-command-top': `${quickCommandTop}px`,
+    '--city-command-width': `${quickCommandWidth}px`,
   } as CSSProperties : undefined;
-
   function buildInlineCommandSummary(commandId: CityCommandId): InlineCommandSummary | undefined {
     switch (commandId) {
       case 'develop':
         return {
           effects: [`农业预计提高 ${farmingGainRange[0]}～${farmingGainRange[1]}`],
-          costs: [`金钱 ${DEVELOP_MONEY_COST}`, `体力 ${DEVELOP_STAMINA_COST}`, '占用本月行动'],
+          costs: [
+            `金钱 ${number.format(DEVELOP_MONEY_COST)} / 城中 ${number.format(city.money)}`,
+            `体力 ${number.format(DEVELOP_STAMINA_COST)} / ${selectedOfficer?.name ?? '武将'} ${number.format(selectedOfficer?.stamina ?? 0)}`,
+            '占用本月行动',
+          ],
           risks: ['实际增量由当前确定性随机序列决定，并受农业上限约束。'],
           unavailableReason: disabled ? '当前有待处理操作，暂时不能执行城池命令' : farmingAvailability.allowed ? undefined : farmingAvailability.reason,
         };
       case 'commerce':
         return {
           effects: [`商业预计提高 ${commerceGainRange[0]}～${commerceGainRange[1]}`],
-          costs: [`金钱 ${DEVELOP_MONEY_COST}`, `体力 ${DEVELOP_STAMINA_COST}`, '占用本月行动'],
+          costs: [
+            `金钱 ${number.format(DEVELOP_MONEY_COST)} / 城中 ${number.format(city.money)}`,
+            `体力 ${number.format(DEVELOP_STAMINA_COST)} / ${selectedOfficer?.name ?? '武将'} ${number.format(selectedOfficer?.stamina ?? 0)}`,
+            '占用本月行动',
+          ],
           risks: ['实际增量由当前确定性随机序列决定，并受商业上限约束。'],
           unavailableReason: displayedCommerceAvailability.allowed ? undefined : displayedCommerceAvailability.reason,
         };
@@ -656,13 +744,21 @@ export function CityPanel({
             (city.condition ?? 'normal') === 'normal' ? '维持城市正常状态' : `解除${CITY_CONDITION_LABELS[city.condition ?? 'normal']}`,
             governMaxGain > 0 ? `防灾提高 1～${governMaxGain}` : '防灾已满',
           ],
-          costs: [`金钱 ${GOVERN_MONEY_COST}`, `体力 ${GOVERN_STAMINA_COST}`, '占用本月行动'],
+          costs: [
+            `金钱 ${number.format(GOVERN_MONEY_COST)} / 城中 ${number.format(city.money)}`,
+            `体力 ${number.format(GOVERN_STAMINA_COST)} / ${selectedOfficer?.name ?? '武将'} ${number.format(selectedOfficer?.stamina ?? 0)}`,
+            '占用本月行动',
+          ],
           unavailableReason: displayedGovernAvailability.allowed ? undefined : displayedGovernAvailability.reason,
         };
       case 'inspect':
         return {
           effects: ['民忠提高 1～4', '人口最多增加 100'],
-          costs: [`金钱 ${INSPECT_MONEY_COST}`, `体力 ${INSPECT_STAMINA_COST}`, '占用本月行动'],
+          costs: [
+            `金钱 ${number.format(INSPECT_MONEY_COST)} / 城中 ${number.format(city.money)}`,
+            `体力 ${number.format(INSPECT_STAMINA_COST)} / ${selectedOfficer?.name ?? '武将'} ${number.format(selectedOfficer?.stamina ?? 0)}`,
+            '占用本月行动',
+          ],
           unavailableReason: displayedInspectAvailability.allowed ? undefined : displayedInspectAvailability.reason,
         };
       case 'trade':
@@ -672,9 +768,9 @@ export function CityPanel({
             : [`金钱增加 ${number.format(tradeMoneyDelta)}`],
           costs: [
             tradeDirection === 'buy'
-              ? `金钱 ${number.format(tradeMoneyDelta)}`
-              : `粮草 ${number.format(Number.isFinite(tradeValue) ? tradeValue : 0)}`,
-            `体力 ${TRADE_STAMINA_COST}`,
+              ? `金钱 ${number.format(tradeMoneyDelta)} / 城中 ${number.format(city.money)}`
+              : `粮草 ${number.format(Number.isFinite(tradeValue) ? tradeValue : 0)} / 城中 ${number.format(city.food)}`,
+            `体力 ${number.format(TRADE_STAMINA_COST)} / ${selectedOfficer?.name ?? '武将'} ${number.format(selectedOfficer?.stamina ?? 0)}`,
             '占用本月行动',
           ],
           unavailableReason: disabled
@@ -689,7 +785,7 @@ export function CityPanel({
               ? '君主忠诚不变'
               : '忠诚提高 1',
           ],
-          costs: [`金钱 ${BANQUET_MONEY_COST}`, '不占用本月行动'],
+          costs: [`金钱 ${number.format(BANQUET_MONEY_COST)} / 城中 ${number.format(city.money)}`, '不占用本月行动'],
           unavailableReason: disabled
             ? '当前有待处理操作，暂时不能执行城池命令'
             : banquetAvailability.allowed ? undefined : banquetAvailability.reason,
@@ -700,7 +796,7 @@ export function CityPanel({
             `获得 ${number.format(plunderGains.money)} 金`,
             `获得 ${number.format(plunderGains.food)} 粮`,
           ],
-          costs: [`体力 ${PLUNDER_STAMINA_COST}`, '占用本月行动'],
+          costs: [`体力 ${number.format(PLUNDER_STAMINA_COST)} / ${selectedOfficer?.name ?? '武将'} ${number.format(selectedOfficer?.stamina ?? 0)}`, '占用本月行动'],
           risks: [
             `民忠 ${city.publicLoyalty ?? 70} → ${Math.floor((city.publicLoyalty ?? 70) / 2)}`,
             `农业 ${number.format(city.farming)} → ${number.format(Math.floor(city.farming / 2))}`,
@@ -714,33 +810,37 @@ export function CityPanel({
       case 'recruit-troops':
         return {
           effects: [`征募 ${number.format(recruitGain)} 名后备兵`],
-          costs: [`金钱 ${number.format(recruitMoneyCost)}`, `体力 ${RECRUIT_STAMINA_COST}`, '占用本月行动'],
+          costs: [
+            `金钱 ${number.format(recruitMoneyCost)} / 城中 ${number.format(city.money)}`,
+            `体力 ${number.format(RECRUIT_STAMINA_COST)} / ${selectedOfficer?.name ?? '武将'} ${number.format(selectedOfficer?.stamina ?? 0)}`,
+            '占用本月行动',
+          ],
           unavailableReason: canRecruit && !disabled ? undefined : disabled ? '当前有待处理操作，暂时不能执行城池命令' : recruitUnavailableReason,
         };
       case 'search':
         return {
           effects: ['尝试发现或直接登用人才，也可能获得道具、金钱或粮草'],
-          costs: [`体力 ${SEARCH_STAMINA_COST}`, '占用本月行动'],
+          costs: [`体力 ${number.format(SEARCH_STAMINA_COST)} / ${selectedOfficer?.name ?? '武将'} ${number.format(selectedOfficer?.stamina ?? 0)}`, '占用本月行动'],
           risks: ['搜索可能没有收获；结果受智力与确定性随机序列影响。'],
           unavailableReason: canSearch && !disabled ? undefined : disabled ? '当前有待处理操作，暂时不能执行城池命令' : searchUnavailableReason,
         };
       case 'recruit-officer':
         return {
           effects: [`尝试让${selectedRecruitTarget?.name ?? '目标人才'}加入${faction?.name ?? '己方势力'}`],
-          costs: [`体力 ${RECRUIT_OFFICER_STAMINA_COST}`, '占用本月行动'],
+          costs: [`体力 ${number.format(RECRUIT_OFFICER_STAMINA_COST)} / ${selectedOfficer?.name ?? '武将'} ${number.format(selectedOfficer?.stamina ?? 0)}`, '占用本月行动'],
           risks: ['失败后人才仍保持已发现状态。'],
           unavailableReason: canRecruitOfficer && !disabled ? undefined : disabled ? '当前有待处理操作，暂时不能执行城池命令' : recruitOfficerUnavailableReason,
         };
       case 'reward':
         return {
           effects: [`忠诚 ${selectedOfficer?.loyalty ?? 0} → ${Math.min(100, (selectedOfficer?.loyalty ?? 0) + REWARD_LOYALTY_GAIN)}`],
-          costs: [`金钱 ${REWARD_MONEY_COST}`, '不占用本月行动'],
+          costs: [`金钱 ${number.format(REWARD_MONEY_COST)} / 城中 ${number.format(city.money)}`, '不占用本月行动'],
           unavailableReason: canReward && !disabled ? undefined : disabled ? '当前有待处理操作，暂时不能执行城池命令' : rewardUnavailableReason,
         };
       case 'move':
         return {
           effects: [`${selectedOfficer?.name ?? '所选武将'}预计 ${selectedMoveTarget?.durationMonths ?? '?'} 个月后抵达${selectedMoveTarget?.city.name ?? '目标城市'}`],
-          costs: [`体力 ${MOVE_STAMINA_COST}`, '占用本月行动'],
+          costs: [`体力 ${number.format(MOVE_STAMINA_COST)} / ${selectedOfficer?.name ?? '武将'} ${number.format(selectedOfficer?.stamina ?? 0)}`, '占用本月行动'],
           risks: city.satrapOfficerId === selectedOfficerId ? ['太守离城后将按当前规则自动补位。'] : undefined,
           unavailableReason: displayedMoveAvailability.allowed ? undefined : displayedMoveAvailability.reason,
         };
@@ -750,7 +850,13 @@ export function CityPanel({
             `${selectedMoveTarget?.durationMonths ?? '?'} 个月后送达${selectedMoveTarget?.city.name ?? '目标城市'}`,
             `金 ${number.format(Number.isFinite(transportCargo.money) ? transportCargo.money : 0)} · 粮 ${number.format(Number.isFinite(transportCargo.food) ? transportCargo.food : 0)} · 兵 ${number.format(Number.isFinite(transportCargo.reserveTroops) ? transportCargo.reserveTroops : 0)}`,
           ],
-          costs: [`体力 ${TRANSPORT_STAMINA_COST}`, '占用本月行动'],
+          costs: [
+            `金钱 ${number.format(Number.isFinite(transportCargo.money) ? transportCargo.money : 0)} / 城中 ${number.format(city.money)}`,
+            `粮草 ${number.format(Number.isFinite(transportCargo.food) ? transportCargo.food : 0)} / 城中 ${number.format(city.food)}`,
+            `后备兵 ${number.format(Number.isFinite(transportCargo.reserveTroops) ? transportCargo.reserveTroops : 0)} / 城中 ${number.format(city.reserveTroops)}`,
+            `体力 ${number.format(TRANSPORT_STAMINA_COST)} / ${selectedOfficer?.name ?? '武将'} ${number.format(selectedOfficer?.stamina ?? 0)}`,
+            '占用本月行动',
+          ],
           unavailableReason: displayedTransportAvailability.allowed ? undefined : displayedTransportAvailability.reason,
         };
       case 'appoint':
@@ -788,7 +894,12 @@ export function CityPanel({
           effects: selectedCaptive
             ? [`处置俘虏${selectedCaptive.name}：可招降、释放、流放或处斩`]
             : ['本城没有可处置俘虏'],
-          costs: [`招降消耗 ${surrenderCost.money} 金、${SURRENDER_STAMINA_COST} 体力和本月行动`, '释放、流放或处斩不占用本月行动'],
+          costs: [
+            `金钱 ${number.format(surrenderCost.money)} / 城中 ${number.format(city.money)}`,
+            `体力 ${number.format(SURRENDER_STAMINA_COST)} / ${selectedOfficer?.name ?? '武将'} ${number.format(selectedOfficer?.stamina ?? 0)}`,
+            '招降占用本月行动',
+            '释放、流放或处斩不占用本月行动',
+          ],
           risks: ['流放与处斩会要求危险确认；处斩将使人物永久死亡。'],
           unavailableReason: selectedCaptive ? undefined : '本城没有可处置俘虏',
         };
@@ -804,21 +915,29 @@ export function CityPanel({
       case 'recon':
         return {
           effects: [`获取${selectedReconTarget?.name ?? '目标城市'}当前情报快照`],
-          costs: [`金钱 ${RECON_MONEY_COST}`, `体力 ${RECON_STAMINA_COST}`, '占用本月行动'],
+          costs: [
+            `金钱 ${number.format(RECON_MONEY_COST)} / 城中 ${number.format(city.money)}`,
+            `体力 ${number.format(RECON_STAMINA_COST)} / ${selectedOfficer?.name ?? '武将'} ${number.format(selectedOfficer?.stamina ?? 0)}`,
+            '占用本月行动',
+          ],
           risks: ['情报是执行时快照，后续变化不会自动更新。'],
           unavailableReason: displayedReconAvailability.allowed ? undefined : displayedReconAvailability.reason,
         };
       case 'diplomacy':
         return {
           effects: [`发起为期 1 个月的${diplomacyLabel(selectedDiplomacyKind)}行动`],
-          costs: [`金钱 ${DIPLOMACY_MONEY_COST}`, `体力 ${DIPLOMACY_STAMINA_COST}`, '占用本月行动'],
+          costs: [
+            `金钱 ${number.format(DIPLOMACY_MONEY_COST)} / 城中 ${number.format(city.money)}`,
+            `体力 ${number.format(DIPLOMACY_STAMINA_COST)} / ${selectedOfficer?.name ?? '武将'} ${number.format(selectedOfficer?.stamina ?? 0)}`,
+            '占用本月行动',
+          ],
           risks: [diplomacyFactors(selectedDiplomacyKind), '不显示精确成功率；结果在命令到期时结算。'],
           unavailableReason: displayedDiplomacyAvailability.allowed ? undefined : displayedDiplomacyAvailability.reason,
         };
       case 'attack':
         return {
           effects: [`${selectedAttackerIds.length} 名武将、${number.format(selectedAttackerIds.reduce((sum, officerId) => sum + (state.officers[officerId]?.troops ?? 0), 0))} 兵出征${selectedAttackTarget ? `至${selectedAttackTarget.name}` : ''}`],
-          costs: [`携带粮草 ${number.format(Number.isFinite(provisionValue) ? provisionValue : 0)}`],
+          costs: [`粮草 ${number.format(Number.isFinite(provisionValue) ? provisionValue : 0)} / 城中 ${number.format(city.food)}`],
           risks: ['确认后仍可选择亲自指挥或快速结算；伤亡和归属由战斗结果决定。'],
           unavailableReason: canAttack && !disabled ? undefined : disabled ? '当前有待处理操作，暂时不能执行城池命令' : attackUnavailableReason,
         };
@@ -852,7 +971,7 @@ export function CityPanel({
 
   return (
     <aside
-      className={`side-panel ${presentation === 'command' ? 'city-command-executor' : 'city-detail-panel'} ${hasQuickCommandAnchor ? quickCommandOpensBelow ? 'anchored-below' : 'anchored-above' : ''}`}
+      className={`side-panel ${presentation === 'command' ? 'city-command-executor' : 'city-detail-panel'} ${hasQuickCommandAnchor ? quickCommandOpensRight ? 'anchored-right' : 'anchored-left' : ''}`}
       data-command-size={commandDefinition?.editorSize ?? 'quick'}
       data-focused-command={Boolean(initialCommand)}
       data-has-anchor={hasQuickCommandAnchor || undefined}

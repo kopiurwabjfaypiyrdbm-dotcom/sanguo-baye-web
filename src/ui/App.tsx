@@ -187,6 +187,10 @@ export function App() {
       y: anchor.y + host.offsetTop,
       viewportWidth: host.offsetWidth + host.offsetLeft * 2,
       viewportHeight: host.offsetHeight + host.offsetTop * 2,
+      mapLeft: host.offsetLeft,
+      mapRight: host.offsetLeft + host.offsetWidth,
+      mapTop: host.offsetTop,
+      mapBottom: host.offsetTop + host.offsetHeight,
     });
   }), [bridge]);
 
@@ -1049,12 +1053,13 @@ export function App() {
   const campaignAttentionCount = buildMonthAdvanceReview(state).notices.length
     + playerStrategicOrders.length
     + playerDiplomaticOrders.length;
-  const isFocusedCityCommandOpen = isCityPanelOpen
+  const focusedCityCommand = cityPanelCommand ? getCityCommand(cityPanelCommand) : undefined;
+  const isExpandedCityCommandOpen = isCityPanelOpen
     && cityPanelPresentation === 'command'
-    && Boolean(cityPanelCommand);
+    && focusedCityCommand?.editorSize === 'expanded';
 
   return (
-    <main className={`app-shell ${isFocusedCityCommandOpen ? 'city-command-active' : ''}`}>
+    <main className={`app-shell ${isExpandedCityCommandOpen ? 'city-command-active' : ''}`}>
       <header className="top-bar">
         <div className="campaign-identity">
           <span className="faction-seal" style={{ backgroundColor: playerFaction?.color ?? '#69766e' }} aria-hidden="true">

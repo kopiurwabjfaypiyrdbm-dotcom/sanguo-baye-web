@@ -2871,38 +2871,41 @@ html[data-runtime="android"] .campaign-event-summary {
   bottom: auto;
   left: var(--city-command-left);
   grid-template-rows: auto auto;
-  width: min(480px, calc(100% - 18px));
+  width: min(var(--city-command-width, 340px), calc(100% - 18px));
   height: auto;
-  max-height: min(68dvh, 310px);
+  max-height: min(72dvh, 360px);
   padding: 8px 10px 9px;
   border-color: rgba(229, 200, 117, .86);
   box-shadow: 0 14px 38px rgba(2, 13, 10, .45);
-  transform: translateX(-50%);
+  transform: translateY(-50%);
 }
-.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-above {
-  transform: translate(-50%, -100%);
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-left {
+  transform: translate(-100%, -50%);
 }
 .side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"]::after {
   position: absolute;
-  left: 50%;
+  top: 50%;
   width: 12px;
   height: 12px;
   background: #ded6bf;
   border-right: 1px solid rgba(229, 200, 117, .86);
   border-bottom: 1px solid rgba(229, 200, 117, .86);
   content: '';
-  transform: translateX(-50%) rotate(45deg);
+  transform: translateY(-50%) rotate(45deg);
 }
-.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-below::after {
-  top: -7px;
-  transform: translateX(-50%) rotate(225deg);
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-right::after {
+  left: -7px;
+  transform: translateY(-50%) rotate(135deg);
 }
-.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-above::after { bottom: -7px; }
-.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-below {
-  animation-name: city-command-anchor-below;
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-left::after {
+  right: -7px;
+  transform: translateY(-50%) rotate(-45deg);
 }
-.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-above {
-  animation-name: city-command-anchor-above;
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-right {
+  animation-name: city-command-anchor-right;
+}
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-left {
+  animation-name: city-command-anchor-left;
 }
 .city-command-executor .city-heading { align-items: center; }
 .city-command-executor .city-heading .panel-kicker { display: none; }
@@ -2973,12 +2976,24 @@ html[data-runtime="android"] .campaign-event-summary {
 }
 .city-command-executor .focused-action-cluster > button { min-height: 44px; }
 
-@keyframes city-command-anchor-below {
-  from { opacity: 0; transform: translate(-50%, -5px) scale(.985); }
+@keyframes city-command-anchor-right {
+  from { opacity: 0; transform: translate(5px, -50%) scale(.985); }
 }
 
-@keyframes city-command-anchor-above {
-  from { opacity: 0; transform: translate(-50%, calc(-100% + 5px)) scale(.985); }
+@keyframes city-command-anchor-left {
+  from { opacity: 0; transform: translate(calc(-100% - 5px), -50%) scale(.985); }
+}
+
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"] .command-field {
+  grid-template-columns: 1fr;
+  align-items: stretch;
+  gap: 2px;
+}
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"] .command-editor-summary {
+  grid-template-columns: 1fr;
+}
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"] .command-editor-summary p {
+  grid-column: 1;
 }
 
 .command-editor-summary {
@@ -3055,9 +3070,9 @@ html[data-runtime="android"] .side-panel.city-command-executor[data-command-size
   right: auto;
   bottom: auto;
   left: var(--city-command-left);
-  width: min(480px, calc(100% - 16px));
+  width: min(var(--city-command-width, 340px), calc(100% - 16px));
   height: auto;
-  max-height: min(70dvh, 310px);
+  max-height: min(72dvh, 360px);
   padding: 7px 9px 8px;
 }
 html[data-runtime="android"] .campaign-navigator-backdrop { inset: calc(var(--safe-top) + 48px) 0 calc(var(--safe-bottom) + 56px); }

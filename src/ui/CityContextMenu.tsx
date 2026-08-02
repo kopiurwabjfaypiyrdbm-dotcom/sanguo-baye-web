@@ -12,7 +12,12 @@ import {
   type CityCommandSection,
 } from './cityCommandCatalog';
 
-export type CityContextAnchor = GameEventMap['city:anchor-changed'];
+export type CityContextAnchor = GameEventMap['city:anchor-changed'] & {
+  mapLeft?: number;
+  mapRight?: number;
+  mapTop?: number;
+  mapBottom?: number;
+};
 
 type CityContextMenuProps = {
   state: GameState;
@@ -124,6 +129,7 @@ export function CityContextMenu({
           </small>
         </div>
         <div className="city-context-metrics" hidden={Boolean(activeSection)}>
+          <span>金 {isOwned ? number.format(city.money) : intel ? number.format(intel.money) : '—'}</span>
           <span>粮 {isOwned ? number.format(city.food) : intel ? number.format(intel.food) : '—'}</span>
           <span>兵 {totalTroops === undefined ? '—' : number.format(totalTroops)}</span>
         </div>
