@@ -1,0 +1,762 @@
+extends RefCounted
+
+const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
+
+const UINT32_MAX: int = 0xffff_ffff
+const EQUIPMENT_LIMIT: int = 2
+const SPIKE_DATA_CONTRACT_VERSION: int = 1
+const SPIKE_PHASE: String = "player"
+const OFFICER_STATUSES: Array[String] = ["serving", "free", "hidden"]
+const LOG_KINDS: Array[String] = ["system", "map", "turn", "battle", "ai"]
+const CITY_CONDITIONS: Array[String] = ["normal", "famine", "drought", "flood", "rebellion"]
+
+
+static func validate(state: Dictionary) -> Array[Dictionary]:
+	var issues: Array[Dictionary] = []
+
+	if not _is_integer_number(state.get("dataContractVersion")) \
+			or int(state.get("dataContractVersion", -1)) != SPIKE_DATA_CONTRACT_VERSION:
+		_add(issues, "dataContractVersion", "must be 1 for the migration spike")
+	if not _is_integer_number(state.get("schemaVersion")) or int(state.get("schemaVersion", -1)) != 6:
+		_add(issues, "schemaVersion", "must be 6")
+
+	var ruleset_id: String = ""
+	if _is_non_blank_string(state.get("rulesetId")):
+		ruleset_id = state["rulesetId"]
+		if not Rulesets.is_supported(ruleset_id):
+			_add(issues, "rulesetId", "must be a supported campaign ruleset")
+	else:
+		_add(issues, "rulesetId", "must be a non-blank string")
+
+	if not _is_integer_number(state.get("turn")) or int(state.get("turn", -1)) != 1:
+		_add(issues, "turn", "must remain 1 in the spike contract")
+	if not _is_integer_number(state.get("rngSeed")) \
+			or int(state.get("rngSeed", -1)) < 0 \
+			or int(state.get("rngSeed", -1)) > UINT32_MAX:
+		_add(issues, "rngSeed", "must be an unsigned 32-bit integer")
+	if typeof(state.get("campaignStarted")) != TYPE_BOOL:
+		_add(issues, "campaignStarted", "must be a boolean")
+
+	var phase: String = ""
+	if typeof(state.get("phase")) == TYPE_STRING:
+		phase = state["phase"]
+	if phase != SPIKE_PHASE:
+		_add(issues, "phase", "must remain player in the spike contract")
+	if state.has("pendingSuccession") and state["pendingSuccession"] != null:
+		_add(issues, "pendingSuccession", "is outside the spike contract")
+	if state.has("outcome") and state["outcome"] != null:
+		_add(issues, "outcome", "is outside the spike contract")
+
+	_validate_calendar(state.get("calendar"), issues)
+	_validate_lifecycle_policy(state.get("lifecyclePolicy"), issues)
+
+	var factions: Dictionary = _record_or_issue(state.get("factions"), "factions", issues)
+	var cities: Dictionary = _record_or_issue(state.get("cities"), "cities", issues)
+	var officers: Dictionary = _record_or_issue(state.get("officers"), "officers", issues)
+	var items: Dictionary = _record_or_issue(state.get("items"), "items", issues)
+	var arms_types: Dictionary = _record_or_issue(state.get("armsTypes"), "armsTypes", issues)
+	var strategic_orders: Dictionary = _record_or_issue(
+		state.get("strategicOrders"), "strategicOrders", issues
+	)
+	var diplomatic_orders: Dictionary = _record_or_issue(
+		state.get("diplomaticOrders"), "diplomaticOrders", issues
+	)
+	var intel_reports: Dictionary = _record_or_issue(
+		state.get("intelReports"), "intelReports", issues
+	)
+	_validate_empty_spike_record(strategic_orders, "strategicOrders", issues)
+	_validate_empty_spike_record(diplomatic_orders, "diplomaticOrders", issues)
+	_validate_empty_spike_record(intel_reports, "intelReports", issues)
+
+	_validate_exact_order(state.get("cityOrder"), "cityOrder", cities, issues)
+	_validate_exact_order(state.get("officerOrder"), "officerOrder", officers, issues)
+	_validate_exact_order(state.get("itemOrder"), "itemOrder", items, issues)
+	_validate_exact_order(state.get("armsTypeOrder"), "armsTypeOrder", arms_types, issues)
+	_validate_faction_order(state.get("factionOrder"), factions, issues)
+
+	var player_faction_id: String = _required_reference(
+		state.get("playerFactionId"), "playerFactionId", factions, issues
+	)
+	var active_faction_id: String = _required_reference(
+		state.get("activeFactionId"), "activeFactionId", factions, issues
+	)
+	if (phase == "player" or phase == "succession") \
+			and not player_faction_id.is_empty() \
+			and active_faction_id != player_faction_id:
+		_add(issues, "activeFactionId", "must be the player faction during the player phase")
+
+	_validate_factions(factions, officers, player_faction_id, issues)
+	var active_order_officers: Dictionary = _validate_active_orders(
+		strategic_orders, diplomatic_orders, factions, cities, officers, issues
+	)
+
+	var item_locations: Dictionary = {}
+	var graph_facts: Dictionary = _validate_cities(
+		cities, factions, officers, items, item_locations, issues
+	)
+	_validate_officers(
+		officers, factions, cities, arms_types, items, active_order_officers,
+		item_locations, state, issues
+	)
+	_validate_items(items, arms_types, cities, issues)
+	_validate_arms_types(arms_types, issues)
+	_validate_logs(state.get("logs"), issues)
+	_validate_id_list(state.get("actedOfficerIds"), "actedOfficerIds", officers, issues)
+	_validate_id_list(state.get("discoveredOfficerIds"), "discoveredOfficerIds", officers, issues)
+	if typeof(state.get("discoveredOfficerIds")) == TYPE_ARRAY \
+			and not (state["discoveredOfficerIds"] as Array).is_empty():
+		_add(issues, "discoveredOfficerIds", "must remain empty in the spike contract")
+	_validate_spike_serial(state.get("nextStrategicOrderSerial"), "nextStrategicOrderSerial", issues)
+	_validate_spike_serial(state.get("nextDiplomaticOrderSerial"), "nextDiplomaticOrderSerial", issues)
+	_validate_graph(state.get("graph"), cities, graph_facts, issues)
+
+	return issues
+
+
+static func first_error(issues: Array[Dictionary]) -> String:
+	if issues.is_empty():
+		return ""
+	var issue: Dictionary = issues[0]
+	return "Invalid game state at %s: %s" % [issue.get("path", "?"), issue.get("message", "invalid")]
+
+
+static func _validate_calendar(raw: Variant, issues: Array[Dictionary]) -> void:
+	if typeof(raw) != TYPE_DICTIONARY:
+		_add(issues, "calendar", "must be an object")
+		return
+	var calendar: Dictionary = raw
+	if not _is_positive_integer(calendar.get("year")):
+		_add(issues, "calendar.year", "must be a positive integer")
+	if not _is_integer_number(calendar.get("month")) \
+			or int(calendar.get("month", 0)) < 1 \
+			or int(calendar.get("month", 0)) > 12:
+		_add(issues, "calendar.month", "must be an integer from 1 to 12")
+	if _is_integer_number(calendar.get("year")) and int(calendar["year"]) != 190:
+		_add(issues, "calendar.year", "must remain 190 in the spike contract")
+	if _is_integer_number(calendar.get("month")) and int(calendar["month"]) != 1:
+		_add(issues, "calendar.month", "must remain 1 in the spike contract")
+
+
+static func _validate_lifecycle_policy(raw: Variant, issues: Array[Dictionary]) -> void:
+	if typeof(raw) != TYPE_DICTIONARY:
+		_add(issues, "lifecyclePolicy", "must be an object")
+		return
+	var policy: Dictionary = raw
+	if not _is_integer_number(policy.get("version")) or int(policy.get("version", 0)) != 1:
+		_add(issues, "lifecyclePolicy.version", "must be 1")
+	if not ["enabled", "disabled"].has(policy.get("ageGrowth")):
+		_add(issues, "lifecyclePolicy.ageGrowth", "must be enabled or disabled")
+	if not ["disabled", "age-90-coinflip"].has(policy.get("naturalDeath")):
+		_add(issues, "lifecyclePolicy.naturalDeath", "must be a supported policy")
+	if not ["disabled", "baye-rare"].has(policy.get("battleDeath")):
+		_add(issues, "lifecyclePolicy.battleDeath", "must be a supported policy")
+	if not ["disabled", "modern-monthly"].has(policy.get("captiveEscape")):
+		_add(issues, "lifecyclePolicy.captiveEscape", "must be a supported policy")
+	if policy.get("ageGrowth") != "enabled" \
+			or policy.get("naturalDeath") != "disabled" \
+			or policy.get("battleDeath") != "disabled" \
+			or policy.get("captiveEscape") != "disabled":
+		_add(issues, "lifecyclePolicy", "must remain at the period-1 spike defaults")
+
+
+static func _validate_factions(
+		factions: Dictionary,
+		officers: Dictionary,
+		player_faction_id: String,
+		issues: Array[Dictionary],
+) -> void:
+	var player_flags: int = 0
+	for key: String in _sorted_string_keys(factions):
+		var path: String = "factions.%s" % key
+		var raw: Variant = factions[key]
+		if typeof(raw) != TYPE_DICTIONARY:
+			_add(issues, path, "must be an object")
+			continue
+		var faction: Dictionary = raw
+		_validate_record_id(faction, key, path, issues)
+		_require_non_blank_string(faction, "name", path, issues)
+		_require_non_blank_string(faction, "color", path, issues)
+		var ruler_id: String = _required_reference(
+			faction.get("rulerOfficerId"), "%s.rulerOfficerId" % path, officers, issues
+		)
+		if typeof(faction.get("isPlayer")) != TYPE_BOOL:
+			_add(issues, "%s.isPlayer" % path, "must be a boolean")
+		elif faction["isPlayer"]:
+			player_flags += 1
+			if key != player_faction_id:
+				_add(issues, "%s.isPlayer" % path, "must match playerFactionId")
+		if faction.has("isNeutral") and typeof(faction["isNeutral"]) != TYPE_BOOL:
+			_add(issues, "%s.isNeutral" % path, "must be a boolean")
+		if not ruler_id.is_empty() and officers.has(ruler_id):
+			var raw_ruler: Variant = officers[ruler_id]
+			if typeof(raw_ruler) == TYPE_DICTIONARY:
+				var ruler: Dictionary = raw_ruler
+				if ruler.get("factionId") != key:
+					_add(issues, "%s.rulerOfficerId" % path, "ruler must belong to the faction")
+	if not player_faction_id.is_empty() and player_flags != 1:
+		_add(issues, "factions", "must contain exactly one player faction")
+
+
+static func _validate_active_orders(
+		strategic_orders: Dictionary,
+		diplomatic_orders: Dictionary,
+		factions: Dictionary,
+		cities: Dictionary,
+		officers: Dictionary,
+		issues: Array[Dictionary],
+) -> Dictionary:
+	var officer_orders: Dictionary = {}
+	for descriptor: Dictionary in [
+		{"name": "strategicOrders", "record": strategic_orders},
+		{"name": "diplomaticOrders", "record": diplomatic_orders},
+	]:
+		var record_name: String = descriptor["name"]
+		var record: Dictionary = descriptor["record"]
+		for key: String in _sorted_string_keys(record):
+			var path: String = "%s.%s" % [record_name, key]
+			var raw: Variant = record[key]
+			if typeof(raw) != TYPE_DICTIONARY:
+				_add(issues, path, "must be an object")
+				continue
+			var order: Dictionary = raw
+			_validate_record_id(order, key, path, issues)
+			_required_reference(order.get("factionId"), "%s.factionId" % path, factions, issues)
+			var officer_id: String = _required_reference(
+				order.get("officerId"), "%s.officerId" % path, officers, issues
+			)
+			if not officer_id.is_empty():
+				if officer_orders.has(officer_id):
+					_add(issues, "%s.officerId" % path, "officer already has an active order")
+				else:
+					officer_orders[officer_id] = key
+			for city_field: String in ["sourceCityId", "targetCityId"]:
+				if order.has(city_field):
+					_required_reference(
+						order.get(city_field), "%s.%s" % [path, city_field], cities, issues
+					)
+	return officer_orders
+
+
+static func _validate_cities(
+		cities: Dictionary,
+		factions: Dictionary,
+		officers: Dictionary,
+		items: Dictionary,
+		item_locations: Dictionary,
+		issues: Array[Dictionary],
+) -> Dictionary:
+	var directed_references: int = 0
+	var roads: Dictionary = {}
+	for key: String in _sorted_string_keys(cities):
+		var path: String = "cities.%s" % key
+		var raw: Variant = cities[key]
+		if typeof(raw) != TYPE_DICTIONARY:
+			_add(issues, path, "must be an object")
+			continue
+		var city: Dictionary = raw
+		_validate_record_id(city, key, path, issues)
+		_require_non_blank_string(city, "name", path, issues)
+		var owner_id: String = _required_reference(
+			city.get("ownerId"), "%s.ownerId" % path, factions, issues
+		)
+		if city.has("satrapOfficerId"):
+			var satrap_id: String = _required_reference(
+				city.get("satrapOfficerId"), "%s.satrapOfficerId" % path, officers, issues
+			)
+			if not satrap_id.is_empty() and officers.has(satrap_id) \
+					and typeof(officers[satrap_id]) == TYPE_DICTIONARY:
+				var satrap: Dictionary = officers[satrap_id]
+				if satrap.get("status") != "serving" \
+						or satrap.get("cityId") != key \
+						or satrap.get("factionId") != owner_id:
+					_add(
+						issues, "%s.satrapOfficerId" % path,
+						"satrap must be a stationed officer of the owning faction"
+					)
+
+		for field: String in ["x", "y"]:
+			if not _is_finite_number(city.get(field)):
+				_add(issues, "%s.%s" % [path, field], "must be a finite number")
+		for field: String in [
+			"population", "farming", "commerce", "defense", "money", "food", "reserveTroops"
+		]:
+			_validate_non_negative_integer(city.get(field), "%s.%s" % [path, field], issues)
+		for field: String in [
+			"sourceIndex", "farmingLimit", "commerceLimit", "populationLimit",
+			"publicLoyalty", "disasterPrevention"
+		]:
+			if city.has(field):
+				_validate_non_negative_integer(city[field], "%s.%s" % [path, field], issues)
+		for field: String in ["publicLoyalty", "disasterPrevention"]:
+			if city.has(field) and _is_integer_number(city[field]) and int(city[field]) > 100:
+				_add(issues, "%s.%s" % [path, field], "must not exceed 100")
+		if city.has("condition") and not CITY_CONDITIONS.has(str(city["condition"])):
+			_add(issues, "%s.condition" % path, "must be a known city condition")
+
+		for item_field: String in ["itemIds", "hiddenItemIds"]:
+			_validate_item_placements(
+				city.get(item_field), "%s.%s" % [path, item_field], items,
+				item_locations, issues
+			)
+
+		var raw_neighbors: Variant = city.get("neighbors")
+		if typeof(raw_neighbors) != TYPE_ARRAY:
+			_add(issues, "%s.neighbors" % path, "must be an array")
+			continue
+		var neighbors: Array = raw_neighbors
+		directed_references += neighbors.size()
+		var seen_neighbors: Dictionary = {}
+		for index: int in range(neighbors.size()):
+			var raw_neighbor: Variant = neighbors[index]
+			if typeof(raw_neighbor) != TYPE_STRING or String(raw_neighbor).is_empty():
+				_add(issues, "%s.neighbors.%d" % [path, index], "must be a city id")
+				continue
+			var neighbor_id: String = raw_neighbor
+			if neighbor_id == key:
+				_add(issues, "%s.neighbors" % path, "must not contain the city itself")
+			if seen_neighbors.has(neighbor_id):
+				_add(issues, "%s.neighbors" % path, "duplicate neighbor: %s" % neighbor_id)
+			seen_neighbors[neighbor_id] = true
+			if not cities.has(neighbor_id):
+				_add(issues, "%s.neighbors" % path, "unknown city: %s" % neighbor_id)
+				continue
+			var raw_neighbor_city: Variant = cities[neighbor_id]
+			if typeof(raw_neighbor_city) != TYPE_DICTIONARY:
+				continue
+			var neighbor_city: Dictionary = raw_neighbor_city
+			var reciprocal_raw: Variant = neighbor_city.get("neighbors")
+			if typeof(reciprocal_raw) != TYPE_ARRAY or not (reciprocal_raw as Array).has(key):
+				_add(issues, "%s.neighbors" % path, "road is not reciprocal: %s" % neighbor_id)
+			roads[_road_key(key, neighbor_id)] = true
+	return {
+		"directed_references": directed_references,
+		"roads": roads,
+	}
+
+
+static func _validate_officers(
+		officers: Dictionary,
+		factions: Dictionary,
+		cities: Dictionary,
+		arms_types: Dictionary,
+		items: Dictionary,
+		active_order_officers: Dictionary,
+		item_locations: Dictionary,
+		state: Dictionary,
+		issues: Array[Dictionary],
+) -> void:
+	var acted_ids: Array = state.get("actedOfficerIds", []) if typeof(state.get("actedOfficerIds")) == TYPE_ARRAY else []
+	for key: String in _sorted_string_keys(officers):
+		var path: String = "officers.%s" % key
+		var raw: Variant = officers[key]
+		if typeof(raw) != TYPE_DICTIONARY:
+			_add(issues, path, "must be an object")
+			continue
+		var officer: Dictionary = raw
+		_validate_record_id(officer, key, path, issues)
+		if typeof(officer.get("name")) != TYPE_STRING:
+			_add(issues, "%s.name" % path, "must be a string")
+		var faction_id: String = _required_reference(
+			officer.get("factionId"), "%s.factionId" % path, factions, issues
+		)
+		_required_reference(officer.get("armsTypeId"), "%s.armsTypeId" % path, arms_types, issues)
+		var status: String = str(officer.get("status", ""))
+		if not OFFICER_STATUSES.has(status):
+			_add(issues, "%s.status" % path, "must be a known officer status")
+		var has_order: bool = active_order_officers.has(key)
+		var city_id: String = ""
+		if officer.has("cityId") and typeof(officer["cityId"]) == TYPE_STRING:
+			city_id = officer["cityId"]
+		if status == "hidden" or status == "dead":
+			if officer.has("cityId") and officer["cityId"] != null:
+				_add(issues, "%s.cityId" % path, "%s officer must not be assigned to a city" % status)
+			if not faction_id.is_empty() and factions.has(faction_id) \
+					and typeof(factions[faction_id]) == TYPE_DICTIONARY \
+					and not (factions[faction_id] as Dictionary).get("isNeutral", false):
+				_add(issues, "%s.factionId" % path, "%s officer must be neutral" % status)
+		elif status == "serving" and has_order:
+			if not city_id.is_empty():
+				_add(issues, "%s.cityId" % path, "ordered serving officer must not be stationed")
+		else:
+			if city_id.is_empty() or not cities.has(city_id):
+				_add(issues, "%s.cityId" % path, "must reference a known city")
+
+		if status == "serving" and not has_order and not city_id.is_empty() and cities.has(city_id) \
+				and typeof(cities[city_id]) == TYPE_DICTIONARY \
+				and (cities[city_id] as Dictionary).get("ownerId") != faction_id:
+			_add(issues, "%s.cityId" % path, "serving officer must be stationed in a city owned by their faction")
+		if status == "free" and not faction_id.is_empty() and factions.has(faction_id) \
+				and typeof(factions[faction_id]) == TYPE_DICTIONARY \
+				and not (factions[faction_id] as Dictionary).get("isNeutral", false):
+			_add(issues, "%s.factionId" % path, "free officer must belong to the neutral faction")
+		if status == "serving" and not faction_id.is_empty() and factions.has(faction_id) \
+				and typeof(factions[faction_id]) == TYPE_DICTIONARY \
+				and (factions[faction_id] as Dictionary).get("isNeutral", false):
+			_add(issues, "%s.factionId" % path, "serving officer must belong to a playable faction")
+
+		for field: String in [
+			"force", "intelligence", "leadership", "troops", "loyalty", "age", "stamina"
+		]:
+			_validate_non_negative_integer(officer.get(field), "%s.%s" % [path, field], issues)
+		for field: String in ["sourceId", "level", "character", "experience", "appearanceYear"]:
+			if officer.has(field):
+				_validate_non_negative_integer(officer[field], "%s.%s" % [path, field], issues)
+		if _is_integer_number(officer.get("loyalty")) and int(officer["loyalty"]) > 100:
+			_add(issues, "%s.loyalty" % path, "must not exceed 100")
+		if _is_integer_number(officer.get("stamina")) and int(officer["stamina"]) > 100:
+			_add(issues, "%s.stamina" % path, "must not exceed 100")
+		if officer.has("appearanceCityId"):
+			_required_reference(
+				officer.get("appearanceCityId"), "%s.appearanceCityId" % path, cities, issues
+			)
+			if not officer.has("appearanceYear"):
+				_add(issues, "%s.appearanceCityId" % path, "requires appearanceYear")
+		if status == "dead" and acted_ids.has(key):
+			_add(issues, "%s.status" % path, "dead officer cannot be marked as acted")
+
+		var equipment_path: String = "%s.equipmentItemIds" % path
+		var raw_equipment: Variant = officer.get("equipmentItemIds")
+		if typeof(raw_equipment) != TYPE_ARRAY:
+			_add(issues, equipment_path, "must be an array")
+		else:
+			var equipment: Array = raw_equipment
+			if equipment.size() > EQUIPMENT_LIMIT:
+				_add(issues, equipment_path, "must contain at most %d items" % EQUIPMENT_LIMIT)
+			_validate_item_placements(
+				equipment, equipment_path, items, item_locations, issues
+			)
+			if status == "dead" and not equipment.is_empty():
+				_add(issues, equipment_path, "dead officer cannot retain equipment")
+
+
+static func _validate_items(
+		items: Dictionary,
+		arms_types: Dictionary,
+		cities: Dictionary,
+		issues: Array[Dictionary],
+) -> void:
+	for key: String in _sorted_string_keys(items):
+		var path: String = "items.%s" % key
+		var raw: Variant = items[key]
+		if typeof(raw) != TYPE_DICTIONARY:
+			_add(issues, path, "must be an object")
+			continue
+		var item: Dictionary = raw
+		_validate_record_id(item, key, path, issues)
+		_require_non_blank_string(item, "name", path, issues)
+		for field: String in ["forceBonus", "intelligenceBonus", "moveBonus"]:
+			_validate_non_negative_integer(item.get(field), "%s.%s" % [path, field], issues)
+		for field: String in ["sourceId", "appearanceYear"]:
+			if item.has(field):
+				_validate_non_negative_integer(item[field], "%s.%s" % [path, field], issues)
+		if item.has("armsTypeOverride"):
+			_required_reference(
+				item.get("armsTypeOverride"), "%s.armsTypeOverride" % path, arms_types, issues
+			)
+		if item.has("appearanceCityId"):
+			_required_reference(
+				item.get("appearanceCityId"), "%s.appearanceCityId" % path, cities, issues
+			)
+			if not item.has("appearanceYear"):
+				_add(issues, "%s.appearanceCityId" % path, "requires appearanceYear")
+		if item.has("appearanceYear") and not item.has("appearanceCityId"):
+			_add(issues, "%s.appearanceCityId" % path, "is required for annual appearance")
+
+
+static func _validate_arms_types(arms_types: Dictionary, issues: Array[Dictionary]) -> void:
+	for key: String in _sorted_string_keys(arms_types):
+		var path: String = "armsTypes.%s" % key
+		var raw: Variant = arms_types[key]
+		if typeof(raw) != TYPE_DICTIONARY:
+			_add(issues, path, "must be an object")
+			continue
+		var arms_type: Dictionary = raw
+		_validate_record_id(arms_type, key, path, issues)
+		_require_non_blank_string(arms_type, "name", path, issues)
+		for field: String in ["attackModifier", "defenseModifier", "mobility"]:
+			if not _is_finite_number(arms_type.get(field)):
+				_add(issues, "%s.%s" % [path, field], "must be a finite number")
+
+
+static func _validate_logs(raw: Variant, issues: Array[Dictionary]) -> void:
+	if typeof(raw) != TYPE_ARRAY:
+		_add(issues, "logs", "must be an array")
+		return
+	var logs: Array = raw
+	var ids: Dictionary = {}
+	for index: int in range(logs.size()):
+		var path: String = "logs.%d" % index
+		if typeof(logs[index]) != TYPE_DICTIONARY:
+			_add(issues, path, "must be an object")
+			continue
+		var log_entry: Dictionary = logs[index]
+		var log_id: String = ""
+		if _is_non_blank_string(log_entry.get("id")):
+			log_id = log_entry["id"]
+			if ids.has(log_id):
+				_add(issues, "%s.id" % path, "duplicate log id: %s" % log_id)
+			ids[log_id] = true
+		else:
+			_add(issues, "%s.id" % path, "must be a non-blank string")
+		if not LOG_KINDS.has(str(log_entry.get("kind", ""))):
+			_add(issues, "%s.kind" % path, "must be a known log kind")
+		_require_non_blank_string(log_entry, "message", path, issues)
+		if not _is_positive_integer(log_entry.get("turn")):
+			_add(issues, "%s.turn" % path, "must be a positive integer")
+
+
+static func _validate_graph(
+		raw: Variant,
+		cities: Dictionary,
+		facts: Dictionary,
+		issues: Array[Dictionary],
+) -> void:
+	if raw == null:
+		return
+	if typeof(raw) != TYPE_DICTIONARY:
+		_add(issues, "graph", "must be an object")
+		return
+	var graph: Dictionary = raw
+	var roads: Dictionary = facts.get("roads", {})
+	var expected_counts: Dictionary = {
+		"cityCount": cities.size(),
+		"roadCount": roads.size(),
+		"directedNeighborReferenceCount": int(facts.get("directed_references", 0)),
+	}
+	for field: String in ["cityCount", "roadCount", "directedNeighborReferenceCount"]:
+		if not _is_integer_number(graph.get(field)) or int(graph.get(field, -1)) != int(expected_counts[field]):
+			_add(issues, "graph.%s" % field, "must equal %d" % int(expected_counts[field]))
+	var raw_roads: Variant = graph.get("roads")
+	if typeof(raw_roads) != TYPE_ARRAY:
+		_add(issues, "graph.roads", "must be an array")
+		return
+	var listed: Dictionary = {}
+	var graph_roads: Array = raw_roads
+	for index: int in range(graph_roads.size()):
+		var path: String = "graph.roads.%d" % index
+		var pair_raw: Variant = graph_roads[index]
+		if typeof(pair_raw) != TYPE_ARRAY or (pair_raw as Array).size() != 2:
+			_add(issues, path, "must contain exactly two city ids")
+			continue
+		var pair: Array = pair_raw
+		if typeof(pair[0]) != TYPE_STRING or typeof(pair[1]) != TYPE_STRING:
+			_add(issues, path, "must contain city ids")
+			continue
+		var road_key: String = _road_key(pair[0], pair[1])
+		if listed.has(road_key):
+			_add(issues, path, "duplicate road")
+		listed[road_key] = true
+		if not roads.has(road_key):
+			_add(issues, path, "road is not present in reciprocal city neighbors")
+	for road_key: String in _sorted_string_keys(roads):
+		if not listed.has(road_key):
+			_add(issues, "graph.roads", "missing reciprocal road: %s" % road_key.replace("|", " <-> "))
+
+
+static func _validate_exact_order(
+		raw: Variant,
+		path: String,
+		record: Dictionary,
+		issues: Array[Dictionary],
+) -> void:
+	if typeof(raw) != TYPE_ARRAY:
+		_add(issues, path, "must be an array")
+		return
+	var values: Array = raw
+	var seen: Dictionary = {}
+	for index: int in range(values.size()):
+		var raw_id: Variant = values[index]
+		if typeof(raw_id) != TYPE_STRING or String(raw_id).is_empty():
+			_add(issues, "%s.%d" % [path, index], "must be an entity id")
+			continue
+		var entity_id: String = raw_id
+		if seen.has(entity_id):
+			_add(issues, path, "contains duplicate id: %s" % entity_id)
+		seen[entity_id] = true
+		if not record.has(entity_id):
+			_add(issues, path, "unknown id: %s" % entity_id)
+	for key: String in _sorted_string_keys(record):
+		if not seen.has(key):
+			_add(issues, path, "missing id: %s" % key)
+
+
+static func _validate_faction_order(
+		raw: Variant,
+		factions: Dictionary,
+		issues: Array[Dictionary],
+) -> void:
+	if typeof(raw) != TYPE_ARRAY:
+		_add(issues, "factionOrder", "must be an array")
+		return
+	var values: Array = raw
+	var seen: Dictionary = {}
+	for index: int in range(values.size()):
+		var raw_id: Variant = values[index]
+		if typeof(raw_id) != TYPE_STRING or not factions.has(raw_id):
+			_add(issues, "factionOrder.%d" % index, "must reference a known faction")
+			continue
+		var faction_id: String = raw_id
+		if seen.has(faction_id):
+			_add(issues, "factionOrder", "contains duplicate id: %s" % faction_id)
+		seen[faction_id] = true
+		if typeof(factions[faction_id]) == TYPE_DICTIONARY \
+				and (factions[faction_id] as Dictionary).get("isNeutral", false):
+			_add(issues, "factionOrder", "must not include the neutral faction")
+	for key: String in _sorted_string_keys(factions):
+		if typeof(factions[key]) != TYPE_DICTIONARY:
+			continue
+		var faction: Dictionary = factions[key]
+		if not faction.get("isNeutral", false) and not seen.has(key):
+			_add(issues, "factionOrder", "missing playable faction: %s" % key)
+
+
+static func _validate_id_list(
+		raw: Variant,
+		path: String,
+		record: Dictionary,
+		issues: Array[Dictionary],
+) -> void:
+	if typeof(raw) != TYPE_ARRAY:
+		_add(issues, path, "must be an array")
+		return
+	var ids: Array = raw
+	var seen: Dictionary = {}
+	for index: int in range(ids.size()):
+		var raw_id: Variant = ids[index]
+		if typeof(raw_id) != TYPE_STRING or not record.has(raw_id):
+			_add(issues, "%s.%d" % [path, index], "must reference a known id")
+			continue
+		var entity_id: String = raw_id
+		if seen.has(entity_id):
+			_add(issues, path, "contains duplicate id: %s" % entity_id)
+		seen[entity_id] = true
+
+
+static func _validate_item_placements(
+		raw: Variant,
+		path: String,
+		items: Dictionary,
+		locations: Dictionary,
+		issues: Array[Dictionary],
+) -> void:
+	if typeof(raw) != TYPE_ARRAY:
+		_add(issues, path, "must be an array")
+		return
+	var ids: Array = raw
+	var local_seen: Dictionary = {}
+	for index: int in range(ids.size()):
+		var raw_id: Variant = ids[index]
+		if typeof(raw_id) != TYPE_STRING or String(raw_id).is_empty():
+			_add(issues, "%s.%d" % [path, index], "must be an item id")
+			continue
+		var item_id: String = raw_id
+		if local_seen.has(item_id):
+			_add(issues, path, "contains duplicate item: %s" % item_id)
+		local_seen[item_id] = true
+		if not items.has(item_id):
+			_add(issues, path, "unknown item: %s" % item_id)
+		if locations.has(item_id):
+			_add(issues, path, "item is already placed at %s: %s" % [locations[item_id], item_id])
+		else:
+			locations[item_id] = path
+
+
+static func _validate_record_id(
+		record: Dictionary,
+		key: String,
+		path: String,
+		issues: Array[Dictionary],
+) -> void:
+	if record.get("id") != key:
+		_add(issues, "%s.id" % path, "must match record key: %s" % key)
+
+
+static func _validate_spike_serial(raw: Variant, path: String, issues: Array[Dictionary]) -> void:
+	if not _is_integer_number(raw) or int(raw) != 1:
+		_add(issues, path, "must remain 1 in the spike contract")
+
+
+static func _validate_empty_spike_record(
+		record: Dictionary,
+		path: String,
+		issues: Array[Dictionary],
+) -> void:
+	if not record.is_empty():
+		_add(issues, path, "must remain empty in the spike contract")
+
+
+static func _validate_non_negative_integer(
+		raw: Variant,
+		path: String,
+		issues: Array[Dictionary],
+) -> void:
+	if not _is_integer_number(raw) or int(raw) < 0:
+		_add(issues, path, "must be a non-negative integer")
+
+
+static func _require_non_blank_string(
+		record: Dictionary,
+		field: String,
+		base_path: String,
+		issues: Array[Dictionary],
+) -> void:
+	if not _is_non_blank_string(record.get(field)):
+		_add(issues, "%s.%s" % [base_path, field], "must be a non-blank string")
+
+
+static func _required_reference(
+		raw: Variant,
+		path: String,
+		record: Dictionary,
+		issues: Array[Dictionary],
+) -> String:
+	if typeof(raw) != TYPE_STRING or String(raw).is_empty():
+		_add(issues, path, "must be an id")
+		return ""
+	var entity_id: String = raw
+	if not record.has(entity_id):
+		_add(issues, path, "unknown id: %s" % entity_id)
+	return entity_id
+
+
+static func _record_or_issue(
+		raw: Variant,
+		path: String,
+		issues: Array[Dictionary],
+) -> Dictionary:
+	if typeof(raw) != TYPE_DICTIONARY:
+		_add(issues, path, "must be an object")
+		return {}
+	return raw
+
+
+static func _sorted_string_keys(record: Dictionary) -> Array[String]:
+	var result: Array[String] = []
+	for raw_key: Variant in record.keys():
+		result.append(str(raw_key))
+	result.sort()
+	return result
+
+
+static func _road_key(left: String, right: String) -> String:
+	return "%s|%s" % [left, right] if left < right else "%s|%s" % [right, left]
+
+
+static func _is_non_blank_string(raw: Variant) -> bool:
+	return typeof(raw) == TYPE_STRING and not String(raw).strip_edges().is_empty()
+
+
+static func _is_finite_number(raw: Variant) -> bool:
+	return (typeof(raw) == TYPE_INT or typeof(raw) == TYPE_FLOAT) and is_finite(float(raw))
+
+
+static func _is_integer_number(raw: Variant) -> bool:
+	return _is_finite_number(raw) and floor(float(raw)) == float(raw)
+
+
+static func _is_positive_integer(raw: Variant) -> bool:
+	return _is_integer_number(raw) and int(raw) >= 1
+
+
+static func _add(issues: Array[Dictionary], path: String, message: String) -> void:
+	issues.append({"path": path, "message": message})

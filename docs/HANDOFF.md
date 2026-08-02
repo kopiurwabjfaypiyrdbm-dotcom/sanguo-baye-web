@@ -47,6 +47,7 @@
 - 自动化基线既覆盖四时期最长 48 个月的完整 AI 推演（允许战役提前合法结束），也用不发生终局的结算夹具逐时期完整推进 48 次、经历 4 次年度更新，并比较每 6 个月重载与不中断结果；一城弱势君主最长 48 个月双跑保持确定。
 - 已加入可安装 PWA 壳：核心 JS、CSS、地图模块、结构化剧本和正式小型图片会预缓存；超过默认 Workbox 上限的入口视频与选时期大图按需缓存。新 Service Worker 必须由玩家确认后才刷新，不会自动打断正在进行的战役。
 - 已加入 Capacitor 8 Android 工程，临时包名为 `com.sumo91.sanguobaye.debug`。原生壳锁定正反横屏、进入沉浸式全屏、允许内容延伸到刘海短边，并处理系统返回键的弹层/页面层级。工程生成、同步和 Debug APK 编译均已通过，包名、API 24/36、`sensorLandscape` 与 v2 调试签名已核验；MuMu 模拟器安装与横屏触控验收通过，物理手机验收仍待进行。
+- 顶层 `godot/` 已形成 Godot 4.7.1 原生迁移技术样片，不嵌入 WebView/TypeScript。时期 1 的 38 城、54 条道路、原生 Camera/Control 表现、触摸点选/拖动、双触点输入路径、空间城池卡片、与 TypeScript fixture 同 seed 的开垦命令及跨进程存读均已闭环；MuMu 的 1280×720、844×390 和 Debug APK 启动通过。详细边界与下一门槛见 `docs/migration/godot-spike-report.md`。
 
 内置 12 城示例状态仍作为测试夹具保留；正式开局流程默认使用四时期完整剧本。
 
@@ -81,6 +82,7 @@ src/game/          Phaser 场景、战略地图和 React/Phaser 事件桥
 src/ui/            React 开局流程、城池面板、PWA 状态和应用编排
 src/platform/      Capacitor 平台识别与 Android 返回键适配
 android/           可版本化的 Capacitor Android 工程；构建产物与本机 SDK 配置忽略
+godot/             Godot 4.7.1 原生技术样片；领域层不挂场景树，构建产物忽略
 public/            PWA 安装图标与静态资源
 references/        上游锁定、来源边界、一致性矩阵、夹具和研究记录
 data/source/       可编辑的数据整理表
@@ -105,6 +107,7 @@ docs/design/       已确认的设计和兼容策略
 - `docs/design/compatibility-policy.md`：允许一致与允许现代化的边界。
 - `references/parity-matrix.md`：每个系统的真实验证状态和下一证据点。
 - `references/vendor/baye-c-core/README.md`：已入库 C 参考基线的使用方法。
+- `docs/mission-briefs/godot-migration-spike.md` 与 `docs/migration/godot-spike-report.md`：Godot 样片任务边界、设备证据和继续迁移门槛。
 
 继续战斗开发时，从这些入口开始：
 
@@ -149,7 +152,7 @@ npm run android:apk      # 同步并用 Gradle 生成 Debug APK
 
 Android 侧要求 Node 22+、近期 Android Studio、SDK Platform 36、Build Tools、Platform Tools 与 JDK 21。Gradle 8.14 支持 JDK 21–24，但不支持 Android Studio 2026.1 所带 JBR 25；`android:apk` 会发现标准 JDK 安装，也可通过 `ANDROID_BUILD_JAVA_HOME` 指向非标准路径。当前 Debug APK 已成功编译；正式发布前必须把临时包名替换为拥有者确认的永久 application ID，并完成签名、备份政策和版本号决策。
 
-`npm run check` 是一次性验证命令，不是常驻服务。它会依次验证已入库参考源码的提交与哈希、以单工作线程运行 Vitest，并执行 TypeScript 和 Vite 生产构建；这样会略微延长检查时间，但避免在开发服务器或 Android 构建同时存在时突然拉起多个高占用 Node 进程。完成后测试工作进程应退出。当前交接基线为 358 项测试通过、4 项需要额外本地原版资料的条件测试跳过、51 个锁定 C 参考文件校验和生产构建通过。
+`npm run check` 是一次性验证命令，不是常驻服务。它会依次验证已入库参考源码的提交与哈希、以单工作线程运行 Vitest，并执行 TypeScript 和 Vite 生产构建；这样会略微延长检查时间，但避免在开发服务器或 Android 构建同时存在时突然拉起多个高占用 Node 进程。完成后测试工作进程应退出。当前交接基线为 360 项测试通过、4 项需要额外本地原版资料的条件测试跳过、51 个锁定 C 参考文件校验和生产构建通过。
 
 只能保留一个 `npm run dev`。Vite 开发服务器会持续监视仓库文件，应在原终端按 `Ctrl+C` 关闭。项目启用了严格端口检查；若端口占用，应复用或关闭原实例，不要改用连续的新端口启动多个服务器。
 

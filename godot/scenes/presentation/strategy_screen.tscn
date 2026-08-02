@@ -1,0 +1,176 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/strategy_screen.gd" id="1_screen"]
+[ext_resource type="Script" path="res://src/presentation/strategy_map_world.gd" id="2_map"]
+[ext_resource type="Script" path="res://src/presentation/safe_area_margin.gd" id="3_safe"]
+[ext_resource type="Theme" path="res://scenes/theme/strategy_theme.tres" id="4_theme"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/city_card.tscn" id="5_card"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_bar"]
+bg_color = Color(0.035, 0.059, 0.068, 0.94)
+border_width_bottom = 1
+border_color = Color(0.39, 0.57, 0.51, 0.62)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="StrategyScreen" type="Node2D"]
+script = ExtResource("1_screen")
+
+[node name="MapWorld" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_map")
+
+[node name="Cities" type="Node2D" parent="MapWorld"]
+unique_name_in_owner = true
+
+[node name="Effects" type="Node2D" parent="MapWorld"]
+unique_name_in_owner = true
+
+[node name="MapCamera" type="Camera2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(556, 328)
+position_smoothing_enabled = false
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="HUDRoot" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("4_theme")
+
+[node name="SafeArea" type="MarginContainer" parent="UILayer/HUDRoot"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_safe")
+
+[node name="HUDStack" type="VBoxContainer" parent="UILayer/HUDRoot/SafeArea"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="TopPanel" type="PanelContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_bar")
+
+[node name="TopMargin" type="MarginContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 7
+
+[node name="TopBar" type="HBoxContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.81, 0.41, 1)
+theme_override_font_sizes/font_size = 21
+text = "三国霸业 · 原生样片"
+vertical_alignment = 1
+
+[node name="YearLabel" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "公元 190 年 · 1 月"
+vertical_alignment = 1
+
+[node name="SeedLabel" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.63, 0.77, 0.71, 1)
+text = "种子 0"
+vertical_alignment = 1
+
+[node name="ToolbarSpacer" type="Control" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="WorldButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(76, 52)
+layout_mode = 2
+focus_mode = 2
+text = "世界全图"
+
+[node name="PlayerButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(76, 52)
+layout_mode = 2
+focus_mode = 2
+text = "我方城池"
+
+[node name="SaveButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(68, 52)
+layout_mode = 2
+focus_mode = 2
+text = "保存"
+
+[node name="LoadButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(68, 52)
+layout_mode = 2
+focus_mode = 2
+text = "读取"
+
+[node name="StatusBadgePanel" type="PanelContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(82, 48)
+layout_mode = 2
+
+[node name="StatusBadge" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar/StatusBadgePanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "就绪"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MapInputSpace" type="Control" parent="UILayer/HUDRoot/SafeArea/HUDStack"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="BottomPanel" type="PanelContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_bar")
+
+[node name="BottomMargin" type="MarginContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="StatusLine" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "拖动平移 · 滚轮或双指缩放 · 点击城池"
+text_overrun_behavior = 3
+
+[node name="CityCard" parent="UILayer/HUDRoot" instance=ExtResource("5_card")]
+unique_name_in_owner = true
+layout_mode = 0
+z_index = 20

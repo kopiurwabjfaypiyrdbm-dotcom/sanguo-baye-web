@@ -8,6 +8,7 @@
     "preview": "vite preview",
     "build": "tsc -b && vite build",
     "test": "vitest run --pool=threads --maxWorkers=1 --minWorkers=1",
+    "godot:spike-data": "vite-node scripts/generate-godot-spike-data.ts",
     "icons:generate": "node scripts/generate-app-icons.mjs",
     "android:add": "npm run build && cap add android",
     "android:sync": "npm run build && cap sync android",

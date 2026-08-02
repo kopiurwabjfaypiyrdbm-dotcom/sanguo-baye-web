@@ -9,3 +9,8 @@ tsconfig.tsbuildinfo
 Thumbs.db
 .reference/
 .superpowers/
+godot/.godot/
+godot/builds/
+godot/.android/
+godot/*.apk
+godot/*.aab
