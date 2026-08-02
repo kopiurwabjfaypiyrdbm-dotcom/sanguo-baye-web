@@ -172,8 +172,8 @@ function runSelfTests(roadmap, state) {
     changed.completedMissions.push(structuredClone(changed.completedMissions[0]))
   }, roadmap, state)
   expectFailure('unmet dependency', (_roadmap, changed) => {
-    changed.currentMissionId = 'MB03'
-    changed.readyMissionIds = ['MB03']
+    changed.currentMissionId = 'MB04'
+    changed.readyMissionIds = ['MB04']
   }, roadmap, state)
   expectFailure('missing active brief', (_roadmap, changed) => {
     changed.phase = 'executing'

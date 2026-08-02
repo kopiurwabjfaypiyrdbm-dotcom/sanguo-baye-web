@@ -7,25 +7,31 @@
   "roadmapPath": "docs/migration/godot-program-roadmap.json",
   "branch": "codex/godot-migration-spike",
   "status": "active",
-  "phase": "executing",
-  "currentMissionId": "MB02",
-  "currentBriefPath": "docs/mission-briefs/MB02-deterministic-migration-verification-platform.md",
-  "readyMissionIds": ["MB02"],
+  "phase": "brief_pending",
+  "currentMissionId": "MB03",
+  "currentBriefPath": null,
+  "readyMissionIds": ["MB03"],
   "completedMissions": [
     {
       "id": "MB01",
       "briefPath": "docs/mission-briefs/godot-migration-spike.md",
       "reportPath": "docs/migration/godot-spike-report.md",
       "commit": "0cdcc3f"
+    },
+    {
+      "id": "MB02",
+      "briefPath": "docs/mission-briefs/MB02-deterministic-migration-verification-platform.md",
+      "reportPath": "docs/migration/mission-reports/MB02-deterministic-migration-verification-platform.md",
+      "commit": "9156cda"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB01",
-    "commit": "0cdcc3f",
+    "missionId": "MB02",
+    "commit": "9156cda",
     "date": "2026-08-02"
   },
-  "nextAction": "Implement and validate the MB02 canonical-state, digest, and batch replay platform; keep the current dataContractVersion 1 boundary unchanged.",
+  "nextAction": "Use $mission-brief in a separate step to create only the MB03 production domain data contract brief, then set implementation_pending and execute it.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
