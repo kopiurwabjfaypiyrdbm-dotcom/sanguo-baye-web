@@ -7,10 +7,10 @@
   "roadmapPath": "docs/migration/godot-program-roadmap.json",
   "branch": "codex/godot-migration-spike",
   "status": "active",
-  "phase": "executing",
-  "currentMissionId": "MB03",
-  "currentBriefPath": "docs/mission-briefs/MB03-production-domain-data-contract.md",
-  "readyMissionIds": ["MB03"],
+  "phase": "brief_pending",
+  "currentMissionId": "MB04",
+  "currentBriefPath": null,
+  "readyMissionIds": ["MB04"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -23,15 +23,21 @@
       "briefPath": "docs/mission-briefs/MB02-deterministic-migration-verification-platform.md",
       "reportPath": "docs/migration/mission-reports/MB02-deterministic-migration-verification-platform.md",
       "commit": "9156cda"
+    },
+    {
+      "id": "MB03",
+      "briefPath": "docs/mission-briefs/MB03-production-domain-data-contract.md",
+      "reportPath": "docs/migration/mission-reports/MB03-production-domain-data-contract.md",
+      "commit": "eca357e"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB02",
-    "commit": "9156cda",
+    "missionId": "MB03",
+    "commit": "eca357e",
     "date": "2026-08-02"
   },
-  "nextAction": "Implement MB03 by defining the production envelope and generating/validating all four periods through the existing MB02 canonical platform without expanding gameplay rules.",
+  "nextAction": "Commission exactly one MB04 Mission Brief for the production application GameSession, then set implementation_pending and execute it without expanding strategic rule breadth.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
