@@ -230,7 +230,7 @@ func _test_spike_contract_rejects_unmigrated_web_states() -> void:
 	}
 	_assert_issue_contains(
 		Validator.validate(ordered_state),
-		"empty in the spike contract",
+		"empty in the initial-state contract",
 		"unmigrated strategic orders must be rejected rather than shallowly accepted"
 	)
 

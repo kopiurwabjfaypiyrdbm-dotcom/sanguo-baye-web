@@ -1,0 +1,72 @@
+{
+  "productionCatalogVersion": 1,
+  "productionDataContractVersion": 2,
+  "id": "baye-production-campaign-catalog-v1",
+  "usage": {
+    "scope": "internal-production-migration-data",
+    "redistributionReview": "pending",
+    "notice": "Generated from the repository bundled scenario source; no original binary archive or media is included."
+  },
+  "periods": [
+    {
+      "periodId": 1,
+      "path": "godot/data/campaigns/period-1.json",
+      "envelopeSha256": "628950fbc8389e3a6d45d8379ed967faae83bb5eeafc4017083722ea422e210d",
+      "stateSha256": "c79e06d0bdf128f371dd3df482a8cdbe0daf3a2288c0f06b331859e0d7cbf198",
+      "facts": {
+        "cityCount": 38,
+        "roadCount": 54,
+        "directedNeighborReferenceCount": 108,
+        "factionCount": 18,
+        "officerCount": 200,
+        "itemCount": 33,
+        "armsTypeCount": 6
+      }
+    },
+    {
+      "periodId": 2,
+      "path": "godot/data/campaigns/period-2.json",
+      "envelopeSha256": "49072c978d59d665ebfe919351b54efb152e2098b4bb18066380041d9e0d58f8",
+      "stateSha256": "98a49987f4d0915ef91c068946904ea1941b36b5325492e46fdcc7997536f8dd",
+      "facts": {
+        "cityCount": 38,
+        "roadCount": 54,
+        "directedNeighborReferenceCount": 108,
+        "factionCount": 16,
+        "officerCount": 200,
+        "itemCount": 33,
+        "armsTypeCount": 6
+      }
+    },
+    {
+      "periodId": 3,
+      "path": "godot/data/campaigns/period-3.json",
+      "envelopeSha256": "81b19f72b57dce0d2997866b4691b9e7d499c9c7444cc3da091b3a4da23b26b1",
+      "stateSha256": "6bd98706be3b2f7ce0787efbda2651a2e82f7d554d9ee95111f7d98c499d7a45",
+      "facts": {
+        "cityCount": 38,
+        "roadCount": 54,
+        "directedNeighborReferenceCount": 108,
+        "factionCount": 11,
+        "officerCount": 200,
+        "itemCount": 33,
+        "armsTypeCount": 6
+      }
+    },
+    {
+      "periodId": 4,
+      "path": "godot/data/campaigns/period-4.json",
+      "envelopeSha256": "f5c20f07ad25108dbd7fbb8b5946b53d42ee70322ae83ad3caa530c3e238c627",
+      "stateSha256": "d4f9c7f6f37020d2771dc3740624fa16c6658f58b7b45cf6b96ca02960d32f6f",
+      "facts": {
+        "cityCount": 38,
+        "roadCount": 54,
+        "directedNeighborReferenceCount": 108,
+        "factionCount": 5,
+        "officerCount": 200,
+        "itemCount": 34,
+        "armsTypeCount": 6
+      }
+    }
+  ]
+}

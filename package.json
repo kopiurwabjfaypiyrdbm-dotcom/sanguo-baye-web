@@ -11,6 +11,9 @@
     "godot:spike-data": "vite-node scripts/generate-godot-spike-data.ts",
     "godot:migration-fixtures:check": "vite-node scripts/verify-godot-migration-fixtures.ts",
     "godot:migration-check": "npm run godot:migration-fixtures:check && node scripts/run-godot-migration-verification.mjs",
+    "godot:domain-data:generate": "vite-node scripts/generate-godot-domain-data.ts --write",
+    "godot:domain-data:check": "vite-node scripts/generate-godot-domain-data.ts",
+    "godot:domain-data:verify": "npm run godot:domain-data:check && node scripts/run-godot-domain-data-verification.mjs",
     "godot:program-check": "node scripts/verify-godot-program.mjs --self-test --recover",
     "icons:generate": "node scripts/generate-app-icons.mjs",
     "android:add": "npm run build && cap add android",
@@ -25,7 +28,7 @@
     "reference:setup:offline": "node scripts/fetch-baye-reference.mjs --full-source --include-offline-runtime",
     "reference:sync-core": "node scripts/sync-baye-core-reference.mjs",
     "reference:check": "node scripts/verify-baye-core-reference.mjs",
-    "check": "npm run godot:program-check && npm run reference:check && npm test && npm run build"
+    "check": "npm run godot:program-check && npm run godot:domain-data:check && npm run reference:check && npm test && npm run build"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",

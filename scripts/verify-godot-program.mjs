@@ -172,8 +172,15 @@ function runSelfTests(roadmap, state) {
     changed.completedMissions.push(structuredClone(changed.completedMissions[0]))
   }, roadmap, state)
   expectFailure('unmet dependency', (_roadmap, changed) => {
-    changed.currentMissionId = 'MB04'
-    changed.readyMissionIds = ['MB04']
+    const dependent = _roadmap.missions.find((mission) => mission.dependsOn.length > 0)
+    invariant(dependent, 'roadmap self-test needs a dependent mission')
+    const removedIds = new Set([...dependent.dependsOn, dependent.id])
+    changed.completedMissions = changed.completedMissions.filter((mission) => !removedIds.has(mission.id))
+    changed.status = 'active'
+    changed.phase = 'brief_pending'
+    changed.currentMissionId = dependent.id
+    changed.currentBriefPath = null
+    changed.readyMissionIds = [dependent.id]
   }, roadmap, state)
   expectFailure('missing active brief', (_roadmap, changed) => {
     changed.phase = 'executing'

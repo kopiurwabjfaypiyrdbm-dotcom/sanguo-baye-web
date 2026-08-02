@@ -4,8 +4,8 @@ const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
 
 const UINT32_MAX: int = 0xffff_ffff
 const EQUIPMENT_LIMIT: int = 2
-const SPIKE_DATA_CONTRACT_VERSION: int = 1
-const SPIKE_PHASE: String = "player"
+const SUPPORTED_DATA_CONTRACT_VERSIONS: Array[int] = [1, 2]
+const INITIAL_PHASE: String = "player"
 const OFFICER_STATUSES: Array[String] = ["serving", "free", "hidden"]
 const LOG_KINDS: Array[String] = ["system", "map", "turn", "battle", "ai"]
 const CITY_CONDITIONS: Array[String] = ["normal", "famine", "drought", "flood", "rebellion"]
@@ -14,9 +14,10 @@ const CITY_CONDITIONS: Array[String] = ["normal", "famine", "drought", "flood", 
 static func validate(state: Dictionary) -> Array[Dictionary]:
 	var issues: Array[Dictionary] = []
 
-	if not _is_integer_number(state.get("dataContractVersion")) \
-			or int(state.get("dataContractVersion", -1)) != SPIKE_DATA_CONTRACT_VERSION:
-		_add(issues, "dataContractVersion", "must be 1 for the migration spike")
+	var data_contract_version: int = int(state.get("dataContractVersion", -1)) \
+			if _is_integer_number(state.get("dataContractVersion")) else -1
+	if not SUPPORTED_DATA_CONTRACT_VERSIONS.has(data_contract_version):
+		_add(issues, "dataContractVersion", "must be a supported initial-state data contract")
 	if not _is_integer_number(state.get("schemaVersion")) or int(state.get("schemaVersion", -1)) != 6:
 		_add(issues, "schemaVersion", "must be 6")
 
@@ -29,7 +30,7 @@ static func validate(state: Dictionary) -> Array[Dictionary]:
 		_add(issues, "rulesetId", "must be a non-blank string")
 
 	if not _is_integer_number(state.get("turn")) or int(state.get("turn", -1)) != 1:
-		_add(issues, "turn", "must remain 1 in the spike contract")
+		_add(issues, "turn", "must remain 1 in the initial-state contract")
 	if not _is_integer_number(state.get("rngSeed")) \
 			or int(state.get("rngSeed", -1)) < 0 \
 			or int(state.get("rngSeed", -1)) > UINT32_MAX:
@@ -40,14 +41,14 @@ static func validate(state: Dictionary) -> Array[Dictionary]:
 	var phase: String = ""
 	if typeof(state.get("phase")) == TYPE_STRING:
 		phase = state["phase"]
-	if phase != SPIKE_PHASE:
-		_add(issues, "phase", "must remain player in the spike contract")
+	if phase != INITIAL_PHASE:
+		_add(issues, "phase", "must remain player in the initial-state contract")
 	if state.has("pendingSuccession") and state["pendingSuccession"] != null:
-		_add(issues, "pendingSuccession", "is outside the spike contract")
+		_add(issues, "pendingSuccession", "is outside the initial-state contract")
 	if state.has("outcome") and state["outcome"] != null:
-		_add(issues, "outcome", "is outside the spike contract")
+		_add(issues, "outcome", "is outside the initial-state contract")
 
-	_validate_calendar(state.get("calendar"), issues)
+	_validate_calendar(state.get("calendar"), data_contract_version, issues)
 	_validate_lifecycle_policy(state.get("lifecyclePolicy"), issues)
 
 	var factions: Dictionary = _record_or_issue(state.get("factions"), "factions", issues)
@@ -105,7 +106,7 @@ static func validate(state: Dictionary) -> Array[Dictionary]:
 	_validate_id_list(state.get("discoveredOfficerIds"), "discoveredOfficerIds", officers, issues)
 	if typeof(state.get("discoveredOfficerIds")) == TYPE_ARRAY \
 			and not (state["discoveredOfficerIds"] as Array).is_empty():
-		_add(issues, "discoveredOfficerIds", "must remain empty in the spike contract")
+		_add(issues, "discoveredOfficerIds", "must remain empty in the initial-state contract")
 	_validate_spike_serial(state.get("nextStrategicOrderSerial"), "nextStrategicOrderSerial", issues)
 	_validate_spike_serial(state.get("nextDiplomaticOrderSerial"), "nextDiplomaticOrderSerial", issues)
 	_validate_graph(state.get("graph"), cities, graph_facts, issues)
@@ -120,7 +121,7 @@ static func first_error(issues: Array[Dictionary]) -> String:
 	return "Invalid game state at %s: %s" % [issue.get("path", "?"), issue.get("message", "invalid")]
 
 
-static func _validate_calendar(raw: Variant, issues: Array[Dictionary]) -> void:
+static func _validate_calendar(raw: Variant, contract_version: int, issues: Array[Dictionary]) -> void:
 	if typeof(raw) != TYPE_DICTIONARY:
 		_add(issues, "calendar", "must be an object")
 		return
@@ -131,10 +132,10 @@ static func _validate_calendar(raw: Variant, issues: Array[Dictionary]) -> void:
 			or int(calendar.get("month", 0)) < 1 \
 			or int(calendar.get("month", 0)) > 12:
 		_add(issues, "calendar.month", "must be an integer from 1 to 12")
-	if _is_integer_number(calendar.get("year")) and int(calendar["year"]) != 190:
+	if contract_version == 1 and _is_integer_number(calendar.get("year")) and int(calendar["year"]) != 190:
 		_add(issues, "calendar.year", "must remain 190 in the spike contract")
 	if _is_integer_number(calendar.get("month")) and int(calendar["month"]) != 1:
-		_add(issues, "calendar.month", "must remain 1 in the spike contract")
+		_add(issues, "calendar.month", "must remain 1 in the initial-state contract")
 
 
 static func _validate_lifecycle_policy(raw: Variant, issues: Array[Dictionary]) -> void:
@@ -156,7 +157,7 @@ static func _validate_lifecycle_policy(raw: Variant, issues: Array[Dictionary]) 
 			or policy.get("naturalDeath") != "disabled" \
 			or policy.get("battleDeath") != "disabled" \
 			or policy.get("captiveEscape") != "disabled":
-		_add(issues, "lifecyclePolicy", "must remain at the period-1 spike defaults")
+		_add(issues, "lifecyclePolicy", "must remain at the supported initial-state defaults")
 
 
 static func _validate_factions(
@@ -673,7 +674,7 @@ static func _validate_record_id(
 
 static func _validate_spike_serial(raw: Variant, path: String, issues: Array[Dictionary]) -> void:
 	if not _is_integer_number(raw) or int(raw) != 1:
-		_add(issues, path, "must remain 1 in the spike contract")
+		_add(issues, path, "must remain 1 in the initial-state contract")
 
 
 static func _validate_empty_spike_record(
@@ -682,7 +683,7 @@ static func _validate_empty_spike_record(
 		issues: Array[Dictionary],
 ) -> void:
 	if not record.is_empty():
-		_add(issues, path, "must remain empty in the spike contract")
+		_add(issues, path, "must remain empty in the initial-state contract")
 
 
 static func _validate_non_negative_integer(
