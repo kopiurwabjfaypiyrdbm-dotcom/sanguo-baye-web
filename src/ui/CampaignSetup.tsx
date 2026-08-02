@@ -1,3 +1,4 @@
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import type { BundledPeriodId, RulerOption, ScenarioOption } from '../data/bundledScenarios';
 import type { LifecyclePolicy } from '../core/types';
 import {
@@ -162,71 +163,75 @@ export function RulerScreen({
             ))}
           </div>
           <aside className="ruler-preview">
-            <p>即将扮演</p>
-            <strong>{selected?.name}</strong>
-            <dl>
-              <div><dt>初始城池</dt><dd>{selected?.cityCount ?? 0}</dd></div>
-              <div><dt>所属人物</dt><dd>{selected?.officerCount ?? 0}</dd></div>
-              <div><dt>天下城池</dt><dd>38</dd></div>
-            </dl>
-            <fieldset className="lifecycle-policy">
-              <legend>战役规则集</legend>
-              <label>
-                <span>规则身份</span>
-                <select
-                  value={rulesetId}
-                  onChange={(event) => onRulesetChange(event.target.value as CampaignRulesetId)}
-                >
-                  {Object.values(CAMPAIGN_RULESETS).map((ruleset) => (
-                    <option key={ruleset.id} value={ruleset.id}>{ruleset.label}</option>
-                  ))}
-                </select>
-              </label>
-              <small>{CAMPAIGN_RULESETS[rulesetId].description} 规则在开局后锁定并随存档保存。</small>
-            </fieldset>
-            <fieldset className="lifecycle-policy">
-              <legend>战役人物规则</legend>
-              <label>
-                <span>战斗死亡</span>
-                <select
-                  value={lifecyclePolicy.battleDeath}
-                  onChange={(event) => onLifecyclePolicyChange({
-                    ...lifecyclePolicy,
-                    battleDeath: event.target.value as LifecyclePolicy['battleDeath'],
-                  })}
-                >
-                  <option value="disabled">关闭（安全模式）</option>
-                  <option value="baye-rare">固定源码稀有战死</option>
-                </select>
-              </label>
-              <label>
-                <span>年龄死亡</span>
-                <select
-                  value={lifecyclePolicy.naturalDeath}
-                  onChange={(event) => onLifecyclePolicyChange({
-                    ...lifecyclePolicy,
-                    naturalDeath: event.target.value as LifecyclePolicy['naturalDeath'],
-                  })}
-                >
-                  <option value="disabled">关闭（固定源码现行）</option>
-                  <option value="age-90-coinflip">90 岁后年度判定（现代可选）</option>
-                </select>
-              </label>
-              <label>
-                <span>俘虏逃脱</span>
-                <select
-                  value={lifecyclePolicy.captiveEscape}
-                  onChange={(event) => onLifecyclePolicyChange({
-                    ...lifecyclePolicy,
-                    captiveEscape: event.target.value as LifecyclePolicy['captiveEscape'],
-                  })}
-                >
-                  <option value="disabled">关闭（安全模式）</option>
-                  <option value="modern-monthly">每月判定（现代可选）</option>
-                </select>
-              </label>
-              <small>规则在开局后锁定，并随存档保存。死亡会回收装备并触发君主继承。</small>
-            </fieldset>
+            <div className="ruler-preview-scroll" onPointerDown={beginMouseDragScroll}>
+              <header className="ruler-preview-heading">
+                <p>即将扮演</p>
+                <strong>{selected?.name}</strong>
+              </header>
+              <dl>
+                <div><dt>初始城池</dt><dd>{selected?.cityCount ?? 0}</dd></div>
+                <div><dt>所属人物</dt><dd>{selected?.officerCount ?? 0}</dd></div>
+                <div><dt>天下城池</dt><dd>38</dd></div>
+              </dl>
+              <fieldset className="lifecycle-policy">
+                <legend>战役规则集</legend>
+                <label>
+                  <span>规则身份</span>
+                  <select
+                    value={rulesetId}
+                    onChange={(event) => onRulesetChange(event.target.value as CampaignRulesetId)}
+                  >
+                    {Object.values(CAMPAIGN_RULESETS).map((ruleset) => (
+                      <option key={ruleset.id} value={ruleset.id}>{ruleset.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <small>{CAMPAIGN_RULESETS[rulesetId].description} 规则在开局后锁定并随存档保存。</small>
+              </fieldset>
+              <fieldset className="lifecycle-policy">
+                <legend>战役人物规则</legend>
+                <label>
+                  <span>战斗死亡</span>
+                  <select
+                    value={lifecyclePolicy.battleDeath}
+                    onChange={(event) => onLifecyclePolicyChange({
+                      ...lifecyclePolicy,
+                      battleDeath: event.target.value as LifecyclePolicy['battleDeath'],
+                    })}
+                  >
+                    <option value="disabled">关闭（安全模式）</option>
+                    <option value="baye-rare">固定源码稀有战死</option>
+                  </select>
+                </label>
+                <label>
+                  <span>年龄死亡</span>
+                  <select
+                    value={lifecyclePolicy.naturalDeath}
+                    onChange={(event) => onLifecyclePolicyChange({
+                      ...lifecyclePolicy,
+                      naturalDeath: event.target.value as LifecyclePolicy['naturalDeath'],
+                    })}
+                  >
+                    <option value="disabled">关闭（固定源码现行）</option>
+                    <option value="age-90-coinflip">90 岁后年度判定（现代可选）</option>
+                  </select>
+                </label>
+                <label>
+                  <span>俘虏逃脱</span>
+                  <select
+                    value={lifecyclePolicy.captiveEscape}
+                    onChange={(event) => onLifecyclePolicyChange({
+                      ...lifecyclePolicy,
+                      captiveEscape: event.target.value as LifecyclePolicy['captiveEscape'],
+                    })}
+                  >
+                    <option value="disabled">关闭（安全模式）</option>
+                    <option value="modern-monthly">每月判定（现代可选）</option>
+                  </select>
+                </label>
+                <small>规则在开局后锁定，并随存档保存。死亡会回收装备并触发君主继承。</small>
+              </fieldset>
+            </div>
             <button type="button" className="entry-primary start-campaign" onClick={onStart} disabled={!selected}>
               开始霸业
             </button>
@@ -235,4 +240,35 @@ export function RulerScreen({
       </section>
     </main>
   );
+}
+
+function beginMouseDragScroll(event: ReactPointerEvent<HTMLDivElement>) {
+  if (event.pointerType !== 'mouse' || event.button !== 0) return;
+  if ((event.target as Element).closest('button, select, input, a')) return;
+
+  const element = event.currentTarget;
+  const pointerId = event.pointerId;
+  const originY = event.clientY;
+  const originScrollTop = element.scrollTop;
+
+  event.preventDefault();
+  element.setPointerCapture(pointerId);
+  element.classList.add('is-dragging');
+
+  const move = (moveEvent: PointerEvent) => {
+    if (moveEvent.pointerId !== pointerId) return;
+    element.scrollTop = originScrollTop - (moveEvent.clientY - originY);
+  };
+  const finish = (finishEvent: PointerEvent) => {
+    if (finishEvent.pointerId !== pointerId) return;
+    element.removeEventListener('pointermove', move);
+    element.removeEventListener('pointerup', finish);
+    element.removeEventListener('pointercancel', finish);
+    if (element.hasPointerCapture(pointerId)) element.releasePointerCapture(pointerId);
+    element.classList.remove('is-dragging');
+  };
+
+  element.addEventListener('pointermove', move);
+  element.addEventListener('pointerup', finish);
+  element.addEventListener('pointercancel', finish);
 }

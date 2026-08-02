@@ -1,5 +1,14 @@
 export type GameEventMap = {
   'city:selected': { cityId: string };
+  'city:anchor-changed': {
+    cityId: string;
+    x: number;
+    y: number;
+    viewportWidth: number;
+    viewportHeight: number;
+    visible: boolean;
+  };
+  'map:cleared': Record<string, never>;
   'tactical:tile-selected': { x: number; y: number };
   'tactical:unit-selected': { unitId: string };
 };

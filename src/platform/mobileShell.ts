@@ -8,9 +8,15 @@ export function isNativeAndroid(): boolean {
 }
 
 export function registerNativeBackHandler(handler: NativeBackHandler): () => void {
-  if (!isNativeAndroid()) return () => undefined;
+  const nativeAndroid = isNativeAndroid();
+  const previewAndroidLayout = import.meta.env.DEV
+    && new URLSearchParams(window.location.search).get('runtime') === 'android';
+  if (!nativeAndroid && !previewAndroidLayout) return () => undefined;
 
   document.documentElement.dataset.runtime = 'android';
+  if (!nativeAndroid) return () => {
+    delete document.documentElement.dataset.runtime;
+  };
   let disposed = false;
   let removeListener: (() => Promise<void>) | undefined;
 

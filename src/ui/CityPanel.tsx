@@ -45,14 +45,27 @@ import {
 } from '../core/diplomaticOrders';
 import { getCampaignCommandCost } from '../core/rulesets';
 import { CommandReviewDialog, type CommandReview } from './CommandReviewDialog';
+import { getCityCommand, type CityCommandId } from './cityCommandCatalog';
 
 type PendingCommandReview = CommandReview & { execute: () => void };
+type InlineCommandSummary = {
+  effects: string[];
+  costs: string[];
+  risks?: string[];
+  unavailableReason?: string;
+};
+export type CityPanelSection = 'summary' | 'internal' | 'personnel' | 'military' | 'intrigue';
 
 type CityPanelProps = {
   state: GameState;
   cityId: string;
   focusOfficerId?: string;
   disabled?: boolean;
+  presentation?: 'detail' | 'command';
+  initialSection?: CityPanelSection;
+  initialCommand?: CityCommandId;
+  dangerousConfirmationDismissRequest?: number;
+  onDangerousConfirmationChange?: (open: boolean) => void;
   onClose: () => void;
   onDevelop: (cityId: string, officerId: string) => void;
   onDevelopCommerce: (cityId: string, officerId: string) => void;
@@ -104,6 +117,11 @@ export function CityPanel({
   cityId,
   focusOfficerId,
   disabled = false,
+  presentation = 'detail',
+  initialSection = 'summary',
+  initialCommand,
+  dangerousConfirmationDismissRequest = 0,
+  onDangerousConfirmationChange,
   onClose,
   onDevelop,
   onDevelopCommerce,
@@ -199,10 +217,24 @@ export function CityPanel({
   const [selectedCaptiveId, setSelectedCaptiveId] = useState('');
   const [selectedAttackerIds, setSelectedAttackerIds] = useState<string[]>([]);
   const [provisions, setProvisions] = useState('100');
-  const [activeCivicCommand, setActiveCivicCommand] = useState<'trade' | 'banquet' | 'plunder' | null>(null);
+  const [activeCivicCommand, setActiveCivicCommand] = useState<'trade' | 'banquet' | 'plunder' | null>(
+    initialCommand === 'trade' || initialCommand === 'banquet' || initialCommand === 'plunder'
+      ? initialCommand
+      : null,
+  );
+  const [activeSection, setActiveSection] = useState<CityPanelSection>(initialSection);
   const [pendingCommandReview, setPendingCommandReview] = useState<PendingCommandReview>();
   const [tradeDirection, setTradeDirection] = useState<'buy' | 'sell'>('buy');
   const [tradeAmount, setTradeAmount] = useState('1');
+
+  useEffect(() => {
+    onDangerousConfirmationChange?.(Boolean(pendingCommandReview));
+    return () => onDangerousConfirmationChange?.(false);
+  }, [onDangerousConfirmationChange, pendingCommandReview]);
+
+  useEffect(() => {
+    if (dangerousConfirmationDismissRequest > 0) setPendingCommandReview(undefined);
+  }, [dangerousConfirmationDismissRequest]);
 
   useEffect(() => {
     if (!eligibleOfficers.some((officer) => officer.id === selectedOfficerId)) {
@@ -240,9 +272,13 @@ export function CityPanel({
   }, [city.id, selectedMoveTargetId]);
 
   useEffect(() => {
-    setActiveCivicCommand(null);
+    setActiveCivicCommand(
+      initialCommand === 'trade' || initialCommand === 'banquet' || initialCommand === 'plunder'
+        ? initialCommand
+        : null,
+    );
     setTradeAmount('1');
-  }, [city.id, selectedOfficerId, state.turn, state.phase, disabled]);
+  }, [city.id, disabled, initialCommand, selectedOfficerId, state.phase, state.turn]);
 
   useEffect(() => {
     if (!reconTargets.some((target) => target.id === selectedReconTargetId)) {
@@ -458,6 +494,68 @@ export function CityPanel({
     && distributionDelta <= city.reserveTroops && distributionDelta !== 0;
   const canAttack = isOwned && selectedAttackerIds.length > 0 && Boolean(selectedTargetId)
     && Number.isInteger(provisionValue) && provisionValue > 0 && provisionValue <= city.food;
+  const recruitOfficerUnavailableReason = !isOwned
+    ? '只能在己方城池登用人才'
+    : !selectedOfficer
+      ? '请选择执行武将'
+      : selectedOfficerActed
+        ? `${selectedOfficer.name}本月已经行动`
+        : selectedOfficer.stamina < RECRUIT_OFFICER_STAMINA_COST
+          ? `${selectedOfficer.name}体力不足，需要 ${RECRUIT_OFFICER_STAMINA_COST}`
+          : !selectedRecruitTargetId
+            ? '本城没有已发现的可登用人才'
+            : '';
+  const rewardUnavailableReason = !isOwned
+    ? '只能奖赏己方城池中的武将'
+    : !selectedOfficer
+      ? '请选择受赏武将'
+      : selectedOfficer.id === state.factions[state.playerFactionId].rulerOfficerId
+        ? '君主不需要通过奖赏提高忠诚'
+        : selectedOfficer.loyalty >= 100
+          ? `${selectedOfficer.name}忠诚已经达到上限`
+          : city.money < REWARD_MONEY_COST
+            ? `${city.name}金钱不足，需要 ${REWARD_MONEY_COST}`
+            : '';
+  const appointUnavailableReason = state.rulesetId === 'baye-classic-v1'
+    ? '经典校准规则由君主或城内智力最高者自动担任太守'
+    : !isOwned
+      ? '只能任命己方城池太守'
+      : !selectedOfficer
+        ? '请选择太守人选'
+        : city.satrapOfficerId === selectedOfficerId
+          ? `${selectedOfficer.name}已经是${city.name}太守`
+          : '';
+  const banishUnavailableReason = !isOwned
+    ? '只能处置己方武将'
+    : !selectedOfficer
+      ? '请选择要流放的武将'
+      : selectedOfficer.id === state.factions[state.playerFactionId].rulerOfficerId
+        ? '不能流放当前君主'
+        : '';
+  const distributeUnavailableReason = !isOwned
+    ? '只能在己方城池分配兵力'
+    : !selectedOfficer
+      ? '请选择执行武将'
+      : !Number.isInteger(distributionValue) || distributionValue < 0
+        ? '兵力必须是非负整数'
+        : distributionValue > distributionCapacity
+          ? `超过武将带兵上限 ${number.format(distributionCapacity)}`
+          : distributionDelta > city.reserveTroops
+            ? '城中后备兵不足'
+            : distributionDelta === 0
+              ? '请输入不同于当前兵力的数值'
+              : '';
+  const attackUnavailableReason = !isOwned
+    ? '只能从己方城池出征'
+    : hostileNeighbors.length === 0
+      ? '没有相邻敌对城池'
+      : selectedAttackerIds.length === 0
+        ? '请选择至少一名可出征武将'
+        : !Number.isInteger(provisionValue) || provisionValue <= 0
+          ? '携带粮草必须是正整数'
+          : provisionValue > city.food
+            ? `${city.name}粮草不足`
+            : '';
   const reconAvailability = selectedOfficer && selectedReconTargetId
     ? getReconAvailability(state, {
       sourceCityId: city.id,
@@ -495,7 +593,213 @@ export function CityPanel({
   useEffect(() => {
     setProvisions(String(Math.max(1, Math.min(city.food, 500))));
     setPendingCommandReview(undefined);
-  }, [city.id]);
+    setActiveSection(initialSection);
+    setActiveCivicCommand(
+      initialCommand === 'trade' || initialCommand === 'banquet' || initialCommand === 'plunder'
+        ? initialCommand
+        : null,
+    );
+  }, [city.id, initialCommand, initialSection]);
+
+  const commandDefinition = initialCommand ? getCityCommand(initialCommand) : undefined;
+  const showCommand = (...commandIds: CityCommandId[]) => !initialCommand || commandIds.includes(initialCommand);
+  const focusedPrimaryClass = (base?: string) => [base, initialCommand ? 'focused-primary-action' : '']
+    .filter(Boolean)
+    .join(' ') || undefined;
+  const inlineCommandSummary = initialCommand ? buildInlineCommandSummary(initialCommand) : undefined;
+
+  function buildInlineCommandSummary(commandId: CityCommandId): InlineCommandSummary | undefined {
+    switch (commandId) {
+      case 'develop':
+        return {
+          effects: [`农业预计提高 ${farmingGainRange[0]}～${farmingGainRange[1]}`],
+          costs: [`金钱 ${DEVELOP_MONEY_COST}`, `体力 ${DEVELOP_STAMINA_COST}`, '占用本月行动'],
+          risks: ['实际增量由当前确定性随机序列决定，并受农业上限约束。'],
+          unavailableReason: disabled ? '当前有待处理操作，暂时不能执行城池命令' : farmingAvailability.allowed ? undefined : farmingAvailability.reason,
+        };
+      case 'commerce':
+        return {
+          effects: [`商业预计提高 ${commerceGainRange[0]}～${commerceGainRange[1]}`],
+          costs: [`金钱 ${DEVELOP_MONEY_COST}`, `体力 ${DEVELOP_STAMINA_COST}`, '占用本月行动'],
+          risks: ['实际增量由当前确定性随机序列决定，并受商业上限约束。'],
+          unavailableReason: displayedCommerceAvailability.allowed ? undefined : displayedCommerceAvailability.reason,
+        };
+      case 'govern':
+        return {
+          effects: [
+            (city.condition ?? 'normal') === 'normal' ? '维持城市正常状态' : `解除${CITY_CONDITION_LABELS[city.condition ?? 'normal']}`,
+            governMaxGain > 0 ? `防灾提高 1～${governMaxGain}` : '防灾已满',
+          ],
+          costs: [`金钱 ${GOVERN_MONEY_COST}`, `体力 ${GOVERN_STAMINA_COST}`, '占用本月行动'],
+          unavailableReason: displayedGovernAvailability.allowed ? undefined : displayedGovernAvailability.reason,
+        };
+      case 'inspect':
+        return {
+          effects: ['民忠提高 1～4', '人口最多增加 100'],
+          costs: [`金钱 ${INSPECT_MONEY_COST}`, `体力 ${INSPECT_STAMINA_COST}`, '占用本月行动'],
+          unavailableReason: displayedInspectAvailability.allowed ? undefined : displayedInspectAvailability.reason,
+        };
+      case 'trade':
+        return {
+          effects: tradeDirection === 'buy'
+            ? [`粮草增加 ${number.format(Number.isFinite(tradeValue) ? tradeValue : 0)}`]
+            : [`金钱增加 ${number.format(tradeMoneyDelta)}`],
+          costs: [
+            tradeDirection === 'buy'
+              ? `金钱 ${number.format(tradeMoneyDelta)}`
+              : `粮草 ${number.format(Number.isFinite(tradeValue) ? tradeValue : 0)}`,
+            `体力 ${TRADE_STAMINA_COST}`,
+            '占用本月行动',
+          ],
+          unavailableReason: disabled
+            ? '当前有待处理操作，暂时不能执行城池命令'
+            : tradeAvailability.allowed ? undefined : tradeAvailability.reason,
+        };
+      case 'banquet':
+        return {
+          effects: [
+            `${selectedOfficer?.name ?? '所选武将'}体力最多恢复 ${BANQUET_STAMINA_RECOVERY}`,
+            selectedOfficer && state.factions[selectedOfficer.factionId]?.rulerOfficerId === selectedOfficer.id
+              ? '君主忠诚不变'
+              : '忠诚提高 1',
+          ],
+          costs: [`金钱 ${BANQUET_MONEY_COST}`, '不占用本月行动'],
+          unavailableReason: disabled
+            ? '当前有待处理操作，暂时不能执行城池命令'
+            : banquetAvailability.allowed ? undefined : banquetAvailability.reason,
+        };
+      case 'plunder':
+        return {
+          effects: [
+            `获得 ${number.format(plunderGains.money)} 金`,
+            `获得 ${number.format(plunderGains.food)} 粮`,
+          ],
+          costs: [`体力 ${PLUNDER_STAMINA_COST}`, '占用本月行动'],
+          risks: [
+            `民忠 ${city.publicLoyalty ?? 70} → ${Math.floor((city.publicLoyalty ?? 70) / 2)}`,
+            `农业 ${number.format(city.farming)} → ${number.format(Math.floor(city.farming / 2))}`,
+            `商业 ${number.format(city.commerce)} → ${number.format(Math.floor(city.commerce / 2))}`,
+            '执行后不可撤销。',
+          ],
+          unavailableReason: disabled
+            ? '当前有待处理操作，暂时不能执行城池命令'
+            : plunderAvailability.allowed ? undefined : plunderAvailability.reason,
+        };
+      case 'recruit-troops':
+        return {
+          effects: [`征募 ${number.format(recruitGain)} 名后备兵`],
+          costs: [`金钱 ${number.format(recruitMoneyCost)}`, `体力 ${RECRUIT_STAMINA_COST}`, '占用本月行动'],
+          unavailableReason: canRecruit && !disabled ? undefined : disabled ? '当前有待处理操作，暂时不能执行城池命令' : recruitUnavailableReason,
+        };
+      case 'search':
+        return {
+          effects: ['尝试发现或直接登用人才，也可能获得道具、金钱或粮草'],
+          costs: [`体力 ${SEARCH_STAMINA_COST}`, '占用本月行动'],
+          risks: ['搜索可能没有收获；结果受智力与确定性随机序列影响。'],
+          unavailableReason: canSearch && !disabled ? undefined : disabled ? '当前有待处理操作，暂时不能执行城池命令' : searchUnavailableReason,
+        };
+      case 'recruit-officer':
+        return {
+          effects: [`尝试让${selectedRecruitTarget?.name ?? '目标人才'}加入${faction?.name ?? '己方势力'}`],
+          costs: [`体力 ${RECRUIT_OFFICER_STAMINA_COST}`, '占用本月行动'],
+          risks: ['失败后人才仍保持已发现状态。'],
+          unavailableReason: canRecruitOfficer && !disabled ? undefined : disabled ? '当前有待处理操作，暂时不能执行城池命令' : recruitOfficerUnavailableReason,
+        };
+      case 'reward':
+        return {
+          effects: [`忠诚 ${selectedOfficer?.loyalty ?? 0} → ${Math.min(100, (selectedOfficer?.loyalty ?? 0) + REWARD_LOYALTY_GAIN)}`],
+          costs: [`金钱 ${REWARD_MONEY_COST}`, '不占用本月行动'],
+          unavailableReason: canReward && !disabled ? undefined : disabled ? '当前有待处理操作，暂时不能执行城池命令' : rewardUnavailableReason,
+        };
+      case 'move':
+        return {
+          effects: [`${selectedOfficer?.name ?? '所选武将'}预计 ${selectedMoveTarget?.durationMonths ?? '?'} 个月后抵达${selectedMoveTarget?.city.name ?? '目标城市'}`],
+          costs: [`体力 ${MOVE_STAMINA_COST}`, '占用本月行动'],
+          risks: city.satrapOfficerId === selectedOfficerId ? ['太守离城后将按当前规则自动补位。'] : undefined,
+          unavailableReason: displayedMoveAvailability.allowed ? undefined : displayedMoveAvailability.reason,
+        };
+      case 'transport':
+        return {
+          effects: [
+            `${selectedMoveTarget?.durationMonths ?? '?'} 个月后送达${selectedMoveTarget?.city.name ?? '目标城市'}`,
+            `金 ${number.format(Number.isFinite(transportCargo.money) ? transportCargo.money : 0)} · 粮 ${number.format(Number.isFinite(transportCargo.food) ? transportCargo.food : 0)} · 兵 ${number.format(Number.isFinite(transportCargo.reserveTroops) ? transportCargo.reserveTroops : 0)}`,
+          ],
+          costs: [`体力 ${TRANSPORT_STAMINA_COST}`, '占用本月行动'],
+          unavailableReason: displayedTransportAvailability.allowed ? undefined : displayedTransportAvailability.reason,
+        };
+      case 'appoint':
+        return {
+          effects: [`${selectedOfficer?.name ?? '所选武将'}成为${city.name}太守`],
+          costs: ['不消耗金钱、体力或本月行动'],
+          unavailableReason: canAppoint && !disabled ? undefined : disabled ? '当前有待处理操作，暂时不能执行城池命令' : appointUnavailableReason,
+        };
+      case 'banish':
+        return {
+          effects: [`${selectedOfficer?.name ?? '所选武将'}离开当前势力并流落他城`],
+          costs: ['不占用本月行动'],
+          risks: ['兵力清零，相关在途命令取消；执行后不可撤销。'],
+          unavailableReason: !banishUnavailableReason && !disabled ? undefined : disabled ? '当前有待处理操作，暂时不能执行城池命令' : banishUnavailableReason,
+        };
+      case 'item':
+        return {
+          effects: selectedItem
+            ? [`将${selectedItem.name}赏赐给${selectedOfficer?.name ?? '所选武将'}：${describeItem(selectedItem)}`]
+            : selectedEquipmentIds.length > 0
+              ? [`可卸下或没收${selectedOfficer?.name ?? '所选武将'}的装备`]
+              : ['本城没有可处置道具'],
+          costs: ['赏赐提高忠诚 8', '卸下或没收不占用本月行动'],
+          risks: selectedOfficer
+            && selectedOfficer.id !== state.factions[state.playerFactionId].rulerOfficerId
+            && selectedEquipmentIds.length > 0
+            ? ['没收非君主装备会降低忠诚 20，并要求危险确认。']
+            : undefined,
+          unavailableReason: selectedItem || selectedEquipmentIds.length > 0
+            ? undefined
+            : '城中没有已发现道具，所选武将也没有装备',
+        };
+      case 'captive':
+        return {
+          effects: selectedCaptive
+            ? [`处置俘虏${selectedCaptive.name}：可招降、释放、流放或处斩`]
+            : ['本城没有可处置俘虏'],
+          costs: [`招降消耗 ${surrenderCost.money} 金、${SURRENDER_STAMINA_COST} 体力和本月行动`, '释放、流放或处斩不占用本月行动'],
+          risks: ['流放与处斩会要求危险确认；处斩将使人物永久死亡。'],
+          unavailableReason: selectedCaptive ? undefined : '本城没有可处置俘虏',
+        };
+      case 'distribute':
+        return {
+          effects: [
+            `${selectedOfficer?.name ?? '所选武将'}兵力 ${number.format(selectedOfficer?.troops ?? 0)} → ${number.format(distributionValue)}`,
+            `城中后备兵变为 ${number.format(city.reserveTroops - distributionDelta)}`,
+          ],
+          costs: ['不消耗金钱或体力', '占用本月行动'],
+          unavailableReason: canDistribute && !disabled ? undefined : disabled ? '当前有待处理操作，暂时不能执行城池命令' : distributeUnavailableReason,
+        };
+      case 'recon':
+        return {
+          effects: [`获取${selectedReconTarget?.name ?? '目标城市'}当前情报快照`],
+          costs: [`金钱 ${RECON_MONEY_COST}`, `体力 ${RECON_STAMINA_COST}`, '占用本月行动'],
+          risks: ['情报是执行时快照，后续变化不会自动更新。'],
+          unavailableReason: displayedReconAvailability.allowed ? undefined : displayedReconAvailability.reason,
+        };
+      case 'diplomacy':
+        return {
+          effects: [`发起为期 1 个月的${diplomacyLabel(selectedDiplomacyKind)}行动`],
+          costs: [`金钱 ${DIPLOMACY_MONEY_COST}`, `体力 ${DIPLOMACY_STAMINA_COST}`, '占用本月行动'],
+          risks: [diplomacyFactors(selectedDiplomacyKind), '不显示精确成功率；结果在命令到期时结算。'],
+          unavailableReason: displayedDiplomacyAvailability.allowed ? undefined : displayedDiplomacyAvailability.reason,
+        };
+      case 'attack':
+        return {
+          effects: [`${selectedAttackerIds.length} 名武将、${number.format(selectedAttackerIds.reduce((sum, officerId) => sum + (state.officers[officerId]?.troops ?? 0), 0))} 兵出征${selectedAttackTarget ? `至${selectedAttackTarget.name}` : ''}`],
+          costs: [`携带粮草 ${number.format(Number.isFinite(provisionValue) ? provisionValue : 0)}`],
+          risks: ['确认后仍可选择亲自指挥或快速结算；伤亡和归属由战斗结果决定。'],
+          unavailableReason: canAttack && !disabled ? undefined : disabled ? '当前有待处理操作，暂时不能执行城池命令' : attackUnavailableReason,
+        };
+      default:
+        return undefined;
+    }
+  }
 
   function toggleAttacker(officerId: string) {
     setSelectedAttackerIds((current) => current.includes(officerId)
@@ -503,12 +807,13 @@ export function CityPanel({
       : current.length < 10 ? [...current, officerId] : current);
   }
 
-  function scrollToCommand(commandId: string) {
-    document.getElementById(commandId)?.scrollIntoView({ block: 'start' });
-  }
-
   function reviewCommand(review: CommandReview, execute: () => void) {
-    setPendingCommandReview({ ...review, execute });
+    if (review.dangerous) {
+      setPendingCommandReview({ ...review, execute });
+      return;
+    }
+    execute();
+    if (initialCommand) onClose();
   }
 
   function confirmReviewedCommand() {
@@ -516,32 +821,48 @@ export function CityPanel({
     if (!command) return;
     setPendingCommandReview(undefined);
     command.execute();
+    if (initialCommand) onClose();
   }
 
   return (
-    <aside className="side-panel" aria-label={`${city.name}城池面板`}>
+    <aside
+      className={`side-panel ${presentation === 'command' ? 'city-command-executor' : 'city-detail-panel'}`}
+      data-command-size={commandDefinition?.editorSize ?? 'quick'}
+      data-focused-command={Boolean(initialCommand)}
+      aria-label={`${city.name}${presentation === 'command' ? '命令操作条' : '城池详情'}`}
+    >
       <div className="city-heading">
         <div>
           <p className="panel-kicker">City {city.sourceIndex !== undefined ? city.sourceIndex + 1 : ''}</p>
-          <h2>{city.name}</h2>
+          <h2>{city.name}{commandDefinition ? ` · ${commandDefinition.label}` : ''}</h2>
         </div>
         <div className="city-heading-actions">
-          <span className="faction-chip" style={{ '--faction-color': faction?.color } as CSSProperties}>
-            {faction?.name ?? '未知势力'}
-          </span>
-          <button type="button" className="city-panel-close" aria-label="关闭城池面板" onClick={onClose}>
-            <span aria-hidden="true">×</span>
+          {presentation === 'detail' && (
+            <span className="faction-chip" style={{ '--faction-color': faction?.color } as CSSProperties}>
+              {faction?.name ?? '未知势力'}
+            </span>
+          )}
+          <button
+            type="button"
+            className="city-panel-close"
+            aria-label={presentation === 'command' ? '返回命令分类' : '关闭城池面板'}
+            onClick={onClose}
+          >
+            <span aria-hidden="true">{presentation === 'command' ? '‹' : '×'}</span>
           </button>
         </div>
       </div>
 
-      <nav className="city-category-nav" aria-label="城池命令分类">
-        <button type="button" onClick={() => scrollToCommand('city-command-internal')}>内政</button>
-        <button type="button" onClick={() => scrollToCommand('city-command-personnel')}>人事</button>
-        <button type="button" onClick={() => scrollToCommand('city-command-military')}>军事</button>
-        <button type="button" onClick={() => scrollToCommand('city-command-intrigue')}>谋略</button>
-      </nav>
+      {isOwned && presentation === 'command' && !initialCommand && (
+        <nav className="city-category-nav" aria-label="城池管理分类">
+          <button type="button" className={activeSection === 'internal' ? 'active' : undefined} onClick={() => setActiveSection('internal')}>内政</button>
+          <button type="button" className={activeSection === 'personnel' ? 'active' : undefined} onClick={() => setActiveSection('personnel')}>人事</button>
+          <button type="button" className={activeSection === 'military' ? 'active' : undefined} onClick={() => setActiveSection('military')}>军事</button>
+          <button type="button" className={activeSection === 'intrigue' ? 'active' : undefined} onClick={() => setActiveSection('intrigue')}>谋略</button>
+        </nav>
+      )}
 
+      <section className="city-summary-view" hidden={presentation !== 'detail'}>
       <dl className="city-stats" id="city-detail-start">
         <Stat label="人口" value={intelValue(isPlayerCity, city.population, intelReport?.population)} />
         <Stat label="金钱" value={intelValue(isPlayerCity, city.money, intelReport?.money)} />
@@ -606,8 +927,12 @@ export function CityPanel({
       {isPlayerCity && city.condition && city.condition !== 'normal' && (
         <p className="city-condition-warning" role="status">{conditionGuidance[city.condition]}</p>
       )}
+      {!isPlayerCity && (
+        <p className="city-context-guidance">敌对或中立城池只显示已掌握的情报。侦察和出征需从相邻的己方城池发起。</p>
+      )}
+      </section>
 
-      <div className="command-panel" aria-label="城池命令">
+      <div className="command-panel" aria-label="城池命令" hidden={presentation !== 'command'}>
         <div className="section-title">
           <h3>城池命令</h3>
           <span>{isOwned ? '玩家阶段' : '仅可查看'}</span>
@@ -631,10 +956,20 @@ export function CityPanel({
               <p className="command-hint">本城没有可下令的己方武将；仍可释放俘虏。</p>
             )}
 
+            {inlineCommandSummary && <CommandEditorSummary summary={inlineCommandSummary} />}
+
+            <section
+              className="city-command-section"
+              hidden={initialCommand
+                ? !showCommand('develop', 'commerce', 'govern', 'inspect', 'trade', 'banquet', 'plunder', 'recruit-troops', 'search')
+                : activeSection !== 'internal'}
+            >
             <p className="command-group-title" id="city-command-internal">内政</p>
             <div className="city-command-buttons">
               <button
                 type="button"
+                className={focusedPrimaryClass()}
+                hidden={!showCommand('develop')}
                 disabled={disabled || !canDevelop}
                 onClick={() => reviewCommand({
                   category: '内政',
@@ -653,6 +988,8 @@ export function CityPanel({
               </button>
               <button
                 type="button"
+                className={focusedPrimaryClass()}
+                hidden={!showCommand('recruit-troops')}
                 disabled={disabled || !canRecruit}
                 onClick={() => reviewCommand({
                   category: '内政',
@@ -669,6 +1006,8 @@ export function CityPanel({
               </button>
               <button
                 type="button"
+                className={focusedPrimaryClass()}
+                hidden={!showCommand('search')}
                 disabled={disabled || !canSearch}
                 onClick={() => reviewCommand({
                   category: '人事',
@@ -685,6 +1024,8 @@ export function CityPanel({
               </button>
               <button
                 type="button"
+                className={focusedPrimaryClass()}
+                hidden={!showCommand('commerce')}
                 disabled={!isOwned || !displayedCommerceAvailability.allowed}
                 onClick={() => reviewCommand({
                   category: '内政',
@@ -704,6 +1045,8 @@ export function CityPanel({
               </button>
               <button
                 type="button"
+                className={focusedPrimaryClass()}
+                hidden={!showCommand('govern')}
                 disabled={!isOwned || !displayedGovernAvailability.allowed}
                 onClick={() => reviewCommand({
                   category: '内政',
@@ -726,6 +1069,8 @@ export function CityPanel({
               </button>
               <button
                 type="button"
+                className={focusedPrimaryClass()}
+                hidden={!showCommand('inspect')}
                 disabled={!isOwned || !displayedInspectAvailability.allowed}
                 onClick={() => reviewCommand({
                   category: '内政',
@@ -743,18 +1088,19 @@ export function CityPanel({
               >
                 出巡
               </button>
-              <button type="button" disabled={disabled} onClick={() => setActiveCivicCommand('trade')}>交易</button>
-              <button type="button" disabled={disabled} onClick={() => setActiveCivicCommand('banquet')}>宴请</button>
+              <button type="button" hidden={Boolean(initialCommand) || !showCommand('trade')} disabled={disabled} onClick={() => setActiveCivicCommand('trade')}>交易</button>
+              <button type="button" hidden={Boolean(initialCommand) || !showCommand('banquet')} disabled={disabled} onClick={() => setActiveCivicCommand('banquet')}>宴请</button>
               <button
                 type="button"
                 className="danger-command"
+                hidden={Boolean(initialCommand) || !showCommand('plunder')}
                 disabled={disabled}
                 onClick={() => setActiveCivicCommand('plunder')}
               >
                 掠夺
               </button>
             </div>
-            <div className="civic-command-guidance" id="civic-command-guidance">
+            <div className="civic-command-guidance" id="civic-command-guidance" hidden={Boolean(initialCommand)}>
               <span>
                 招商：
                 {displayedCommerceAvailability.allowed
@@ -776,11 +1122,11 @@ export function CityPanel({
                   : `不可用——${displayedInspectAvailability.reason}`}
               </span>
             </div>
-            {activeCivicCommand === 'trade' && (
+            {activeCivicCommand === 'trade' && showCommand('trade') && (
               <div className="civic-command-card" aria-label="交易命令">
                 <div className="section-title">
                   <strong>粮草交易</strong>
-                  <button type="button" onClick={() => setActiveCivicCommand(null)}>关闭</button>
+                  {!initialCommand && <button type="button" onClick={() => setActiveCivicCommand(null)}>关闭</button>}
                 </div>
                 <div className="trade-command-row">
                   <label className="command-field">
@@ -811,6 +1157,7 @@ export function CityPanel({
                 </p>
                 <button
                   type="button"
+                  className={focusedPrimaryClass()}
                   disabled={disabled || !tradeAvailability.allowed}
                   aria-describedby="trade-command-hint"
                   onClick={() => reviewCommand({
@@ -833,18 +1180,18 @@ export function CityPanel({
                     ],
                   }, () => {
                     onTrade(city.id, selectedOfficerId, tradeDirection, tradeValue);
-                    setActiveCivicCommand(null);
+                    if (!initialCommand) setActiveCivicCommand(null);
                   })}
                 >
                   确认交易
                 </button>
               </div>
             )}
-            {activeCivicCommand === 'banquet' && (
+            {activeCivicCommand === 'banquet' && showCommand('banquet') && (
               <div className="civic-command-card" aria-label="宴请命令">
                 <div className="section-title">
                   <strong>宴请所选武将</strong>
-                  <button type="button" onClick={() => setActiveCivicCommand(null)}>关闭</button>
+                  {!initialCommand && <button type="button" onClick={() => setActiveCivicCommand(null)}>关闭</button>}
                 </div>
                 <p className="command-hint" id="banquet-command-hint">
                   {banquetAvailability.allowed
@@ -855,6 +1202,7 @@ export function CityPanel({
                 </p>
                 <button
                   type="button"
+                  className={focusedPrimaryClass()}
                   disabled={disabled || !banquetAvailability.allowed}
                   aria-describedby="banquet-command-hint"
                   onClick={() => reviewCommand({
@@ -872,18 +1220,18 @@ export function CityPanel({
                     costs: [`金钱 ${BANQUET_MONEY_COST}`, '不占用本月行动'],
                   }, () => {
                     onBanquet(city.id, selectedOfficerId);
-                    setActiveCivicCommand(null);
+                    if (!initialCommand) setActiveCivicCommand(null);
                   })}
                 >
                   确认宴请
                 </button>
               </div>
             )}
-            {activeCivicCommand === 'plunder' && (
+            {activeCivicCommand === 'plunder' && showCommand('plunder') && (
               <div className="civic-command-card danger-card" role="alert" aria-label="掠夺确认">
                 <div className="section-title">
                   <strong>危险：确认掠夺</strong>
-                  <button type="button" autoFocus onClick={() => setActiveCivicCommand(null)}>取消</button>
+                  {!initialCommand && <button type="button" onClick={() => setActiveCivicCommand(null)}>关闭</button>}
                 </div>
                 <p>
                   民忠 {city.publicLoyalty ?? 70} → {Math.floor((city.publicLoyalty ?? 70) / 2)}；
@@ -898,7 +1246,7 @@ export function CityPanel({
                 </p>
                 <button
                   type="button"
-                  className="danger-command"
+                  className={focusedPrimaryClass('danger-command')}
                   disabled={disabled || !plunderAvailability.allowed}
                   aria-describedby="plunder-command-hint"
                   onClick={() => reviewCommand({
@@ -921,7 +1269,7 @@ export function CityPanel({
                     confirmLabel: '确认掠夺',
                   }, () => {
                     onPlunder(city.id, selectedOfficerId);
-                    setActiveCivicCommand(null);
+                    if (!initialCommand) setActiveCivicCommand(null);
                   })}
                 >
                   确认掠夺
@@ -929,9 +1277,16 @@ export function CityPanel({
               </div>
             )}
 
+            </section>
+            <section
+              className="city-command-section"
+              hidden={initialCommand
+                ? !showCommand('recruit-officer', 'reward', 'move', 'transport', 'appoint', 'banish', 'item', 'captive')
+                : activeSection !== 'personnel'}
+            >
             <p className="command-group-title" id="city-command-personnel">人事</p>
             {discoveredFreeOfficers.length > 0 && (
-              <div className="recruit-command-row">
+              <div className="recruit-command-row" hidden={!showCommand('recruit-officer')}>
                 <label className="command-field">
                   <span>已发现人才</span>
                   <select value={selectedRecruitTargetId} onChange={(event) => setSelectedRecruitTargetId(event.target.value)}>
@@ -942,6 +1297,7 @@ export function CityPanel({
                 </label>
                 <button
                   type="button"
+                  className={focusedPrimaryClass()}
                   disabled={disabled || !canRecruitOfficer}
                   onClick={() => reviewCommand({
                     category: '人事',
@@ -959,8 +1315,8 @@ export function CityPanel({
                 </button>
               </div>
             )}
-            <div className="personnel-command-row">
-              <label className="command-field">
+            <div className="personnel-command-row" hidden={!showCommand('move', 'transport', 'appoint')}>
+              <label className="command-field" hidden={!showCommand('move', 'transport')}>
                 <span>道路目标城池（调动/输送共用，每段道路 1 个月）</span>
                 <select
                   value={selectedMoveTargetId}
@@ -977,6 +1333,8 @@ export function CityPanel({
               </label>
               <button
                 type="button"
+                className={focusedPrimaryClass()}
+                hidden={!showCommand('move')}
                 disabled={disabled || !canMove}
                 onClick={() => reviewCommand({
                   category: '人事',
@@ -997,6 +1355,8 @@ export function CityPanel({
               </button>
               <button
                 type="button"
+                className={focusedPrimaryClass()}
+                hidden={!showCommand('appoint')}
                 disabled={disabled || !canAppoint}
                 onClick={() => reviewCommand({
                   category: '人事',
@@ -1014,12 +1374,12 @@ export function CityPanel({
                 任太守
               </button>
             </div>
-            {!displayedMoveAvailability.allowed && (
+            {!displayedMoveAvailability.allowed && showCommand('move') && (
               <p className="command-hint" id="move-command-hint">
                 暂不可调动：{displayedMoveAvailability.reason}
               </p>
             )}
-            <div className="transport-command-card">
+            <div className="transport-command-card" hidden={!showCommand('transport')}>
               <div className="transport-command-heading">
                 <strong>
                   输送至
@@ -1068,6 +1428,7 @@ export function CityPanel({
               </div>
               <button
                 type="button"
+                className={focusedPrimaryClass()}
                 disabled={!canTransport}
                 aria-describedby={!displayedTransportAvailability.allowed
                   ? 'transport-command-risk transport-command-hint'
@@ -1106,7 +1467,8 @@ export function CityPanel({
             </div>
             <button
               type="button"
-              className="reward-command"
+              className={focusedPrimaryClass('reward-command')}
+              hidden={!showCommand('reward')}
               disabled={disabled || !canReward}
               onClick={() => reviewCommand({
                 category: '人事',
@@ -1125,7 +1487,8 @@ export function CityPanel({
             </button>
             <button
               type="button"
-              className="danger-command"
+              className={focusedPrimaryClass('danger-command')}
+              hidden={!showCommand('banish')}
               disabled={disabled || !isOwned || !selectedOfficer
                 || selectedOfficer.id === state.factions[state.playerFactionId].rulerOfficerId}
               onClick={() => {
@@ -1148,7 +1511,7 @@ export function CityPanel({
             >
               流放所选武将
             </button>
-            <div className="item-command-row">
+            <div className="item-command-row" hidden={!showCommand('item')}>
               <label className="command-field">
                 <span>城中道具（另有 {city.hiddenItemIds?.length ?? 0} 件未发现）</span>
                 <select
@@ -1166,6 +1529,7 @@ export function CityPanel({
               </label>
               <button
                 type="button"
+                className={focusedPrimaryClass()}
                 disabled={disabled || !canGiveItem}
                 onClick={() => reviewCommand({
                   category: '人事',
@@ -1190,10 +1554,10 @@ export function CityPanel({
                 赏赐道具
               </button>
             </div>
-            {isOwned && !itemAvailability.allowed && (
+            {isOwned && !itemAvailability.allowed && showCommand('item') && (
               <p className="command-hint">暂不可赏赐：{itemAvailability.reason}</p>
             )}
-            {selectedEquipmentIds.length > 0 && (
+            {selectedEquipmentIds.length > 0 && showCommand('item') && (
               <div className="equipment-actions" aria-label="所选武将装备">
                 {selectedEquipmentIds.map((itemId) => (
                   <button
@@ -1228,7 +1592,7 @@ export function CityPanel({
                 ))}
               </div>
             )}
-            {captives.length > 0 && (
+            {captives.length > 0 && showCommand('captive') && (
               <div className="captive-command-block">
                 <p className="command-group-title">俘虏</p>
                 <label className="command-field">
@@ -1241,7 +1605,7 @@ export function CityPanel({
                     ))}
                   </select>
                 </label>
-                <div className="city-command-buttons">
+                <div className={`city-command-buttons ${initialCommand === 'captive' ? 'focused-action-cluster' : ''}`}>
                   <button
                     type="button"
                     disabled={disabled || !canRecruitCaptive}
@@ -1331,6 +1695,11 @@ export function CityPanel({
               </div>
             )}
 
+            </section>
+            <section
+              className="city-command-section"
+              hidden={initialCommand ? !showCommand('diplomacy') : activeSection !== 'intrigue'}
+            >
             <p className="command-group-title" id="city-command-intrigue">谋略</p>
             <div className="diplomacy-command-card">
               <label className="command-field">
@@ -1373,6 +1742,7 @@ export function CityPanel({
               </p>
               <button
                 type="button"
+                className={focusedPrimaryClass()}
                 disabled={!displayedDiplomacyAvailability.allowed}
                 aria-describedby="diplomacy-command-hint"
                 onClick={() => reviewCommand({
@@ -1395,8 +1765,13 @@ export function CityPanel({
               </button>
             </div>
 
+            </section>
+            <section
+              className="city-command-section"
+              hidden={initialCommand ? !showCommand('distribute', 'recon', 'attack') : activeSection !== 'military'}
+            >
             <p className="command-group-title" id="city-command-military">军事</p>
-            <div className="recon-command-row">
+            <div className="recon-command-row" hidden={!showCommand('recon')}>
               <label className="command-field">
                 <span>侦察目标</span>
                 <select
@@ -1414,6 +1789,7 @@ export function CityPanel({
               </label>
               <button
                 type="button"
+                className={focusedPrimaryClass()}
                 disabled={!displayedReconAvailability.allowed}
                 onClick={() => reviewCommand({
                   category: '军事',
@@ -1432,10 +1808,10 @@ export function CityPanel({
                 侦察
               </button>
             </div>
-            {!displayedReconAvailability.allowed && (
+            {!displayedReconAvailability.allowed && showCommand('recon') && (
               <p className="command-hint">暂不可侦察：{displayedReconAvailability.reason}</p>
             )}
-            <div className="distribution-row">
+            <div className="distribution-row" hidden={!showCommand('distribute')}>
               <label className="command-field">
                 <span>分配后武将兵力（上限 {number.format(distributionCapacity)}）</span>
                 <input
@@ -1449,6 +1825,7 @@ export function CityPanel({
               </label>
               <button
                 type="button"
+                className={focusedPrimaryClass()}
                 disabled={disabled || !canDistribute}
                 onClick={() => reviewCommand({
                   category: '军事',
@@ -1467,6 +1844,7 @@ export function CityPanel({
               </button>
             </div>
 
+            <div className="attack-command-composer" hidden={!showCommand('attack')}>
             <label className="command-field">
               <span>出征目标</span>
               <select
@@ -1508,7 +1886,7 @@ export function CityPanel({
             </label>
             <button
               type="button"
-              className="attack-command"
+              className={focusedPrimaryClass('attack-command')}
               disabled={disabled || !canAttack}
               onClick={() => reviewCommand({
                 category: '军事',
@@ -1526,6 +1904,8 @@ export function CityPanel({
             >
               筹划出征
             </button>
+            </div>
+            </section>
           </>
         ) : (
           <p className="command-hint">
@@ -1551,6 +1931,27 @@ function Stat({ label, value }: { label: string; value: string }) {
       <dt>{label}</dt>
       <dd>{value}</dd>
     </div>
+  );
+}
+
+function CommandEditorSummary({ summary }: { summary: InlineCommandSummary }) {
+  return (
+    <section className={`command-editor-summary ${summary.unavailableReason ? 'unavailable' : ''}`} aria-live="polite">
+      <div>
+        <strong>预期效果</strong>
+        <ul>{summary.effects.map((effect) => <li key={effect}>{effect}</li>)}</ul>
+      </div>
+      <div>
+        <strong>消耗</strong>
+        <ul>{summary.costs.map((cost) => <li key={cost}>{cost}</li>)}</ul>
+      </div>
+      {summary.risks && summary.risks.length > 0 && (
+        <p>{summary.risks.join('；')}</p>
+      )}
+      {summary.unavailableReason && (
+        <p className="command-editor-unavailable">暂不可执行：{summary.unavailableReason}</p>
+      )}
+    </section>
   );
 }
 

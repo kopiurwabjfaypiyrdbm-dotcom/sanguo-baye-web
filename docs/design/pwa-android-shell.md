@@ -33,11 +33,11 @@ npm run preview
 - 系统栏采用沉浸式隐藏，边缘滑动可临时唤回；内容延伸到显示切口短边，Web 层继续使用 `env(safe-area-inset-*)` 避让交互区。
 - 原生返回键优先关闭当前战术层或 React 弹层，再从君主选择返回剧本、从剧本返回标题、从战役返回标题；标题页返回最小化应用。继承决策和正在进行的战斗不会被系统返回键静默跳过。
 - 原生壳不挂载 PWA Service Worker，直接使用 APK 内嵌构建资源，避免 APK 更新后仍被旧 Web 缓存控制。
-- Debug APK 已在 Windows、Android SDK Platform 36 与 Android Studio JBR 25 环境完成编译和 v2 调试签名校验；产物约 12.1 MiB。真机安装与触控验收仍待设备连接。
+- Debug APK 已在 Windows、Android SDK Platform 36 与 Temurin JDK 21 环境完成编译和 v2 调试签名校验；产物约 12.1 MiB。MuMu 模拟器安装与横屏触控验收通过，物理手机验收仍待进行。
 
 ## 环境与命令
 
-要求近期版本 Android Studio、Android SDK Platform 36、对应 Build Tools、Platform Tools，以及 JDK 21 或更高。`android:apk` 会优先使用 `ANDROID_STUDIO_JBR`、标准安装路径或项目所在盘的 Android Studio JBR，再回退到兼容的 `JAVA_HOME`；非标准安装位置可显式设置 `ANDROID_STUDIO_JBR`。
+要求近期版本 Android Studio、Android SDK Platform 36、对应 Build Tools、Platform Tools，以及 JDK 21。Gradle 8.14 可运行于 JDK 21–24，但当前 Android Studio 2026.1 所带 JBR 25 超出兼容范围。`android:apk` 会优先寻找 `ANDROID_BUILD_JAVA_HOME`、兼容的 `JAVA_HOME` 或标准 JDK 安装目录；非标准安装位置可显式设置 `ANDROID_BUILD_JAVA_HOME`。
 
 ```bash
 npm ci

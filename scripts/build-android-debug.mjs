@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -35,10 +35,15 @@ child.on('exit', (code) => {
 });
 
 function findCompatibleJavaHome() {
+  const programFiles = isWindows ? process.env.ProgramFiles : undefined;
   const candidates = [
+    process.env.ANDROID_BUILD_JAVA_HOME,
+    process.env.JAVA_HOME,
+    ...childDirectories(programFiles ? path.join(programFiles, 'Eclipse Adoptium') : undefined),
+    ...childDirectories(programFiles ? path.join(programFiles, 'Java') : undefined),
     process.env.ANDROID_STUDIO_JBR,
-    isWindows && process.env.ProgramFiles
-      ? path.join(process.env.ProgramFiles, 'Android', 'Android Studio', 'jbr')
+    programFiles
+      ? path.join(programFiles, 'Android', 'Android Studio', 'jbr')
       : undefined,
     isWindows
       ? path.join(path.parse(root).root, 'Program Files', 'Android', 'Android Studio', 'jbr')
@@ -47,7 +52,6 @@ function findCompatibleJavaHome() {
       ? '/Applications/Android Studio.app/Contents/jbr/Contents/Home'
       : undefined,
     process.platform === 'linux' ? '/opt/android-studio/jbr' : undefined,
-    process.env.JAVA_HOME,
   ].filter(Boolean);
 
   const javaExecutable = isWindows ? 'java.exe' : 'java';
@@ -57,11 +61,18 @@ function findCompatibleJavaHome() {
     const version = spawnSync(executable, ['-version'], { encoding: 'utf8' });
     const output = `${version.stdout ?? ''}\n${version.stderr ?? ''}`;
     const major = Number(output.match(/version "(?:1\.)?(\d+)/)?.[1] ?? 0);
-    return major >= 21;
+    return major >= 21 && major <= 24;
   });
   if (found) return found;
 
   throw new Error(
-    'Android build requires JDK 21 or newer. Install Android Studio or set ANDROID_STUDIO_JBR/JAVA_HOME.',
+    'Android build requires JDK 21 (Gradle 8.14 also supports 22-24). Set ANDROID_BUILD_JAVA_HOME or JAVA_HOME.',
   );
+}
+
+function childDirectories(directory) {
+  if (!directory || !existsSync(directory)) return [];
+  return readdirSync(directory, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => path.join(directory, entry.name));
 }
