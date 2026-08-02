@@ -583,7 +583,10 @@ static func _execute_execution(data: Dictionary, parameters: Dictionary) -> Dict
 	var city: Dictionary = availability["city"]
 	var captive: Dictionary = availability["target"]
 	var random: Dictionary = CoreLcg.next_random(int(data["rngSeed"]))
-	var next: Dictionary = StrategicOrders.cancel_officer_orders(data, captive["id"], "执行者失效")
+	var cancellation: Dictionary = StrategicOrders.cancel_officer_orders(data, captive["id"], "执行者失效")
+	if not cancellation["ok"]:
+		return _failure(cancellation["error"])
+	var next: Dictionary = cancellation["next"]
 	var next_city: Dictionary = city.duplicate(true)
 	var recovered_items: Array = (city.get("itemIds", []) as Array).duplicate(true)
 	for raw_item_id: Variant in captive.get("equipmentItemIds", []):
@@ -624,7 +627,10 @@ static func _execute_banish(data: Dictionary, parameters: Dictionary) -> Diction
 	var ordered_cities: Array[Dictionary] = _ordered_cities(data)
 	var random: Dictionary = _draw(int(data["rngSeed"]), ordered_cities.size())
 	var destination: Dictionary = ordered_cities[int(random["result"])]
-	var next: Dictionary = StrategicOrders.cancel_officer_orders(data, target["id"], "执行者失效")
+	var cancellation: Dictionary = StrategicOrders.cancel_officer_orders(data, target["id"], "执行者失效")
+	if not cancellation["ok"]:
+		return _failure(cancellation["error"])
+	var next: Dictionary = cancellation["next"]
 	var released: Dictionary = target.duplicate(true)
 	released["status"] = "free"
 	released["factionId"] = _neutral_faction_id(data)

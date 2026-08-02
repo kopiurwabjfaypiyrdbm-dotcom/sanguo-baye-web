@@ -142,6 +142,7 @@ func _render_selection() -> void:
 	cargo_row.visible = transport
 	cargo_preset_button.visible = transport
 	var target: Dictionary = _selected_record(target_option)
+	_configure_selected_cargo_limits(target)
 	var officer: Dictionary = _selected_record(executor_option)
 	if target.is_empty():
 		route_label.text = str(_query.get("reason", tr("没有可达己方城市")))
@@ -164,11 +165,15 @@ func _render_action_state() -> void:
 	var allowed_key: String = "transportAllowed" if transport else "moveAllowed"
 	var reason_key: String = "transportReason" if transport else "moveReason"
 	var allowed: bool = not target.is_empty() and not officer.is_empty() and bool(officer.get(allowed_key, false))
-	if transport and int(money_amount.value) + int(food_amount.value) + int(troops_amount.value) <= 0:
+	if transport and not bool(target.get("transportAllowed", false)):
+		allowed = false
+		reason_label.text = str(target.get("transportReason", tr("目标城无法接收物资")))
+	elif transport and int(money_amount.value) + int(food_amount.value) + int(troops_amount.value) <= 0:
 		allowed = false
 		reason_label.text = tr("请至少输送一种资源")
 	elif allowed:
-		reason_label.text = tr("物资签发后立即扣除；抵达时有 20% 级受损风险") if transport else tr("签发后武将立即进入在途状态")
+		var risk: int = int(_query.get("lossThresholdPercent", 0))
+		reason_label.text = tr("物资签发后立即扣除；抵达时有 %d%% 级受损风险") % risk if transport else tr("签发后武将立即进入在途状态")
 	elif not officer.is_empty():
 		reason_label.text = str(officer.get(reason_key, _query.get("reason", "")))
 	else:
@@ -182,8 +187,19 @@ func _render_orders() -> void:
 	var lines: Array[String] = []
 	for raw_order: Variant in _query.get("activeOrders", []):
 		var order: Dictionary = raw_order
-		lines.append("%s · %s → %s · 剩 %d 月" % [order.get("officerName", order["officerId"]), order.get("sourceCityName", order["sourceCityId"]), order.get("targetCityName", order["targetCityId"]), int(order["remainingMonths"])])
+		var cargo_text: String = ""
+		if order.get("kind", "") == "transport":
+			cargo_text = " · %s" % _format_cargo(order.get("cargo", {}))
+		lines.append("%s · %s → %s%s · 剩 %d 月" % [order.get("officerName", order["officerId"]), order.get("sourceCityName", order["sourceCityId"]), order.get("targetCityName", order["targetCityId"]), cargo_text, int(order["remainingMonths"])])
 	orders_label.text = tr("当前无在途命令") if lines.is_empty() else "%s：%s" % [tr("在途"), "  |  ".join(lines)]
+
+
+func _format_cargo(cargo: Dictionary) -> String:
+	var parts: Array[String] = []
+	if int(cargo.get("money", 0)) > 0: parts.append("%d 金" % int(cargo["money"]))
+	if int(cargo.get("food", 0)) > 0: parts.append("%d 粮" % int(cargo["food"]))
+	if int(cargo.get("reserveTroops", 0)) > 0: parts.append("%d 后备兵" % int(cargo["reserveTroops"]))
+	return "、".join(parts)
 
 
 func _emit_command() -> void:
@@ -227,3 +243,10 @@ func _configure_amount(amount: SpinBox, maximum: int) -> void:
 	amount.allow_greater = false
 	amount.allow_lesser = false
 	amount.rounded = true
+
+
+func _configure_selected_cargo_limits(target: Dictionary) -> void:
+	var limits: Dictionary = target.get("cargoLimits", {})
+	_configure_amount(money_amount, int(limits.get("money", 0)))
+	_configure_amount(food_amount, int(limits.get("food", 0)))
+	_configure_amount(troops_amount, int(limits.get("reserveTroops", 0)))

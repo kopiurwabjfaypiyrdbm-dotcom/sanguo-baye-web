@@ -3,6 +3,8 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canonicalJson, canonicalSha256 } from '../src/core/migration/canonicalJson';
 import { governCity } from '../src/core/cityCommands';
+import { findOwnedCityRoute } from '../src/core/strategicOrders';
+import { cancelOfficerOrders } from '../src/core/officerLifecycle';
 import {
   createProductionSessionState,
   OracleApplicationSession,
@@ -134,6 +136,8 @@ export function buildFixture() {
     personnelLifecycleBoundaryCases: buildPersonnelLifecycleBoundaryCases(),
     strategicLogisticsSequences: buildStrategicLogisticsSequences(),
     strategicLogisticsBoundaryCases: buildStrategicLogisticsBoundaryCases(),
+    strategicRouteCases: buildStrategicRouteCases(),
+    strategicLifecycleCases: buildStrategicLifecycleCases(),
     validationCases: buildValidationCases(),
     modernRulesetCase: buildModernRulesetCase(),
   };
@@ -205,6 +209,20 @@ function buildStrategicLogisticsSequences() {
     { path: ['officers', 'officer-19', 'cityId'], value: 'city-3' },
     { path: ['officers', 'officer-64', 'cityId'], value: 'city-8' },
   ];
+  const noMoneySettlementPatches: StatePatch[] = Object.keys(createProductionSessionState(1, 5).cities)
+    .map((cityId) => ({ path: ['cities', cityId, 'money'], value: Number.MAX_SAFE_INTEGER }));
+  const splitSettlementPatches: StatePatch[] = [];
+  for (const cityId of Object.keys(createProductionSessionState(1, 5).cities)) {
+    if (cityId !== 'city-0') splitSettlementPatches.push({ path: ['cities', cityId, 'money'], value: Number.MAX_SAFE_INTEGER });
+    if (cityId !== 'city-3') splitSettlementPatches.push({ path: ['cities', cityId, 'food'], value: Number.MAX_SAFE_INTEGER });
+    if (cityId !== 'city-8') splitSettlementPatches.push({ path: ['cities', cityId, 'reserveTroops'], value: Number.MAX_SAFE_INTEGER });
+  }
+  const sourceLostPatches: StatePatch[] = [
+    { path: ['cities', 'city-0', 'ownerId'], value: 'ruler-0' },
+    { path: ['cities', 'city-0', 'satrapOfficerId'], value: 'officer-19' },
+    { path: ['officers', 'officer-19', 'cityId'], value: 'city-0' },
+    { path: ['officers', 'officer-57', 'cityId'], value: 'city-3' },
+  ];
   const buildMultiOrder = () => {
     const initialState = createProductionSessionState(1, 5);
     const initialPatches: StatePatch[] = [{ path: ['cities', 'city-8', 'reserveTroops'], value: 500 }];
@@ -245,12 +263,56 @@ function buildStrategicLogisticsSequences() {
       finalStateSha256: canonicalSha256(session.snapshot()),
     };
   };
+  const buildLandless = () => {
+    const initialState = createProductionSessionState(1, 5);
+    const initialPatches: StatePatch[] = [{ path: ['cities', 'city-8', 'reserveTroops'], value: 500 }];
+    applyStatePatches(initialState as unknown as Record<string, unknown>, initialPatches);
+    const session = new OracleApplicationSession(initialState);
+    const command: ApplicationCommandEnvelope = {
+      commandEnvelopeVersion: 1, commandId: 'mb08-landless-001',
+      expectedStateSha256: canonicalSha256(session.snapshot()), kind: 'issue_transport_order',
+      parameters: {
+        sourceCityId: 'city-8', targetCityId: 'city-3', officerId: 'officer-5',
+        cargo: { money: 10, food: 20, reserveTroops: 30 },
+      },
+    };
+    const issued = session.execute(command);
+    const { state: _issuedState, ...issuedCore } = issued;
+    const prePatches: StatePatch[] = [
+      ...[['city-0', 'officer-19'], ['city-3', 'officer-20'], ['city-8', 'officer-21']]
+        .flatMap(([cityId, satrapOfficerId]) => [
+          { path: ['cities', cityId, 'ownerId'], value: 'ruler-0' },
+          { path: ['cities', cityId, 'satrapOfficerId'], value: satrapOfficerId },
+          { path: ['officers', satrapOfficerId, 'cityId'], value: cityId },
+        ] as StatePatch[]),
+      ...['officer-56', 'officer-57', 'officer-58', 'officer-60', 'officer-61', 'officer-62', 'officer-63', 'officer-64', 'officer-65', 'officer-66']
+        .map((officerId) => ({ path: ['officers', officerId, 'factionId'], value: 'ruler-0' })),
+    ];
+    const beforeAdvance = session.snapshot();
+    applyStatePatches(beforeAdvance as unknown as Record<string, unknown>, prePatches);
+    session.restoreSnapshot(beforeAdvance);
+    const preStateSha256 = canonicalSha256(beforeAdvance);
+    const { state: _advancedState, ...advancedCore } = session.advanceStrategicOrders();
+    return {
+      id: 'landless-ruler-transport', campaign: { periodId: 1, rulerSourceIndex: 5 },
+      initialPatches, initialStateSha256: canonicalSha256(initialState),
+      steps: [
+        { id: 'issue-landless-ruler-transport', operation: 'command', command, expectedCore: issuedCore },
+        { id: 'advance-landless-ruler-transport', operation: 'advance', prePatches, preStateSha256, expectedCore: advancedCore },
+      ],
+      finalStateSha256: canonicalSha256(session.snapshot()),
+    };
+  };
   return [
-    build('success', 48_641),
+    build('success', 0),
     build('loss', 1_972, true),
     build('target-full', 48_641, true, [{ path: ['cities', 'city-3', 'money'], value: Number.MAX_SAFE_INTEGER }]),
     build('target-captured', 48_641, true, targetCapturedPatches),
+    build('source-lost', 0, true, sourceLostPatches),
+    build('split-cargo', 48_641, true, splitSettlementPatches),
+    build('unsettleable-cargo', 48_641, true, noMoneySettlementPatches),
     buildMultiOrder(),
+    buildLandless(),
   ];
 }
 
@@ -315,7 +377,71 @@ function buildStrategicLogisticsBoundaryCases() {
     sourceCityId: 'city-0', targetCityId: 'city-3', officerId: 'officer-56',
     cargo: { money: 1, food: 0, reserveTroops: 0 },
   }, [...directRoute, { path: ['officers', 'officer-56', 'stamina'], value: 7 }]);
+  add('no-owned-route', 'issue_move_order', {
+    sourceCityId: 'city-0', targetCityId: 'city-8', officerId: 'officer-56',
+  }, [
+    { path: ['cities', 'city-3', 'ownerId'], value: 'ruler-0' },
+    { path: ['cities', 'city-3', 'satrapOfficerId'], value: 'officer-19' },
+    { path: ['officers', 'officer-19', 'cityId'], value: 'city-3' },
+    { path: ['officers', 'officer-64', 'cityId'], value: 'city-8' },
+  ]);
   return cases;
+}
+
+function buildStrategicRouteCases() {
+  const equalRoute = createProductionSessionState(3, 4);
+  const disconnected = createProductionSessionState(1, 5);
+  disconnected.cities['city-3'].ownerId = 'ruler-0';
+  return [
+    {
+      id: 'equal-length-route-uses-ordinal-neighbor-order',
+      campaign: { periodId: 3, rulerSourceIndex: 4 }, ownershipPatches: [],
+      factionId: 'ruler-4', sourceCityId: 'city-1', targetCityId: 'city-11',
+      expectedRouteCityIds: findOwnedCityRoute(equalRoute, 'ruler-4', 'city-1', 'city-11') ?? [],
+    },
+    {
+      id: 'owned-endpoints-with-hostile-cut-have-no-route',
+      campaign: { periodId: 1, rulerSourceIndex: 5 },
+      ownershipPatches: [{ cityId: 'city-3', ownerId: 'ruler-0' }],
+      factionId: 'ruler-5', sourceCityId: 'city-0', targetCityId: 'city-8',
+      expectedRouteCityIds: findOwnedCityRoute(disconnected, 'ruler-5', 'city-0', 'city-8') ?? [],
+    },
+  ];
+}
+
+function buildStrategicLifecycleCases() {
+  const build = (id: string, prePatches: StatePatch[], cargo: { money: number; food: number; reserveTroops: number }) => {
+    const initialState = createProductionSessionState(1, 5);
+    const session = new OracleApplicationSession(initialState);
+    const command: ApplicationCommandEnvelope = {
+      commandEnvelopeVersion: 1, commandId: `mb08-lifecycle-${id}`,
+      expectedStateSha256: canonicalSha256(session.snapshot()), kind: 'issue_transport_order',
+      parameters: { sourceCityId: 'city-0', targetCityId: 'city-3', officerId: 'officer-56', cargo },
+    };
+    const issued = session.execute(command);
+    if (!issued.ok) throw new Error(`failed to build strategic lifecycle case: ${id}`);
+    const cancellationInput = session.snapshot();
+    applyStatePatches(cancellationInput as unknown as Record<string, unknown>, prePatches);
+    const expected = cancelOfficerOrders(cancellationInput, 'officer-56');
+    return {
+      id, campaign: { periodId: 1, rulerSourceIndex: 5 }, command, prePatches,
+      cancellationInputSha256: canonicalSha256(cancellationInput),
+      expectedStateSha256: canonicalSha256(expected),
+      expectedLog: expected.logs.at(-1)?.message ?? '',
+    };
+  };
+  return [
+    build('source-lost-prefers-source-salvage', [
+      { path: ['cities', 'city-0', 'ownerId'], value: 'ruler-0' },
+      { path: ['cities', 'city-0', 'satrapOfficerId'], value: 'officer-19' },
+      { path: ['officers', 'officer-19', 'cityId'], value: 'city-0' },
+      { path: ['officers', 'officer-57', 'cityId'], value: 'city-3' },
+    ], { money: 10, food: 20, reserveTroops: 0 }),
+    build('source-index-salvage-order', [
+      ...['city-0', 'city-1', 'city-3', 'city-8']
+        .map((cityId) => ({ path: ['cities', cityId, 'money'], value: Number.MAX_SAFE_INTEGER })),
+    ], { money: 10, food: 0, reserveTroops: 0 }),
+  ];
 }
 
 function buildPersonnelLifecycleSequence() {
@@ -721,12 +847,24 @@ function buildInternalAffairsBoundaryCases() {
 }
 
 function buildValidationCases() {
+  const validOrder = {
+    id: 'strategic-order-1', kind: 'transport', factionId: 'ruler-5', officerId: 'officer-56',
+    sourceCityId: 'city-0', targetCityId: 'city-3', routeCityIds: ['city-0', 'city-3'],
+    createdTurn: 1, createdYear: 190, createdMonth: 1, durationMonths: 1, remainingMonths: 1,
+    cargo: { money: 1, food: 0, reserveTroops: 0 },
+  };
   return [
     {
       id: 'unsafe-city-money',
       patches: [{ path: ['cities', 'city-12', 'money'], value: '9007199254740992' }],
       expectedPath: 'cities.city-12.money',
       expectedMessage: 'must be a non-negative safe integer',
+    },
+    {
+      id: 'malformed-city-record-does-not-crash-validator',
+      patches: [{ path: ['cities', 'city-0'], value: 'malformed' }],
+      expectedPath: 'cities.city-0',
+      expectedMessage: 'must be an object',
     },
     {
       id: 'captive-former-faction-cannot-be-captor',
@@ -749,6 +887,91 @@ function buildValidationCases() {
       ],
       expectedPath: 'officers.officer-30.death',
       expectedMessage: 'dead officer must retain a death record',
+    },
+    {
+      id: 'strategic-order-unknown-field',
+      patches: [
+        { path: ['strategicOrders'], value: { 'strategic-order-1': { ...validOrder, surprise: true } } },
+        { path: ['nextStrategicOrderSerial'], value: 2 },
+      ],
+      expectedPath: 'strategicOrders.strategic-order-1.surprise',
+      expectedMessage: 'is an unknown field',
+    },
+    {
+      id: 'strategic-cargo-missing-field',
+      patches: [
+        { path: ['strategicOrders'], value: { 'strategic-order-1': { ...validOrder, cargo: { money: 1, reserveTroops: 0 } } } },
+        { path: ['nextStrategicOrderSerial'], value: 2 },
+      ],
+      expectedPath: 'strategicOrders.strategic-order-1.cargo.food',
+      expectedMessage: 'must be a non-negative safe integer',
+    },
+    {
+      id: 'strategic-cargo-nested-value-does-not-crash-validator',
+      patches: [
+        { path: ['strategicOrders'], value: { 'strategic-order-1': { ...validOrder, cargo: { money: {}, food: 0, reserveTroops: 0 } } } },
+        { path: ['nextStrategicOrderSerial'], value: 2 },
+      ],
+      expectedPath: 'strategicOrders.strategic-order-1.cargo.money',
+      expectedMessage: 'must be a non-negative safe integer',
+    },
+    {
+      id: 'strategic-order-leading-zero-id',
+      patches: [
+        { path: ['strategicOrders'], value: { 'strategic-order-01': { ...validOrder, id: 'strategic-order-01' } } },
+        { path: ['nextStrategicOrderSerial'], value: 2 },
+      ],
+      expectedPath: 'strategicOrders.strategic-order-01.id',
+      expectedMessage: 'must use strategic-order-N format',
+    },
+    {
+      id: 'strategic-order-broken-road',
+      patches: [
+        { path: ['strategicOrders'], value: { 'strategic-order-1': { ...validOrder, targetCityId: 'city-8', routeCityIds: ['city-0', 'city-8'] } } },
+        { path: ['nextStrategicOrderSerial'], value: 2 },
+      ],
+      expectedPath: 'strategicOrders.strategic-order-1.routeCityIds.1',
+      expectedMessage: 'must follow an existing road',
+    },
+    {
+      id: 'strategic-route-malformed-neighbors-does-not-crash-validator',
+      patches: [
+        { path: ['strategicOrders'], value: { 'strategic-order-1': validOrder } },
+        { path: ['nextStrategicOrderSerial'], value: 2 },
+        { path: ['cities', 'city-0', 'neighbors'], value: 'malformed' },
+      ],
+      expectedPath: 'cities.city-0.neighbors',
+      expectedMessage: 'must be an array',
+    },
+    {
+      id: 'strategic-order-clock-mismatch',
+      patches: [
+        { path: ['strategicOrders'], value: { 'strategic-order-1': { ...validOrder, durationMonths: 2, remainingMonths: 1 } } },
+        { path: ['nextStrategicOrderSerial'], value: 2 },
+      ],
+      expectedPath: 'strategicOrders.strategic-order-1.remainingMonths',
+      expectedMessage: 'must agree with durationMonths and elapsed campaign turns',
+    },
+    {
+      id: 'strategic-order-duplicate-executor',
+      patches: [
+        { path: ['strategicOrders'], value: {
+          'strategic-order-1': validOrder,
+          'strategic-order-2': { ...validOrder, id: 'strategic-order-2' },
+        } },
+        { path: ['nextStrategicOrderSerial'], value: 3 },
+      ],
+      expectedPath: 'strategicOrders.strategic-order-2.officerId',
+      expectedMessage: 'officer already has an active order',
+    },
+    {
+      id: 'strategic-order-serial-not-monotonic',
+      patches: [
+        { path: ['strategicOrders'], value: { 'strategic-order-1': validOrder } },
+        { path: ['nextStrategicOrderSerial'], value: 1 },
+      ],
+      expectedPath: 'nextStrategicOrderSerial',
+      expectedMessage: 'must exceed every active strategic order serial',
     },
   ];
 }

@@ -279,6 +279,28 @@ func _run() -> void:
 	for control_name: String in ["CloseButton", "ModeOption", "TargetOption", "ExecutorOption", "MoneyAmount", "FoodAmount", "TroopsAmount", "ExecuteButton", "AdvanceButton", "CargoPresetButton", "DemoButton"]:
 		var control: Control = logistics_panel.get_node("%%%s" % control_name)
 		_assert_true(control.custom_minimum_size.y * canvas_scale >= 47.5, "compact logistics %s must retain a 48px-class physical target" % control_name)
+	# Destination capacity is a query DTO concern; the Control only applies the
+	# selected target's declared headroom and the declared risk percentage.
+	var original_target: Dictionary = target_option.get_item_metadata(0).duplicate(true)
+	_assert_true(original_target.has("cargoHeadroom"), "logistics target DTO must expose cargo headroom")
+	var full_target: Dictionary = original_target.duplicate(true)
+	full_target["cargoHeadroom"] = {"money": 0, "food": 0, "reserveTroops": 0}
+	full_target["cargoLimits"] = {"money": 0, "food": 0, "reserveTroops": 0}
+	full_target["transportAllowed"] = false
+	full_target["transportReason"] = "目标城无接收空间或源城无可输送物资"
+	target_option.set_item_metadata(0, full_target)
+	logistics_panel.get_node("%ModeOption").select(1)
+	target_option.select(0)
+	logistics_panel.call("_render_selection")
+	_assert_equal(int(logistics_panel.get_node("%MoneyAmount").max_value), 0, "full selected target must clamp money input")
+	_assert_equal(int(logistics_panel.get_node("%FoodAmount").max_value), 0, "full selected target must clamp food input")
+	_assert_true(logistics_panel.get_node("%ExecuteButton").disabled, "full selected target must disable transport")
+	_assert_true("无接收空间" in logistics_panel.get_node("%ReasonLabel").text, "full selected target must expose the query reason")
+	target_option.set_item_metadata(0, original_target)
+	logistics_panel.call("_render_selection")
+	logistics_panel.call("_apply_small_mixed_cargo")
+	_assert_true("20%" in logistics_panel.get_node("%ReasonLabel").text, "risk copy must use the query threshold")
+	logistics_panel.get_node("%ModeOption").select(0)
 	# Select the two-road destination and issue a real move through the application envelope.
 	target_option.select(1)
 	logistics_panel.call("_render_selection")
@@ -309,8 +331,10 @@ func _run() -> void:
 	_assert_equal(int(screen.get("_snapshot")["cities"]["city-0"]["money"]), transport_money_before - mini(10, transport_money_before), "transport must debit money atomically on issue")
 	_assert_equal(int(screen.get("_snapshot")["cities"]["city-0"]["food"]), transport_food_before - mini(10, transport_food_before), "transport must debit food atomically on issue")
 	_assert_equal(int(screen.get("_snapshot")["cities"]["city-0"]["reserveTroops"]), transport_troops_before - mini(10, transport_troops_before), "transport must debit reserve troops atomically on issue")
+	_assert_true("10 金" in logistics_panel.get_node("%OrdersLabel").text and "10 粮" in logistics_panel.get_node("%OrdersLabel").text, "active transport summary must expose its cargo")
 	screen.call("_advance_strategic_logistics")
 	_assert_true(int(screen.get("_snapshot")["rngSeed"]) != transport_seed_before, "valid transport arrival must consume exactly the deterministic loss roll")
+	_assert_true("全部损失" in screen.get_node("%StatusLine").text or "完成对" in screen.get_node("%StatusLine").text, "advance feedback must expose the transport outcome")
 
 	if _failures > 0:
 		push_error(

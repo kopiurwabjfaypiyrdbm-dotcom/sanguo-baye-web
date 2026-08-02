@@ -4,6 +4,7 @@ const GameState = preload("res://src/domain/game_state/game_state.gd")
 const Validator = preload("res://src/domain/validation/game_state_validator.gd")
 const CoreLcg = preload("res://src/domain/random/core_lcg.gd")
 const DevelopFarming = preload("res://src/domain/commands/develop_farming_command.gd")
+const StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
 const GameSession = preload("res://src/application/game_session/game_session.gd")
 const SaveRepository = preload("res://src/application/persistence/json_save_repository.gd")
 
@@ -25,6 +26,7 @@ func _initialize() -> void:
 	_test_uint32_shift_boundaries()
 	_test_invalid_command_does_not_advance_state()
 	_test_runtime_rejects_unsafe_integer_state()
+	_test_strategic_order_lifecycle_cancellation()
 	_test_spike_contract_rejects_unmigrated_web_states()
 	_test_save_load_equivalence()
 
@@ -36,6 +38,37 @@ func _initialize() -> void:
 		return
 	print("[Godot domain tests] PASSED: %d assertion(s)" % _assertions)
 	quit(0)
+
+
+func _test_strategic_order_lifecycle_cancellation() -> void:
+	var session: GameSession = GameSession.new()
+	var started: Dictionary = session.start_campaign(1, 5)
+	_assert_true(started["ok"], "strategic lifecycle campaign must start")
+	if not started["ok"]: return
+	var before: Dictionary = session.snapshot()
+	var issued: Dictionary = StrategicOrders.execute(GameState.new(before), "issue_transport_order", {
+		"sourceCityId": "city-0", "targetCityId": "city-3", "officerId": "officer-56",
+		"cargo": {"money": 10, "food": 20, "reserveTroops": 0},
+	})
+	_assert_true(issued["ok"], "lifecycle cancellation transport must issue")
+	if not issued["ok"]: return
+	var in_transit: Dictionary = issued["next_state"].snapshot()
+	var canceled: Dictionary = StrategicOrders.cancel_officer_orders(in_transit, "officer-56", "生命周期测试")
+	_assert_true(canceled["ok"], "lifecycle cancellation must return a recoverable result")
+	if canceled["ok"]:
+		var next: Dictionary = canceled["next"]
+		_assert_equal(next["strategicOrders"], {}, "lifecycle cancellation must remove the active order")
+		_assert_equal(next["cities"]["city-0"]["money"], before["cities"]["city-0"]["money"], "lifecycle cancellation must restore money")
+		_assert_equal(next["cities"]["city-0"]["food"], before["cities"]["city-0"]["food"], "lifecycle cancellation must restore food")
+		_assert_equal(next["officers"]["officer-56"]["cityId"], "city-0", "lifecycle cancellation must return the executor")
+		_assert_equal(next["logs"][-1]["message"], "strategic-order-1因生命周期测试而终止，10 金、20 粮由西凉接收。", "lifecycle cancellation log must match Web wording")
+		_assert_equal(Validator.validate_runtime(next), [], "lifecycle cancellation output must validate")
+	_assert_true(in_transit["strategicOrders"].has("strategic-order-1"), "lifecycle cancellation must not mutate its input")
+	var impossible: Dictionary = in_transit.duplicate(true)
+	for city_id: Variant in impossible["cityOrder"]: impossible["cities"][city_id]["money"] = 9_007_199_254_740_991
+	var rejected: Dictionary = StrategicOrders.cancel_officer_orders(impossible, "officer-56", "生命周期测试")
+	_assert_true(not rejected["ok"], "unsettleable lifecycle cancellation must fail explicitly")
+	_assert_true(impossible["strategicOrders"].has("strategic-order-1"), "failed lifecycle cancellation must retain the input order")
 
 
 func _test_period_structure_and_roads() -> void:

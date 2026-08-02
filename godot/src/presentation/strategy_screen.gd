@@ -322,7 +322,17 @@ func _advance_strategic_logistics() -> void:
 		return
 	_refresh_snapshot(true)
 	_refresh_strategic_logistics()
-	_set_status(tr("战略订单已推进 · 种子 %d") % int(_snapshot.get("rngSeed", 0)), "success")
+	var receipt: Dictionary = _as_dictionary(result.get("receipt", {}))
+	var messages: Array[String] = []
+	for raw_log: Variant in receipt.get("appendedLogs", []):
+		if raw_log is Dictionary and not str(raw_log.get("message", "")).is_empty():
+			messages.append(str(raw_log["message"]))
+	var feedback: String = "；".join(messages)
+	_set_status(
+		(tr("战略订单已推进 · 种子 %d") % int(_snapshot.get("rngSeed", 0)))
+			if feedback.is_empty() else "%s · %s" % [feedback, tr("种子 %d") % int(_snapshot.get("rngSeed", 0))],
+		"success",
+	)
 
 
 func _preview_logistics_route(route_city_ids: Array) -> void:

@@ -112,7 +112,7 @@ static func _validate(state: Dictionary, initial_contract: bool) -> Array[Dictio
 			and active_faction_id != player_faction_id:
 		_add(issues, "activeFactionId", "must be the player faction during the player phase")
 
-	_validate_factions(factions, officers, player_faction_id, issues)
+	_validate_factions(factions, cities, officers, player_faction_id, issues)
 	var active_order_officers: Dictionary = _validate_active_orders(
 		strategic_orders, diplomatic_orders, factions, cities, officers, issues
 	)
@@ -209,6 +209,7 @@ static func _validate_lifecycle_policy(
 
 static func _validate_factions(
 		factions: Dictionary,
+		cities: Dictionary,
 		officers: Dictionary,
 		player_faction_id: String,
 		issues: Array[Dictionary],
@@ -239,8 +240,18 @@ static func _validate_factions(
 			var raw_ruler: Variant = officers[ruler_id]
 			if typeof(raw_ruler) == TYPE_DICTIONARY:
 				var ruler: Dictionary = raw_ruler
-				if ruler.get("factionId") != key:
+				var faction_owns_city: bool = false
+				for city_id: String in _sorted_string_keys(cities):
+					if typeof(cities[city_id]) == TYPE_DICTIONARY \
+							and (cities[city_id] as Dictionary).get("ownerId") == key:
+						faction_owns_city = true
+						break
+				if not bool(faction.get("isNeutral", false)) and faction_owns_city \
+						and ruler.get("factionId") != key:
 					_add(issues, "%s.rulerOfficerId" % path, "ruler must belong to the faction")
+				elif not bool(faction.get("isNeutral", false)) and faction_owns_city \
+						and ruler.get("status") != "serving":
+					_add(issues, "%s.rulerOfficerId" % path, "non-neutral ruler must be serving")
 	if not player_faction_id.is_empty() and player_flags != 1:
 		_add(issues, "factions", "must contain exactly one player faction")
 
@@ -296,8 +307,7 @@ static func _validate_strategic_orders(
 		if typeof(raw) != TYPE_DICTIONARY:
 			continue
 		var order: Dictionary = raw
-		if not key.begins_with("strategic-order-") or not key.trim_prefix("strategic-order-").is_valid_int() \
-				or int(key.trim_prefix("strategic-order-")) < 1:
+		if not _is_strategic_order_id(key):
 			_add(issues, "%s.id" % path, "must use strategic-order-N format")
 		else:
 			highest_serial = maxi(highest_serial, int(key.trim_prefix("strategic-order-")))
@@ -360,9 +370,14 @@ static func _validate_strategic_orders(
 				if seen.has(city_id):
 					_add(issues, "%s.routeCityIds" % path, "must not repeat a city")
 				seen[city_id] = true
-				if index > 0 and cities.has(str(route[index - 1])) and cities.has(city_id) \
-						and not (cities[str(route[index - 1])].get("neighbors", []) as Array).has(city_id):
-					_add(issues, "%s.routeCityIds.%d" % [path, index], "must follow an existing road")
+				if index > 0:
+					var previous_id: String = str(route[index - 1])
+					if cities.has(previous_id) and cities.has(city_id) \
+							and typeof(cities[previous_id]) == TYPE_DICTIONARY \
+							and typeof(cities[city_id]) == TYPE_DICTIONARY:
+						var raw_neighbors: Variant = (cities[previous_id] as Dictionary).get("neighbors")
+						if typeof(raw_neighbors) == TYPE_ARRAY and not (raw_neighbors as Array).has(city_id):
+							_add(issues, "%s.routeCityIds.%d" % [path, index], "must follow an existing road")
 			if _is_positive_integer(order.get("durationMonths")) and route.size() >= 2 \
 					and int(order["durationMonths"]) != route.size() - 1:
 				_add(issues, "%s.durationMonths" % path, "must equal route road count")
@@ -371,12 +386,14 @@ static func _validate_strategic_orders(
 			_add(issues, "%s.cargo" % path, "must be an object")
 		else:
 			var cargo: Dictionary = raw_cargo
+			var total_positive: bool = false
 			for field: String in ["money", "food", "reserveTroops"]:
-				_validate_non_negative_integer(cargo.get(field), "%s.cargo.%s" % [path, field], issues)
+				var amount: Variant = cargo.get(field)
+				_validate_non_negative_integer(amount, "%s.cargo.%s" % [path, field], issues)
+				if _is_integer_number(amount) and int(amount) > 0:
+					total_positive = true
 			if cargo.size() != 3:
 				_add(issues, "%s.cargo" % path, "must contain exactly money, food, and reserveTroops")
-			var total_positive: bool = int(cargo.get("money", 0)) > 0 or int(cargo.get("food", 0)) > 0 \
-					or int(cargo.get("reserveTroops", 0)) > 0
 			if order.get("kind") == "move" and total_positive:
 				_add(issues, "%s.cargo" % path, "move cargo must be empty")
 			if order.get("kind") == "transport" and not total_positive:
@@ -988,6 +1005,17 @@ static func _is_integer_number(raw: Variant) -> bool:
 
 static func _is_positive_integer(raw: Variant) -> bool:
 	return _is_integer_number(raw) and int(raw) >= 1
+
+
+static func _is_strategic_order_id(value: String) -> bool:
+	const PREFIX := "strategic-order-"
+	if not value.begins_with(PREFIX): return false
+	var suffix: String = value.trim_prefix(PREFIX)
+	if suffix.is_empty() or suffix.length() > 16 or suffix[0] < "1" or suffix[0] > "9":
+		return false
+	for index: int in range(1, suffix.length()):
+		if suffix[index] < "0" or suffix[index] > "9": return false
+	return int(suffix) <= JS_MAX_SAFE_INTEGER
 
 
 static func _add(issues: Array[Dictionary], path: String, message: String) -> void:

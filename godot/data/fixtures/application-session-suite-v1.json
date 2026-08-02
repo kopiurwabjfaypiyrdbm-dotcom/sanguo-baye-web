@@ -94136,7 +94136,7 @@
           "path": [
             "rngSeed"
           ],
-          "value": 48641
+          "value": 0
         },
         {
           "path": [
@@ -94147,7 +94147,7 @@
           "value": 500
         }
       ],
-      "initialStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+      "initialStateSha256": "4ce12d379416731ba078b54648279c9cd9a999e1ad16c35a29b5e9ca455a1ef0",
       "steps": [
         {
           "id": "issue-multihop-move",
@@ -94155,7 +94155,7 @@
           "command": {
             "commandEnvelopeVersion": 1,
             "commandId": "mb08-success-001",
-            "expectedStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+            "expectedStateSha256": "4ce12d379416731ba078b54648279c9cd9a999e1ad16c35a29b5e9ca455a1ef0",
             "kind": "issue_move_order",
             "parameters": {
               "sourceCityId": "city-0",
@@ -94172,13 +94172,13 @@
             "code": "ok",
             "error": "",
             "stateChanged": true,
-            "beforeStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
-            "afterStateSha256": "7bf8d3e7e9ad948e4b78a1bba625878f99ba179bb118da2b506a561973d9e8d8",
+            "beforeStateSha256": "4ce12d379416731ba078b54648279c9cd9a999e1ad16c35a29b5e9ca455a1ef0",
+            "afterStateSha256": "b6d686058e31a44c8e4ea8fbc3a4c9639e6c2cc966da5ee5cebfd9ba9e18ee9d",
             "receipt": {
               "kind": "issue_move_order",
               "state": {
                 "turn": 1,
-                "rngSeed": 48641,
+                "rngSeed": 0,
                 "campaignStarted": true,
                 "actedOfficerIds": [
                   "officer-56"
@@ -94266,18 +94266,18 @@
           "id": "move-month-1",
           "operation": "advance",
           "prePatches": [],
-          "preStateSha256": "7bf8d3e7e9ad948e4b78a1bba625878f99ba179bb118da2b506a561973d9e8d8",
+          "preStateSha256": "b6d686058e31a44c8e4ea8fbc3a4c9639e6c2cc966da5ee5cebfd9ba9e18ee9d",
           "expectedCore": {
             "ok": true,
             "error": "",
             "stateChanged": true,
-            "beforeStateSha256": "7bf8d3e7e9ad948e4b78a1bba625878f99ba179bb118da2b506a561973d9e8d8",
-            "afterStateSha256": "f4845c493dc026a4d4a6fd718624f2e82add44f191fca0e0bc911790af49eef4",
+            "beforeStateSha256": "b6d686058e31a44c8e4ea8fbc3a4c9639e6c2cc966da5ee5cebfd9ba9e18ee9d",
+            "afterStateSha256": "c1d41f3a83202005361b8ece7d15e0d9ef984e24e940629707f1b6f12438d8c6",
             "receipt": {
               "kind": "advance_strategic_orders",
               "state": {
                 "turn": 2,
-                "rngSeed": 48641,
+                "rngSeed": 0,
                 "campaignStarted": true,
                 "actedOfficerIds": [],
                 "logCount": 2
@@ -94316,18 +94316,18 @@
           "id": "move-arrival",
           "operation": "advance",
           "prePatches": [],
-          "preStateSha256": "f4845c493dc026a4d4a6fd718624f2e82add44f191fca0e0bc911790af49eef4",
+          "preStateSha256": "c1d41f3a83202005361b8ece7d15e0d9ef984e24e940629707f1b6f12438d8c6",
           "expectedCore": {
             "ok": true,
             "error": "",
             "stateChanged": true,
-            "beforeStateSha256": "f4845c493dc026a4d4a6fd718624f2e82add44f191fca0e0bc911790af49eef4",
-            "afterStateSha256": "04fd0f68350ea44d97c2ecfd1a4f7c35353e208a288ddcfcc6ddcf1a543f004b",
+            "beforeStateSha256": "c1d41f3a83202005361b8ece7d15e0d9ef984e24e940629707f1b6f12438d8c6",
+            "afterStateSha256": "46ea27730ec8304415737627b8a243a879ac439018b944e31f28dc57f65f91c7",
             "receipt": {
               "kind": "advance_strategic_orders",
               "state": {
                 "turn": 3,
-                "rngSeed": 48641,
+                "rngSeed": 0,
                 "campaignStarted": true,
                 "actedOfficerIds": [],
                 "logCount": 3
@@ -94353,7 +94353,7 @@
           "command": {
             "commandEnvelopeVersion": 1,
             "commandId": "mb08-success-002",
-            "expectedStateSha256": "04fd0f68350ea44d97c2ecfd1a4f7c35353e208a288ddcfcc6ddcf1a543f004b",
+            "expectedStateSha256": "46ea27730ec8304415737627b8a243a879ac439018b944e31f28dc57f65f91c7",
             "kind": "issue_transport_order",
             "parameters": {
               "sourceCityId": "city-0",
@@ -94375,13 +94375,13 @@
             "code": "ok",
             "error": "",
             "stateChanged": true,
-            "beforeStateSha256": "04fd0f68350ea44d97c2ecfd1a4f7c35353e208a288ddcfcc6ddcf1a543f004b",
-            "afterStateSha256": "a35e9a34c6efd6d34eb0684a09d5a0f3036ae3a843d59b9ba91a5213d1510a25",
+            "beforeStateSha256": "46ea27730ec8304415737627b8a243a879ac439018b944e31f28dc57f65f91c7",
+            "afterStateSha256": "8a198c2bf64fe1dfb1683146024171850e07cdeddae9153ec106a5494888364a",
             "receipt": {
               "kind": "issue_transport_order",
               "state": {
                 "turn": 3,
-                "rngSeed": 48641,
+                "rngSeed": 0,
                 "campaignStarted": true,
                 "actedOfficerIds": [
                   "officer-57"
@@ -94468,18 +94468,18 @@
           "id": "transport-success",
           "operation": "advance",
           "prePatches": [],
-          "preStateSha256": "a35e9a34c6efd6d34eb0684a09d5a0f3036ae3a843d59b9ba91a5213d1510a25",
+          "preStateSha256": "8a198c2bf64fe1dfb1683146024171850e07cdeddae9153ec106a5494888364a",
           "expectedCore": {
             "ok": true,
             "error": "",
             "stateChanged": true,
-            "beforeStateSha256": "a35e9a34c6efd6d34eb0684a09d5a0f3036ae3a843d59b9ba91a5213d1510a25",
-            "afterStateSha256": "3b5a1760355272a55f0fa16ff4ab45a17606ad579e6f73a97e9a644a65b1e767",
+            "beforeStateSha256": "8a198c2bf64fe1dfb1683146024171850e07cdeddae9153ec106a5494888364a",
+            "afterStateSha256": "9b6b07d756df204f3e39574aeb4965bd6c8ff74c1c7c05bdd1a74483b32b11f3",
             "receipt": {
               "kind": "advance_strategic_orders",
               "state": {
                 "turn": 4,
-                "rngSeed": 373686124,
+                "rngSeed": 1013904223,
                 "campaignStarted": true,
                 "actedOfficerIds": [],
                 "logCount": 5
@@ -94492,7 +94492,7 @@
                 {
                   "id": "log-4-005",
                   "kind": "turn",
-                  "message": "马超的输送途中受损，10 金、20 粮、30 后备兵全部损失，人员返回西凉。",
+                  "message": "马超完成对安定的输送，10 金、20 粮、30 后备兵入库，并返回西凉。",
                   "turn": 4
                 }
               ]
@@ -94500,7 +94500,7 @@
           }
         }
       ],
-      "finalStateSha256": "3b5a1760355272a55f0fa16ff4ab45a17606ad579e6f73a97e9a644a65b1e767"
+      "finalStateSha256": "9b6b07d756df204f3e39574aeb4965bd6c8ff74c1c7c05bdd1a74483b32b11f3"
     },
     {
       "id": "loss",
@@ -95088,6 +95088,1755 @@
       "finalStateSha256": "64adfb6e1d46cbf2b20e7d2e79570aed50b2b6c0046c68875771788ee75b3ea9"
     },
     {
+      "id": "source-lost",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 500
+        }
+      ],
+      "initialStateSha256": "4ce12d379416731ba078b54648279c9cd9a999e1ad16c35a29b5e9ca455a1ef0",
+      "steps": [
+        {
+          "id": "issue-loss-transport",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-source-lost-001",
+            "expectedStateSha256": "4ce12d379416731ba078b54648279c9cd9a999e1ad16c35a29b5e9ca455a1ef0",
+            "kind": "issue_transport_order",
+            "parameters": {
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "officerId": "officer-56",
+              "cargo": {
+                "money": 10,
+                "food": 20,
+                "reserveTroops": 30
+              }
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-source-lost-001",
+            "kind": "issue_transport_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "4ce12d379416731ba078b54648279c9cd9a999e1ad16c35a29b5e9ca455a1ef0",
+            "afterStateSha256": "41b91d5b5ec866664b5467b643c7c8c91a204da659a0f36e27beb53fa09db7fe",
+            "receipt": {
+              "kind": "issue_transport_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 0,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-56"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "strategic-order-1",
+                "kind": "transport",
+                "factionId": "ruler-5",
+                "officerId": "officer-56",
+                "sourceCityId": "city-0",
+                "targetCityId": "city-3",
+                "routeCityIds": [
+                  "city-0",
+                  "city-3"
+                ],
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "cargo": {
+                  "money": 10,
+                  "food": 20,
+                  "reserveTroops": 30
+                }
+              },
+              "sourceCity": {
+                "id": "city-0",
+                "before": {
+                  "money": 202,
+                  "food": 436,
+                  "reserveTroops": 500,
+                  "satrapOfficerId": "officer-56"
+                },
+                "after": {
+                  "money": 192,
+                  "food": 416,
+                  "reserveTroops": 470,
+                  "satrapOfficerId": "officer-57"
+                }
+              },
+              "targetCity": {
+                "id": "city-3",
+                "before": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                },
+                "after": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                }
+              },
+              "officer": {
+                "id": "officer-56",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": "city-0",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": null,
+                  "stamina": 92
+                }
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "韩遂从西凉向安定输送10 金、20 粮、30 后备兵，预计 1 个月完成。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "transport-source-lost",
+          "operation": "advance",
+          "prePatches": [
+            {
+              "path": [
+                "cities",
+                "city-0",
+                "ownerId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "cities",
+                "city-0",
+                "satrapOfficerId"
+              ],
+              "value": "officer-19"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-19",
+                "cityId"
+              ],
+              "value": "city-0"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-57",
+                "cityId"
+              ],
+              "value": "city-3"
+            }
+          ],
+          "preStateSha256": "9c9067ad6becf159c1132fedcfcfda23b47ae4f5dab866d5fd0fc9a40b0c1831",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "9c9067ad6becf159c1132fedcfcfda23b47ae4f5dab866d5fd0fc9a40b0c1831",
+            "afterStateSha256": "db70b22d71adc4249dbea5341ae610b1e8bb5ffc03b4ca5ba9312bccfb1b6f55",
+            "receipt": {
+              "kind": "advance_strategic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 1013904223,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "strategic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "turn",
+                  "message": "韩遂完成对安定的输送，10 金、20 粮、30 后备兵入库，并返回安定。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "db70b22d71adc4249dbea5341ae610b1e8bb5ffc03b4ca5ba9312bccfb1b6f55"
+    },
+    {
+      "id": "split-cargo",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 48641
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 500
+        }
+      ],
+      "initialStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+      "steps": [
+        {
+          "id": "issue-loss-transport",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-split-cargo-001",
+            "expectedStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+            "kind": "issue_transport_order",
+            "parameters": {
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "officerId": "officer-56",
+              "cargo": {
+                "money": 10,
+                "food": 20,
+                "reserveTroops": 30
+              }
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-split-cargo-001",
+            "kind": "issue_transport_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+            "afterStateSha256": "da5a2c14572de14358756a3a4881e81ac57331a18fc01552680c5ce1240802c9",
+            "receipt": {
+              "kind": "issue_transport_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-56"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "strategic-order-1",
+                "kind": "transport",
+                "factionId": "ruler-5",
+                "officerId": "officer-56",
+                "sourceCityId": "city-0",
+                "targetCityId": "city-3",
+                "routeCityIds": [
+                  "city-0",
+                  "city-3"
+                ],
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "cargo": {
+                  "money": 10,
+                  "food": 20,
+                  "reserveTroops": 30
+                }
+              },
+              "sourceCity": {
+                "id": "city-0",
+                "before": {
+                  "money": 202,
+                  "food": 436,
+                  "reserveTroops": 500,
+                  "satrapOfficerId": "officer-56"
+                },
+                "after": {
+                  "money": 192,
+                  "food": 416,
+                  "reserveTroops": 470,
+                  "satrapOfficerId": "officer-57"
+                }
+              },
+              "targetCity": {
+                "id": "city-3",
+                "before": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                },
+                "after": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                }
+              },
+              "officer": {
+                "id": "officer-56",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": "city-0",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": null,
+                  "stamina": 92
+                }
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "韩遂从西凉向安定输送10 金、20 粮、30 后备兵，预计 1 个月完成。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "transport-split-cargo",
+          "operation": "advance",
+          "prePatches": [
+            {
+              "path": [
+                "cities",
+                "city-0",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-0",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-1",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-1",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-1",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-2",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-2",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-2",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-3",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-3",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-4",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-4",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-4",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-5",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-5",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-5",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-6",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-6",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-6",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-7",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-7",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-7",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-8",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-8",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-9",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-9",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-9",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-10",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-10",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-10",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-11",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-11",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-11",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-12",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-12",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-12",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-13",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-13",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-13",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-14",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-14",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-14",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-15",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-15",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-15",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-16",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-16",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-16",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-17",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-17",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-17",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-18",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-18",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-18",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-19",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-19",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-19",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-20",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-20",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-20",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-21",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-21",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-21",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-22",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-22",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-22",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-23",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-23",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-23",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-24",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-24",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-24",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-25",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-25",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-25",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-26",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-26",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-26",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-27",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-27",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-27",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-28",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-28",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-28",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-29",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-29",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-29",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-30",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-30",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-30",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-31",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-31",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-31",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-32",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-32",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-32",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-33",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-33",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-33",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-34",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-34",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-34",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-35",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-35",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-35",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-36",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-36",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-36",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-37",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-37",
+                "food"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-37",
+                "reserveTroops"
+              ],
+              "value": 9007199254740991
+            }
+          ],
+          "preStateSha256": "cd038df13ff14572093ae8ab353facd9f89ae6f75c5a708f1cc870afac7440c9",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "cd038df13ff14572093ae8ab353facd9f89ae6f75c5a708f1cc870afac7440c9",
+            "afterStateSha256": "8ba3130b4654480ad0a0928f12d1242366e7511e9731ee5a077a1e57e0250805",
+            "receipt": {
+              "kind": "advance_strategic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 4
+              },
+              "completedOrderIds": [
+                "strategic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "turn",
+                  "message": "strategic-order-1因安定库存已满失效，10 金、20 粮、30 后备兵退回西凉、安定、天水。",
+                  "turn": 2
+                },
+                {
+                  "id": "log-2-004",
+                  "kind": "turn",
+                  "message": "韩遂返回西凉。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "8ba3130b4654480ad0a0928f12d1242366e7511e9731ee5a077a1e57e0250805"
+    },
+    {
+      "id": "unsettleable-cargo",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 48641
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 500
+        }
+      ],
+      "initialStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+      "steps": [
+        {
+          "id": "issue-loss-transport",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-unsettleable-cargo-001",
+            "expectedStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+            "kind": "issue_transport_order",
+            "parameters": {
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "officerId": "officer-56",
+              "cargo": {
+                "money": 10,
+                "food": 20,
+                "reserveTroops": 30
+              }
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-unsettleable-cargo-001",
+            "kind": "issue_transport_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "8cfaa8b8af84534f3f8c2f35882ff8426fbf43e0440743b0134434921ff3f14a",
+            "afterStateSha256": "da5a2c14572de14358756a3a4881e81ac57331a18fc01552680c5ce1240802c9",
+            "receipt": {
+              "kind": "issue_transport_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-56"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "strategic-order-1",
+                "kind": "transport",
+                "factionId": "ruler-5",
+                "officerId": "officer-56",
+                "sourceCityId": "city-0",
+                "targetCityId": "city-3",
+                "routeCityIds": [
+                  "city-0",
+                  "city-3"
+                ],
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "cargo": {
+                  "money": 10,
+                  "food": 20,
+                  "reserveTroops": 30
+                }
+              },
+              "sourceCity": {
+                "id": "city-0",
+                "before": {
+                  "money": 202,
+                  "food": 436,
+                  "reserveTroops": 500,
+                  "satrapOfficerId": "officer-56"
+                },
+                "after": {
+                  "money": 192,
+                  "food": 416,
+                  "reserveTroops": 470,
+                  "satrapOfficerId": "officer-57"
+                }
+              },
+              "targetCity": {
+                "id": "city-3",
+                "before": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                },
+                "after": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                }
+              },
+              "officer": {
+                "id": "officer-56",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": "city-0",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": null,
+                  "stamina": 92
+                }
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "韩遂从西凉向安定输送10 金、20 粮、30 后备兵，预计 1 个月完成。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "transport-unsettleable-cargo",
+          "operation": "advance",
+          "prePatches": [
+            {
+              "path": [
+                "cities",
+                "city-0",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-1",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-2",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-3",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-4",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-5",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-6",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-7",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-8",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-9",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-10",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-11",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-12",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-13",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-14",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-15",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-16",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-17",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-18",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-19",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-20",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-21",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-22",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-23",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-24",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-25",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-26",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-27",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-28",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-29",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-30",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-31",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-32",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-33",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-34",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-35",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-36",
+                "money"
+              ],
+              "value": 9007199254740991
+            },
+            {
+              "path": [
+                "cities",
+                "city-37",
+                "money"
+              ],
+              "value": 9007199254740991
+            }
+          ],
+          "preStateSha256": "255889ea2039291d35c57199b0fba9f2c8cb7e36fac5e559c9be9681c0313051",
+          "expectedCore": {
+            "ok": false,
+            "error": "没有城市可以安全接收运输资源：money",
+            "stateChanged": false,
+            "beforeStateSha256": "255889ea2039291d35c57199b0fba9f2c8cb7e36fac5e559c9be9681c0313051",
+            "afterStateSha256": "255889ea2039291d35c57199b0fba9f2c8cb7e36fac5e559c9be9681c0313051",
+            "receipt": {}
+          }
+        }
+      ],
+      "finalStateSha256": "255889ea2039291d35c57199b0fba9f2c8cb7e36fac5e559c9be9681c0313051"
+    },
+    {
       "id": "multi-order",
       "campaign": {
         "periodId": 1,
@@ -95442,6 +97191,338 @@
         }
       ],
       "finalStateSha256": "8f7163f58ae98cd4d0bba06a9ae3d5a85297fa4cca23ba779cb3413aef158d95"
+    },
+    {
+      "id": "landless-ruler-transport",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "reserveTroops"
+          ],
+          "value": 500
+        }
+      ],
+      "initialStateSha256": "f0ce9a742e8cb994d98131871b2d79fb853902b675c8afab00ff3f94b1b8b626",
+      "steps": [
+        {
+          "id": "issue-landless-ruler-transport",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-landless-001",
+            "expectedStateSha256": "f0ce9a742e8cb994d98131871b2d79fb853902b675c8afab00ff3f94b1b8b626",
+            "kind": "issue_transport_order",
+            "parameters": {
+              "sourceCityId": "city-8",
+              "targetCityId": "city-3",
+              "officerId": "officer-5",
+              "cargo": {
+                "money": 10,
+                "food": 20,
+                "reserveTroops": 30
+              }
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb08-landless-001",
+            "kind": "issue_transport_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "f0ce9a742e8cb994d98131871b2d79fb853902b675c8afab00ff3f94b1b8b626",
+            "afterStateSha256": "19086e9f5e0f09073abf01aaa021364bbedf6d8b8178bbc3b2fcb3d4bb5c7b5b",
+            "receipt": {
+              "kind": "issue_transport_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-5"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "strategic-order-1",
+                "kind": "transport",
+                "factionId": "ruler-5",
+                "officerId": "officer-5",
+                "sourceCityId": "city-8",
+                "targetCityId": "city-3",
+                "routeCityIds": [
+                  "city-8",
+                  "city-3"
+                ],
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "cargo": {
+                  "money": 10,
+                  "food": 20,
+                  "reserveTroops": 30
+                }
+              },
+              "sourceCity": {
+                "id": "city-8",
+                "before": {
+                  "money": 237,
+                  "food": 505,
+                  "reserveTroops": 500,
+                  "satrapOfficerId": "officer-5"
+                },
+                "after": {
+                  "money": 227,
+                  "food": 485,
+                  "reserveTroops": 470,
+                  "satrapOfficerId": "officer-65"
+                }
+              },
+              "targetCity": {
+                "id": "city-3",
+                "before": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                },
+                "after": {
+                  "money": 107,
+                  "food": 174,
+                  "reserveTroops": 0,
+                  "satrapOfficerId": "officer-64"
+                }
+              },
+              "officer": {
+                "id": "officer-5",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": "city-8",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": null,
+                  "stamina": 92
+                }
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "马腾从天水向安定输送10 金、20 粮、30 后备兵，预计 1 个月完成。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance-landless-ruler-transport",
+          "operation": "advance",
+          "prePatches": [
+            {
+              "path": [
+                "cities",
+                "city-0",
+                "ownerId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "cities",
+                "city-0",
+                "satrapOfficerId"
+              ],
+              "value": "officer-19"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-19",
+                "cityId"
+              ],
+              "value": "city-0"
+            },
+            {
+              "path": [
+                "cities",
+                "city-3",
+                "ownerId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "cities",
+                "city-3",
+                "satrapOfficerId"
+              ],
+              "value": "officer-20"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-20",
+                "cityId"
+              ],
+              "value": "city-3"
+            },
+            {
+              "path": [
+                "cities",
+                "city-8",
+                "ownerId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "cities",
+                "city-8",
+                "satrapOfficerId"
+              ],
+              "value": "officer-21"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-21",
+                "cityId"
+              ],
+              "value": "city-8"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-56",
+                "factionId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-57",
+                "factionId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-58",
+                "factionId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-60",
+                "factionId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-61",
+                "factionId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-62",
+                "factionId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-63",
+                "factionId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-64",
+                "factionId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-65",
+                "factionId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-66",
+                "factionId"
+              ],
+              "value": "ruler-0"
+            }
+          ],
+          "preStateSha256": "1d72dc128e98a6066529c940e33afb99a3d6003ba32bf0c9cf112b1bfec28b99",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "1d72dc128e98a6066529c940e33afb99a3d6003ba32bf0c9cf112b1bfec28b99",
+            "afterStateSha256": "0fd670f2f58f2baecda1732c2c9532d8720751a17ac503d6d3e0b15539652474",
+            "receipt": {
+              "kind": "advance_strategic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 48641,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 4
+              },
+              "completedOrderIds": [
+                "strategic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "turn",
+                  "message": "strategic-order-1因所属势力已经失去全部城池失效，10 金、20 粮、30 后备兵由天水接收。",
+                  "turn": 2
+                },
+                {
+                  "id": "log-2-004",
+                  "kind": "turn",
+                  "message": "马腾所属势力已无城可归，流落至安定。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "0fd670f2f58f2baecda1732c2c9532d8720751a17ac503d6d3e0b15539652474"
     }
   ],
   "strategicLogisticsBoundaryCases": [
@@ -95873,6 +97954,230 @@
         "receipt": {}
       },
       "expectedStateSha256": "5e1a51e2ee2f27510d47b37a1b78b13eb694627be149536253d68ab037c69895"
+    },
+    {
+      "id": "no-owned-route",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "ownerId"
+          ],
+          "value": "ruler-0"
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "satrapOfficerId"
+          ],
+          "value": "officer-19"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-19",
+            "cityId"
+          ],
+          "value": "city-3"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-64",
+            "cityId"
+          ],
+          "value": "city-8"
+        }
+      ],
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-010",
+        "expectedStateSha256": "30ad91774cb9a831dfd0774805650ba6c73e2d6aa668fccdff363417c96fa4ac",
+        "kind": "issue_move_order",
+        "parameters": {
+          "sourceCityId": "city-0",
+          "targetCityId": "city-8",
+          "officerId": "officer-56"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-boundary-010",
+        "kind": "issue_move_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "两座城市之间没有连通的己方道路",
+        "stateChanged": false,
+        "beforeStateSha256": "30ad91774cb9a831dfd0774805650ba6c73e2d6aa668fccdff363417c96fa4ac",
+        "afterStateSha256": "30ad91774cb9a831dfd0774805650ba6c73e2d6aa668fccdff363417c96fa4ac",
+        "receipt": {}
+      },
+      "expectedStateSha256": "30ad91774cb9a831dfd0774805650ba6c73e2d6aa668fccdff363417c96fa4ac"
+    }
+  ],
+  "strategicRouteCases": [
+    {
+      "id": "equal-length-route-uses-ordinal-neighbor-order",
+      "campaign": {
+        "periodId": 3,
+        "rulerSourceIndex": 4
+      },
+      "ownershipPatches": [],
+      "factionId": "ruler-4",
+      "sourceCityId": "city-1",
+      "targetCityId": "city-11",
+      "expectedRouteCityIds": [
+        "city-1",
+        "city-6",
+        "city-12",
+        "city-11"
+      ]
+    },
+    {
+      "id": "owned-endpoints-with-hostile-cut-have-no-route",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "ownershipPatches": [
+        {
+          "cityId": "city-3",
+          "ownerId": "ruler-0"
+        }
+      ],
+      "factionId": "ruler-5",
+      "sourceCityId": "city-0",
+      "targetCityId": "city-8",
+      "expectedRouteCityIds": []
+    }
+  ],
+  "strategicLifecycleCases": [
+    {
+      "id": "source-lost-prefers-source-salvage",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-lifecycle-source-lost-prefers-source-salvage",
+        "expectedStateSha256": "ace11832c6da3428d68c7394952ae78e40694992984caa4587f90c19768677a4",
+        "kind": "issue_transport_order",
+        "parameters": {
+          "sourceCityId": "city-0",
+          "targetCityId": "city-3",
+          "officerId": "officer-56",
+          "cargo": {
+            "money": 10,
+            "food": 20,
+            "reserveTroops": 0
+          }
+        }
+      },
+      "prePatches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "ownerId"
+          ],
+          "value": "ruler-0"
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "satrapOfficerId"
+          ],
+          "value": "officer-19"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-19",
+            "cityId"
+          ],
+          "value": "city-0"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-57",
+            "cityId"
+          ],
+          "value": "city-3"
+        }
+      ],
+      "cancellationInputSha256": "6d06c6ada835155937ccf5e26b7d7fd49180dccbd5b591b026b9e91b129d4f40",
+      "expectedStateSha256": "8dc7dd30ad10e307c606c3db55bce09d7e8700a98ea4ea8b2359c43836e24c04",
+      "expectedLog": "strategic-order-1因执行者失效而终止，10 金、20 粮由西凉接收。"
+    },
+    {
+      "id": "source-index-salvage-order",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb08-lifecycle-source-index-salvage-order",
+        "expectedStateSha256": "ace11832c6da3428d68c7394952ae78e40694992984caa4587f90c19768677a4",
+        "kind": "issue_transport_order",
+        "parameters": {
+          "sourceCityId": "city-0",
+          "targetCityId": "city-3",
+          "officerId": "officer-56",
+          "cargo": {
+            "money": 10,
+            "food": 0,
+            "reserveTroops": 0
+          }
+        }
+      },
+      "prePatches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "money"
+          ],
+          "value": 9007199254740991
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "money"
+          ],
+          "value": 9007199254740991
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "money"
+          ],
+          "value": 9007199254740991
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "money"
+          ],
+          "value": 9007199254740991
+        }
+      ],
+      "cancellationInputSha256": "0b73a790a33e36a3d559c8c2b9c59d6cf20a7cf7c0c02c2763c2d81b606b4c3e",
+      "expectedStateSha256": "4ee4b170f90b4264030021c3c1aa2a46f886b487bae0c5f35ac657fb80f9ff51",
+      "expectedLog": "strategic-order-1因执行者失效而终止，10 金由襄平接收。"
     }
   ],
   "validationCases": [
@@ -95890,6 +98195,20 @@
       ],
       "expectedPath": "cities.city-12.money",
       "expectedMessage": "must be a non-negative safe integer"
+    },
+    {
+      "id": "malformed-city-record-does-not-crash-validator",
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0"
+          ],
+          "value": "malformed"
+        }
+      ],
+      "expectedPath": "cities.city-0",
+      "expectedMessage": "must be an object"
     },
     {
       "id": "captive-former-faction-cannot-be-captor",
@@ -96024,6 +98343,414 @@
       ],
       "expectedPath": "officers.officer-30.death",
       "expectedMessage": "dead officer must retain a death record"
+    },
+    {
+      "id": "strategic-order-unknown-field",
+      "patches": [
+        {
+          "path": [
+            "strategicOrders"
+          ],
+          "value": {
+            "strategic-order-1": {
+              "id": "strategic-order-1",
+              "kind": "transport",
+              "factionId": "ruler-5",
+              "officerId": "officer-56",
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "routeCityIds": [
+                "city-0",
+                "city-3"
+              ],
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "cargo": {
+                "money": 1,
+                "food": 0,
+                "reserveTroops": 0
+              },
+              "surprise": true
+            }
+          }
+        },
+        {
+          "path": [
+            "nextStrategicOrderSerial"
+          ],
+          "value": 2
+        }
+      ],
+      "expectedPath": "strategicOrders.strategic-order-1.surprise",
+      "expectedMessage": "is an unknown field"
+    },
+    {
+      "id": "strategic-cargo-missing-field",
+      "patches": [
+        {
+          "path": [
+            "strategicOrders"
+          ],
+          "value": {
+            "strategic-order-1": {
+              "id": "strategic-order-1",
+              "kind": "transport",
+              "factionId": "ruler-5",
+              "officerId": "officer-56",
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "routeCityIds": [
+                "city-0",
+                "city-3"
+              ],
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "cargo": {
+                "money": 1,
+                "reserveTroops": 0
+              }
+            }
+          }
+        },
+        {
+          "path": [
+            "nextStrategicOrderSerial"
+          ],
+          "value": 2
+        }
+      ],
+      "expectedPath": "strategicOrders.strategic-order-1.cargo.food",
+      "expectedMessage": "must be a non-negative safe integer"
+    },
+    {
+      "id": "strategic-cargo-nested-value-does-not-crash-validator",
+      "patches": [
+        {
+          "path": [
+            "strategicOrders"
+          ],
+          "value": {
+            "strategic-order-1": {
+              "id": "strategic-order-1",
+              "kind": "transport",
+              "factionId": "ruler-5",
+              "officerId": "officer-56",
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "routeCityIds": [
+                "city-0",
+                "city-3"
+              ],
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "cargo": {
+                "money": {},
+                "food": 0,
+                "reserveTroops": 0
+              }
+            }
+          }
+        },
+        {
+          "path": [
+            "nextStrategicOrderSerial"
+          ],
+          "value": 2
+        }
+      ],
+      "expectedPath": "strategicOrders.strategic-order-1.cargo.money",
+      "expectedMessage": "must be a non-negative safe integer"
+    },
+    {
+      "id": "strategic-order-leading-zero-id",
+      "patches": [
+        {
+          "path": [
+            "strategicOrders"
+          ],
+          "value": {
+            "strategic-order-01": {
+              "id": "strategic-order-01",
+              "kind": "transport",
+              "factionId": "ruler-5",
+              "officerId": "officer-56",
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "routeCityIds": [
+                "city-0",
+                "city-3"
+              ],
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "cargo": {
+                "money": 1,
+                "food": 0,
+                "reserveTroops": 0
+              }
+            }
+          }
+        },
+        {
+          "path": [
+            "nextStrategicOrderSerial"
+          ],
+          "value": 2
+        }
+      ],
+      "expectedPath": "strategicOrders.strategic-order-01.id",
+      "expectedMessage": "must use strategic-order-N format"
+    },
+    {
+      "id": "strategic-order-broken-road",
+      "patches": [
+        {
+          "path": [
+            "strategicOrders"
+          ],
+          "value": {
+            "strategic-order-1": {
+              "id": "strategic-order-1",
+              "kind": "transport",
+              "factionId": "ruler-5",
+              "officerId": "officer-56",
+              "sourceCityId": "city-0",
+              "targetCityId": "city-8",
+              "routeCityIds": [
+                "city-0",
+                "city-8"
+              ],
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "cargo": {
+                "money": 1,
+                "food": 0,
+                "reserveTroops": 0
+              }
+            }
+          }
+        },
+        {
+          "path": [
+            "nextStrategicOrderSerial"
+          ],
+          "value": 2
+        }
+      ],
+      "expectedPath": "strategicOrders.strategic-order-1.routeCityIds.1",
+      "expectedMessage": "must follow an existing road"
+    },
+    {
+      "id": "strategic-route-malformed-neighbors-does-not-crash-validator",
+      "patches": [
+        {
+          "path": [
+            "strategicOrders"
+          ],
+          "value": {
+            "strategic-order-1": {
+              "id": "strategic-order-1",
+              "kind": "transport",
+              "factionId": "ruler-5",
+              "officerId": "officer-56",
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "routeCityIds": [
+                "city-0",
+                "city-3"
+              ],
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "cargo": {
+                "money": 1,
+                "food": 0,
+                "reserveTroops": 0
+              }
+            }
+          }
+        },
+        {
+          "path": [
+            "nextStrategicOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "neighbors"
+          ],
+          "value": "malformed"
+        }
+      ],
+      "expectedPath": "cities.city-0.neighbors",
+      "expectedMessage": "must be an array"
+    },
+    {
+      "id": "strategic-order-clock-mismatch",
+      "patches": [
+        {
+          "path": [
+            "strategicOrders"
+          ],
+          "value": {
+            "strategic-order-1": {
+              "id": "strategic-order-1",
+              "kind": "transport",
+              "factionId": "ruler-5",
+              "officerId": "officer-56",
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "routeCityIds": [
+                "city-0",
+                "city-3"
+              ],
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 2,
+              "remainingMonths": 1,
+              "cargo": {
+                "money": 1,
+                "food": 0,
+                "reserveTroops": 0
+              }
+            }
+          }
+        },
+        {
+          "path": [
+            "nextStrategicOrderSerial"
+          ],
+          "value": 2
+        }
+      ],
+      "expectedPath": "strategicOrders.strategic-order-1.remainingMonths",
+      "expectedMessage": "must agree with durationMonths and elapsed campaign turns"
+    },
+    {
+      "id": "strategic-order-duplicate-executor",
+      "patches": [
+        {
+          "path": [
+            "strategicOrders"
+          ],
+          "value": {
+            "strategic-order-1": {
+              "id": "strategic-order-1",
+              "kind": "transport",
+              "factionId": "ruler-5",
+              "officerId": "officer-56",
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "routeCityIds": [
+                "city-0",
+                "city-3"
+              ],
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "cargo": {
+                "money": 1,
+                "food": 0,
+                "reserveTroops": 0
+              }
+            },
+            "strategic-order-2": {
+              "id": "strategic-order-2",
+              "kind": "transport",
+              "factionId": "ruler-5",
+              "officerId": "officer-56",
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "routeCityIds": [
+                "city-0",
+                "city-3"
+              ],
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "cargo": {
+                "money": 1,
+                "food": 0,
+                "reserveTroops": 0
+              }
+            }
+          }
+        },
+        {
+          "path": [
+            "nextStrategicOrderSerial"
+          ],
+          "value": 3
+        }
+      ],
+      "expectedPath": "strategicOrders.strategic-order-2.officerId",
+      "expectedMessage": "officer already has an active order"
+    },
+    {
+      "id": "strategic-order-serial-not-monotonic",
+      "patches": [
+        {
+          "path": [
+            "strategicOrders"
+          ],
+          "value": {
+            "strategic-order-1": {
+              "id": "strategic-order-1",
+              "kind": "transport",
+              "factionId": "ruler-5",
+              "officerId": "officer-56",
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "routeCityIds": [
+                "city-0",
+                "city-3"
+              ],
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "cargo": {
+                "money": 1,
+                "food": 0,
+                "reserveTroops": 0
+              }
+            }
+          }
+        },
+        {
+          "path": [
+            "nextStrategicOrderSerial"
+          ],
+          "value": 1
+        }
+      ],
+      "expectedPath": "nextStrategicOrderSerial",
+      "expectedMessage": "must exceed every active strategic order serial"
     }
   ],
   "modernRulesetCase": {

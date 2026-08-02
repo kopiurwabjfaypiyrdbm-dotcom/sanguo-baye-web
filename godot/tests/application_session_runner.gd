@@ -6,6 +6,7 @@ const ProductionDataRepository = preload("res://src/application/game_session/pro
 const GameSession = preload("res://src/application/game_session/game_session.gd")
 const GameState = preload("res://src/domain/game_state/game_state.gd")
 const InternalAffairs = preload("res://src/domain/commands/internal_affairs_commands.gd")
+const StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
 
 const FIXTURE_PATH: String = "res://data/fixtures/application-session-suite-v1.json"
 
@@ -195,6 +196,8 @@ func _test_transaction_fixture() -> void:
 	_test_personnel_lifecycle_boundary_cases(fixture, campaign)
 	_test_strategic_logistics_sequences(fixture, campaign)
 	_test_strategic_logistics_boundary_cases(fixture, campaign)
+	_test_strategic_route_cases(fixture)
+	_test_strategic_lifecycle_cases(fixture)
 	_test_validation_cases(fixture, campaign)
 	_test_modern_ruleset_case(fixture, campaign)
 
@@ -487,6 +490,58 @@ func _test_strategic_logistics_boundary_cases(fixture: Dictionary, campaign: Dic
 		_assert_true(state_digest["ok"], "%s MB08 boundary state must hash" % test_case["id"])
 		if state_digest["ok"]:
 			_assert_equal(state_digest["value"], test_case["expectedStateSha256"], "%s MB08 boundary state must match TypeScript" % test_case["id"])
+
+
+func _test_strategic_route_cases(fixture: Dictionary) -> void:
+	var cases: Array = fixture.get("strategicRouteCases", [])
+	_assert_true(not cases.is_empty(), "fixture must include MB08 route-order cases")
+	for raw_case: Variant in cases:
+		var test_case: Dictionary = raw_case
+		var session: GameSession = GameSession.new()
+		var campaign: Dictionary = test_case["campaign"]
+		var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+		_assert_true(started["ok"], "%s route campaign must start" % test_case["id"])
+		if not started["ok"]: continue
+		var data: Dictionary = session.snapshot()
+		for raw_patch: Variant in test_case["ownershipPatches"]:
+			var patch: Dictionary = raw_patch
+			data["cities"][patch["cityId"]]["ownerId"] = patch["ownerId"]
+		var actual: Array[String] = StrategicOrders.find_owned_city_route(
+			data, test_case["factionId"], test_case["sourceCityId"], test_case["targetCityId"]
+		)
+		_assert_equal(actual, test_case.get("expectedRouteCityIds", []), "%s route must match TypeScript" % test_case["id"])
+
+
+func _test_strategic_lifecycle_cases(fixture: Dictionary) -> void:
+	var cases: Array = fixture.get("strategicLifecycleCases", [])
+	_assert_true(not cases.is_empty(), "fixture must include MB08 lifecycle-cancellation cases")
+	for raw_case: Variant in cases:
+		var test_case: Dictionary = raw_case
+		var session: GameSession = GameSession.new()
+		var campaign: Dictionary = test_case["campaign"]
+		var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+		_assert_true(started["ok"], "%s lifecycle campaign must start" % test_case["id"])
+		if not started["ok"]: continue
+		var issued: Dictionary = session.execute_command(test_case["command"])
+		_assert_true(issued["ok"], "%s lifecycle transport must issue" % test_case["id"])
+		if not issued["ok"]: continue
+		var input: Dictionary = session.snapshot()
+		_apply_patches(input, test_case["prePatches"])
+		_assert_equal(Validator.validate_runtime(input), [], "%s lifecycle input must validate" % test_case["id"])
+		var input_digest: Dictionary = CanonicalJson.try_sha256(input)
+		_assert_true(input_digest["ok"], "%s lifecycle input must hash" % test_case["id"])
+		if input_digest["ok"]:
+			_assert_equal(input_digest["value"], test_case["cancellationInputSha256"], "%s lifecycle input must match TypeScript" % test_case["id"])
+		var canceled: Dictionary = StrategicOrders.cancel_officer_orders(input, "officer-56", "执行者失效")
+		_assert_true(canceled["ok"], "%s lifecycle cancellation must succeed" % test_case["id"])
+		if not canceled["ok"]: continue
+		var next: Dictionary = canceled["next"]
+		var next_digest: Dictionary = CanonicalJson.try_sha256(next)
+		_assert_true(next_digest["ok"], "%s lifecycle output must hash" % test_case["id"])
+		if next_digest["ok"]:
+			_assert_equal(next_digest["value"], test_case["expectedStateSha256"], "%s lifecycle output must match TypeScript" % test_case["id"])
+		_assert_equal(next["logs"][-1]["message"], test_case["expectedLog"], "%s lifecycle log must match TypeScript" % test_case["id"])
+		_assert_true(input["strategicOrders"].has("strategic-order-1"), "%s lifecycle cancellation must not mutate input" % test_case["id"])
 
 
 func _test_validation_cases(fixture: Dictionary, campaign: Dictionary) -> void:

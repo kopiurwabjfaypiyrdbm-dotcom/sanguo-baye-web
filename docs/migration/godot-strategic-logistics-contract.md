@@ -21,7 +21,7 @@
 
 ## 排序与确定性
 
-生产实体 ID 受 schema 约束为 ASCII 前缀加十进制序号。跨语言顺序定义为这些受约束 ASCII 字符串的 ordinal 字典序，而不是本地化、自然数或 `Dictionary` 插入顺序。城市邻接、回退城市、订单和查询结果都先显式排序。
+生产实体 ID 受 schema 约束为 ASCII 前缀加十进制序号。一般订单推进、道路邻接、常规结算回退、订单和查询结果采用这些受约束 ASCII 字符串的 ordinal 字典序，而不是本地化、自然数或 `Dictionary` 插入顺序。生命周期取消是一个明确例外：为与 Web `cancelOfficerOrders` 对齐，候选先取源城、目标城，再按城市 `sourceIndex`、ID 排序补入己方城和其余城市。
 
 共享 fixture 把两个合法订单重命名为 `strategic-order-2` 与 `strategic-order-10`，要求 `strategic-order-10` 先处理，从而能识别错误的数值排序或容器遍历。TypeScript 现有 `localeCompare` 在该受约束 ASCII 域中的结果由 fixture 固定；若将来允许非 ASCII ID，必须先升级契约与双运行时 fixture。
 
@@ -57,8 +57,7 @@
 
 ## 证据
 
-- `godot/data/fixtures/application-session-suite-v1.json`：106 路完整应用事务，含直达/多段、成功/受损、条件 RNG、三类货物、容量与安全整数、目标易主、稳定订单顺序和失败原子性。
-- `npm run godot:application-session:verify`：Godot 4.7.1 共 838 项断言，与 TypeScript result core、receipt、state、canonical SHA-256 和精确 seed 一致。
-- `npm run godot:project:verify`：144 项领域/历史断言、101 项主场景表现与输入断言。
+- `godot/data/fixtures/application-session-suite-v1.json`：125 路完整应用事务、2 路独立路线案例和 2 路生命周期取消案例，含直达/多段/天然同长/断路、成功/受损、条件 RNG、三类货物跨城分摊、源城失守、无城君主、生命周期源/目标优先与 `sourceIndex` 回收、容量与安全整数、目标易主、全城无容量原子回滚、稳定订单顺序、closed-shape 损坏输入和失败原子性。
+- `npm run godot:application-session:verify`：Godot 4.7.1 共 928 项断言，与 TypeScript result core、receipt、state、canonical SHA-256、生命周期日志和精确 seed 一致。
+- `npm run godot:project:verify`：156 项领域/历史断言、109 项主场景表现与输入断言。
 - MB08 完成报告记录 1280×720、844×390 与最终 Android Debug APK 的设备证据。
-

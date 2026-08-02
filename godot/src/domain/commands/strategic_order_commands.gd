@@ -9,6 +9,7 @@ const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
 const JS_MAX_SAFE_INTEGER: int = 9_007_199_254_740_991
 const CARGO_FIELDS: Array[String] = ["money", "food", "reserveTroops"]
 const COMMAND_KINDS: Array[String] = ["issue_move_order", "issue_transport_order"]
+const TRANSPORT_LOSS_THRESHOLD_PERCENT: int = 20
 
 
 static func execute(state: GameState, kind: String, parameters: Dictionary) -> Dictionary:
@@ -43,7 +44,9 @@ static func advance(state: GameState) -> Dictionary:
 				or officer.get("factionId", "") != order["factionId"]:
 			(next["strategicOrders"] as Dictionary).erase(order_id)
 			if order["kind"] == "transport":
-				_settle_invalid_cargo(next["cities"], order, messages, "执行武将状态变化")
+				var settlement: Dictionary = _settle_invalid_cargo(next["cities"], order, messages, "执行武将状态变化")
+				if not settlement["ok"]:
+					return _failure(settlement["error"])
 			messages.append("%s因执行武将状态变化而失效。" % order_id)
 			completed_ids.append(order_id)
 			continue
@@ -59,7 +62,9 @@ static func advance(state: GameState) -> Dictionary:
 		var source: Dictionary = next["cities"].get(order["sourceCityId"], {})
 		var fallback: Dictionary = _first_owned_city(next["cities"], order["factionId"])
 		if order["kind"] == "transport":
-			_advance_transport(next, order, officer, source, target, fallback, messages)
+			var transport: Dictionary = _advance_transport(next, order, officer, source, target, fallback, messages)
+			if not transport["ok"]:
+				return _failure(transport["error"])
 		else:
 			_advance_move(next, order, officer, source, target, fallback, messages)
 
@@ -100,11 +105,27 @@ static func query_city_catalog(state: GameState, source_city_id: String) -> Dict
 		)
 		if route.is_empty():
 			continue
+		var headroom: Dictionary = {
+			"money": JS_MAX_SAFE_INTEGER - int(city["money"]),
+			"food": JS_MAX_SAFE_INTEGER - int(city["food"]),
+			"reserveTroops": JS_MAX_SAFE_INTEGER - int(city["reserveTroops"]),
+		}
+		var destination_limits: Dictionary = {
+			"money": mini(int(source["money"]), int(headroom["money"])),
+			"food": mini(int(source["food"]), int(headroom["food"])),
+			"reserveTroops": mini(int(source["reserveTroops"]), int(headroom["reserveTroops"])),
+		}
+		var destination_accepts_cargo: bool = int(destination_limits["money"]) > 0 \
+				or int(destination_limits["food"]) > 0 or int(destination_limits["reserveTroops"]) > 0
 		destinations.append({
 			"id": city_id, "name": city["name"], "routeCityIds": route,
 			"durationMonths": route.size() - 1,
 			"money": int(city["money"]), "food": int(city["food"]),
 			"reserveTroops": int(city["reserveTroops"]),
+			"cargoHeadroom": headroom,
+			"cargoLimits": destination_limits,
+			"transportAllowed": destination_accepts_cargo,
+			"transportReason": "" if destination_accepts_cargo else "目标城无接收空间或源城无可输送物资",
 		})
 	destinations.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
 		if int(left["durationMonths"]) != int(right["durationMonths"]):
@@ -113,10 +134,14 @@ static func query_city_catalog(state: GameState, source_city_id: String) -> Dict
 	)
 	var officers: Array[Dictionary] = []
 	var probe_cargo: Dictionary = {"money": 0, "food": 0, "reserveTroops": 0}
-	for field: String in CARGO_FIELDS:
-		if int(source.get(field, 0)) > 0:
-			probe_cargo[field] = 1
-			break
+	var probe_target_id: String = source_city_id
+	for destination: Dictionary in destinations:
+		for field: String in CARGO_FIELDS:
+			if int(destination["cargoLimits"][field]) > 0:
+				probe_cargo[field] = 1
+				probe_target_id = destination["id"]
+				break
+		if probe_target_id != source_city_id: break
 	for raw_officer_id: Variant in data["officerOrder"]:
 		var officer_id: String = str(raw_officer_id)
 		var officer: Dictionary = data["officers"][officer_id]
@@ -132,12 +157,15 @@ static func query_city_catalog(state: GameState, source_city_id: String) -> Dict
 				"targetCityId": destinations[0]["id"],
 				"officerId": officer_id,
 			})
-			transport = _availability_for_data(data, "issue_transport_order", {
-				"sourceCityId": source_city_id,
-				"targetCityId": destinations[0]["id"],
-				"officerId": officer_id,
-				"cargo": probe_cargo,
-			})
+			if probe_target_id != source_city_id:
+				transport = _availability_for_data(data, "issue_transport_order", {
+					"sourceCityId": source_city_id,
+					"targetCityId": probe_target_id,
+					"officerId": officer_id,
+					"cargo": probe_cargo,
+				})
+			else:
+				transport = _unavailable("没有可安全接收物资的己方城市")
 		officers.append({
 			"id": officer_id, "name": officer["name"], "stamina": int(officer["stamina"]),
 			"moveAllowed": bool(move["allowed"]), "moveReason": str(move["reason"]),
@@ -163,7 +191,7 @@ static func query_city_catalog(state: GameState, source_city_id: String) -> Dict
 			"money": int(source["money"]), "food": int(source["food"]),
 			"reserveTroops": int(source["reserveTroops"]),
 		},
-		"lossThresholdPercent": 20,
+		"lossThresholdPercent": TRANSPORT_LOSS_THRESHOLD_PERCENT,
 	}
 
 
@@ -176,7 +204,12 @@ static func cancel_officer_orders(data: Dictionary, officer_id: String, reason: 
 			continue
 		(next["strategicOrders"] as Dictionary).erase(order_id)
 		if order.get("kind", "") == "transport":
-			_settle_invalid_cargo(next["cities"], order, messages, reason)
+			var settlement: Dictionary = _settle_lifecycle_cargo(next["cities"], order)
+			if not settlement["ok"]:
+				return settlement
+			messages.append("%s因%s而终止，%s由%s接收。" % [
+				order_id, reason, _format_cargo(order["cargo"]), "、".join(settlement["destinationNames"]),
+			])
 		else:
 			messages.append("%s因%s而终止。" % [order_id, reason])
 		var executor: Dictionary = next["officers"].get(officer_id, {})
@@ -191,7 +224,9 @@ static func cancel_officer_orders(data: Dictionary, officer_id: String, reason: 
 				returned["cityId"] = destination["id"]
 				next["officers"][officer_id] = returned
 	_append_logs(next, "turn", messages)
-	return _update_city_satraps(next)
+	# Keep this helper byte-for-byte aligned with Web cancelOfficerOrders. The
+	# surrounding lifecycle command owns any later satrap recomputation.
+	return {"ok": true, "error": "", "next": next}
 
 
 static func find_owned_city_route(
@@ -350,13 +385,14 @@ static func _issue(
 static func _advance_transport(
 		next: Dictionary, order: Dictionary, officer: Dictionary, source: Dictionary,
 		target: Dictionary, fallback: Dictionary, messages: Array[String]
-) -> void:
+) -> Dictionary:
 	var return_city: Dictionary = source if not source.is_empty() and source["ownerId"] == order["factionId"] \
 			else (target if not target.is_empty() and target["ownerId"] == order["factionId"] else fallback)
 	if return_city.is_empty():
-		_settle_invalid_cargo(next["cities"], order, messages, "所属势力已经失去全部城池")
+		var settlement: Dictionary = _settle_invalid_cargo(next["cities"], order, messages, "所属势力已经失去全部城池")
+		if not settlement["ok"]: return settlement
 		_release_without_land(next, order, officer, target, source, messages)
-		return
+		return _ok()
 	var returned: Dictionary = officer.duplicate(true)
 	returned["cityId"] = return_city["id"]
 	next["officers"][officer["id"]] = returned
@@ -365,20 +401,23 @@ static func _advance_transport(
 			_credit(next["cities"], return_city["id"], order["cargo"])
 			messages.append("%s因输送目标易主，携%s返回%s。" % [officer["name"], _format_cargo(order["cargo"]), return_city["name"]])
 		else:
-			_settle_invalid_cargo(next["cities"], order, messages, "输送目标易主且返程城市库存已满")
+			var settlement: Dictionary = _settle_invalid_cargo(next["cities"], order, messages, "输送目标易主且返程城市库存已满")
+			if not settlement["ok"]: return settlement
 			messages.append("%s返回%s。" % [officer["name"], return_city["name"]])
-		return
+		return _ok()
 	if not _can_credit(next["cities"][target["id"]], order["cargo"]):
-		_settle_invalid_cargo(next["cities"], order, messages, "%s库存已满" % target["name"])
+		var settlement: Dictionary = _settle_invalid_cargo(next["cities"], order, messages, "%s库存已满" % target["name"])
+		if not settlement["ok"]: return settlement
 		messages.append("%s返回%s。" % [officer["name"], return_city["name"]])
-		return
+		return _ok()
 	var roll: Dictionary = CoreLcg.next_random(int(next["rngSeed"]))
 	next["rngSeed"] = int(roll["seed"])
-	if int(floor(float(roll["value"]) * 100.0)) > 20:
+	if int(floor(float(roll["value"]) * 100.0)) > TRANSPORT_LOSS_THRESHOLD_PERCENT:
 		_credit(next["cities"], target["id"], order["cargo"])
 		messages.append("%s完成对%s的输送，%s入库，并返回%s。" % [officer["name"], target["name"], _format_cargo(order["cargo"]), return_city["name"]])
 	else:
 		messages.append("%s的输送途中受损，%s全部损失，人员返回%s。" % [officer["name"], _format_cargo(order["cargo"]), return_city["name"]])
+	return _ok()
 
 
 static func _advance_move(
@@ -399,7 +438,7 @@ static func _advance_move(
 
 static func _settle_invalid_cargo(
 		cities: Dictionary, order: Dictionary, messages: Array[String], reason: String
-) -> void:
+) -> Dictionary:
 	var candidates: Array[String] = []
 	for city_id: String in [str(order["sourceCityId"]), str(order["targetCityId"])]:
 		if cities.has(city_id) and cities[city_id]["ownerId"] == order["factionId"] and not candidates.has(city_id):
@@ -413,7 +452,10 @@ static func _settle_invalid_cargo(
 	for city_id: String in _sorted_keys(cities):
 		if not candidates.has(city_id):
 			candidates.append(city_id)
-	var destination_ids: Array[String] = _credit_across(cities, candidates, order["cargo"])
+	var credit_result: Dictionary = _credit_across(cities, candidates, order["cargo"])
+	if not credit_result["ok"]:
+		return credit_result
+	var destination_ids: Array[String] = credit_result["destinationIds"]
 	var names: Array[String] = []
 	var refunded: bool = true
 	for city_id: String in destination_ids:
@@ -423,6 +465,23 @@ static func _settle_invalid_cargo(
 		order["id"], reason, _format_cargo(order["cargo"]),
 		"退回" if refunded else "由", "、".join(names) + ("" if refunded else "接收"),
 	])
+	return _ok()
+
+
+static func _settle_lifecycle_cargo(cities: Dictionary, order: Dictionary) -> Dictionary:
+	var candidates: Array[String] = []
+	for city_id: String in [str(order["sourceCityId"]), str(order["targetCityId"])]:
+		if cities.has(city_id) and not candidates.has(city_id): candidates.append(city_id)
+	for city_id: String in _sorted_city_ids_by_source(cities):
+		if cities[city_id]["ownerId"] == order["factionId"] and not candidates.has(city_id):
+			candidates.append(city_id)
+	for city_id: String in _sorted_city_ids_by_source(cities):
+		if not candidates.has(city_id): candidates.append(city_id)
+	var credit_result: Dictionary = _credit_across(cities, candidates, order["cargo"])
+	if not credit_result["ok"]: return credit_result
+	var names: Array[String] = []
+	for city_id: String in credit_result["destinationIds"]: names.append(str(cities[city_id]["name"]))
+	return {"ok": true, "error": "", "destinationNames": names}
 
 
 static func _release_without_land(
@@ -569,22 +628,26 @@ static func _credit(cities: Dictionary, city_id: String, cargo: Dictionary) -> v
 	cities[city_id] = city
 
 
-static func _credit_across(cities: Dictionary, candidates: Array[String], cargo: Dictionary) -> Array[String]:
-	var destinations: Array[String] = []
+static func _credit_across(cities: Dictionary, candidates: Array[String], cargo: Dictionary) -> Dictionary:
+	var placements: Dictionary = {}
 	for field: String in CARGO_FIELDS:
 		var amount: int = int(cargo[field])
 		if amount == 0: continue
-		var placed: bool = false
 		for city_id: String in candidates:
 			if int(cities[city_id][field]) <= JS_MAX_SAFE_INTEGER - amount:
-				var city: Dictionary = cities[city_id].duplicate(true)
-				city[field] = int(city[field]) + amount
-				cities[city_id] = city
-				if not destinations.has(city_id): destinations.append(city_id)
-				placed = true
+				placements[field] = city_id
 				break
-		assert(placed, "没有城市可以安全接收运输资源：%s" % field)
-	return destinations
+		if not placements.has(field):
+			return {"ok": false, "error": "没有城市可以安全接收运输资源：%s" % field}
+	var destinations: Array[String] = []
+	for field: String in CARGO_FIELDS:
+		if not placements.has(field): continue
+		var city_id: String = placements[field]
+		var city: Dictionary = cities[city_id].duplicate(true)
+		city[field] = int(city[field]) + int(cargo[field])
+		cities[city_id] = city
+		if not destinations.has(city_id): destinations.append(city_id)
+	return {"ok": true, "error": "", "destinationIds": destinations}
 
 
 static func _can_credit(city: Dictionary, cargo: Dictionary) -> bool:
@@ -631,17 +694,31 @@ static func _sorted_keys(record: Dictionary) -> Array[String]:
 	return keys
 
 
+static func _sorted_city_ids_by_source(cities: Dictionary) -> Array[String]:
+	var ids: Array[String] = _sorted_keys(cities)
+	ids.sort_custom(func(left: String, right: String) -> bool:
+		var left_index: int = int(cities[left].get("sourceIndex", JS_MAX_SAFE_INTEGER))
+		var right_index: int = int(cities[right].get("sourceIndex", JS_MAX_SAFE_INTEGER))
+		return left_index < right_index if left_index != right_index else left < right
+	)
+	return ids
+
+
 static func _is_non_negative_safe_integer(raw: Variant) -> bool:
 	return (typeof(raw) == TYPE_INT or typeof(raw) == TYPE_FLOAT) and is_finite(float(raw)) \
 			and floor(float(raw)) == float(raw) and int(raw) >= 0 and int(raw) <= JS_MAX_SAFE_INTEGER
 
 
 static func _empty_catalog(reason: String) -> Dictionary:
-	return {"allowed": false, "reason": reason, "sourceCityId": "", "destinations": [], "officers": [], "activeOrders": [], "moveStaminaCost": 0, "transportStaminaCost": 0, "cargoLimits": {"money": 0, "food": 0, "reserveTroops": 0}, "lossThresholdPercent": 20}
+	return {"allowed": false, "reason": reason, "sourceCityId": "", "destinations": [], "officers": [], "activeOrders": [], "moveStaminaCost": 0, "transportStaminaCost": 0, "cargoLimits": {"money": 0, "food": 0, "reserveTroops": 0}, "lossThresholdPercent": TRANSPORT_LOSS_THRESHOLD_PERCENT}
 
 
 static func _unavailable(reason: String) -> Dictionary:
 	return {"allowed": false, "reason": reason}
+
+
+static func _ok() -> Dictionary:
+	return {"ok": true, "error": ""}
 
 
 static func _failure(reason: String) -> Dictionary:

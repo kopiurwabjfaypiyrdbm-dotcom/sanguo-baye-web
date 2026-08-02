@@ -35,6 +35,12 @@ const ALLOWED: Dictionary = {
 		"armsTypeOverride", "appearanceYear", "appearanceCityId",
 	],
 	"armsType": ["id", "name", "attackModifier", "defenseModifier", "mobility"],
+	"strategicOrder": [
+		"id", "kind", "factionId", "officerId", "sourceCityId", "targetCityId",
+		"routeCityIds", "createdTurn", "createdYear", "createdMonth", "durationMonths",
+		"remainingMonths", "cargo",
+	],
+	"strategicCargo": ["money", "food", "reserveTroops"],
 	"log": ["id", "turn", "kind", "message"],
 }
 
@@ -67,6 +73,20 @@ static func validate(state: Dictionary) -> Array[Dictionary]:
 				)
 	_validate_record(state.get("items"), ALLOWED["item"], "items", issues)
 	_validate_record(state.get("armsTypes"), ALLOWED["armsType"], "armsTypes", issues)
+	_validate_record(state.get("strategicOrders"), ALLOWED["strategicOrder"], "strategicOrders", issues)
+	var raw_orders: Variant = state.get("strategicOrders")
+	if raw_orders is Dictionary:
+		var orders: Dictionary = raw_orders
+		var order_ids: Array[String] = []
+		for raw_order_id: Variant in orders.keys(): order_ids.append(str(raw_order_id))
+		order_ids.sort()
+		for order_id: String in order_ids:
+			var raw_order: Variant = orders[order_id]
+			if raw_order is Dictionary and (raw_order as Dictionary).has("cargo"):
+				_validate_object(
+					(raw_order as Dictionary)["cargo"], ALLOWED["strategicCargo"],
+					"strategicOrders.%s.cargo" % order_id, issues
+				)
 	var logs: Variant = state.get("logs")
 	if logs is Array:
 		for index: int in range((logs as Array).size()):
