@@ -237,7 +237,7 @@ func _test_spike_contract_rejects_unmigrated_web_states() -> void:
 
 func _test_save_load_equivalence() -> void:
 	var session: GameSession = GameSession.new(TEST_SAVE_PATH)
-	var started: Dictionary = session.start_period_1()
+	var started: Dictionary = session.start_spike_period_1()
 	_assert_true(started["ok"], "test session must load period-1: %s" % started.get("error", ""))
 	if not started["ok"]:
 		return
@@ -289,6 +289,21 @@ func _test_save_load_equivalence() -> void:
 		_assert_true(
 			String(rejected["error"]).contains("无法识别"),
 			"format rejection must explain that the save format is unknown"
+		)
+
+	var v2_envelope: Dictionary = saved["envelope"].duplicate(true)
+	var production_period: Dictionary = _read_dictionary("res://data/campaigns/period-1.json")
+	v2_envelope["state"] = production_period["state"]
+	file = FileAccess.open(TEST_SAVE_PATH, FileAccess.WRITE)
+	_assert_true(file != null, "test must be able to write a v2 state under the spike envelope")
+	if file != null:
+		file.store_string(JSON.stringify(v2_envelope, "\t", true))
+		file.close()
+		var rejected_v2: Dictionary = SaveRepository.new(TEST_SAVE_PATH).load()
+		_assert_true(not rejected_v2["ok"], "MB01 spike repository must reject production v2 states")
+		_assert_true(
+			String(rejected_v2["error"]).contains("dataContractVersion 1"),
+			"v2-under-spike rejection must identify the contract mismatch"
 		)
 
 

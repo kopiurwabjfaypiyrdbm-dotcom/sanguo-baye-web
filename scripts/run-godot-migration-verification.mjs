@@ -14,6 +14,10 @@ const localAppData = resolve(runtimeRoot, 'localappdata');
 mkdirSync(appData, { recursive: true });
 mkdirSync(localAppData, { recursive: true });
 const godotEnv = { ...process.env, APPDATA: appData, LOCALAPPDATA: localAppData };
+godotEnv.XDG_CONFIG_HOME = resolve(runtimeRoot, 'xdg-config');
+godotEnv.XDG_CACHE_HOME = resolve(runtimeRoot, 'xdg-cache');
+godotEnv.XDG_DATA_HOME = resolve(runtimeRoot, 'xdg-data');
+for (const path of [godotEnv.XDG_CONFIG_HOME, godotEnv.XDG_CACHE_HOME, godotEnv.XDG_DATA_HOME]) mkdirSync(path, { recursive: true });
 const common = ['--headless', '--path', godotProject, '--script', 'res://tests/migration_replay_runner.gd'];
 
 const version = spawnSync(engine, ['--version'], { cwd: root, env: godotEnv, encoding: 'utf8', timeout: 60_000 });

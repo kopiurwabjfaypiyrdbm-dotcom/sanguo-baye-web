@@ -36,6 +36,7 @@ var _selected_city_id := ""
 var _camera_tween: Tween
 var _compact_layout := false
 var _command_serial := 0
+var _spike_persistence_enabled := false
 
 var _mouse_pressed := false
 var _mouse_dragging := false
@@ -62,6 +63,12 @@ func _ready() -> void:
 		_set_status(tr("时期 1 载入失败：%s") % _result_error(result), "error")
 		return
 	_refresh_snapshot(false)
+	_spike_persistence_enabled = bool(_as_dictionary(result.get("campaign", {})).get("legacySpike", false))
+	save_button.disabled = not _spike_persistence_enabled
+	load_button.disabled = not _spike_persistence_enabled
+	if not _spike_persistence_enabled:
+		save_button.tooltip_text = tr("生产存档将在 MB20 实现")
+		load_button.tooltip_text = tr("生产存档将在 MB20 实现")
 	_set_status(tr("已载入时期 1 · 拖动地图，点击城池下令"), "ready")
 	call_deferred("_focus_world")
 
@@ -162,12 +169,12 @@ func _select_city(city_id: String) -> void:
 
 
 func _show_selected_city_card() -> void:
-	var default_executor := ""
+	var command_query: Dictionary = {}
 	if is_instance_valid(_session) and _session.has_method("city_query"):
 		var query: Variant = _session.call("city_query", _selected_city_id)
 		if query is Dictionary:
-			default_executor = str(_as_dictionary(query.get("developFarming", {})).get("defaultOfficerId", ""))
-	city_card.show_city(_snapshot, _selected_city_id, default_executor)
+			command_query = _as_dictionary(query.get("developFarming", {}))
+	city_card.show_city(_snapshot, _selected_city_id, command_query)
 	city_card.place_near(map_world.get_city_screen_position(_selected_city_id), _get_card_usable_rect())
 
 
@@ -206,6 +213,9 @@ func _execute_develop_farming(city_id: String, officer_id: String) -> void:
 
 
 func _save_game() -> void:
+	if not _spike_persistence_enabled:
+		_set_status(tr("生产存档将在 MB20 实现"), "warning")
+		return
 	_set_interaction_busy(true)
 	var result := _call_session("save_game")
 	_set_interaction_busy(false)
@@ -216,6 +226,9 @@ func _save_game() -> void:
 
 
 func _load_game() -> void:
+	if not _spike_persistence_enabled:
+		_set_status(tr("生产存档将在 MB20 实现"), "warning")
+		return
 	_set_interaction_busy(true)
 	# Recreating the facade verifies the save is not relying on scene-memory state.
 	var replacement: Object = GAME_SESSION_SCRIPT.new()
@@ -510,8 +523,8 @@ func _apply_responsive_labels() -> void:
 
 
 func _set_interaction_busy(busy: bool) -> void:
-	save_button.disabled = busy
-	load_button.disabled = busy
+	save_button.disabled = busy or not _spike_persistence_enabled
+	load_button.disabled = busy or not _spike_persistence_enabled
 	world_button.disabled = busy
 	player_button.disabled = busy
 	city_card.set_busy(busy)

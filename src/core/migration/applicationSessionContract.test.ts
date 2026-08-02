@@ -44,5 +44,30 @@ describe('Godot production application session oracle', () => {
       code: 'invalid_envelope',
       error: 'unknown command envelope field: a',
     });
+    expect(validateEnvelope({
+      commandEnvelopeVersion: 1,
+      commandId: '\u00a0',
+      expectedStateSha256: '0'.repeat(64),
+      kind: 'develop_farming',
+      parameters: { cityId: 'city-12', officerId: 'officer-1' },
+    })).toEqual({
+      ok: false,
+      code: 'invalid_command_id',
+      error: 'commandId must be a non-blank string',
+    });
+  });
+
+  it('rejects malformed Unicode without throwing from canonical hashing', () => {
+    const initial = createProductionSessionState(1, 1);
+    const session = new OracleApplicationSession(initial);
+    const result = session.execute({
+      commandEnvelopeVersion: 1,
+      commandId: '\ud800',
+      expectedStateSha256: canonicalSha256(initial),
+      kind: 'develop_farming',
+      parameters: { cityId: 'city-12', officerId: 'officer-1' },
+    });
+    expect(result).toMatchObject({ ok: false, code: 'invalid_envelope', stateChanged: false });
+    expect(canonicalSha256(session.snapshot())).toBe(canonicalSha256(initial));
   });
 });

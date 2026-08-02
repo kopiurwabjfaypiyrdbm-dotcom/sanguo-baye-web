@@ -11,7 +11,7 @@ const UINT32_MASK: int = 0xffff_ffff
 
 static func execute(state: GameState, city_id: String, officer_id: String) -> Dictionary:
 	var before: Dictionary = state.snapshot()
-	var input_issues: Array[Dictionary] = Validator.validate(before)
+	var input_issues: Array[Dictionary] = Validator.validate_runtime(before)
 	if not input_issues.is_empty():
 		return _failure(Validator.first_error(input_issues))
 
@@ -68,7 +68,7 @@ static func execute(state: GameState, city_id: String, officer_id: String) -> Di
 	next_logs.append(appended_log)
 	next_data["logs"] = next_logs
 
-	var output_issues: Array[Dictionary] = Validator.validate(next_data)
+	var output_issues: Array[Dictionary] = Validator.validate_runtime(next_data)
 	if not output_issues.is_empty():
 		return _failure(Validator.first_error(output_issues))
 
@@ -109,7 +109,7 @@ static func execute(state: GameState, city_id: String, officer_id: String) -> Di
 
 static func get_availability(state: GameState, city_id: String, officer_id: String) -> Dictionary:
 	var data: Dictionary = state.snapshot()
-	var issues: Array[Dictionary] = Validator.validate(data)
+	var issues: Array[Dictionary] = Validator.validate_runtime(data)
 	if not issues.is_empty():
 		return {"allowed": false, "reason": Validator.first_error(issues)}
 	var result: Dictionary = _availability_for_data(data, city_id, officer_id)
@@ -117,6 +117,35 @@ static func get_availability(state: GameState, city_id: String, officer_id: Stri
 		"allowed": result["allowed"],
 		"reason": result.get("reason", ""),
 	}
+
+
+static func list_available_executors(state: GameState, city_id: String) -> Dictionary:
+	var data: Dictionary = state.snapshot()
+	var issues: Array[Dictionary] = Validator.validate_runtime(data)
+	if not issues.is_empty():
+		return {"executorIds": [], "reason": Validator.first_error(issues)}
+	var executor_ids: Array[String] = []
+	var candidate_reason: String = "没有可执行开垦的武将"
+	var officers: Dictionary = data["officers"]
+	for raw_officer_id: Variant in data["officerOrder"]:
+		var officer_id: String = raw_officer_id
+		var result: Dictionary = _availability_for_data(data, city_id, officer_id)
+		if result["allowed"]:
+			executor_ids.append(officer_id)
+		elif candidate_reason == "没有可执行开垦的武将":
+			var officer: Dictionary = officers[officer_id]
+			if officer.get("cityId", "") == city_id \
+					and officer.get("factionId", "") == data["activeFactionId"] \
+					and officer.get("status", "") == "serving":
+				candidate_reason = result["reason"]
+	if not executor_ids.is_empty():
+		return {"executorIds": executor_ids, "reason": ""}
+	var city_level: Dictionary = _availability_for_data(data, city_id, "")
+	if String(city_level.get("reason", "")).contains("己方城池") \
+			or String(city_level.get("reason", "")).contains("战役已经结束") \
+			or String(city_level.get("reason", "")).contains("拥立新君"):
+		candidate_reason = city_level["reason"]
+	return {"executorIds": executor_ids, "reason": candidate_reason}
 
 
 static func _availability_for_data(data: Dictionary, city_id: String, officer_id: String) -> Dictionary:

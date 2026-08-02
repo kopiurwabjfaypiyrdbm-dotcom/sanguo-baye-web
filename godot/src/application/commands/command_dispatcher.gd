@@ -1,13 +1,14 @@
 class_name CommandDispatcher
 extends RefCounted
 
-const DevelopFarming = preload("res://src/domain/commands/develop_farming_command.gd")
+const DevelopFarmingAdapter = preload("res://src/application/commands/develop_farming_adapter.gd")
+const StringContract = preload("res://src/application/commands/application_string_contract.gd")
 
 const ENVELOPE_VERSION: int = 1
 const ENVELOPE_KEYS: Array[String] = [
 	"commandEnvelopeVersion", "commandId", "expectedStateSha256", "kind", "parameters",
 ]
-const DEVELOP_FARMING_KEYS: Array[String] = ["cityId", "officerId"]
+const ADAPTERS: Dictionary = {"develop_farming": DevelopFarmingAdapter}
 
 
 static func validate_envelope(raw: Variant) -> Dictionary:
@@ -33,15 +34,12 @@ static func validate_envelope(raw: Variant) -> Dictionary:
 		return _failure("invalid_parameters", "parameters must be an object")
 
 	var kind: String = envelope["kind"]
-	if kind != "develop_farming":
+	if not ADAPTERS.has(kind):
 		return _failure("unknown_command", "unsupported command kind: %s" % kind)
 	var parameters: Dictionary = envelope["parameters"]
-	unknown_keys = _unknown_keys(parameters, DEVELOP_FARMING_KEYS)
-	if not unknown_keys.is_empty():
-		return _failure("invalid_parameters", "unknown develop_farming parameter: %s" % unknown_keys[0])
-	for key: String in DEVELOP_FARMING_KEYS:
-		if not parameters.has(key) or not _is_non_blank_string(parameters[key]):
-			return _failure("invalid_parameters", "%s must be a non-blank string" % key)
+	var parameter_result: Dictionary = ADAPTERS[kind].validate_parameters(parameters)
+	if not parameter_result["ok"]:
+		return _failure("invalid_parameters", parameter_result["error"])
 	return {
 		"ok": true,
 		"code": "ok",
@@ -51,11 +49,10 @@ static func validate_envelope(raw: Variant) -> Dictionary:
 
 
 static func dispatch(state: RefCounted, envelope: Dictionary) -> Dictionary:
-	match String(envelope["kind"]):
-		"develop_farming":
-			var parameters: Dictionary = envelope["parameters"]
-			return DevelopFarming.execute(state, parameters["cityId"], parameters["officerId"])
-	return _failure("unknown_command", "unsupported command kind: %s" % envelope["kind"])
+	var kind: String = envelope["kind"]
+	if not ADAPTERS.has(kind):
+		return _failure("unknown_command", "unsupported command kind: %s" % kind)
+	return ADAPTERS[kind].execute(state, envelope["parameters"])
 
 
 static func _unknown_keys(record: Dictionary, allowed: Array[String]) -> Array[String]:
@@ -69,11 +66,13 @@ static func _unknown_keys(record: Dictionary, allowed: Array[String]) -> Array[S
 
 
 static func _is_integer(raw: Variant) -> bool:
-	return (typeof(raw) == TYPE_INT or typeof(raw) == TYPE_FLOAT) and floor(float(raw)) == float(raw)
+	return (typeof(raw) == TYPE_INT or typeof(raw) == TYPE_FLOAT) \
+			and is_finite(float(raw)) \
+			and floor(float(raw)) == float(raw)
 
 
 static func _is_non_blank_string(raw: Variant) -> bool:
-	return typeof(raw) == TYPE_STRING and not String(raw).strip_edges().is_empty()
+	return StringContract.is_non_blank(raw)
 
 
 static func _is_sha256(raw: Variant) -> bool:

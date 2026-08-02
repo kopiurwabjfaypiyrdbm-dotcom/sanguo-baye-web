@@ -27,7 +27,7 @@
 ## 事务和幂等
 
 - `expectedStateSha256` 是乐观并发门；陈旧请求不进入领域命令。
-- 成功请求按 `commandId + canonical request SHA-256` 缓存。完全相同的重复提交返回首次结果，不再次消耗 RNG；同 ID 不同请求返回 `command_id_conflict`。
+- 成功请求按 `commandId + canonical request SHA-256` 进入显式有序的 256 条紧凑幂等窗口，缓存不含完整状态。紧邻的完全相同重复可重建首次 result；状态已继续前进时返回 `ok: true / code: already_committed / stateChanged: false` 和当前快照，不再次消耗 RNG；同 ID 不同请求返回 `command_id_conflict`。超出窗口的旧请求因 before 摘要陈旧而拒绝，窗口淘汰不依赖 Dictionary 顺序。
 - 领域拒绝、错误 envelope、陈旧摘要、ID 冲突、next state 校验或摘要失败均不替换状态。
 - ID 由调用者的显式稳定序号产生，不使用系统时间、随机 UUID、帧序或默认 RNG。
 - UI 在事务后重新读取会话快照，绝不把 result 中的证据状态反向写进会话。
@@ -36,9 +36,13 @@
 
 `game_session_queries.gd` 负责城市详情、开垦可用性和默认执行者。默认执行者只按领域 `officerOrder` 选择；查询从深拷贝读取且不改变 seed、日志或行动列表。表现层仍可用快照绘制地图，但不自行判断命令合法性。
 
+`restore_snapshot()` 提供 MB04 范围内的内存恢复演练：先深拷贝、完整校验和计算 canonical 摘要，再一次替换状态并清空进程内命令缓存。它不是生产存档 schema；多槽存档、命令幂等记录持久化和版本迁移仍属于 MB20。
+
+生产会话只加载并缓存当前时期的 catalog entry、envelope 和初始状态；切换时期时替换该缓存，不在 Android 主线程常驻四时期解码状态。MB01 `sanguo-baye-godot-spike` 存档仓库只接受 `dataContractVersion: 1`；生产 v2 主场景禁用存读入口，避免在 MB20 前伪装成样片存档。
+
 ## 跨语言证据
 
-`src/core/migration/applicationSessionContract.ts` 是 Web oracle 适配器；`godot/data/fixtures/application-session-suite-v1.json` 记录时期 1/曹操的成功、完全重复、陈旧摘要、领域拒绝、ID 冲突、未知命令和错误参数。生成器与 Godot runner 分别为：
+`src/core/migration/applicationSessionContract.ts` 是 Web oracle 适配器；`godot/data/fixtures/application-session-suite-v1.json` 记录时期 1/曹操的成功、完全重复、陈旧摘要、领域拒绝、ID 冲突、未知命令、未知版本、缺失/错误参数、稳定字段错误顺序及 Unicode 空白字符串拒绝。双方以显式 ECMAScript TrimString 码点集合定义“非空字符串”，不依赖宿主 `trim()`/`strip_edges()` 差异。生成器与 Godot runner 分别为：
 
 ```powershell
 npm run godot:application-session:generate
@@ -46,4 +50,4 @@ npm run godot:application-session:check
 npm run godot:application-session:verify
 ```
 
-验证脚本把 `APPDATA` 和 `LOCALAPPDATA` 重定向到被忽略的 `godot/.godot/runtime/`。这是为了隔离 Godot 4.7.1 编辑器缓存并支持受限/CI 环境，不改变游戏运行时路径或 APK 内容。
+验证脚本把 Windows `APPDATA/LOCALAPPDATA` 和跨平台 `XDG_CONFIG_HOME/XDG_CACHE_HOME/XDG_DATA_HOME` 重定向到被忽略的 `godot/.godot/runtime/`。`npm run godot:project:verify` 统一覆盖领域、表现/触控、editor import 和主场景启动；隔离不改变游戏运行时路径或 APK 内容。

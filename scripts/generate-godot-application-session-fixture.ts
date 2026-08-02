@@ -39,7 +39,8 @@ export function buildFixture() {
   };
   const steps: { id: string; command: unknown; expected: unknown }[] = [];
   const apply = (id: string, command: unknown) => steps.push({ id, command, expected: session.execute(command) });
-  apply('success', success);
+  const firstResult = session.execute(success);
+  steps.push({ id: 'success', command: success, expected: firstResult });
   apply('exact-duplicate', success);
   apply('stale-before-digest', { ...success, commandId: 'mb04-stale-0002' });
   apply('domain-rejection', {
@@ -59,17 +60,60 @@ export function buildFixture() {
     kind: 'unknown',
     parameters: {},
   });
+  apply('unsupported-version', {
+    ...success,
+    commandEnvelopeVersion: 2,
+    commandId: 'mb04-version-0005',
+    expectedStateSha256: canonicalSha256(session.snapshot()),
+  });
+  apply('missing-parameter', {
+    ...success,
+    commandId: 'mb04-missing-0006',
+    expectedStateSha256: canonicalSha256(session.snapshot()),
+    parameters: { cityId: 'city-12' },
+  });
+  apply('sorted-unknown-field-error', {
+    ...success,
+    commandId: 'mb04-fields-0007',
+    expectedStateSha256: canonicalSha256(session.snapshot()),
+    ['\u{10000}']: true,
+    ['\ue000']: true,
+  });
   apply('wrong-parameter-type', {
     ...success,
-    commandId: 'mb04-invalid-0005',
+    commandId: 'mb04-invalid-0008',
     expectedStateSha256: canonicalSha256(session.snapshot()),
     parameters: { cityId: 12, officerId: 'officer-1' },
   });
+  apply('non-breaking-space-command-id', {
+    ...success,
+    commandId: '\u00a0',
+    expectedStateSha256: canonicalSha256(session.snapshot()),
+  });
+  const restoredSession = new OracleApplicationSession(firstResult.state);
+  const continuationCommand: ApplicationCommandEnvelope = {
+    commandEnvelopeVersion: 1,
+    commandId: 'mb04-restored-0009',
+    expectedStateSha256: canonicalSha256(restoredSession.snapshot()),
+    kind: 'develop_farming',
+    parameters: { cityId: 'city-12', officerId: 'officer-32' },
+  };
+  const continuationExpected = restoredSession.execute(continuationCommand);
+  apply('second-success', continuationCommand);
+  apply('advanced-duplicate', success);
   return {
     applicationSessionFixtureVersion: 1,
-    algorithms: { canonicalJson: 'canonical-json-v1', digest: 'sha256' },
+    algorithms: {
+      canonicalJson: 'canonical-json-v1',
+      digest: 'sha256',
+      numberDomain: 'safe-integer-or-decimal-6-v1',
+    },
     campaign: { periodId: 1, rulerSourceIndex: 1, initialStateSha256: initialDigest },
     steps,
     finalStateSha256: canonicalSha256(session.snapshot()),
+    restoredContinuation: {
+      command: continuationCommand,
+      expected: continuationExpected,
+    },
   };
 }

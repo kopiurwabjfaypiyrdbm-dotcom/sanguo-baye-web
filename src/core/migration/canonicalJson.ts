@@ -68,7 +68,7 @@ export function canonicalSha256(value: unknown): string {
   return createHash('sha256').update(canonicalJson(value), 'utf8').digest('hex');
 }
 
-function compareUnicodeScalar(left: string, right: string): number {
+export function compareUnicodeScalar(left: string, right: string): number {
   const leftPoints = [...left].map((character) => character.codePointAt(0) ?? 0);
   const rightPoints = [...right].map((character) => character.codePointAt(0) ?? 0);
   const sharedLength = Math.min(leftPoints.length, rightPoints.length);

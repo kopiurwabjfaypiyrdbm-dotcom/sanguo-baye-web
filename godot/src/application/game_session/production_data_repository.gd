@@ -33,36 +33,83 @@ static func load_all() -> Dictionary:
 	for raw_entry: Variant in (catalog as Dictionary)["periods"]:
 		var entry: Dictionary = raw_entry
 		var period_id: int = int(entry["periodId"])
-		var envelope_result: Dictionary = _read_json(ALLOWED_PERIOD_PATHS[period_id])
-		if not envelope_result["ok"]:
-			failures.append(envelope_result["error"])
+		var period_result: Dictionary = _load_validated_period(entry)
+		if not period_result["ok"]:
+			failures.append_array(period_result["failures"])
 			continue
-		var envelope: Variant = envelope_result["value"]
-		var period_issues: Array[String] = ProductionDataValidator.validate_envelope(envelope)
-		if typeof(envelope) != TYPE_DICTIONARY \
-				or typeof((envelope as Dictionary).get("scenario")) != TYPE_DICTIONARY \
-				or int(((envelope as Dictionary).get("scenario") as Dictionary).get("periodId", -1)) != period_id:
-			period_issues.append("scenario.periodId: must match catalog periodId %d" % period_id)
-		for issue: String in period_issues:
-			failures.append("period-%d: %s" % [period_id, issue])
-		var digest: Dictionary = CanonicalJson.try_sha256(envelope)
-		if not digest["ok"]:
-			failures.append("period-%d.envelopeSha256: %s" % [period_id, digest["error"]])
-		elif digest["value"] != entry["envelopeSha256"]:
-			failures.append("period-%d.envelopeSha256: mismatch" % period_id)
-		if typeof(envelope) == TYPE_DICTIONARY:
-			if entry.get("stateSha256") != (envelope as Dictionary).get("stateSha256"):
-				failures.append("period-%d.stateSha256: catalog mismatch" % period_id)
-			var catalog_facts: Dictionary = CanonicalJson.try_sha256(entry.get("facts"))
-			var envelope_facts: Dictionary = CanonicalJson.try_sha256((envelope as Dictionary).get("facts"))
-			if not catalog_facts["ok"] or not envelope_facts["ok"] or catalog_facts["value"] != envelope_facts["value"]:
-				failures.append("period-%d.facts: catalog mismatch" % period_id)
-		if period_issues.is_empty() and digest["ok"]:
-			envelopes[period_id] = envelope
-			states[period_id] = GameState.new((envelope as Dictionary)["state"])
+		envelopes[period_id] = period_result["envelope"]
+		states[period_id] = period_result["state"]
 	if not failures.is_empty():
 		return _failure(failures)
 	return {"ok": true, "error": "", "failures": [], "catalog": catalog, "envelopes": envelopes, "states": states}
+
+
+static func load_period(period_id: int) -> Dictionary:
+	if not ALLOWED_PERIOD_PATHS.has(period_id):
+		return _failure(["unknown production period: %d" % period_id])
+	var catalog_result: Dictionary = _read_json(CATALOG_PATH)
+	if not catalog_result["ok"]:
+		return catalog_result
+	var catalog: Variant = catalog_result["value"]
+	var failures: Array[String] = _validate_catalog_shape(catalog)
+	if not failures.is_empty():
+		return _failure(failures)
+	var entry: Dictionary = {}
+	for raw_entry: Variant in (catalog as Dictionary)["periods"]:
+		if int((raw_entry as Dictionary)["periodId"]) == period_id:
+			entry = raw_entry
+			break
+	if entry.is_empty():
+		return _failure(["catalog does not contain period %d" % period_id])
+	var period_result: Dictionary = _load_validated_period(entry)
+	if not period_result["ok"]:
+		return period_result
+	return {
+		"ok": true,
+		"error": "",
+		"failures": [],
+		"catalog": catalog,
+		"periodId": period_id,
+		"envelope": period_result["envelope"],
+		"state": period_result["state"],
+	}
+
+
+static func _load_validated_period(entry: Dictionary) -> Dictionary:
+	var period_id: int = int(entry["periodId"])
+	var failures: Array[String] = []
+	var envelope_result: Dictionary = _read_json(ALLOWED_PERIOD_PATHS[period_id])
+	if not envelope_result["ok"]:
+		return envelope_result
+	var envelope: Variant = envelope_result["value"]
+	var period_issues: Array[String] = ProductionDataValidator.validate_envelope(envelope)
+	if typeof(envelope) != TYPE_DICTIONARY \
+			or typeof((envelope as Dictionary).get("scenario")) != TYPE_DICTIONARY \
+			or int(((envelope as Dictionary).get("scenario") as Dictionary).get("periodId", -1)) != period_id:
+		period_issues.append("scenario.periodId: must match catalog periodId %d" % period_id)
+	for issue: String in period_issues:
+		failures.append("period-%d: %s" % [period_id, issue])
+	var digest: Dictionary = CanonicalJson.try_sha256(envelope)
+	if not digest["ok"]:
+		failures.append("period-%d.envelopeSha256: %s" % [period_id, digest["error"]])
+	elif digest["value"] != entry["envelopeSha256"]:
+		failures.append("period-%d.envelopeSha256: mismatch" % period_id)
+	if typeof(envelope) == TYPE_DICTIONARY:
+		if entry.get("stateSha256") != (envelope as Dictionary).get("stateSha256"):
+			failures.append("period-%d.stateSha256: catalog mismatch" % period_id)
+		var catalog_facts: Dictionary = CanonicalJson.try_sha256(entry.get("facts"))
+		var envelope_facts: Dictionary = CanonicalJson.try_sha256((envelope as Dictionary).get("facts"))
+		if not catalog_facts["ok"] or not envelope_facts["ok"] or catalog_facts["value"] != envelope_facts["value"]:
+			failures.append("period-%d.facts: catalog mismatch" % period_id)
+	if not failures.is_empty():
+		return _failure(failures)
+	return {
+		"ok": true,
+		"error": "",
+		"failures": [],
+		"envelope": envelope,
+		"state": GameState.new((envelope as Dictionary)["state"]),
+	}
 
 
 static func _validate_catalog_shape(raw: Variant) -> Array[String]:

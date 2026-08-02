@@ -15,7 +15,9 @@ func _init(save_path: String = "user://godot-spike-save.json") -> void:
 
 func save(state: GameState, label: String = "", saved_at: String = "") -> Dictionary:
 	var state_data: Dictionary = state.snapshot()
-	var issues: Array[Dictionary] = Validator.validate(state_data)
+	if int(state_data.get("dataContractVersion", -1)) != 1:
+		return _failure("MB01 样片存档只接受 dataContractVersion 1")
+	var issues: Array[Dictionary] = Validator.validate_runtime(state_data)
 	if not issues.is_empty():
 		return _failure(Validator.first_error(issues))
 
@@ -85,7 +87,9 @@ func load() -> Dictionary:
 		return _failure("存档中的游戏状态无效")
 
 	var state_data: Dictionary = envelope["state"]
-	var issues: Array[Dictionary] = Validator.validate(state_data)
+	if int(state_data.get("dataContractVersion", -1)) != 1:
+		return _failure("MB01 样片存档只接受 dataContractVersion 1")
+	var issues: Array[Dictionary] = Validator.validate_runtime(state_data)
 	if not issues.is_empty():
 		return _failure(Validator.first_error(issues))
 	var loaded_state: GameState = GameState.new(state_data)

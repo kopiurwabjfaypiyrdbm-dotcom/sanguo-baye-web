@@ -33,7 +33,7 @@ func _ready() -> void:
 	hide()
 
 
-func show_city(snapshot: Dictionary, city_id: String, default_executor_id: String = "") -> void:
+func show_city(snapshot: Dictionary, city_id: String, command_query: Dictionary = {}) -> void:
 	var cities := _as_dictionary(snapshot.get("cities", {}))
 	var city := _as_dictionary(cities.get(city_id, {}))
 	if city.is_empty():
@@ -54,9 +54,7 @@ func show_city(snapshot: Dictionary, city_id: String, default_executor_id: Strin
 		tr("金：%d") % int(city.get("money", 0)),
 		tr("粮：%d") % int(city.get("food", 0)),
 	]
-	var active_faction_id := str(snapshot.get("activeFactionId", snapshot.get("playerFactionId", "")))
-	var can_issue_order := not owner_id.is_empty() and owner_id == active_faction_id and not default_executor_id.is_empty()
-	_populate_executors(snapshot, city_id, owner_id, default_executor_id, can_issue_order)
+	_populate_executors(command_query)
 	show()
 
 
@@ -109,46 +107,30 @@ func place_near(anchor_position: Vector2, usable_rect: Rect2) -> void:
 	position = desired.round()
 
 
-func _populate_executors(
-	snapshot: Dictionary,
-	city_id: String,
-	owner_id: String,
-	preferred_id: String,
-	can_issue_order: bool
-) -> void:
+func _populate_executors(command_query: Dictionary) -> void:
 	executor_option.clear()
-	var officers := _as_dictionary(snapshot.get("officers", {}))
-	var officer_ids := _ordered_keys(snapshot.get("officerOrder", []), officers)
-	var acted_officer_ids: Array[String] = []
-	var acted_value: Variant = snapshot.get("actedOfficerIds", [])
-	if acted_value is Array:
-		for raw_id in acted_value:
-			acted_officer_ids.append(str(raw_id))
-	var selected_index := -1
-	for officer_id in officer_ids:
-		var officer := _as_dictionary(officers.get(officer_id, {}))
-		if (
-			str(officer.get("cityId", "")) != city_id
-			or str(officer.get("factionId", "")) != owner_id
-			or str(officer.get("status", "")) != "serving"
-			or acted_officer_ids.has(officer_id)
-		):
-			continue
-		executor_option.add_item("%s · %s %d" % [
-			str(officer.get("name", officer_id)),
-			tr("体"),
-			int(officer.get("stamina", 0)),
-		])
-		var index := executor_option.item_count - 1
-		executor_option.set_item_metadata(index, officer_id)
-		if officer_id == preferred_id:
-			selected_index = index
+	var executors: Variant = command_query.get("executors", [])
+	if executors is Array:
+		for raw_executor: Variant in executors:
+			if not raw_executor is Dictionary:
+				continue
+			var executor: Dictionary = raw_executor
+			var officer_id: String = str(executor.get("id", ""))
+			if officer_id.is_empty():
+				continue
+			executor_option.add_item("%s · %s %d" % [
+				str(executor.get("name", officer_id)),
+				tr("体"),
+				int(executor.get("stamina", 0)),
+			])
+			var index := executor_option.item_count - 1
+			executor_option.set_item_metadata(index, officer_id)
 
-	_base_action_enabled = can_issue_order and executor_option.item_count > 0
+	_base_action_enabled = bool(command_query.get("allowed", false)) and executor_option.item_count > 0
 	if executor_option.item_count == 0:
-		executor_option.add_item(tr("无可用在职武将"))
+		executor_option.add_item(str(command_query.get("reason", tr("无可用在职武将"))))
 	else:
-		executor_option.select(selected_index if selected_index >= 0 else 0)
+		executor_option.select(0)
 	set_busy(_busy)
 
 
@@ -159,25 +141,6 @@ func _on_develop_pressed() -> void:
 	if officer_id.is_empty():
 		return
 	develop_requested.emit(_city_id, officer_id)
-
-
-func _ordered_keys(declared_order: Variant, records: Dictionary) -> Array[String]:
-	var result: Array[String] = []
-	var seen := {}
-	if declared_order is Array:
-		for raw_id in declared_order:
-			var record_id := str(raw_id)
-			if records.has(record_id) and not seen.has(record_id):
-				result.append(record_id)
-				seen[record_id] = true
-	var fallback: Array[String] = []
-	for raw_id in records.keys():
-		var record_id := str(raw_id)
-		if not seen.has(record_id):
-			fallback.append(record_id)
-	fallback.sort()
-	result.append_array(fallback)
-	return result
 
 
 func _format_number(value: int) -> String:

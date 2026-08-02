@@ -1,6 +1,7 @@
 extends RefCounted
 
 const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
+const ShapeValidator = preload("res://src/domain/validation/game_state_shape_validator.gd")
 
 const UINT32_MAX: int = 0xffff_ffff
 const EQUIPMENT_LIMIT: int = 2
@@ -12,7 +13,19 @@ const CITY_CONDITIONS: Array[String] = ["normal", "famine", "drought", "flood", 
 
 
 static func validate(state: Dictionary) -> Array[Dictionary]:
-	var issues: Array[Dictionary] = []
+	return validate_initial(state)
+
+
+static func validate_initial(state: Dictionary) -> Array[Dictionary]:
+	return _validate(state, true)
+
+
+static func validate_runtime(state: Dictionary) -> Array[Dictionary]:
+	return _validate(state, false)
+
+
+static func _validate(state: Dictionary, initial_contract: bool) -> Array[Dictionary]:
+	var issues: Array[Dictionary] = ShapeValidator.validate(state)
 
 	var data_contract_version: int = int(state.get("dataContractVersion", -1)) \
 			if _is_integer_number(state.get("dataContractVersion")) else -1
@@ -29,7 +42,9 @@ static func validate(state: Dictionary) -> Array[Dictionary]:
 	else:
 		_add(issues, "rulesetId", "must be a non-blank string")
 
-	if not _is_integer_number(state.get("turn")) or int(state.get("turn", -1)) != 1:
+	if not _is_positive_integer(state.get("turn")):
+		_add(issues, "turn", "must be a positive integer")
+	elif initial_contract and int(state["turn"]) != 1:
 		_add(issues, "turn", "must remain 1 in the initial-state contract")
 	if not _is_integer_number(state.get("rngSeed")) \
 			or int(state.get("rngSeed", -1)) < 0 \
@@ -41,15 +56,19 @@ static func validate(state: Dictionary) -> Array[Dictionary]:
 	var phase: String = ""
 	if typeof(state.get("phase")) == TYPE_STRING:
 		phase = state["phase"]
-	if phase != INITIAL_PHASE:
+	if initial_contract and phase != INITIAL_PHASE:
 		_add(issues, "phase", "must remain player in the initial-state contract")
-	if state.has("pendingSuccession") and state["pendingSuccession"] != null:
+	elif not initial_contract and phase != "player":
+		_add(issues, "phase", "is not supported by the current runtime validator")
+	if initial_contract and state.has("pendingSuccession") and state["pendingSuccession"] != null:
 		_add(issues, "pendingSuccession", "is outside the initial-state contract")
-	if state.has("outcome") and state["outcome"] != null:
+	if initial_contract and state.has("outcome") and state["outcome"] != null:
 		_add(issues, "outcome", "is outside the initial-state contract")
+	if not initial_contract:
+		_validate_runtime_phase_fields(state, phase, issues)
 
-	_validate_calendar(state.get("calendar"), data_contract_version, issues)
-	_validate_lifecycle_policy(state.get("lifecyclePolicy"), issues)
+	_validate_calendar(state.get("calendar"), data_contract_version, initial_contract, issues)
+	_validate_lifecycle_policy(state.get("lifecyclePolicy"), initial_contract, issues)
 
 	var factions: Dictionary = _record_or_issue(state.get("factions"), "factions", issues)
 	var cities: Dictionary = _record_or_issue(state.get("cities"), "cities", issues)
@@ -65,9 +84,14 @@ static func validate(state: Dictionary) -> Array[Dictionary]:
 	var intel_reports: Dictionary = _record_or_issue(
 		state.get("intelReports"), "intelReports", issues
 	)
-	_validate_empty_spike_record(strategic_orders, "strategicOrders", issues)
-	_validate_empty_spike_record(diplomatic_orders, "diplomaticOrders", issues)
-	_validate_empty_spike_record(intel_reports, "intelReports", issues)
+	if initial_contract:
+		_validate_empty_spike_record(strategic_orders, "strategicOrders", issues)
+		_validate_empty_spike_record(diplomatic_orders, "diplomaticOrders", issues)
+		_validate_empty_spike_record(intel_reports, "intelReports", issues)
+	else:
+		_validate_empty_runtime_record(strategic_orders, "strategicOrders", issues)
+		_validate_empty_runtime_record(diplomatic_orders, "diplomaticOrders", issues)
+		_validate_empty_runtime_record(intel_reports, "intelReports", issues)
 
 	_validate_exact_order(state.get("cityOrder"), "cityOrder", cities, issues)
 	_validate_exact_order(state.get("officerOrder"), "officerOrder", officers, issues)
@@ -97,7 +121,7 @@ static func validate(state: Dictionary) -> Array[Dictionary]:
 	)
 	_validate_officers(
 		officers, factions, cities, arms_types, items, active_order_officers,
-		item_locations, state, issues
+		item_locations, state, initial_contract, issues
 	)
 	_validate_items(items, arms_types, cities, issues)
 	_validate_arms_types(arms_types, issues)
@@ -106,9 +130,14 @@ static func validate(state: Dictionary) -> Array[Dictionary]:
 	_validate_id_list(state.get("discoveredOfficerIds"), "discoveredOfficerIds", officers, issues)
 	if typeof(state.get("discoveredOfficerIds")) == TYPE_ARRAY \
 			and not (state["discoveredOfficerIds"] as Array).is_empty():
-		_add(issues, "discoveredOfficerIds", "must remain empty in the initial-state contract")
-	_validate_spike_serial(state.get("nextStrategicOrderSerial"), "nextStrategicOrderSerial", issues)
-	_validate_spike_serial(state.get("nextDiplomaticOrderSerial"), "nextDiplomaticOrderSerial", issues)
+		_add(
+			issues,
+			"discoveredOfficerIds",
+			"must remain empty in the initial-state contract"
+					if initial_contract else "is not supported by the current runtime validator"
+		)
+	_validate_serial(state.get("nextStrategicOrderSerial"), "nextStrategicOrderSerial", initial_contract, issues)
+	_validate_serial(state.get("nextDiplomaticOrderSerial"), "nextDiplomaticOrderSerial", initial_contract, issues)
 	_validate_graph(state.get("graph"), cities, graph_facts, issues)
 
 	return issues
@@ -121,7 +150,20 @@ static func first_error(issues: Array[Dictionary]) -> String:
 	return "Invalid game state at %s: %s" % [issue.get("path", "?"), issue.get("message", "invalid")]
 
 
-static func _validate_calendar(raw: Variant, contract_version: int, issues: Array[Dictionary]) -> void:
+static func _validate_runtime_phase_fields(
+		state: Dictionary, phase: String, issues: Array[Dictionary]
+) -> void:
+	var pending: Variant = state.get("pendingSuccession")
+	if pending != null:
+		_add(issues, "pendingSuccession", "is not supported by the current runtime validator")
+	var outcome: Variant = state.get("outcome")
+	if outcome != null:
+		_add(issues, "outcome", "is not supported by the current runtime validator")
+
+
+static func _validate_calendar(
+		raw: Variant, contract_version: int, initial_contract: bool, issues: Array[Dictionary]
+) -> void:
 	if typeof(raw) != TYPE_DICTIONARY:
 		_add(issues, "calendar", "must be an object")
 		return
@@ -132,13 +174,15 @@ static func _validate_calendar(raw: Variant, contract_version: int, issues: Arra
 			or int(calendar.get("month", 0)) < 1 \
 			or int(calendar.get("month", 0)) > 12:
 		_add(issues, "calendar.month", "must be an integer from 1 to 12")
-	if contract_version == 1 and _is_integer_number(calendar.get("year")) and int(calendar["year"]) != 190:
+	if initial_contract and contract_version == 1 and _is_integer_number(calendar.get("year")) and int(calendar["year"]) != 190:
 		_add(issues, "calendar.year", "must remain 190 in the spike contract")
-	if _is_integer_number(calendar.get("month")) and int(calendar["month"]) != 1:
+	if initial_contract and _is_integer_number(calendar.get("month")) and int(calendar["month"]) != 1:
 		_add(issues, "calendar.month", "must remain 1 in the initial-state contract")
 
 
-static func _validate_lifecycle_policy(raw: Variant, issues: Array[Dictionary]) -> void:
+static func _validate_lifecycle_policy(
+		raw: Variant, initial_contract: bool, issues: Array[Dictionary]
+) -> void:
 	if typeof(raw) != TYPE_DICTIONARY:
 		_add(issues, "lifecyclePolicy", "must be an object")
 		return
@@ -153,10 +197,10 @@ static func _validate_lifecycle_policy(raw: Variant, issues: Array[Dictionary]) 
 		_add(issues, "lifecyclePolicy.battleDeath", "must be a supported policy")
 	if not ["disabled", "modern-monthly"].has(policy.get("captiveEscape")):
 		_add(issues, "lifecyclePolicy.captiveEscape", "must be a supported policy")
-	if policy.get("ageGrowth") != "enabled" \
+	if initial_contract and (policy.get("ageGrowth") != "enabled" \
 			or policy.get("naturalDeath") != "disabled" \
 			or policy.get("battleDeath") != "disabled" \
-			or policy.get("captiveEscape") != "disabled":
+			or policy.get("captiveEscape") != "disabled"):
 		_add(issues, "lifecyclePolicy", "must remain at the supported initial-state defaults")
 
 
@@ -344,6 +388,7 @@ static func _validate_officers(
 		active_order_officers: Dictionary,
 		item_locations: Dictionary,
 		state: Dictionary,
+		initial_contract: bool,
 		issues: Array[Dictionary],
 ) -> void:
 	var acted_ids: Array = state.get("actedOfficerIds", []) if typeof(state.get("actedOfficerIds")) == TYPE_ARRAY else []
@@ -672,8 +717,12 @@ static func _validate_record_id(
 		_add(issues, "%s.id" % path, "must match record key: %s" % key)
 
 
-static func _validate_spike_serial(raw: Variant, path: String, issues: Array[Dictionary]) -> void:
-	if not _is_integer_number(raw) or int(raw) != 1:
+static func _validate_serial(
+		raw: Variant, path: String, initial_contract: bool, issues: Array[Dictionary]
+) -> void:
+	if not _is_positive_integer(raw):
+		_add(issues, path, "must be a positive integer")
+	elif initial_contract and int(raw) != 1:
 		_add(issues, path, "must remain 1 in the initial-state contract")
 
 
@@ -684,6 +733,13 @@ static func _validate_empty_spike_record(
 ) -> void:
 	if not record.is_empty():
 		_add(issues, path, "must remain empty in the initial-state contract")
+
+
+static func _validate_empty_runtime_record(
+		record: Dictionary, path: String, issues: Array[Dictionary]
+) -> void:
+	if not record.is_empty():
+		_add(issues, path, "is not supported by the current runtime validator")
 
 
 static func _validate_non_negative_integer(

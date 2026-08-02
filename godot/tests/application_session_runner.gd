@@ -74,12 +74,36 @@ func _test_all_campaign_candidates() -> void:
 		_assert_true(city_result["found"], "city query must find city-12")
 		_assert_equal(city_result["developFarming"]["defaultOfficerId"], "officer-1", "query must select stable default executor")
 		_assert_equal(session.state_sha256(), query_before, "snapshot mutation and query must not mutate session")
+		_assert_true(not session.save_game()["ok"], "production state must not use the MB01 spike save envelope")
+		_assert_equal(session.state_sha256(), query_before, "rejected production save must not mutate session")
+		var invalid_snapshot: Dictionary = session.snapshot()
+		invalid_snapshot["rngSeed"] = "invalid"
+		_assert_true(not session.restore_snapshot(invalid_snapshot)["ok"], "invalid snapshot restore must fail")
+		_assert_equal(session.state_sha256(), query_before, "invalid snapshot restore must not mutate session")
+		var missing_scenario: Dictionary = session.snapshot()
+		missing_scenario.erase("scenario")
+		_assert_true(not session.restore_snapshot(missing_scenario)["ok"], "snapshot without scenario must fail")
+		_assert_equal(session.state_sha256(), query_before, "missing scenario must not partially restore")
+		var missing_source_id: Dictionary = session.snapshot()
+		var ruler_id: String = missing_source_id["factions"][missing_source_id["playerFactionId"]]["rulerOfficerId"]
+		missing_source_id["officers"][ruler_id].erase("sourceId")
+		_assert_true(not session.restore_snapshot(missing_source_id)["ok"], "snapshot without ruler sourceId must fail")
+		_assert_equal(session.state_sha256(), query_before, "missing ruler sourceId must not partially restore")
+		var wrong_scenario: Dictionary = session.snapshot()
+		wrong_scenario["scenario"]["id"] = "wrong-period-id"
+		_assert_true(not session.restore_snapshot(wrong_scenario)["ok"], "snapshot with changed scenario identity must fail")
+		_assert_equal(session.state_sha256(), query_before, "changed scenario identity must not partially restore")
 
 
 func _test_transaction_fixture() -> void:
 	var fixture: Dictionary = _read_json(FIXTURE_PATH)
 	if fixture.is_empty():
 		return
+	_assert_equal(fixture.get("applicationSessionFixtureVersion"), 1.0, "fixture version must be 1")
+	var algorithms: Dictionary = fixture.get("algorithms", {})
+	_assert_equal(algorithms.get("canonicalJson"), "canonical-json-v1", "fixture canonical algorithm must be supported")
+	_assert_equal(algorithms.get("digest"), "sha256", "fixture digest algorithm must be supported")
+	_assert_equal(algorithms.get("numberDomain"), "safe-integer-or-decimal-6-v1", "fixture number domain must be supported")
 	var session: GameSession = GameSession.new()
 	var campaign: Dictionary = fixture["campaign"]
 	var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
@@ -101,11 +125,40 @@ func _test_transaction_fixture() -> void:
 	_assert_equal(session.state_sha256(), fixture["finalStateSha256"], "final state digest must match TypeScript")
 
 	var restored: GameSession = GameSession.new()
-	var restored_start: Dictionary = restored.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
-	_assert_true(restored_start["ok"], "snapshot recovery rehearsal must restart campaign")
-	if restored_start["ok"]:
-		var replayed: Dictionary = restored.execute_command(fixture["steps"][0]["command"])
+	var restored_result: Dictionary = restored.restore_snapshot(first_result["state"])
+	_assert_true(restored_result["ok"], "snapshot recovery rehearsal must restore a validated snapshot")
+	if restored_result["ok"]:
+		_assert_equal(restored.state_sha256(), first_result["afterStateSha256"], "restored snapshot digest must match committed state")
+		_assert_equal(restored.city_query("city-12")["found"], true, "restored session queries must remain available")
+		_assert_equal(restored.campaign_descriptor(), session.campaign_descriptor(), "restored campaign descriptor must match catalog identity")
+		var continuation: Dictionary = fixture["restoredContinuation"]
+		var continued: Dictionary = restored.execute_command(continuation["command"])
+		_assert_canonical_equal(continued, continuation["expected"], "restored session must continue with the TypeScript transaction result")
+	var v1_snapshot: Dictionary = _read_json("res://data/period-1.json")
+	var before_v1_restore: String = restored.state_sha256()
+	_assert_true(not restored.restore_snapshot(v1_snapshot)["ok"], "production restore must reject MB01 v1 snapshots")
+	_assert_equal(restored.state_sha256(), before_v1_restore, "rejected v1 restore must not mutate restored session")
+	var replayed_session: GameSession = GameSession.new()
+	var replayed_start: Dictionary = replayed_session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+	_assert_true(replayed_start["ok"], "fresh-session replay must restart campaign")
+	if replayed_start["ok"]:
+		var replayed: Dictionary = replayed_session.execute_command(fixture["steps"][0]["command"])
 		_assert_canonical_equal(replayed, first_result, "fresh-session replay must reproduce the committed transaction")
+
+	var guarded: GameSession = GameSession.new()
+	var guarded_start: Dictionary = guarded.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+	_assert_true(guarded_start["ok"], "canonical failure guard session must start")
+	if guarded_start["ok"]:
+		var guarded_success: Dictionary = guarded.execute_command(fixture["steps"][0]["command"])
+		var guarded_digest: String = guarded.state_sha256()
+		var guarded_campaign: Dictionary = guarded.campaign_descriptor()
+		var unhashable: Dictionary = guarded.snapshot()
+		unhashable["scenario"]["id"] = INF
+		_assert_true(not guarded.restore_snapshot(unhashable)["ok"], "unhashable snapshot must fail")
+		_assert_equal(guarded.state_sha256(), guarded_digest, "canonical hash failure must not mutate state")
+		_assert_equal(guarded.campaign_descriptor(), guarded_campaign, "canonical hash failure must not mutate campaign")
+		var duplicate_after_failure: Dictionary = guarded.execute_command(fixture["steps"][0]["command"])
+		_assert_canonical_equal(duplicate_after_failure, guarded_success, "canonical hash failure must preserve idempotency cache")
 
 
 func _read_json(path: String) -> Dictionary:

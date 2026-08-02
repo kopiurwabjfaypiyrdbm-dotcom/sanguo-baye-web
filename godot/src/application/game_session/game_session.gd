@@ -12,11 +12,13 @@ const SaveRepository = preload("res://src/application/persistence/json_save_repo
 const DEFAULT_PERIOD_PATH: String = "res://data/period-1.json"
 const DEFAULT_SAVE_PATH: String = "user://godot-spike-save.json"
 const RESULT_ENVELOPE_VERSION: int = 1
+const IDEMPOTENCY_WINDOW_LIMIT: int = 256
 
 var _state: GameState
 var _repository: SaveRepository
 var _campaign: Dictionary = {}
 var _completed_commands: Dictionary = {}
+var _completed_command_order: Array[String] = []
 var _compat_command_serial: int = 0
 var _production_bundle: Dictionary = {}
 
@@ -29,18 +31,13 @@ func start_campaign(period_id: Variant, ruler_source_index: Variant) -> Dictiona
 	if not _is_integer(period_id) or not _is_integer(ruler_source_index):
 		return _failure("periodId and rulerSourceIndex must be integers")
 	var loaded: Dictionary = _production_bundle
-	if loaded.is_empty():
-		loaded = ProductionDataRepository.load_all()
+	if loaded.is_empty() or int(loaded.get("periodId", -1)) != int(period_id):
+		loaded = ProductionDataRepository.load_period(int(period_id))
 	if not loaded["ok"]:
 		return _failure("production campaign data failed validation: %s" % loaded["error"])
 	_production_bundle = loaded
 	var normalized_period_id: int = int(period_id)
-	var states: Dictionary = loaded["states"]
-	var envelopes: Dictionary = loaded["envelopes"]
-	if not states.has(normalized_period_id) or not envelopes.has(normalized_period_id):
-		return _failure("unknown production period: %d" % normalized_period_id)
-
-	var envelope: Dictionary = envelopes[normalized_period_id]
+	var envelope: Dictionary = loaded["envelope"]
 	var scenario: Dictionary = envelope["scenario"]
 	var selected_candidate: Dictionary = {}
 	for raw_candidate: Variant in scenario["playerCandidates"]:
@@ -54,7 +51,7 @@ func start_campaign(period_id: Variant, ruler_source_index: Variant) -> Dictiona
 			% [int(ruler_source_index), normalized_period_id]
 		)
 
-	var initial_state: GameState = states[normalized_period_id]
+	var initial_state: GameState = loaded["state"]
 	var candidate_data: Dictionary = initial_state.snapshot()
 	var initial_seed: int = int(candidate_data["rngSeed"])
 	var faction_id: String = selected_candidate["factionId"]
@@ -71,7 +68,7 @@ func start_campaign(period_id: Variant, ruler_source_index: Variant) -> Dictiona
 	candidate_data["phase"] = "player"
 	candidate_data["playerFactionId"] = faction_id
 	candidate_data["activeFactionId"] = faction_id
-	var issues: Array[Dictionary] = Validator.validate(candidate_data)
+	var issues: Array[Dictionary] = Validator.validate_initial(candidate_data)
 	if not issues.is_empty():
 		return _failure("selected production campaign is invalid: %s" % Validator.first_error(issues))
 	if int(candidate_data["rngSeed"]) != initial_seed:
@@ -92,6 +89,7 @@ func start_campaign(period_id: Variant, ruler_source_index: Variant) -> Dictiona
 		"rulerName": selected_candidate["name"],
 	}
 	_completed_commands.clear()
+	_completed_command_order.clear()
 	_compat_command_serial = 0
 	return {
 		"ok": true,
@@ -126,6 +124,7 @@ func start_spike_period_1(path: String = DEFAULT_PERIOD_PATH) -> Dictionary:
 	_state = GameState.new(candidate_data)
 	_campaign = {"periodId": 1, "legacySpike": true, "playerFactionId": candidate_data["playerFactionId"]}
 	_completed_commands.clear()
+	_completed_command_order.clear()
 	_compat_command_serial = 0
 	return _success_with_state()
 
@@ -145,6 +144,74 @@ func campaign_descriptor() -> Dictionary:
 	return _campaign.duplicate(true)
 
 
+func restore_snapshot(raw_snapshot: Variant) -> Dictionary:
+	if typeof(raw_snapshot) != TYPE_DICTIONARY:
+		return _failure("snapshot must be an object")
+	var candidate_data: Dictionary = (raw_snapshot as Dictionary).duplicate(true)
+	var issues: Array[Dictionary] = Validator.validate_runtime(candidate_data)
+	if not issues.is_empty():
+		return _failure("snapshot is invalid: %s" % Validator.first_error(issues))
+	if int(candidate_data.get("dataContractVersion", -1)) != 2:
+		return _failure("snapshot must use production dataContractVersion 2")
+	if typeof(candidate_data.get("scenario")) != TYPE_DICTIONARY:
+		return _failure("snapshot scenario must be an object")
+	var state_scenario: Dictionary = candidate_data["scenario"]
+	if not _is_integer(state_scenario.get("period")) or int(state_scenario["period"]) < 1:
+		return _failure("snapshot scenario.period must be a positive integer")
+	var digest: Dictionary = CanonicalJson.try_sha256(candidate_data)
+	if not digest["ok"]:
+		return _failure("snapshot cannot be hashed: %s" % digest["error"])
+	var player_faction_id: String = candidate_data["playerFactionId"]
+	var player_faction: Dictionary = candidate_data["factions"][player_faction_id]
+	var ruler_officer_id: String = player_faction["rulerOfficerId"]
+	var ruler_officer: Dictionary = candidate_data["officers"][ruler_officer_id]
+	if not _is_integer(ruler_officer.get("sourceId")):
+		return _failure("snapshot player ruler sourceId must be an integer")
+	var period_id: int = int(state_scenario["period"])
+	var loaded: Dictionary = _production_bundle
+	if loaded.is_empty() or int(loaded.get("periodId", -1)) != period_id:
+		loaded = ProductionDataRepository.load_period(period_id)
+	if not loaded["ok"]:
+		return _failure("production campaign data failed validation: %s" % loaded["error"])
+	var production_scenario: Dictionary = loaded["envelope"]["scenario"]
+	var catalog_state_scenario: Dictionary = (loaded["state"] as GameState).snapshot()["scenario"]
+	if state_scenario != catalog_state_scenario:
+		return _failure("snapshot scenario identity does not match the production catalog")
+	var matched_candidate: Dictionary = {}
+	for raw_candidate: Variant in production_scenario["playerCandidates"]:
+		var candidate: Dictionary = raw_candidate
+		if candidate["factionId"] == player_faction_id \
+				and candidate["rulerOfficerId"] == ruler_officer_id \
+				and int(candidate["sourceIndex"]) == int(ruler_officer["sourceId"]):
+			matched_candidate = candidate
+			break
+	if matched_candidate.is_empty():
+		return _failure("snapshot player ruler is not a production campaign candidate")
+	var next_state: GameState = GameState.new(candidate_data)
+	var next_campaign: Dictionary = {
+		"productionDataContractVersion": int(candidate_data["dataContractVersion"]),
+		"periodId": period_id,
+		"title": production_scenario["title"],
+		"rulerSourceIndex": int(ruler_officer["sourceId"]),
+		"playerFactionId": player_faction_id,
+		"rulerOfficerId": ruler_officer_id,
+		"rulerName": ruler_officer["name"],
+	}
+	_state = next_state
+	_campaign = next_campaign
+	_production_bundle = loaded
+	_completed_commands.clear()
+	_completed_command_order.clear()
+	_compat_command_serial = 0
+	return {
+		"ok": true,
+		"error": "",
+		"campaign": campaign_descriptor(),
+		"stateSha256": digest["value"],
+		"state": snapshot(),
+	}
+
+
 func execute_command(raw_envelope: Variant) -> Dictionary:
 	var before_state: Dictionary = snapshot()
 	var before_digest: String = state_sha256()
@@ -162,7 +229,18 @@ func execute_command(raw_envelope: Variant) -> Dictionary:
 	if _completed_commands.has(command_id):
 		var completed: Dictionary = _completed_commands[command_id]
 		if completed["requestSha256"] == request_digest:
-			return (completed["result"] as Dictionary).duplicate(true)
+			var cached_core: Dictionary = completed["resultCore"]
+			if cached_core["afterStateSha256"] == before_digest:
+				var cached_result: Dictionary = cached_core.duplicate(true)
+				cached_result["state"] = before_state
+				return cached_result
+			var already_committed: Dictionary = _command_result_base(envelope, true, "already_committed", "")
+			already_committed["stateChanged"] = false
+			already_committed["beforeStateSha256"] = before_digest
+			already_committed["afterStateSha256"] = before_digest
+			already_committed["receipt"] = (cached_core["receipt"] as Dictionary).duplicate(true)
+			already_committed["state"] = before_state
+			return already_committed
 		return _command_failure(
 			envelope, "command_id_conflict", "commandId was already used for a different request", before_digest
 		)
@@ -170,11 +248,19 @@ func execute_command(raw_envelope: Variant) -> Dictionary:
 		return _command_failure(envelope, "stale_state", "expectedStateSha256 does not match current state", before_digest)
 
 	var domain_result: Dictionary = CommandDispatcher.dispatch(_state, envelope)
+	if typeof(domain_result) != TYPE_DICTIONARY \
+			or typeof(domain_result.get("ok")) != TYPE_BOOL \
+			or typeof(domain_result.get("error")) != TYPE_STRING:
+		return _command_failure(envelope, "invalid_adapter_result", "command adapter returned an invalid result", before_digest)
 	if not domain_result["ok"]:
 		return _command_failure(envelope, "domain_rejected", domain_result["error"], before_digest)
+	if not domain_result.has("next_state") \
+			or not domain_result["next_state"] is GameState \
+			or typeof(domain_result.get("receipt")) != TYPE_DICTIONARY:
+		return _command_failure(envelope, "invalid_adapter_result", "successful command adapter result is incomplete", before_digest)
 	var next_state: GameState = domain_result["next_state"]
 	var next_snapshot: Dictionary = next_state.snapshot()
-	var issues: Array[Dictionary] = Validator.validate(next_snapshot)
+	var issues: Array[Dictionary] = Validator.validate_runtime(next_snapshot)
 	if not issues.is_empty():
 		return _command_failure(
 			envelope, "invalid_next_state", Validator.first_error(issues), before_digest
@@ -190,9 +276,15 @@ func execute_command(raw_envelope: Variant) -> Dictionary:
 	result["afterStateSha256"] = after_digest_result["value"]
 	result["receipt"] = (domain_result["receipt"] as Dictionary).duplicate(true)
 	result["state"] = next_snapshot
+	var result_core: Dictionary = result.duplicate(true)
+	result_core.erase("state")
+	if _completed_command_order.size() >= IDEMPOTENCY_WINDOW_LIMIT:
+		var evicted_id: String = _completed_command_order.pop_front()
+		_completed_commands.erase(evicted_id)
+	_completed_command_order.append(command_id)
 	_completed_commands[command_id] = {
 		"requestSha256": request_digest,
-		"result": result.duplicate(true),
+		"resultCore": result_core,
 	}
 	return result.duplicate(true)
 
@@ -223,6 +315,8 @@ func city_query(city_id: String) -> Dictionary:
 func save_game() -> Dictionary:
 	if _state == null:
 		return _failure("尚未载入战役")
+	if not bool(_campaign.get("legacySpike", false)):
+		return _failure("生产 GameState 存档留待 MB20；当前格式只保存 MB01 样片")
 	var result: Dictionary = _repository.save(_state, "Godot migration spike")
 	if not result["ok"]:
 		return result
@@ -230,12 +324,17 @@ func save_game() -> Dictionary:
 
 
 func load_game() -> Dictionary:
+	return load_spike_game()
+
+
+func load_spike_game() -> Dictionary:
 	var result: Dictionary = _repository.load()
 	if not result["ok"]:
 		return result
 	_state = result["state"]
-	_campaign = {"periodId": 1, "legacySpikeSave": true, "playerFactionId": snapshot()["playerFactionId"]}
+	_campaign = {"periodId": 1, "legacySpike": true, "restoredFromSpikeSave": true, "playerFactionId": snapshot()["playerFactionId"]}
 	_completed_commands.clear()
+	_completed_command_order.clear()
 	_compat_command_serial = 0
 	return {"ok": true, "error": "", "path": result["path"], "envelope": result["envelope"], "state": snapshot()}
 
@@ -278,4 +377,6 @@ func _failure(reason: String) -> Dictionary:
 
 
 func _is_integer(raw: Variant) -> bool:
-	return (typeof(raw) == TYPE_INT or typeof(raw) == TYPE_FLOAT) and floor(float(raw)) == float(raw)
+	return (typeof(raw) == TYPE_INT or typeof(raw) == TYPE_FLOAT) \
+			and is_finite(float(raw)) \
+			and floor(float(raw)) == float(raw)
