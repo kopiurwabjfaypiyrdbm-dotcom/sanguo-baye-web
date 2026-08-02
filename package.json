@@ -9,6 +9,7 @@
     "build": "tsc -b && vite build",
     "test": "vitest run --pool=threads --maxWorkers=1 --minWorkers=1",
     "godot:spike-data": "vite-node scripts/generate-godot-spike-data.ts",
+    "godot:program-check": "node scripts/verify-godot-program.mjs --self-test --recover",
     "icons:generate": "node scripts/generate-app-icons.mjs",
     "android:add": "npm run build && cap add android",
     "android:sync": "npm run build && cap sync android",
@@ -22,7 +23,7 @@
     "reference:setup:offline": "node scripts/fetch-baye-reference.mjs --full-source --include-offline-runtime",
     "reference:sync-core": "node scripts/sync-baye-core-reference.mjs",
     "reference:check": "node scripts/verify-baye-core-reference.mjs",
-    "check": "npm run reference:check && npm test && npm run build"
+    "check": "npm run godot:program-check && npm run reference:check && npm test && npm run build"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",

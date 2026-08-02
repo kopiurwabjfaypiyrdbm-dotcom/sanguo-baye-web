@@ -18,3 +18,13 @@ This repository is a modern Web remake of the BBK electronic-dictionary version 
 - Update `references/provenance/` and preserve license notices whenever upstream code materially influences an implementation.
 
 Run `npm run check` before handing off changes.
+
+## Godot full-migration program
+
+- The immutable program commission is `docs/mission-briefs/MB00-godot-full-migration-program.md`. Its Outcome, Constraints, Non-goals, approval boundaries, and final completion evidence may change only with explicit user approval.
+- For an active or resumed migration run, bootstrap from repository evidence in this order: this file, MB00, `docs/migration/godot-program-roadmap.json`, `docs/migration/godot-program-state.json`, the current Mission Brief when present, the latest completed mission report, `references/parity-matrix.md`, and Git status/history.
+- Treat `docs/migration/godot-program-state.json` as the only authority for current position. Conversation text and compacted summaries may explain progress but cannot override the committed ledger.
+- Keep exactly one active implementation Mission. A completed Mission requires its evidence gates, review fixes, report, ledger update, and local checkpoint commit; completing one Mission never completes the program Goal.
+- After a Mission closes, use `$mission-brief` in a separate brief-generation step to create exactly one next self-contained Mission Brief, update the ledger, and continue implementation. Do not pre-generate the remaining backlog.
+- Run `npm run godot:program-check` before resuming work and before each checkpoint. If a non-critical Mission is blocked, record the blocker and select another dependency-ready Mission; stop only at an MB00 approval boundary or when no safe ready work remains.
+- Local reversible edits, tests, builds, emulator installs, and checkpoint commits are authorized by MB00. Do not push, create a PR, publish, weaken validation, or perform destructive Git/file operations without explicit user approval.

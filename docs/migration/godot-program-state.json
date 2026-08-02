@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "programId": "godot-full-migration",
+  "charterPath": "docs/mission-briefs/MB00-godot-full-migration-program.md",
+  "charterRevision": 1,
+  "charterSha256": "0c95fc8da7287a833080a6703514357326c27fbe48a7d8141675e869218f817f",
+  "roadmapPath": "docs/migration/godot-program-roadmap.json",
+  "branch": "codex/godot-migration-spike",
+  "status": "active",
+  "phase": "brief_pending",
+  "currentMissionId": "MB02",
+  "currentBriefPath": null,
+  "readyMissionIds": ["MB02"],
+  "completedMissions": [
+    {
+      "id": "MB01",
+      "briefPath": "docs/mission-briefs/godot-migration-spike.md",
+      "reportPath": "docs/migration/godot-spike-report.md",
+      "commit": "0cdcc3f"
+    }
+  ],
+  "blockedMissions": [],
+  "lastCheckpoint": {
+    "missionId": "MB01",
+    "commit": "0cdcc3f",
+    "date": "2026-08-02"
+  },
+  "nextAction": "Use $mission-brief to create exactly one self-contained MB02 brief, then update this ledger to phase implementation_pending before implementing it.",
+  "approvalRequiredFor": [
+    "changing MB00 fixed clauses",
+    "destructive Git or filesystem operations",
+    "downloading or installing components",
+    "pushing or creating a pull request",
+    "publishing APK or AAB",
+    "licensing and redistribution decisions"
+  ]
+}
