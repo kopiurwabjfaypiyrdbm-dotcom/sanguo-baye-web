@@ -4,6 +4,7 @@ const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
 const ShapeValidator = preload("res://src/domain/validation/game_state_shape_validator.gd")
 
 const UINT32_MAX: int = 0xffff_ffff
+const JS_MAX_SAFE_INTEGER: int = 9_007_199_254_740_991
 const EQUIPMENT_LIMIT: int = 2
 const SUPPORTED_DATA_CONTRACT_VERSIONS: Array[int] = [1, 2]
 const INITIAL_PHASE: String = "player"
@@ -747,8 +748,8 @@ static func _validate_non_negative_integer(
 		path: String,
 		issues: Array[Dictionary],
 ) -> void:
-	if not _is_integer_number(raw) or int(raw) < 0:
-		_add(issues, path, "must be a non-negative integer")
+	if not _is_integer_number(raw) or int(raw) < 0 or int(raw) > JS_MAX_SAFE_INTEGER:
+		_add(issues, path, "must be a non-negative safe integer")
 
 
 static func _require_non_blank_string(

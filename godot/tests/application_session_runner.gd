@@ -4,6 +4,8 @@ const CanonicalJson = preload("res://src/domain/validation/canonical_json.gd")
 const Validator = preload("res://src/domain/validation/game_state_validator.gd")
 const ProductionDataRepository = preload("res://src/application/game_session/production_data_repository.gd")
 const GameSession = preload("res://src/application/game_session/game_session.gd")
+const GameState = preload("res://src/domain/game_state/game_state.gd")
+const InternalAffairs = preload("res://src/domain/commands/internal_affairs_commands.gd")
 
 const FIXTURE_PATH: String = "res://data/fixtures/application-session-suite-v1.json"
 
@@ -133,6 +135,9 @@ func _test_transaction_fixture() -> void:
 			_assert_equal(session.state_sha256(), before_digest, "%s failure must not mutate state" % step["id"])
 	_assert_equal(session.state_sha256(), fixture["finalStateSha256"], "final state digest must match TypeScript")
 	_test_internal_affairs_sequence(fixture, campaign)
+	_test_internal_affairs_boundary_cases(fixture, campaign)
+	_test_validation_cases(fixture, campaign)
+	_test_modern_ruleset_case(fixture, campaign)
 
 	var restored: GameSession = GameSession.new()
 	var restored_result: Dictionary = restored.restore_snapshot(first_result["state"])
@@ -191,9 +196,115 @@ func _test_internal_affairs_sequence(fixture: Dictionary, campaign: Dictionary) 
 		var expected_core: Dictionary = step["expectedCore"]
 		_assert_canonical_equal(actual_core, expected_core, "%s internal-affairs result core must match TypeScript" % step["id"])
 		_assert_equal(session.state_sha256(), actual["afterStateSha256"], "%s state must match its result digest" % step["id"])
+		var returned_state_digest: Dictionary = CanonicalJson.try_sha256(actual["state"])
+		_assert_true(returned_state_digest["ok"], "%s returned state must be canonical-hashable" % step["id"])
+		if returned_state_digest["ok"]:
+			_assert_equal(
+				returned_state_digest["value"], step["expectedCore"]["afterStateSha256"],
+				"%s returned state payload must match the TypeScript after-state digest" % step["id"]
+			)
 		if not bool(expected_core["stateChanged"]):
 			_assert_equal(session.state_sha256(), before_digest, "%s rejection must not mutate state" % step["id"])
 	_assert_equal(session.state_sha256(), sequence["finalStateSha256"], "internal-affairs final state must match TypeScript")
+
+
+func _test_internal_affairs_boundary_cases(fixture: Dictionary, campaign: Dictionary) -> void:
+	var cases: Array = fixture.get("internalAffairsBoundaryCases", [])
+	_assert_true(not cases.is_empty(), "fixture must include MB05 boundary cases")
+	for raw_case: Variant in cases:
+		var test_case: Dictionary = raw_case
+		var session: GameSession = GameSession.new()
+		var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+		_assert_true(started["ok"], "%s boundary campaign must start" % test_case["id"])
+		if not started["ok"]:
+			continue
+		var input: Dictionary = session.snapshot()
+		_apply_patches(input, test_case["patches"])
+		var restored: Dictionary = session.restore_snapshot(input)
+		_assert_true(restored["ok"], "%s patched boundary state must restore" % test_case["id"])
+		if not restored["ok"]:
+			continue
+		var actual: Dictionary = session.execute_command(test_case["command"])
+		var actual_core: Dictionary = actual.duplicate(true)
+		actual_core.erase("state")
+		_assert_canonical_equal(
+			actual_core, test_case["expectedCore"],
+			"%s boundary result core must match TypeScript" % test_case["id"]
+		)
+		var state_digest: Dictionary = CanonicalJson.try_sha256(actual["state"])
+		_assert_true(state_digest["ok"], "%s boundary returned state must hash" % test_case["id"])
+		if state_digest["ok"]:
+			_assert_equal(
+				state_digest["value"], test_case["expectedStateSha256"],
+				"%s boundary state must match TypeScript" % test_case["id"]
+			)
+
+
+func _test_validation_cases(fixture: Dictionary, campaign: Dictionary) -> void:
+	var cases: Array = fixture.get("validationCases", [])
+	_assert_true(not cases.is_empty(), "fixture must include shared invalid-state cases")
+	var repository := ProductionDataRepository.new()
+	var loaded: Dictionary = repository.load_period(campaign["periodId"])
+	_assert_true(loaded["ok"], "validation fixture campaign data must load")
+	if not loaded["ok"]:
+		return
+	for raw_case: Variant in cases:
+		var test_case: Dictionary = raw_case
+		var input: Dictionary = loaded["state"].snapshot()
+		var patches: Array = test_case["patches"].duplicate(true)
+		for raw_patch: Variant in patches:
+			var patch: Dictionary = raw_patch
+			if patch["value"] is String and str(patch["value"]).is_valid_int():
+				patch["value"] = int(patch["value"])
+		_apply_patches(input, patches)
+		var issues: Array[Dictionary] = Validator.validate_runtime(input)
+		var matched := false
+		for issue: Dictionary in issues:
+			if issue["path"] == test_case["expectedPath"] and issue["message"] == test_case["expectedMessage"]:
+				matched = true
+				break
+		_assert_true(matched, "%s must produce the shared validator issue" % test_case["id"])
+
+
+func _apply_patches(target: Dictionary, patches: Array) -> void:
+	for raw_patch: Variant in patches:
+		var patch: Dictionary = raw_patch
+		var path: Array = patch["path"]
+		var cursor: Dictionary = target
+		for index: int in range(path.size() - 1):
+			cursor = cursor[str(path[index])]
+		cursor[str(path[-1])] = patch["value"]
+
+
+func _test_modern_ruleset_case(fixture: Dictionary, campaign: Dictionary) -> void:
+	var ruleset_case: Dictionary = fixture.get("modernRulesetCase", {})
+	_assert_true(not ruleset_case.is_empty(), "fixture must include a modern ruleset cost case")
+	if ruleset_case.is_empty():
+		return
+	var session: GameSession = GameSession.new()
+	var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+	_assert_true(started["ok"], "modern ruleset case campaign must start")
+	if not started["ok"]:
+		return
+	var input: Dictionary = session.snapshot()
+	input["rulesetId"] = "modern-balanced-v1"
+	_assert_equal(CanonicalJson.try_sha256(input)["value"], ruleset_case["inputStateSha256"], "modern ruleset input must match TypeScript")
+	var result: Dictionary = InternalAffairs.execute(
+		GameState.new(input), ruleset_case["kind"], ruleset_case["parameters"]
+	)
+	_assert_true(result["ok"], "modern ruleset domain command must succeed: %s" % result.get("error", ""))
+	if not result["ok"]:
+		return
+	var after: Dictionary = result["next_state"].snapshot()
+	_assert_equal(CanonicalJson.try_sha256(after)["value"], ruleset_case["expectedStateSha256"], "modern ruleset output must match TypeScript")
+	_assert_equal(
+		int(input["cities"]["city-12"]["money"]) - int(after["cities"]["city-12"]["money"]),
+		int(ruleset_case["expectedMoneyCost"]), "modern govern money cost must match"
+	)
+	_assert_equal(
+		int(input["officers"]["officer-1"]["stamina"]) - int(after["officers"]["officer-1"]["stamina"]),
+		int(ruleset_case["expectedStaminaCost"]), "modern govern stamina cost must match"
+	)
 
 
 func _read_json(path: String) -> Dictionary:

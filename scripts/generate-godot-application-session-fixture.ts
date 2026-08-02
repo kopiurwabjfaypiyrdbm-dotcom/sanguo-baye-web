@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canonicalJson, canonicalSha256 } from '../src/core/migration/canonicalJson';
+import { governCity } from '../src/core/cityCommands';
 import {
   createProductionSessionState,
   OracleApplicationSession,
@@ -27,7 +28,8 @@ if (writeMode) {
 }
 
 function transactionCaseCount(value: ReturnType<typeof buildFixture>) {
-  return value.steps.length + value.internalAffairsSequence.steps.length;
+  return value.steps.length + value.internalAffairsSequence.steps.length
+    + value.internalAffairsBoundaryCases.length + value.validationCases.length;
 }
 
 export function buildFixture() {
@@ -121,6 +123,104 @@ export function buildFixture() {
       expected: continuationExpected,
     },
     internalAffairsSequence,
+    internalAffairsBoundaryCases: buildInternalAffairsBoundaryCases(),
+    validationCases: buildValidationCases(),
+    modernRulesetCase: buildModernRulesetCase(),
+  };
+}
+
+type StatePatch = { path: string[]; value: unknown };
+
+function buildInternalAffairsBoundaryCases() {
+  const base = createProductionSessionState(1, 1);
+  const city = base.cities['city-12'];
+  const hiddenWithoutItem16 = (city.hiddenItemIds ?? []).filter((id) => id !== 'item-16');
+  const cases: unknown[] = [];
+  let serial = 1;
+  const add = (
+    id: string,
+    kind: string,
+    parameters: Record<string, unknown>,
+    patches: StatePatch[],
+  ) => {
+    const input = createProductionSessionState(1, 1);
+    applyStatePatches(input as unknown as Record<string, unknown>, patches);
+    const session = new OracleApplicationSession(input);
+    const command: ApplicationCommandEnvelope = {
+      commandEnvelopeVersion: 1,
+      commandId: `mb05-boundary-${String(serial).padStart(3, '0')}`,
+      expectedStateSha256: canonicalSha256(input),
+      kind,
+      parameters,
+    };
+    serial += 1;
+    const expected = session.execute(command);
+    const { state: _stateEvidence, ...expectedCore } = expected;
+    cases.push({ id, patches, command, expectedCore, expectedStateSha256: canonicalSha256(expected.state) });
+  };
+  add('farming-limit-rejected', 'develop_farming', { cityId: 'city-12', officerId: 'officer-1' }, [
+    { path: ['cities', 'city-12', 'farming'], value: city.farmingLimit },
+  ]);
+  add('commerce-limit-rejected', 'develop_commerce', { cityId: 'city-12', officerId: 'officer-1' }, [
+    { path: ['cities', 'city-12', 'commerce'], value: city.commerceLimit },
+  ]);
+  add('govern-abnormal-city', 'govern_city', { cityId: 'city-12', officerId: 'officer-1' }, [
+    { path: ['cities', 'city-12', 'condition'], value: 'flood' },
+    { path: ['cities', 'city-12', 'disasterPrevention'], value: 100 },
+  ]);
+  add('inspect-both-limits-rejected', 'inspect_city', { cityId: 'city-12', officerId: 'officer-1' }, [
+    { path: ['cities', 'city-12', 'publicLoyalty'], value: 100 },
+    { path: ['cities', 'city-12', 'population'], value: city.populationLimit },
+  ]);
+  add('commerce-equipped-intelligence', 'develop_commerce', { cityId: 'city-12', officerId: 'officer-1' }, [
+    { path: ['cities', 'city-12', 'hiddenItemIds'], value: hiddenWithoutItem16 },
+    { path: ['officers', 'officer-1', 'equipmentItemIds'], value: ['item-16'] },
+  ]);
+  add('banquet-ruler-full-rejected', 'banquet_officer', { cityId: 'city-12', targetOfficerId: 'officer-1' }, []);
+  add('plunder-resource-caps', 'plunder_city', { cityId: 'city-12', officerId: 'officer-1' }, [
+    { path: ['cities', 'city-12', 'money'], value: 30_000 },
+    { path: ['cities', 'city-12', 'food'], value: 30_000 },
+  ]);
+  for (const [id, kind, parameters] of [
+    ['modern-inspect-cost', 'inspect_city', { cityId: 'city-12', officerId: 'officer-1' }],
+    ['modern-trade-cost', 'trade_food', { cityId: 'city-12', officerId: 'officer-1', direction: 'sell', amount: 1 }],
+    ['modern-banquet-cost', 'banquet_officer', { cityId: 'city-12', targetOfficerId: 'officer-36' }],
+    ['modern-plunder-cost', 'plunder_city', { cityId: 'city-12', officerId: 'officer-1' }],
+  ] as const) {
+    add(id, kind, parameters, [{ path: ['rulesetId'], value: 'modern-balanced-v1' }]);
+  }
+  return cases;
+}
+
+function buildValidationCases() {
+  return [{
+    id: 'unsafe-city-money',
+    patches: [{ path: ['cities', 'city-12', 'money'], value: '9007199254740992' }],
+    expectedPath: 'cities.city-12.money',
+    expectedMessage: 'must be a non-negative safe integer',
+  }];
+}
+
+function applyStatePatches(target: Record<string, unknown>, patches: StatePatch[]) {
+  for (const patch of patches) {
+    let cursor: Record<string, unknown> = target;
+    for (const segment of patch.path.slice(0, -1)) cursor = cursor[segment] as Record<string, unknown>;
+    cursor[patch.path.at(-1)!] = structuredClone(patch.value);
+  }
+}
+
+function buildModernRulesetCase() {
+  const input = createProductionSessionState(1, 1);
+  input.rulesetId = 'modern-balanced-v1';
+  const parameters = { cityId: 'city-12', officerId: 'officer-1' };
+  const expected = governCity(input, parameters);
+  return {
+    kind: 'govern_city',
+    parameters,
+    inputStateSha256: canonicalSha256(input),
+    expectedStateSha256: canonicalSha256(expected),
+    expectedMoneyCost: input.cities['city-12'].money - expected.cities['city-12'].money,
+    expectedStaminaCost: input.officers['officer-1'].stamina - expected.officers['officer-1'].stamina,
   };
 }
 
@@ -158,6 +258,9 @@ function buildInternalAffairsSequence() {
   });
   apply('invalid-trade-amount', 'trade_food', {
     cityId: 'city-12', officerId: 'officer-21', direction: 'buy', amount: 0,
+  });
+  apply('sorted-internal-parameter-error', 'develop_commerce', {
+    cityId: 'city-12', officerId: 'officer-21', ['\u{10000}']: true, ['\ue000']: true,
   });
   apply('acted-officer-rejected', 'develop_commerce', {
     cityId: 'city-12', officerId: 'officer-1',

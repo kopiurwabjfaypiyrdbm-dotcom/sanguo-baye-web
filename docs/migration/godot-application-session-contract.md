@@ -50,4 +50,6 @@ npm run godot:application-session:check
 npm run godot:application-session:verify
 ```
 
+MB05 在同一 fixture 内追加紧凑的内政序列；新增步骤保存 result core 和 state SHA，不重复嵌入完整状态。支持命令及参数见 `docs/migration/godot-internal-affairs-contract.md`。
+
 验证脚本把 Windows `APPDATA/LOCALAPPDATA` 和跨平台 `XDG_CONFIG_HOME/XDG_CACHE_HOME/XDG_DATA_HOME` 重定向到被忽略的 `godot/.godot/runtime/`。`npm run godot:project:verify` 统一覆盖领域、表现/触控、editor import 和主场景启动；隔离不改变游戏运行时路径或 APK 内容。

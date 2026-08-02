@@ -60,61 +60,49 @@ static func _internal_affairs(
 		state: RefCounted, data: Dictionary, city_id: String, farming: Dictionary
 ) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
+	var domain_catalog: Dictionary = InternalAffairs.query_city_catalog(state, city_id)
+	var domain_commands: Dictionary = domain_catalog["commands"]
 	for definition: Dictionary in INTERNAL_COMMANDS:
 		var kind: String = definition["kind"]
 		var query: Dictionary
 		if kind == "develop_farming":
 			query = farming.duplicate(true)
 		elif kind == "banquet_officer":
-			query = _banquet(state, data, city_id)
+			query = _banquet(data, domain_catalog["banquet"])
 		else:
-			query = _executor_command(state, data, city_id, kind)
+			query = _executor_command(data, domain_commands[kind])
 		query["kind"] = kind
 		query["label"] = definition["label"]
 		query["mode"] = definition["mode"]
 		query["dangerous"] = definition["dangerous"]
 		if kind == "trade_food":
-			_apply_trade_defaults(state, data, city_id, query)
+			_apply_trade_defaults(query, (domain_commands[kind] as Dictionary)["tradeOptions"])
 		result.append(query)
 	return result
 
 
-static func _apply_trade_defaults(
-		state: RefCounted, data: Dictionary, city_id: String, query: Dictionary
-) -> void:
-	var directions: Array[String] = []
+static func _apply_trade_defaults(query: Dictionary, options: Dictionary) -> void:
 	var executor_id: String = query.get("defaultOfficerId", "")
-	if not executor_id.is_empty():
-		for direction: String in ["buy", "sell"]:
-			var availability: Dictionary = InternalAffairs.get_availability(state, "trade_food", {
-				"cityId": city_id, "officerId": executor_id, "direction": direction, "amount": 1,
-			})
-			if availability["allowed"]:
-				directions.append(direction)
-	query["directions"] = directions
-	if directions.is_empty():
+	if executor_id.is_empty():
+		query["directions"] = []
+		query["directionLimits"] = {}
 		query["allowed"] = false
 		query["reason"] = "当前资源无法交易"
 		query["defaultDirection"] = "buy"
 		query["defaultAmount"] = 1
 		return
-	var city_data: Dictionary = data["cities"][city_id]
-	var default_direction: String = "sell" if directions.has("sell") else directions[0]
-	var maximum: int
-	if default_direction == "sell":
-		maximum = mini(int(city_data["food"]), int(floor(float(30_000 - int(city_data["money"])) / 2.0)))
-	else:
-		maximum = mini(30_000 - int(city_data["food"]), int(floor(float(city_data["money"]) / 5.0)))
-	query["defaultDirection"] = default_direction
-	query["defaultAmount"] = mini(100, maxi(1, maximum))
+	query["directions"] = options["directions"]
+	query["directionLimits"] = options["directionLimits"]
+	query["defaultDirection"] = options["defaultDirection"]
+	query["defaultAmount"] = options["defaultAmount"]
+	if (options["directions"] as Array).is_empty():
+		query["allowed"] = false
+		query["reason"] = options["reason"]
 
 
-static func _executor_command(
-		state: RefCounted, data: Dictionary, city_id: String, kind: String
-) -> Dictionary:
+static func _executor_command(data: Dictionary, domain_query: Dictionary) -> Dictionary:
 	var officers: Dictionary = data["officers"]
 	var executors: Array[Dictionary] = []
-	var domain_query: Dictionary = InternalAffairs.list_available_executors(state, city_id, kind)
 	for raw_officer_id: Variant in domain_query["executorIds"]:
 		var officer_id: String = raw_officer_id
 		var officer: Dictionary = officers[officer_id]
@@ -127,10 +115,9 @@ static func _executor_command(
 	}
 
 
-static func _banquet(state: RefCounted, data: Dictionary, city_id: String) -> Dictionary:
+static func _banquet(data: Dictionary, domain_query: Dictionary) -> Dictionary:
 	var officers: Dictionary = data["officers"]
 	var targets: Array[Dictionary] = []
-	var domain_query: Dictionary = InternalAffairs.list_banquet_targets(state, city_id)
 	for raw_target_id: Variant in domain_query["targetIds"]:
 		var target_id: String = raw_target_id
 		var officer: Dictionary = officers[target_id]

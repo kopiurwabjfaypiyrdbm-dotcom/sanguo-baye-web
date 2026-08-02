@@ -24,6 +24,7 @@ func _initialize() -> void:
 	_test_equipment_intelligence_bonus()
 	_test_uint32_shift_boundaries()
 	_test_invalid_command_does_not_advance_state()
+	_test_runtime_rejects_unsafe_integer_state()
 	_test_spike_contract_rejects_unmigrated_web_states()
 	_test_save_load_equivalence()
 
@@ -199,6 +200,19 @@ func _test_invalid_command_does_not_advance_state() -> void:
 		JSON.stringify(state.snapshot(), "", true),
 		before_json,
 		"failed validation must leave the input and RNG seed unchanged"
+	)
+
+
+func _test_runtime_rejects_unsafe_integer_state() -> void:
+	var period: Dictionary = _read_dictionary(PERIOD_PATH).duplicate(true)
+	if period.is_empty():
+		return
+	period["cities"]["city-12"]["money"] = 9_007_199_254_740_992
+	var issues: Array[Dictionary] = Validator.validate_runtime(period)
+	_assert_issue_contains(
+		issues,
+		"non-negative safe integer",
+		"runtime validator must reject city values outside the shared JS safe-integer domain"
 	)
 
 

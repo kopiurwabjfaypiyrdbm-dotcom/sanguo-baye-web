@@ -55,6 +55,40 @@ static func list_available_executors(state: GameState, city_id: String, kind: St
 	var issues: Array[Dictionary] = Validator.validate_runtime(data)
 	if not issues.is_empty():
 		return {"executorIds": [], "reason": Validator.first_error(issues)}
+	return _list_available_executors_for_data(data, city_id, kind)
+
+
+static func query_city_catalog(state: GameState, city_id: String) -> Dictionary:
+	var data: Dictionary = state.snapshot()
+	var issues: Array[Dictionary] = Validator.validate_runtime(data)
+	if not issues.is_empty():
+		var invalid_commands: Dictionary = {}
+		for kind: String in COMMAND_KINDS:
+			if kind != "banquet_officer":
+				invalid_commands[kind] = {"executorIds": [], "reason": Validator.first_error(issues)}
+		return {
+			"commands": invalid_commands,
+			"banquet": {"targetIds": [], "reason": Validator.first_error(issues)},
+		}
+	var commands: Dictionary = {}
+	for kind: String in COMMAND_KINDS:
+		if kind == "banquet_officer":
+			continue
+		commands[kind] = _list_available_executors_for_data(data, city_id, kind)
+	var trade_query: Dictionary = commands["trade_food"]
+	var trade_executor_ids: Array = trade_query["executorIds"]
+	trade_query["tradeOptions"] = _trade_options_for_data(
+		data, city_id, "" if trade_executor_ids.is_empty() else str(trade_executor_ids[0])
+	)
+	return {
+		"commands": commands,
+		"banquet": _list_banquet_targets_for_data(data, city_id),
+	}
+
+
+static func _list_available_executors_for_data(
+		data: Dictionary, city_id: String, kind: String
+) -> Dictionary:
 	var executor_ids: Array[String] = []
 	var first_reason: String = "没有可执行%s的武将" % _command_label(kind)
 	for raw_officer_id: Variant in data["officerOrder"]:
@@ -80,11 +114,62 @@ static func list_available_executors(state: GameState, city_id: String, kind: St
 	}
 
 
+static func get_trade_options(state: GameState, city_id: String, officer_id: String) -> Dictionary:
+	var data: Dictionary = state.snapshot()
+	var issues: Array[Dictionary] = Validator.validate_runtime(data)
+	if not issues.is_empty():
+		return {
+			"directions": [], "reason": Validator.first_error(issues),
+			"directionLimits": {}, "defaultDirection": "buy", "defaultAmount": 1,
+		}
+	return _trade_options_for_data(data, city_id, officer_id)
+
+
+static func _trade_options_for_data(data: Dictionary, city_id: String, officer_id: String) -> Dictionary:
+	var directions: Array[String] = []
+	var direction_limits: Dictionary = {}
+	var city: Dictionary = data["cities"].get(city_id, {})
+	for direction: String in ["buy", "sell"]:
+		var availability: Dictionary = _availability_for_data(data, "trade_food", {
+			"cityId": city_id, "officerId": officer_id, "direction": direction, "amount": 1,
+		})
+		if availability["allowed"]:
+			directions.append(direction)
+			if direction == "buy":
+				direction_limits[direction] = mini(
+					TRADE_RESOURCE_CAP - int(city["food"]),
+					int(floor(float(city["money"]) / float(BUY_FOOD_PRICE)))
+				)
+			else:
+				direction_limits[direction] = mini(
+					int(city["food"]),
+					int(floor(float(TRADE_RESOURCE_CAP - int(city["money"])) / float(SELL_FOOD_PRICE)))
+				)
+	if directions.is_empty():
+		return {
+			"directions": directions, "reason": "当前资源无法交易",
+			"directionLimits": direction_limits, "defaultDirection": "buy", "defaultAmount": 1,
+		}
+	var default_direction: String = "sell" if directions.has("sell") else directions[0]
+	var maximum: int = direction_limits[default_direction]
+	return {
+		"directions": directions,
+		"reason": "",
+		"directionLimits": direction_limits,
+		"defaultDirection": default_direction,
+		"defaultAmount": mini(100, maxi(1, maximum)),
+	}
+
+
 static func list_banquet_targets(state: GameState, city_id: String) -> Dictionary:
 	var data: Dictionary = state.snapshot()
 	var issues: Array[Dictionary] = Validator.validate_runtime(data)
 	if not issues.is_empty():
 		return {"targetIds": [], "reason": Validator.first_error(issues)}
+	return _list_banquet_targets_for_data(data, city_id)
+
+
+static func _list_banquet_targets_for_data(data: Dictionary, city_id: String) -> Dictionary:
 	var target_ids: Array[String] = []
 	var first_reason: String = "没有可宴请的武将"
 	for raw_officer_id: Variant in data["officerOrder"]:

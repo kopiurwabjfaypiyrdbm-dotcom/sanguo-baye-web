@@ -501,6 +501,12 @@ func _on_viewport_size_changed() -> void:
 
 func _apply_responsive_labels() -> void:
 	var physical_size := DisplayServer.window_get_size()
+	if physical_size.x <= 1 or physical_size.y <= 1:
+		physical_size = Vector2i(get_viewport_rect().size.round())
+	_apply_responsive_layout_for_size(physical_size)
+
+
+func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	var compact := physical_size.x <= 900 or physical_size.y <= 440
 	var viewport_size := get_viewport_rect().size
 	var canvas_scale := minf(

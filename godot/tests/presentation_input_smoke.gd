@@ -19,6 +19,8 @@ func _run() -> void:
 	var map_world: StrategyMapWorld = screen.get_node("%MapWorld")
 	var map_camera: Camera2D = screen.get_node("%MapCamera")
 	var city_card: CityCard = screen.get_node("%CityCard")
+	var physical_size := Vector2i(844, 390)
+	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
 	_assert_equal(map_world.get_ordered_city_ids().size(), 38, "main scene must render all 38 cities")
 	_assert_equal(map_world.get_road_count(), 54, "main scene must render 54 reciprocal roads")
 
@@ -50,8 +52,43 @@ func _run() -> void:
 	_assert_true(city_card.visible, "touch tap on city-12 must open the spatial city card")
 	var command_option: OptionButton = city_card.get_node("%CommandOption")
 	_assert_equal(command_option.item_count, 7, "city card must expose all seven internal-affairs commands")
+	city_card.call("_step_command", -1)
+	_assert_equal(command_option.get_item_metadata(command_option.selected), "plunder_city", "left command control must wrap to plunder")
+	city_card.call("_on_action_pressed")
+	var confirmation: ConfirmationDialog = city_card.get("_confirm_dialog")
+	_assert_true(confirmation.visible, "plunder must open a native dangerous-action confirmation")
+	_assert_true(confirmation.get_ok_button().custom_minimum_size.y >= 48.0, "danger confirmation must keep a 48px-class confirm target")
+	confirmation.hide()
+	var compact_card: CityCard = load("res://scenes/presentation/city_card.tscn").instantiate()
+	root.add_child(compact_card)
+	await process_frame
+	var compact_query: Dictionary = screen.get("_session").city_query("city-12")
+	compact_card.show_city(screen.get("_snapshot"), "city-12", compact_query["internalAffairs"])
+	compact_card.apply_responsive_layout(true, canvas_scale, physical_size)
+	compact_card.call("_on_command_selected", 6)
+	await process_frame
+	compact_card.reset_size()
+	await process_frame
+	var compact_size := compact_card.get_combined_minimum_size()
+	var usable_rect := Rect2(Vector2.ZERO, Vector2(1558.0, 278.0 / canvas_scale))
+	compact_card.size = compact_size
+	compact_card.place_near(Vector2(800.0, 130.0), usable_rect)
+	_assert_true(
+		compact_card.position.y >= usable_rect.position.y - 1.0
+			and compact_card.position.y + compact_card.size.y <= usable_rect.end.y + 1.0,
+		"compact city card must remain inside the top/bottom safe content region: card=%s usable=%s"
+			% [compact_card.get_rect(), usable_rect]
+	)
 	city_card.call("_on_command_selected", 4)
 	_assert_true(city_card.get_node("%TradeRow").visible, "trade command must reveal native direction and amount controls")
+	compact_card.call("_on_command_selected", 4)
+	for control_name: String in ["CommandOption", "ExecutorOption", "TradeDirection", "TradeAmount"]:
+		var control: Control = compact_card.get_node("%%%s" % control_name)
+		_assert_true(
+			control.custom_minimum_size.y * canvas_scale >= 47.5,
+			"compact %s must retain a 48px-class physical target" % control_name
+		)
+	compact_card.queue_free()
 	city_card.call("_on_command_selected", 0)
 	var snapshot_before: Dictionary = screen.get("_snapshot")
 	var farming_before: int = int(snapshot_before["cities"]["city-12"]["farming"])
