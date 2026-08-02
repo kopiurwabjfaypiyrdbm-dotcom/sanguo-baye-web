@@ -1166,6 +1166,7 @@ export function App() {
           presentation={cityPanelPresentation}
           initialSection={cityPanelSection}
           initialCommand={cityPanelCommand}
+          contextAnchor={cityContextAnchor}
           dangerousConfirmationDismissRequest={dangerousCommandDismissRequest}
           onDangerousConfirmationChange={setIsDangerousCommandConfirmationOpen}
           onClose={closeCityPanelToContext}

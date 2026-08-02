@@ -2865,6 +2865,45 @@ html[data-runtime="android"] .campaign-event-summary {
   height: min(76dvh, 420px);
   max-height: min(76dvh, 420px);
 }
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"] {
+  top: var(--city-command-top);
+  right: auto;
+  bottom: auto;
+  left: var(--city-command-left);
+  grid-template-rows: auto auto;
+  width: min(480px, calc(100% - 18px));
+  height: auto;
+  max-height: min(68dvh, 310px);
+  padding: 8px 10px 9px;
+  border-color: rgba(229, 200, 117, .86);
+  box-shadow: 0 14px 38px rgba(2, 13, 10, .45);
+  transform: translateX(-50%);
+}
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-above {
+  transform: translate(-50%, -100%);
+}
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"]::after {
+  position: absolute;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  background: #ded6bf;
+  border-right: 1px solid rgba(229, 200, 117, .86);
+  border-bottom: 1px solid rgba(229, 200, 117, .86);
+  content: '';
+  transform: translateX(-50%) rotate(45deg);
+}
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-below::after {
+  top: -7px;
+  transform: translateX(-50%) rotate(225deg);
+}
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-above::after { bottom: -7px; }
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-below {
+  animation-name: city-command-anchor-below;
+}
+.side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"].anchored-above {
+  animation-name: city-command-anchor-above;
+}
 .city-command-executor .city-heading { align-items: center; }
 .city-command-executor .city-heading .panel-kicker { display: none; }
 .city-command-executor .city-heading h2 { font-size: 17px; }
@@ -2934,6 +2973,14 @@ html[data-runtime="android"] .campaign-event-summary {
 }
 .city-command-executor .focused-action-cluster > button { min-height: 44px; }
 
+@keyframes city-command-anchor-below {
+  from { opacity: 0; transform: translate(-50%, -5px) scale(.985); }
+}
+
+@keyframes city-command-anchor-above {
+  from { opacity: 0; transform: translate(-50%, calc(-100% + 5px)) scale(.985); }
+}
+
 .command-editor-summary {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, .8fr);
@@ -3002,6 +3049,16 @@ html[data-runtime="android"] .side-panel.city-command-executor[data-command-size
   width: min(920px, calc(100% - 18px));
   height: min(76dvh, 420px);
   max-height: min(76dvh, 420px);
+}
+html[data-runtime="android"] .side-panel.city-command-executor[data-command-size="quick"][data-has-anchor="true"] {
+  top: var(--city-command-top);
+  right: auto;
+  bottom: auto;
+  left: var(--city-command-left);
+  width: min(480px, calc(100% - 16px));
+  height: auto;
+  max-height: min(70dvh, 310px);
+  padding: 7px 9px 8px;
 }
 html[data-runtime="android"] .campaign-navigator-backdrop { inset: calc(var(--safe-top) + 48px) 0 calc(var(--safe-bottom) + 56px); }
 html[data-runtime="android"] .log-panel { bottom: calc(var(--safe-bottom) + 59px); }

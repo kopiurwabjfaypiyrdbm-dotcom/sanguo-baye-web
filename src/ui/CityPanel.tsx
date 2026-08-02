@@ -45,6 +45,7 @@ import {
 } from '../core/diplomaticOrders';
 import { getCampaignCommandCost } from '../core/rulesets';
 import { CommandReviewDialog, type CommandReview } from './CommandReviewDialog';
+import type { CityContextAnchor } from './CityContextMenu';
 import { getCityCommand, type CityCommandId } from './cityCommandCatalog';
 
 type PendingCommandReview = CommandReview & { execute: () => void };
@@ -64,6 +65,7 @@ type CityPanelProps = {
   presentation?: 'detail' | 'command';
   initialSection?: CityPanelSection;
   initialCommand?: CityCommandId;
+  contextAnchor?: CityContextAnchor;
   dangerousConfirmationDismissRequest?: number;
   onDangerousConfirmationChange?: (open: boolean) => void;
   onClose: () => void;
@@ -120,6 +122,7 @@ export function CityPanel({
   presentation = 'detail',
   initialSection = 'summary',
   initialCommand,
+  contextAnchor,
   dangerousConfirmationDismissRequest = 0,
   onDangerousConfirmationChange,
   onClose,
@@ -607,6 +610,29 @@ export function CityPanel({
     .filter(Boolean)
     .join(' ') || undefined;
   const inlineCommandSummary = initialCommand ? buildInlineCommandSummary(initialCommand) : undefined;
+  const hasQuickCommandAnchor = presentation === 'command'
+    && commandDefinition?.editorSize === 'quick'
+    && contextAnchor?.visible
+    && contextAnchor.cityId === city.id;
+  const quickCommandOpensBelow = hasQuickCommandAnchor
+    ? contextAnchor.y < contextAnchor.viewportHeight * 0.58
+    : true;
+  const quickCommandHalfWidth = hasQuickCommandAnchor
+    ? Math.min(240, Math.max(150, contextAnchor.viewportWidth / 2 - 10))
+    : 0;
+  const quickCommandLeft = hasQuickCommandAnchor
+    ? Math.min(
+      Math.max(contextAnchor.x, quickCommandHalfWidth),
+      Math.max(quickCommandHalfWidth, contextAnchor.viewportWidth - quickCommandHalfWidth),
+    )
+    : 0;
+  const quickCommandTop = hasQuickCommandAnchor
+    ? quickCommandOpensBelow ? contextAnchor.y + 38 : contextAnchor.y - 36
+    : 0;
+  const commandPanelStyle = hasQuickCommandAnchor ? {
+    '--city-command-left': `${quickCommandLeft}px`,
+    '--city-command-top': `${quickCommandTop}px`,
+  } as CSSProperties : undefined;
 
   function buildInlineCommandSummary(commandId: CityCommandId): InlineCommandSummary | undefined {
     switch (commandId) {
@@ -826,9 +852,11 @@ export function CityPanel({
 
   return (
     <aside
-      className={`side-panel ${presentation === 'command' ? 'city-command-executor' : 'city-detail-panel'}`}
+      className={`side-panel ${presentation === 'command' ? 'city-command-executor' : 'city-detail-panel'} ${hasQuickCommandAnchor ? quickCommandOpensBelow ? 'anchored-below' : 'anchored-above' : ''}`}
       data-command-size={commandDefinition?.editorSize ?? 'quick'}
       data-focused-command={Boolean(initialCommand)}
+      data-has-anchor={hasQuickCommandAnchor || undefined}
+      style={commandPanelStyle}
       aria-label={`${city.name}${presentation === 'command' ? '命令操作条' : '城池详情'}`}
     >
       <div className="city-heading">
