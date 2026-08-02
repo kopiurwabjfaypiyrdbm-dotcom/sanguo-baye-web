@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB08",
-  "currentBriefPath": "docs/mission-briefs/MB08-movement-transport-strategic-logistics.md",
-  "readyMissionIds": ["MB08"],
+  "currentMissionId": "MB09",
+  "currentBriefPath": "docs/mission-briefs/MB09-reconnaissance-intelligence-visibility.md",
+  "readyMissionIds": ["MB09"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -53,15 +53,21 @@
       "briefPath": "docs/mission-briefs/MB07-recruitment-captives-surrender-banishment.md",
       "reportPath": "docs/migration/mission-reports/MB07-recruitment-captives-surrender-banishment.md",
       "commit": "a5a424c"
+    },
+    {
+      "id": "MB08",
+      "briefPath": "docs/mission-briefs/MB08-movement-transport-strategic-logistics.md",
+      "reportPath": "docs/migration/mission-reports/MB08-movement-transport-strategic-logistics.md",
+      "commit": "4a4f658"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB07",
-    "commit": "a5a424c",
+    "missionId": "MB08",
+    "commit": "4a4f658",
     "date": "2026-08-03"
   },
-  "nextAction": "Implement MB08 by migrating deterministic cross-city movement and resource transport, strategic-order validation and advancement, lifecycle cancellation, native touch logistics interaction, and shared TypeScript/Godot fixture evidence.",
+  "nextAction": "Implement MB09 by migrating deterministic reconnaissance, validated intelligence snapshots, visibility-safe native queries and touch presentation, and shared TypeScript/Godot fixture evidence.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
