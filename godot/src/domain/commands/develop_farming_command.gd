@@ -126,7 +126,7 @@ static func _availability_for_data(data: Dictionary, city_id: String, officer_id
 		return _unavailable("必须先拥立新君")
 	var cities: Dictionary = data["cities"]
 	if not cities.has(city_id):
-		return _unavailable("未知城池：%s" % city_id)
+		return _unavailable("只能在己方城池执行命令")
 	var city: Dictionary = cities[city_id]
 	if city["ownerId"] != data["activeFactionId"]:
 		return _unavailable("只能在己方城池执行命令")

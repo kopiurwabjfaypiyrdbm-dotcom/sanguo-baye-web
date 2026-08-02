@@ -7,7 +7,7 @@
   "roadmapPath": "docs/migration/godot-program-roadmap.json",
   "branch": "codex/godot-migration-spike",
   "status": "active",
-  "phase": "implementation_pending",
+  "phase": "executing",
   "currentMissionId": "MB02",
   "currentBriefPath": "docs/mission-briefs/MB02-deterministic-migration-verification-platform.md",
   "readyMissionIds": ["MB02"],
@@ -25,7 +25,7 @@
     "commit": "0cdcc3f",
     "date": "2026-08-02"
   },
-  "nextAction": "Read MB02, inspect the existing single-command fixture path, and implement the deterministic migration verification platform without expanding the MB03 data contract.",
+  "nextAction": "Implement and validate the MB02 canonical-state, digest, and batch replay platform; keep the current dataContractVersion 1 boundary unchanged.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",

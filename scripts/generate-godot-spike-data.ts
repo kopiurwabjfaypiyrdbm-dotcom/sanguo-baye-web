@@ -2,12 +2,14 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { developFarming } from '../src/core/cityCommands';
+import { buildMigrationReplaySuite } from '../src/core/migration/replayFixture';
 import type { City, Faction, GameState, Officer } from '../src/core/types';
 import { createBundledScenario } from '../src/data/bundledScenarios';
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PERIOD_OUTPUT_PATH = resolve(PROJECT_ROOT, 'godot/data/period-1.json');
 const FIXTURE_OUTPUT_PATH = resolve(PROJECT_ROOT, 'godot/data/fixtures/develop-farming-v1.json');
+const REPLAY_SUITE_OUTPUT_PATH = resolve(PROJECT_ROOT, 'godot/data/fixtures/migration-replay-suite-v1.json');
 const BUNDLED_PERIODS_PATH = resolve(PROJECT_ROOT, 'src/data/generated/baye-periods.json');
 
 const PERIOD_ID = 1 as const;
@@ -278,10 +280,12 @@ export function buildDevelopFarmingFixture() {
 }
 
 export function writeGodotSpikeData(): void {
-  writeJson(PERIOD_OUTPUT_PATH, buildGodotSpikeData());
+  const period = buildGodotSpikeData();
+  writeJson(PERIOD_OUTPUT_PATH, period);
   writeJson(FIXTURE_OUTPUT_PATH, buildDevelopFarmingFixture());
+  writeJson(REPLAY_SUITE_OUTPUT_PATH, buildMigrationReplaySuite(period));
   process.stdout.write(
-    `Generated ${relativeOutput(PERIOD_OUTPUT_PATH)} and ${relativeOutput(FIXTURE_OUTPUT_PATH)}.\n`,
+    `Generated ${relativeOutput(PERIOD_OUTPUT_PATH)}, ${relativeOutput(FIXTURE_OUTPUT_PATH)}, and ${relativeOutput(REPLAY_SUITE_OUTPUT_PATH)}.\n`,
   );
 }
 

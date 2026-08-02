@@ -9,6 +9,8 @@
     "build": "tsc -b && vite build",
     "test": "vitest run --pool=threads --maxWorkers=1 --minWorkers=1",
     "godot:spike-data": "vite-node scripts/generate-godot-spike-data.ts",
+    "godot:migration-fixtures:check": "vite-node scripts/verify-godot-migration-fixtures.ts",
+    "godot:migration-check": "npm run godot:migration-fixtures:check && node scripts/run-godot-migration-verification.mjs",
     "godot:program-check": "node scripts/verify-godot-program.mjs --self-test --recover",
     "icons:generate": "node scripts/generate-app-icons.mjs",
     "android:add": "npm run build && cap add android",
