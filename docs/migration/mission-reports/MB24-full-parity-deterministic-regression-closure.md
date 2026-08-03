@@ -4,7 +4,7 @@
 
 MB24 已补上跨阶段 fixture 的 canonical 回归闭环，并新增一条实际贯通回放：TypeScript 生成 13 个战略、战术、存档和入口 fixture 的语言无关清单，Godot 4.7.1 独立读取同一 JSON、重新计算 canonical SHA-256，并通过 136 项清单断言；Godot full-loop runner 另通过 36 项断言，包含 Godot 原生战术创建、部署确认、撤退/结算、AI/月度双次同 seed 回放，以及独立 fixture-backed 移动、攻击和技能命令切片。该 Mission 没有改动 RNG 算法、命令事务或存档契约，也没有把 Web 运行时嵌入 Godot。
 
-MB23 遗留的 MuMu 物理触控 P2 仍明确保留：当前 `adb shell input tap/touchscreen` 在 MuMu 的旋转窗口上没有稳定命中 Godot 控件；键盘导航、渲染、返回、暂停/恢复和双尺寸截图已通过，真实触摸、拖动/缩放、点城与战术入口仍需人工窗口/真机复核。
+MB23 遗留的 MuMu 物理触控 P1 验收缺口仍明确保留：当前 `adb shell input tap/touchscreen` 在 MuMu 的旋转窗口上没有稳定命中 Godot 控件；键盘导航、渲染、返回、暂停/恢复和双尺寸截图已通过，真实触摸、拖动/缩放、点城与战术入口仍需人工窗口/真机复核。在 Android-first 目标下，未取得物理触摸证据前不能将本阶段标记为移动端完全验收。
 
 ## 本次实现
 
@@ -14,6 +14,10 @@ MB23 遗留的 MuMu 物理触控 P2 仍明确保留：当前 `adb shell input ta
 - 新增 `scripts/generate-godot-full-loop-fixture.ts`、`godot/data/fixtures/godot-full-loop-v1.json`、`godot/tests/full_loop_replay_runner.gd` 与对应验证 wrapper，执行战役启动→开垦→中间存档重载→Godot 原生战术创建/部署确认→撤退→结算→最终存档重载，并额外双次回放 AI/月度转换及移动/攻击/技能切片；当前通过 36 项断言。
 - 将 `npm run godot:parity-regression:verify`、`npm run godot:full-loop:verify`、`npm run godot:migration-check` 与 `npm run godot:project:verify` 接入 `npm run check`。
 - 修复 Android Back 的场景优先级：战术设置/战略面板/返回确认先关闭；补回 Windows 标题栏关闭通知；暂停时战略 GameSession 自动保存，主菜单、战役设置、战略和战术场景接收恢复通知。
+- 将战术暂停检查点升级为 version 2：由 application/persistence 的 `TacticalPauseRepository` 负责，包含 battle identity、父战略状态摘要，采用临时文件→备份→原子重命名，主文件、`.tmp`、`.bak` 按优先级逐一校验并可提升有效候选，写入失败显式反馈，损坏/摘要不一致时显示可见恢复警告；进入新战术样片前保存战略 GameSession 并清理全部旧候选，冷启动主菜单先验证候选并提供“恢复战术演练”入口，恢复后返回战略地图可从生产存档重建会话。
+- 战略→战术样片现在由 `GameSession.create_tactical_battle()` 以显式、排序的相邻进攻 order 创建真实战场，再经 application-owned `TacticalLaunchContext` 交给战术场景；场景不再从 `DemoFactory` 替代生产 hand-off。仅直接打开战术场景的 presentation smoke 才使用带 `demo:` parent 标识的演示工厂。
+- 终局战术返回战略前会通过 `settle_tactical_battle` 将战后结果、资源和 RNG 状态回写并保存到战略 `GameSession`；冷恢复无内存 hand-off 时先加载已验证的战略存档再结算，避免战术成果只停留在场景内。战术路径会在暂停检查点清理前保留 committed 标记，冷启动消费并暴露匹配的 battleId 后不再二次结算。
+- 进行中的战术战场通过 Android Back、Escape 或返回按钮离开时先弹出“继续战斗/放弃并返回”确认，不再因误触直接丢弃战术恢复点。
 - 将统一平台安全区计算应用到主菜单、战役设置、战略 HUD 和战术相机/操作区。
 - 更新 `references/parity-matrix.md`，新增“Godot 全量回归 fixture 清单”条目，明确该证据闭合跨客户端 canonical 载荷，不提升未知 BBK 原设备 ABI 的证据等级。
 
@@ -23,9 +27,10 @@ MB23 遗留的 MuMu 物理触控 P2 仍明确保留：当前 `adb shell input ta
 |---|---|
 | `npm run godot:parity-regression:verify` | 13 fixture entries；Godot 136 assertions 通过 |
 | `npm run godot:full-loop:verify` | Godot full-loop 36 assertions 通过 |
-| `npm run check` | 通过；Godot 13 fixture/20 项 full-loop、迁移负例、主场景/导入、各领域事务与呈现检查、Web 47 files/378 tests（2 skipped files/4 skipped tests）、生产构建均通过 |
+| `npm run check` | 通过；Godot 13 fixture/36 项 full-loop、迁移负例、主场景/导入、各领域事务与呈现检查、Web 47 files/378 tests（2 skipped files/4 skipped tests）、生产构建均通过 |
 | `npm run godot:project:verify` | 211 domain + 212 presentation input smoke；主场景和导入通过 |
-| `npm run godot:tactical-presentation:verify` | 74 assertions 通过 |
+| `npm run godot:tactical-presentation:verify` | 92 assertions 通过，包含未知呈现命令拒绝、状态不变、`.tmp/.bak` 候选提升及非法主文件回退断言 |
+| `npm run godot:production-save:verify` | 135 assertions 通过，含 committed crash-window 冷恢复、battleId 消费和 exact-once 回写保护 |
 | `npm run reference:check` | 包含于 `npm run check`，通过；未引入受限原版资产 |
 | `git diff --check` | 通过 |
 
@@ -39,7 +44,7 @@ MB23 遗留的 MuMu 物理触控 P2 仍明确保留：当前 `adb shell input ta
 
 ## 已知风险与人工复验
 
-- MB23 的 MuMu 触控注入问题仍是移动验收缺口：需要在 MuMu 窗口或真机上人工点击主菜单、下拉选择、城池节点，拖动/缩放战略地图，打开战术样片并返回；不能把 ADB 键盘焦点路径当作触摸通过。安全区与 Back 路由已补齐，但真实触摸证据仍未宣称通过。
+- MB23 的 MuMu 触控注入问题仍是 Android-first 的 P1 移动验收缺口：需要在 MuMu 窗口或真机上人工点击主菜单、下拉选择、城池节点，拖动/缩放战略地图，打开战术样片并返回；不能把 ADB 键盘焦点路径当作触摸通过。安全区、Back 路由、战略预存档和战术恢复检查点已补齐，但真实触摸证据仍未宣称通过。
 - 未知 BBK `SysRand`、原版战场 ABI、部分未证实原版内容仍按 parity matrix 的 provisional/partial 状态保留。
 - 默认 Godot Windows renderer 的本机原生 `0x58` 环境崩溃仍不等于项目逻辑失败；GL Compatibility smoke 是当前支持路径。
 

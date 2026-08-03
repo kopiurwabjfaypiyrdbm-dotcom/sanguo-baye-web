@@ -637,23 +637,25 @@ func _less_diplomatic_order_id(left: String, right: String) -> bool:
 	return left < right if left_serial == right_serial else left_serial < right_serial
 
 
-func save_game() -> Dictionary:
+func save_game(preserve_committed_recovery: bool = false) -> Dictionary:
 	if _state == null:
 		return _failure("尚未载入战役")
 	if bool(_campaign.get("legacySpike", false)):
 		var spike_result: Dictionary = _repository.save(_state, "Godot migration spike")
 		if not spike_result["ok"]:
 			return spike_result
-		var spike_recovery_cleanup := _clear_committed_recovery_after_save()
-		if not spike_recovery_cleanup["ok"]:
-			return spike_recovery_cleanup
+		if not preserve_committed_recovery:
+			var spike_recovery_cleanup := _clear_committed_recovery_after_save()
+			if not spike_recovery_cleanup["ok"]:
+				return spike_recovery_cleanup
 		return {"ok": true, "error": "", "path": spike_result["path"], "envelope": spike_result["envelope"], "state": snapshot()}
 	var result: Dictionary = _repository.save_production(_state, _campaign, "Godot production campaign")
 	if not result["ok"]:
 		return result
-	var recovery_cleanup := _clear_committed_recovery_after_save()
-	if not recovery_cleanup["ok"]:
-		return recovery_cleanup
+	if not preserve_committed_recovery:
+		var recovery_cleanup := _clear_committed_recovery_after_save()
+		if not recovery_cleanup["ok"]:
+			return recovery_cleanup
 	return {"ok": true, "error": "", "path": result["path"], "envelope": result["envelope"], "state": snapshot()}
 
 
@@ -753,6 +755,7 @@ func load_game() -> Dictionary:
 	if not restored["ok"]:
 		return restored
 	var normalized_envelope: Dictionary = envelope.duplicate(true)
+	var recovered_committed_battle_id := ""
 	if bool(result.get("migrated", false)):
 		var migrated: Dictionary = _repository.create_production_envelope(
 			_state, _campaign, String(envelope.get("label", "迁移的旧版生产存档")), String(envelope.get("savedAt", ""))
@@ -766,6 +769,20 @@ func load_game() -> Dictionary:
 			_compat_command_serial = previous_serial
 			return migrated
 		normalized_envelope = migrated["envelope"]
+	# A committed battle marker is the durable second phase of a strategic
+	# settlement. If the process died after the marker was written but before
+	# the main save completed, promote that already-validated post-battle state
+	# and immediately commit the normal save so cold-start load is authoritative.
+	var committed_recovery: Dictionary = _recovery_repository.load()
+	if bool(committed_recovery.get("ok", false)) and bool(committed_recovery.get("found", false)) and str(committed_recovery.get("status", "")) == "committed":
+		var resumed_committed: Dictionary = resume_battle_recovery()
+		if not bool(resumed_committed.get("ok", false)):
+			return resumed_committed
+		var recovered_save: Dictionary = save_game()
+		if not bool(recovered_save.get("ok", false)):
+			return recovered_save
+		normalized_envelope = recovered_save.get("envelope", normalized_envelope)
+		recovered_committed_battle_id = String(resumed_committed.get("battleId", ""))
 	return {
 		"ok": true,
 		"error": "",
@@ -774,6 +791,7 @@ func load_game() -> Dictionary:
 		"migrated": bool(result.get("migrated", false)),
 		"campaign": campaign_descriptor(),
 		"recoveredFrom": result.get("recoveredFrom", ""),
+		"recoveredCommittedBattleId": recovered_committed_battle_id,
 		"state": snapshot(),
 	}
 

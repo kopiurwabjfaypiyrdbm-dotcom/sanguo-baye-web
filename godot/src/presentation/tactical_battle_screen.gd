@@ -11,7 +11,11 @@ const Canonical = preload("res://src/domain/validation/canonical_json.gd")
 const Session = preload("res://src/application/tactical_battle/tactical_battle_session.gd")
 const DemoFactory = preload("res://src/application/tactical_battle/tactical_battle_demo_factory.gd")
 const SafeArea = preload("res://src/presentation/safe_area_margin.gd")
-const TACTICAL_PAUSE_PATH := "user://godot-tactical-pause.json"
+const LAUNCH_CONTEXT = preload("res://src/application/campaign_launch_context.gd")
+const SESSION_CONTEXT = preload("res://src/application/campaign_session_context.gd")
+const TACTICAL_CONTEXT = preload("res://src/application/tactical_launch_context.gd")
+const PauseRepository = preload("res://src/application/persistence/tactical_pause_repository.gd")
+const GAME_SESSION_SCRIPT = preload("res://src/application/game_session/game_session.gd")
 
 const CELL_SIZE := 88.0
 const BOARD_SIZE := Vector2(12.0 * CELL_SIZE, 8.0 * CELL_SIZE)
@@ -59,6 +63,7 @@ var _high_contrast_toggle: CheckButton
 var _reduced_motion_toggle: CheckButton
 var _hints_toggle: CheckButton
 var _settings_close_button: Button
+var _return_confirmation: ConfirmationDialog
 var _top_bar: PanelContainer
 var _turn_bar: PanelContainer
 var _text_scale := 1.0
@@ -66,19 +71,40 @@ var _high_contrast := false
 var _reduced_motion := false
 var _show_hints := true
 var _compact_layout := false
+var _pause_recovery_error := ""
+var _pause_save_failed := false
+var _parent_state_sha256 := ""
+var _pause_repository := PauseRepository.new()
+var _strategic_settlement_applied := false
 
 
 func _ready() -> void:
 	_build_interface()
+	var had_pause_candidate := PauseRepository.has_candidate()
 	var recovered_snapshot := _load_pause_snapshot()
-	_session = Session.from_snapshot(recovered_snapshot if not recovered_snapshot.is_empty() else DemoFactory.create_snapshot())
+	var handoff := TACTICAL_CONTEXT.take()
+	var initial_snapshot: Dictionary
+	if not recovered_snapshot.is_empty():
+		initial_snapshot = recovered_snapshot
+	elif not handoff.is_empty():
+		initial_snapshot = handoff.get("battle", {}) as Dictionary
+		_parent_state_sha256 = str(handoff.get("parentStateSha256", ""))
+	elif had_pause_candidate:
+		_set_status("战术恢复检查点无效，已拒绝回退到无关演示战场", Color("f38c78"))
+		return
+	else:
+		initial_snapshot = DemoFactory.create_snapshot()
+		_parent_state_sha256 = "demo:%s" % str(initial_snapshot.get("id", ""))
+	_session = Session.from_snapshot(initial_snapshot)
 	if _session == null:
-		_set_status("战场样片状态校验失败", Color(0.95, 0.4, 0.35))
+		_set_status("战场样片状态校验失败，拒绝进入无关演示战场", Color(0.95, 0.4, 0.35))
 		return
 	_snapshot = _session.snapshot()
 	battle_camera.position = BOARD_SIZE * 0.5
 	battle_camera.zoom = Vector2.ONE
 	_refresh_view()
+	if not _pause_recovery_error.is_empty():
+		_set_status("恢复检查点：%s" % _pause_recovery_error, Color("f3cf72"))
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	_apply_responsive_layout()
 	call_deferred("_focus_battlefield")
@@ -126,7 +152,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if is_instance_valid(_settings_panel) and _settings_panel.visible:
 			_close_settings()
 		else:
-			_return_to_strategy()
+			_request_return_to_strategy()
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton:
 		_handle_mouse_button(event)
@@ -223,7 +249,7 @@ func _build_interface() -> void:
 	_unit_count_label = Label.new(); _unit_count_label.name = "UnitCountLabel"; top_row.add_child(_unit_count_label)
 	_hint_label = Label.new(); _hint_label.name = "HintLabel"; _hint_label.text = "拖动平移 · 滚轮/双指缩放 · 点击选中"; _hint_label.add_theme_color_override("font_color", Color("b7c9c6")); _hint_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; top_row.add_child(_hint_label)
 	_settings_button = Button.new(); _settings_button.text = "设置"; _settings_button.custom_minimum_size = Vector2(78, 48); _settings_button.pressed.connect(_open_settings); top_row.add_child(_settings_button)
-	_back_button = Button.new(); _back_button.text = "返回战略地图"; _back_button.custom_minimum_size = Vector2(150, 48); _back_button.pressed.connect(_return_to_strategy); top_row.add_child(_back_button)
+	_back_button = Button.new(); _back_button.text = "返回战略地图"; _back_button.custom_minimum_size = Vector2(150, 48); _back_button.pressed.connect(_request_return_to_strategy); top_row.add_child(_back_button)
 	overlay.add_child(_top_bar)
 	_status_label = Label.new(); _status_label.position = Vector2(20, 84); _status_label.add_theme_font_size_override("font_size", 18); _status_label.add_theme_color_override("font_color", Color("eaf4ef")); _status_label.mouse_filter = Control.MOUSE_FILTER_IGNORE; overlay.add_child(_status_label)
 	_selection_panel = PanelContainer.new(); _selection_panel.custom_minimum_size = Vector2(260, 190); _selection_panel.mouse_filter = Control.MOUSE_FILTER_STOP; overlay.add_child(_selection_panel)
@@ -243,6 +269,13 @@ func _build_interface() -> void:
 	_settle_button = Button.new(); _settle_button.text = "查看战果"; _settle_button.custom_minimum_size = Vector2(112, 48); _settle_button.pressed.connect(_on_settle_pressed); turn_row.add_child(_settle_button)
 	overlay.add_child(_turn_bar)
 	_build_settings_panel()
+	_return_confirmation = ConfirmationDialog.new()
+	_return_confirmation.title = "离开战术战场"
+	_return_confirmation.dialog_text = "战斗尚未结束。放弃本场战斗并返回战略地图吗？"
+	_return_confirmation.get_ok_button().text = "放弃并返回"
+	_return_confirmation.get_cancel_button().text = "继续战斗"
+	_return_confirmation.confirmed.connect(_abandon_and_return)
+	add_child(_return_confirmation)
 	_update_touch_targets()
 
 
@@ -483,11 +516,16 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	if is_instance_valid(_top_bar):
 		_top_bar.offset_left = safe_left
 		_top_bar.offset_right = -safe_right
-		_top_bar.offset_bottom = touch_size + 22.0
+		_top_bar.offset_top = safe_rect.position.y
+		_top_bar.offset_bottom = safe_rect.position.y + touch_size + 22.0
+	if is_instance_valid(_status_label):
+		_status_label.position = Vector2(safe_rect.position.x + 12.0, safe_rect.position.y + touch_size + 28.0)
 	if is_instance_valid(_turn_bar):
 		_turn_bar.offset_left = safe_left
 		_turn_bar.offset_right = -safe_right
-		_turn_bar.offset_top = -(touch_size + 18.0)
+		var safe_bottom := get_viewport_rect().size.y - safe_rect.end.y
+		_turn_bar.offset_top = -(touch_size + 18.0 + safe_bottom)
+		_turn_bar.offset_bottom = -safe_bottom
 	if is_instance_valid(_settings_panel):
 		_settings_panel.custom_minimum_size = Vector2(ceilf(360.0 / scale), ceilf(290.0 / scale))
 		_settings_panel.position = safe_rect.position + (safe_rect.size - _settings_panel.custom_minimum_size) * 0.5
@@ -574,54 +612,167 @@ func _on_viewport_size_changed() -> void:
 
 
 func _return_to_strategy() -> void:
-	if FileAccess.file_exists(TACTICAL_PAUSE_PATH):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(TACTICAL_PAUSE_PATH))
+	if not _settle_into_strategic_session():
+		return
+	var clear_result := PauseRepository.clear_candidates()
+	if not bool(clear_result.get("ok", false)):
+		_set_status("无法清理战术恢复检查点，已取消返回", Color("f38c78"))
+		return
+	# Keep the committed recovery marker through the strategic save. Only clear
+	# it after the tactical checkpoint is gone, so a crash in this small window
+	# can still be promoted exactly once on the next cold load.
+	if str(_snapshot.get("status", "ongoing")) != "ongoing":
+		var settled_session = SESSION_CONTEXT.peek()
+		if is_instance_valid(settled_session):
+			var recovery_clear: Dictionary = settled_session.clear_battle_recovery()
+			if not bool(recovery_clear.get("ok", false)):
+				_set_status("无法清理战果提交标记，已取消返回", Color("f38c78"))
+				return
+	# If Android recreated this scene, the in-memory strategic hand-off is gone;
+	# the strategic screen can rebuild it from the production save.
+	if not SESSION_CONTEXT.has_session():
+		LAUNCH_CONTEXT.request_load()
 	var error := get_tree().change_scene_to_file("res://scenes/presentation/strategy_screen.tscn")
 	if error != OK:
 		_set_status("无法返回战略地图：错误 %d" % error, Color("f38c78"))
+
+
+func _request_return_to_strategy() -> void:
+	if str(_snapshot.get("status", "ongoing")) == "ongoing":
+		if is_instance_valid(_return_confirmation): _return_confirmation.popup_centered()
+		return
+	_return_to_strategy()
+
+
+func _abandon_and_return() -> void:
+	_return_to_strategy()
+
+
+func _settle_into_strategic_session() -> bool:
+	if str(_snapshot.get("status", "ongoing")) == "ongoing":
+		return true
+	if _strategic_settlement_applied:
+		var existing_session = SESSION_CONTEXT.peek()
+		if not is_instance_valid(existing_session):
+			return false
+		var retry_save: Dictionary = existing_session.save_game(true)
+		if not bool(retry_save.get("ok", false)):
+			_set_status("战果保存失败：%s" % str(retry_save.get("error", "")), Color("f38c78"))
+			return false
+		return true
+	var settlement: Dictionary = _last_command_result.get("settlement", {})
+	if settlement.is_empty():
+		var digest: Dictionary = Canonical.try_sha256(_snapshot)
+		if not bool(digest.get("ok", false)):
+			_set_status("战后状态摘要失败，无法回写战略", Color("f38c78"))
+			return false
+		var settle_command := {
+			"commandEnvelopeVersion": 1,
+			"commandId": "presentation-settle-%04d" % (_command_serial + 1),
+			"expectedBattleStateSha256": str(digest.get("value", "")),
+			"kind": "settle_battle",
+			"parameters": {},
+		}
+		var settle_result: Dictionary = _session.execute(settle_command)
+		if not bool(settle_result.get("ok", false)):
+			_set_status("战后结果生成失败：%s" % str(settle_result.get("error", "")), Color("f38c78"))
+			return false
+		settlement = settle_result.get("settlement", {})
+	if settlement.is_empty():
+		_set_status("战后结果为空，无法回写战略", Color("f38c78"))
+		return false
+	var settlement_digest: Dictionary = Canonical.try_sha256(settlement)
+	if not bool(settlement_digest.get("ok", false)):
+		_set_status("战后结果摘要失败，无法回写战略", Color("f38c78"))
+		return false
+	var strategic_session = SESSION_CONTEXT.peek()
+	var created_session := false
+	if not is_instance_valid(strategic_session):
+		strategic_session = GAME_SESSION_SCRIPT.new()
+		var loaded: Dictionary = strategic_session.load_game()
+		if not bool(loaded.get("ok", false)):
+			_set_status("无法载入战略存档以结算战果：%s" % str(loaded.get("error", "")), Color("f38c78"))
+			return false
+		created_session = true
+		var recovered_battle_id := String(loaded.get("recoveredCommittedBattleId", ""))
+		if not recovered_battle_id.is_empty():
+			if recovered_battle_id != String(_snapshot.get("id", "")):
+				_set_status("战果提交标记与当前战场不匹配，已拒绝重复回写", Color("f38c78"))
+				return false
+			# load_game() has already promoted and saved this exact terminal
+			# settlement. Dispatching it again would fail the strategic guard.
+			_strategic_settlement_applied = true
+			SESSION_CONTEXT.store(strategic_session)
+			return true
+	var strategic_digest := strategic_session.state_sha256()
+	var command := {
+		"commandEnvelopeVersion": 1,
+		"commandId": "presentation-strategic-settle-%s-%s" % [str(_snapshot.get("id", "")), str(settlement_digest.get("value", "")).left(16)],
+		"expectedStateSha256": strategic_digest,
+		"kind": "settle_tactical_battle",
+		"parameters": {"battleResult": settlement},
+	}
+	var applied: Dictionary = strategic_session.execute_command(command)
+	if not bool(applied.get("ok", false)):
+		_set_status("战果回写战略失败：%s" % str(applied.get("error", "")), Color("f38c78"))
+		return false
+	_strategic_settlement_applied = true
+	if created_session:
+		SESSION_CONTEXT.store(strategic_session)
+	var saved: Dictionary = strategic_session.save_game(true)
+	if not bool(saved.get("ok", false)):
+		_set_status("战果保存失败：%s" % str(saved.get("error", "")), Color("f38c78"))
+		return false
+	return true
 
 
 func _handle_system_back() -> bool:
 	if is_instance_valid(_settings_panel) and _settings_panel.visible:
 		_close_settings()
 		return true
+	if is_instance_valid(_return_confirmation) and _return_confirmation.visible:
+		_return_confirmation.hide()
+		return true
+	if str(_snapshot.get("status", "ongoing")) == "ongoing":
+		_request_return_to_strategy()
+		return true
 	return false
 
 
 func _on_application_paused() -> void:
-	_save_pause_snapshot()
-	_set_status("应用已暂停；战术状态已写入恢复检查点", Color("f3cf72"))
+	_pause_save_failed = false
+	if _save_pause_snapshot():
+		_set_status("应用已暂停；战术状态已写入恢复检查点", Color("f3cf72"))
+	else:
+		_pause_save_failed = true
+		_set_status("应用暂停时无法写入战术恢复检查点", Color("f38c78"))
 
 
 func _on_application_resumed() -> void:
-	_set_status("应用已恢复；战术状态保持确定性", Color("9be59f"))
+	if _pause_save_failed:
+		_set_status("应用已恢复；暂停时恢复检查点写入失败", Color("f38c78"))
+	else:
+		_set_status("应用已恢复；战术状态保持确定性", Color("9be59f"))
 
 
-func _save_pause_snapshot() -> void:
+func _save_pause_snapshot() -> bool:
 	if not is_instance_valid(_session):
-		return
-	var payload := {"version": 1, "stateSha256": _session.state_sha256(), "battle": _session.snapshot()}
-	var file := FileAccess.open(TACTICAL_PAUSE_PATH, FileAccess.WRITE)
-	if file != null:
-		file.store_string(JSON.stringify(payload))
-		file.close()
+		return false
+	var battle: Dictionary = _session.snapshot()
+	var digest: String = _session.state_sha256()
+	return bool(_pause_repository.save(battle, digest, _parent_state_sha256).get("ok", false))
 
 
 func _load_pause_snapshot() -> Dictionary:
-	if not FileAccess.file_exists(TACTICAL_PAUSE_PATH):
+	_pause_recovery_error = ""
+	var loaded: Dictionary = _pause_repository.load()
+	if not bool(loaded.get("ok", false)):
+		_pause_recovery_error = String(loaded.get("error", "恢复文件校验失败"))
 		return {}
-	var file := FileAccess.open(TACTICAL_PAUSE_PATH, FileAccess.READ)
-	if file == null:
-		return {}
-	var parsed: Variant = JSON.parse_string(file.get_as_text())
-	file.close()
-	if not parsed is Dictionary or int(parsed.get("version", -1)) != 1 or not parsed.get("battle", {}) is Dictionary:
-		return {}
-	var battle: Dictionary = parsed["battle"]
-	var digest := Canonical.try_sha256(battle)
-	if not bool(digest.get("ok", false)) or str(digest.get("value", "")) != str(parsed.get("stateSha256", "")):
-		return {}
-	return battle
+	_parent_state_sha256 = str(loaded.get("parentStateSha256", ""))
+	if bool(loaded.get("recoveredFromFallback", false)):
+		_pause_recovery_error = "已从备用恢复文件恢复战术状态" if bool(loaded.get("promoted", false)) else "已读取备用恢复文件，但无法提升为主文件"
+	return loaded.get("battle", {}) as Dictionary
 
 
 func _sorted_unit_ids() -> Array[String]:

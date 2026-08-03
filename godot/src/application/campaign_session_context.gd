@@ -18,5 +18,13 @@ static func take() -> GameSession:
 	return result
 
 
+static func has_session() -> bool:
+	return is_instance_valid(_session)
+
+
+static func peek() -> GameSession:
+	return _session
+
+
 static func clear() -> void:
 	_session = null

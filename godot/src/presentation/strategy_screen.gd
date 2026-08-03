@@ -5,6 +5,8 @@ extends Node2D
 const GAME_SESSION_SCRIPT := preload("res://src/application/game_session/game_session.gd")
 const LAUNCH_CONTEXT := preload("res://src/application/campaign_launch_context.gd")
 const SESSION_CONTEXT := preload("res://src/application/campaign_session_context.gd")
+const TACTICAL_CONTEXT := preload("res://src/application/tactical_launch_context.gd")
+const PauseRepository = preload("res://src/application/persistence/tactical_pause_repository.gd")
 
 @export var allow_demo_samples := false
 
@@ -84,6 +86,7 @@ func _ready() -> void:
 	var result: Dictionary
 	var carried_session: GameSession = SESSION_CONTEXT.take()
 	if is_instance_valid(carried_session):
+		LAUNCH_CONTEXT.clear()
 		_session = carried_session
 		result = {
 			"ok": true,
@@ -477,10 +480,11 @@ func _advance_turn_month() -> void:
 	_set_interaction_busy(true)
 	_set_status(tr("正在执行诸侯行动与月度结算……"), "busy")
 	_command_serial += 1
+	var before_digest := str(_session.call("state_sha256"))
 	var result: Dictionary = _call_session("advance_turn_month", [{
 		"commandEnvelopeVersion": 1,
-		"commandId": "strategy-screen-turn-%06d" % _command_serial,
-		"expectedStateSha256": str(_session.call("state_sha256")),
+		"commandId": "strategy-screen-turn-%s-%06d" % [before_digest.left(12), _command_serial],
+		"expectedStateSha256": before_digest,
 		"kind": "advance_turn_month",
 		"parameters": {},
 	}])
@@ -640,7 +644,7 @@ func _execute_internal_command(kind: String, parameters: Dictionary) -> void:
 	var before_digest: String = str(_session.call("state_sha256"))
 	var result := _call_session("execute_command", [{
 		"commandEnvelopeVersion": 1,
-		"commandId": "strategy-screen-%06d" % _command_serial,
+		"commandId": "strategy-screen-%s-%s-%06d" % [kind, before_digest.left(12), _command_serial],
 		"expectedStateSha256": before_digest,
 		"kind": kind,
 		"parameters": parameters.duplicate(true),
@@ -779,12 +783,67 @@ func _load_game() -> void:
 
 
 func _open_tactical_demo() -> void:
+	if _persistence_enabled and is_instance_valid(_session):
+		var save_result := _call_session("save_game")
+		if not bool(save_result.get("ok", false)):
+			_set_status(tr("进入战术前保存失败：%s") % _result_error(save_result), "error")
+			return
+	# A checkpoint belongs to one explicit tactical hand-off. Remove any stale
+	# checkpoint before creating a new hand-off; the new scene writes its own
+	# atomic checkpoint after it starts.
+	var clear_result := PauseRepository.clear_candidates()
+	if not bool(clear_result.get("ok", false)):
+		_set_status(tr("无法清理上一次战术恢复检查点：错误 %d") % int(clear_result.get("error", ERR_CANT_OPEN)), "error")
+		return
+	var order := _build_tactical_demo_order()
+	if order.is_empty():
+		_set_status(tr("当前战役没有可用的相邻进攻样片"), "warning")
+		return
+	var creation := _call_session("create_tactical_battle", [order])
+	if not bool(creation.get("ok", false)):
+		_set_status(tr("战术样片创建失败：%s") % _result_error(creation), "error")
+		return
+	var battle: Dictionary = _as_dictionary(creation.get("battle", {}))
+	if battle.is_empty():
+		_set_status(tr("战术样片没有有效战场快照"), "error")
+		return
+	TACTICAL_CONTEXT.store(battle, order, str(creation.get("stateSha256", "")), _session.campaign_descriptor())
 	if is_instance_valid(_session):
 		SESSION_CONTEXT.store(_session)
 	var error := get_tree().change_scene_to_file("res://scenes/presentation/tactical_battle_screen.tscn")
 	if error != OK:
+		TACTICAL_CONTEXT.clear()
 		SESSION_CONTEXT.clear()
 		_set_status(tr("无法打开战术样片：错误 %d") % error, "error")
+
+
+func _build_tactical_demo_order() -> Dictionary:
+	var player_faction_id := str(_snapshot.get("playerFactionId", ""))
+	var cities := _as_dictionary(_snapshot.get("cities", {}))
+	var officers := _as_dictionary(_snapshot.get("officers", {}))
+	var city_ids: Array[String] = []
+	for raw_id: Variant in cities.keys(): city_ids.append(str(raw_id))
+	city_ids.sort()
+	for source_id: String in city_ids:
+		var source := _as_dictionary(cities.get(source_id, {}))
+		if str(source.get("ownerId", "")) != player_faction_id: continue
+		var neighbor_ids: Array[String] = []
+		for raw_neighbor: Variant in source.get("neighbors", []): neighbor_ids.append(str(raw_neighbor))
+		neighbor_ids.sort()
+		for target_id: String in neighbor_ids:
+			var target := _as_dictionary(cities.get(target_id, {}))
+			if target.is_empty() or str(target.get("ownerId", "")) == player_faction_id: continue
+			var officer_ids: Array[String] = []
+			for raw_officer_id: Variant in officers.keys(): officer_ids.append(str(raw_officer_id))
+			officer_ids.sort()
+			for officer_id: String in officer_ids:
+				var officer := _as_dictionary(officers.get(officer_id, {}))
+				if str(officer.get("status", "")) != "serving" or str(officer.get("factionId", "")) != player_faction_id or str(officer.get("cityId", "")) != source_id: continue
+				if int(officer.get("troops", 0)) <= 0 or int(officer.get("stamina", 0)) <= 0 or (_snapshot.get("actedOfficerIds", []) as Array).has(officer_id): continue
+				var provisions := mini(20, int(source.get("food", 0)))
+				if provisions <= 0: continue
+				return {"sourceCityId": source_id, "targetCityId": target_id, "officerIds": [officer_id], "provisions": provisions}
+	return {}
 
 
 func _return_to_menu() -> void:
@@ -850,6 +909,7 @@ func _on_application_resumed() -> void:
 
 func _leave_to_menu() -> void:
 	LAUNCH_CONTEXT.clear()
+	TACTICAL_CONTEXT.clear()
 	SESSION_CONTEXT.clear()
 	var error := get_tree().change_scene_to_file("res://scenes/presentation/main_menu.tscn")
 	if error != OK:

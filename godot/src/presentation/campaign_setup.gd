@@ -86,7 +86,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		option.get_popup().add_theme_font_size_override("font_size", ceili(float(popup_font) / maxf(canvas_scale, 0.01)))
 		option.get_popup().add_theme_constant_override("v_separation", popup_gap)
 	if compact:
-		card.custom_minimum_size = Vector2(ceilf(maxf(320.0, float(physical_size.x) - 32.0) / maxf(canvas_scale, 0.01)), 0.0)
+		card.custom_minimum_size = Vector2(ceilf(maxf(320.0, safe_rect.size.x - 32.0)), 0.0)
 		var touch_size := ceilf(48.0 / maxf(canvas_scale, 0.01))
 		for control: Control in [period_option, ruler_option, back_button, start_button]:
 			control.custom_minimum_size.y = touch_size

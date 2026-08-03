@@ -11,6 +11,8 @@ func _init() -> void: call_deferred("_run")
 func _run() -> void:
 	for viewport_size: Vector2i in [Vector2i(1280, 720), Vector2i(844, 390)]:
 		root.size = viewport_size
+		for stale_candidate: String in ["user://godot-tactical-pause.json", "user://godot-tactical-pause.json.tmp", "user://godot-tactical-pause.json.bak"]:
+			if FileAccess.file_exists(stale_candidate): DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_candidate))
 		var screen := TacticalScene.instantiate()
 		root.add_child(screen)
 		await process_frame
@@ -74,6 +76,9 @@ func _run() -> void:
 		screen._execute_command("attack_unit", {"unitId": "officer:demo-attacker", "targetUnitId": "officer:unknown"})
 		_assert_equal(screen.get("_snapshot"), invalid_before, "invalid command must not mutate the presentation snapshot at %s" % viewport_size)
 		_assert_true(String(screen.get("_status_label").text).contains("命令未执行"), "invalid command must surface domain feedback at %s" % viewport_size)
+		screen._execute_command("unsupported_presentation_action", {})
+		_assert_equal(screen.get("_snapshot"), invalid_before, "unsupported presentation action must not mutate state at %s" % viewport_size)
+		_assert_true(String(screen.get("_status_label").text).contains("命令未执行"), "unsupported presentation action must surface feedback at %s" % viewport_size)
 		var move_before: Dictionary = screen.get("_snapshot").duplicate(true)
 		var move_before_digest := _digest(move_before)
 		screen._on_move_pressed()
@@ -99,6 +104,39 @@ func _run() -> void:
 			var terminal_result: Dictionary = terminal_session.execute({"commandEnvelopeVersion": 1, "commandId": "presentation-terminal", "expectedBattleStateSha256": terminal_digest, "kind": "wait_unit", "parameters": {"unitId": "officer:demo-attacker"}})
 			_assert_true(not bool(terminal_result.get("ok", false)), "terminal command must be rejected at %s" % viewport_size)
 			_assert_equal(terminal_session.snapshot(), terminal_snapshot, "terminal rejection must preserve state at %s" % viewport_size)
+		# Exercise the crash-recovery candidates without depending on platform
+		# process-kill timing: every candidate must validate the same digest and
+		# a valid fallback must be promoted back to the primary path.
+		var pause_candidates: Array[String] = ["user://godot-tactical-pause.json", "user://godot-tactical-pause.json.tmp", "user://godot-tactical-pause.json.bak"]
+		for candidate: String in pause_candidates:
+			if FileAccess.file_exists(candidate): DirAccess.remove_absolute(ProjectSettings.globalize_path(candidate))
+		_assert_true(bool(screen._save_pause_snapshot()), "pause checkpoint must write atomically at %s" % viewport_size)
+		var primary_file := FileAccess.open(pause_candidates[0], FileAccess.READ)
+		var primary_text := primary_file.get_as_text() if primary_file != null else ""
+		if primary_file != null: primary_file.close()
+		if FileAccess.file_exists(pause_candidates[0]): DirAccess.remove_absolute(ProjectSettings.globalize_path(pause_candidates[0]))
+		var tmp_file := FileAccess.open(pause_candidates[1], FileAccess.WRITE)
+		if tmp_file != null: tmp_file.store_string(primary_text); tmp_file.close()
+		var tmp_recovered: Dictionary = screen._load_pause_snapshot()
+		_assert_equal(_digest(tmp_recovered), _digest(screen.get("_snapshot")), "tmp checkpoint fallback must restore the same battle digest at %s error=%s" % [viewport_size, screen.get("_pause_recovery_error")])
+		_assert_true(FileAccess.file_exists(ProjectSettings.globalize_path(pause_candidates[0])), "tmp checkpoint fallback must promote the primary file at %s error=%s" % [viewport_size, screen.get("_pause_recovery_error")])
+		if FileAccess.file_exists(pause_candidates[0]): DirAccess.remove_absolute(ProjectSettings.globalize_path(pause_candidates[0]))
+		if FileAccess.file_exists(pause_candidates[1]): DirAccess.remove_absolute(ProjectSettings.globalize_path(pause_candidates[1]))
+		var bak_file := FileAccess.open(pause_candidates[2], FileAccess.WRITE)
+		if bak_file != null: bak_file.store_string(primary_text); bak_file.close()
+		var bak_recovered: Dictionary = screen._load_pause_snapshot()
+		_assert_equal(_digest(bak_recovered), _digest(screen.get("_snapshot")), "bak checkpoint fallback must restore the same battle digest at %s error=%s" % [viewport_size, screen.get("_pause_recovery_error")])
+		_assert_true(FileAccess.file_exists(ProjectSettings.globalize_path(pause_candidates[0])), "bak checkpoint fallback must promote the primary file at %s error=%s" % [viewport_size, screen.get("_pause_recovery_error")])
+		if FileAccess.file_exists(pause_candidates[0]): DirAccess.remove_absolute(ProjectSettings.globalize_path(pause_candidates[0]))
+		var invalid_primary := FileAccess.open(pause_candidates[0], FileAccess.WRITE)
+		if invalid_primary != null: invalid_primary.store_string("{}"); invalid_primary.close()
+		var fallback_file := FileAccess.open(pause_candidates[2], FileAccess.WRITE)
+		if fallback_file != null: fallback_file.store_string(primary_text); fallback_file.close()
+		var invalid_primary_recovered: Dictionary = screen._load_pause_snapshot()
+		_assert_equal(_digest(invalid_primary_recovered), _digest(screen.get("_snapshot")), "invalid primary must fall through to a valid bak digest at %s" % viewport_size)
+		_assert_true(FileAccess.file_exists(ProjectSettings.globalize_path(pause_candidates[0])), "valid fallback must replace invalid primary at %s" % viewport_size)
+		for candidate: String in pause_candidates:
+			if FileAccess.file_exists(candidate): DirAccess.remove_absolute(ProjectSettings.globalize_path(candidate))
 		screen.queue_free()
 	if _failures > 0: push_error("[Godot tactical presentation] FAILED: %d failure(s), %d assertion(s)" % [_failures, _assertions]); quit(1); return
 	print("[Godot tactical presentation] PASSED: %d assertion(s)" % _assertions); quit(0)

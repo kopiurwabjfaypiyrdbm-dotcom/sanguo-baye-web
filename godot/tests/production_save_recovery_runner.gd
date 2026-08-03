@@ -237,8 +237,9 @@ func _initialize() -> void:
 	var warm_committed := GameSession.new(SAVE_PATH)
 	var warm_loaded := warm_committed.load_game()
 	_assert_true(warm_loaded.get("ok", false), "warm committed recovery baseline must load")
-	var warm_resume := warm_committed.resume_battle_recovery()
-	_assert_true(warm_resume.get("ok", false) and warm_resume.get("code", "") == "already_committed", "warm session must resume committed checkpoint over its main baseline")
+	_assert_equal(_digest(warm_loaded.get("state", {})), fixture["committed"]["strategicSave"]["stateSha256"], "warm load must promote committed checkpoint to the post-battle state")
+	var warm_recovery_after_load := warm_committed.load_battle_recovery()
+	_assert_true(not bool(warm_recovery_after_load.get("found", false)), "warm load must clear the committed recovery marker after promotion")
 	committed_session.clear_battle_recovery()
 	_write_json(SAVE_PATH + ".battle-recovery.json", fixture["committed"])
 	var fixture_committed_loaded := committed_session.load_battle_recovery()
@@ -333,6 +334,31 @@ func _initialize() -> void:
 	_assert_true(saved_after_settlement.get("ok", false), "saving settled state must succeed")
 	var cleared_after_settlement := settle_session.load_battle_recovery()
 	_assert_true(cleared_after_settlement.get("ok", false) and not cleared_after_settlement.get("found", false), "saving settled state must clear same-state committed marker")
+	# The tactical presentation deliberately preserves the committed marker until
+	# its pause checkpoint is removed. A crash after the strategic save but before
+	# that cleanup must cold-promote exactly once, then expose the consumed battle
+	# id so the presentation does not dispatch the settlement a second time.
+	var crash_window := GameSession.new(SAVE_PATH)
+	crash_window.clear_battle_recovery()
+	crash_window.start_campaign(1, 1)
+	crash_window.save_game()
+	var crash_pending := crash_window.save_battle_recovery_pending(
+		settlement_order, {"kind": "player-phase"}, "战术终局 crash window", "2026-08-03T00:00:01.000Z"
+	)
+	_assert_true(crash_pending.get("ok", false), "crash-window pending marker must be written")
+	var crash_settled := crash_window.execute_command(settlement_command)
+	_assert_true(crash_settled.get("ok", false), "crash-window settlement must commit")
+	var crash_saved := crash_window.save_game(true)
+	_assert_true(crash_saved.get("ok", false), "tactical save must preserve committed marker")
+	var marker_before_cold_load := GameSession.new(SAVE_PATH).load_battle_recovery()
+	_assert_true(marker_before_cold_load.get("ok", false) and marker_before_cold_load.get("found", false) and marker_before_cold_load.get("status", "") == "committed", "crash-window marker must survive tactical save")
+	var crash_cold := GameSession.new(SAVE_PATH)
+	var crash_loaded := crash_cold.load_game()
+	_assert_true(crash_loaded.get("ok", false), "cold load must promote committed tactical settlement: %s" % crash_loaded.get("error", ""))
+	_assert_equal(crash_loaded.get("recoveredCommittedBattleId", ""), crash_settled.get("receipt", {}).get("battleId", ""), "cold load must expose the consumed battle id")
+	_assert_equal(_digest(crash_loaded.get("state", {})), settlement_fixture["expectedStateSha256"], "cold promotion must preserve the terminal strategic result")
+	var marker_after_cold_load := crash_cold.load_battle_recovery()
+	_assert_true(marker_after_cold_load.get("ok", false) and not marker_after_cold_load.get("found", false), "cold promotion must clear the committed marker after saving")
 	# Simulate a crash after a newer main save lands but before an older
 	# committed marker is cleared. A cold process must reject that stale marker
 	# using the monotonic saveRevision rather than rolling back to the old state.
