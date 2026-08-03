@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB22",
-  "currentBriefPath": "docs/mission-briefs/MB22-tactical-hud-feedback-settings-accessibility.md",
-  "readyMissionIds": ["MB22"],
+  "currentMissionId": "MB23",
+  "currentBriefPath": "docs/mission-briefs/MB23-android-windows-platform-hardening-performance.md",
+  "readyMissionIds": ["MB23"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -137,15 +137,21 @@
       "briefPath": "docs/mission-briefs/MB21-main-menu-campaign-setup-strategic-ui.md",
       "reportPath": "docs/migration/mission-reports/MB21-main-menu-campaign-setup-strategic-ui.md",
       "commit": "2b006bf"
+    },
+    {
+      "id": "MB22",
+      "briefPath": "docs/mission-briefs/MB22-tactical-hud-feedback-settings-accessibility.md",
+      "reportPath": "docs/migration/mission-reports/MB22-tactical-hud-feedback-settings-accessibility.md",
+      "commit": "bbe869b"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB21",
-    "commit": "2b006bf",
+    "missionId": "MB22",
+    "commit": "bbe869b",
     "date": "2026-08-04"
   },
-  "nextAction": "Implement MB22 tactical HUD, feedback, settings, and accessibility; preserve MB21 campaign entry and session hand-off contracts.",
+  "nextAction": "Implement MB23 Android/Windows platform hardening, APK export, device evidence, lifecycle checks, and performance evidence; preserve MB22 tactical HUD contracts.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
