@@ -153,8 +153,8 @@ static func attack_unit(battle: BattleState, unit_id: String, target_unit_id: St
 	var before_digest := _digest(data)
 	var preflight := _preflight(data, before_digest)
 	if not preflight.is_empty(): return preflight
-	if data.get("phase") != "battle": return _battle_failure(before_digest, "战斗尚未开始")
 	if data.get("status") != "ongoing": return _battle_failure(before_digest, "战斗已经结束")
+	if data.get("phase") != "battle": return _battle_failure(before_digest, "战斗尚未开始")
 	var attacker: Dictionary = data["units"].get(unit_id, {})
 	if attacker.is_empty() or int(attacker.get("troops", 0)) <= 0: return _battle_failure(before_digest, "单位不存在或已经退出战斗")
 	if not bool(attacker.get("deployed", false)): return _battle_failure(before_digest, "攻击单位尚未部署")
@@ -254,6 +254,25 @@ static func end_unit_turn(battle: BattleState, unit_id: String) -> Dictionary:
 	unit["acted"] = true; data["units"][unit_id] = unit
 	data["actedUnitIds"].append(unit_id); data["actedUnitIds"].sort(); data["logs"].append("%s结束本回合行动。" % unit.get("name", unit_id))
 	return _finish(data, before_digest, "end_unit_turn", {"unitId": unit_id, "activeSide": data["activeSide"]})
+
+
+static func wait_unit(battle: BattleState, unit_id: String) -> Dictionary:
+	var data = battle.snapshot()
+	var before_digest := _digest(data)
+	var preflight := _preflight(data, before_digest)
+	if not preflight.is_empty(): return preflight
+	if data.get("phase") != "battle": return _battle_failure(before_digest, "战斗回合尚未开始")
+	if data.get("status") != "ongoing": return _battle_failure(before_digest, "战斗已经结束")
+	var unit: Dictionary = data["units"].get(unit_id, {})
+	if unit.is_empty() or not bool(unit.get("deployed", false)): return _battle_failure(before_digest, "部队不存在或尚未部署：%s" % unit_id)
+	if unit.get("side") != data["activeSide"]: return _battle_failure(before_digest, "当前不是该部队所属阵营的行动阶段")
+	if bool(unit.get("acted", false)): return _battle_failure(before_digest, "该部队本回合已经行动")
+	var before_points := int(unit.get("skillPoints", 0))
+	var after_points := mini(int(unit.get("maxSkillPoints", before_points)), before_points + 1)
+	unit["moved"] = true; unit["acted"] = true; unit["skillPoints"] = after_points; data["units"][unit_id] = unit
+	data["actedUnitIds"].append(unit_id); data["actedUnitIds"].sort()
+	data["logs"].append("%s原地休整%s。" % [unit.get("name", unit_id), "，恢复 1 点计谋点" if after_points > before_points else ""])
+	return _finish(data, before_digest, "wait_unit", {"unitId": unit_id, "skillPointsBefore": before_points, "skillPointsAfter": after_points})
 
 
 static func end_side_turn(battle: BattleState) -> Dictionary:

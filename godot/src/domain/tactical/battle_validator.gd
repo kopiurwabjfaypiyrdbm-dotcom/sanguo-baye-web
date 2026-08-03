@@ -51,7 +51,10 @@ static func validate(snapshot: Dictionary) -> Array[Dictionary]:
 	var status := String(snapshot.get("status", "")) if typeof(snapshot.get("status")) == TYPE_STRING else ""
 	var outcome := String(snapshot.get("outcome", "")) if typeof(snapshot.get("outcome")) == TYPE_STRING else ""
 	if status == "ongoing" and (phase == "ended" or not outcome.is_empty()): _issue(issues, "status", "ongoing state must not be ended or have an outcome")
-	if status != "" and status != "ongoing" and (phase != "ended" or outcome.is_empty()): _issue(issues, "outcome", "ended state must have a non-empty outcome")
+	# The Web tactical oracle keeps terminal battles in the `battle` phase while
+	# recording status/outcome; accept that compatibility shape alongside the
+	# native `ended` phase used by command-level fixtures.
+	if status != "" and status != "ongoing" and (not ["battle", "ended"].has(phase) or outcome.is_empty()): _issue(issues, "outcome", "ended state must have a non-empty outcome")
 	for key: String in ["attackerOfficerIds", "defenderOfficerIds", "actedUnitIds", "logs"]:
 		if typeof(snapshot.get(key)) != TYPE_ARRAY: _issue(issues, key, "must be an array")
 	_validate_unique_strings(snapshot.get("attackerOfficerIds", []), "attackerOfficerIds", issues)

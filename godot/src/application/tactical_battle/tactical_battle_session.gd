@@ -76,6 +76,7 @@ func execute(command: Dictionary) -> Dictionary:
 		"move_unit": result = Commands.move_unit(_battle, String(parameters.get("unitId", "")), int(parameters.get("slotX", -1)), int(parameters.get("slotY", -1)))
 		"attack_unit": result = Commands.attack_unit(_battle, String(parameters.get("unitId", "")), String(parameters.get("targetUnitId", "")))
 		"use_skill": result = Commands.use_skill(_battle, String(parameters.get("unitId", "")), String(parameters.get("skillId", "")), String(parameters.get("targetUnitId", "")))
+		"wait_unit": result = Commands.wait_unit(_battle, String(parameters.get("unitId", "")))
 		"remove_deployment": result = Commands.remove_deployment(_battle, String(parameters.get("unitId", "")))
 		"end_unit_turn": result = Commands.end_unit_turn(_battle, String(parameters.get("unitId", "")))
 		"end_side_turn": result = Commands.end_side_turn(_battle)
@@ -125,7 +126,7 @@ func _validate_command(command: Dictionary) -> Dictionary:
 		for key: String in ["slotX", "slotY"]:
 			if not parameters.has(key) or not _is_exact_integer(parameters[key]):
 				return {"ok": false, "error": "部署坐标必须是整数"}
-	elif ["remove_deployment", "end_unit_turn"].has(kind):
+	elif ["remove_deployment", "end_unit_turn", "wait_unit"].has(kind):
 		if typeof(parameters.get("unitId")) != TYPE_STRING or String(parameters.get("unitId")).is_empty():
 			return {"ok": false, "error": "战斗命令缺少 unitId"}
 	elif kind == "attack_unit":
