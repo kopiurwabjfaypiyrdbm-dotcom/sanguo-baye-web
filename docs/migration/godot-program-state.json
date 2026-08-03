@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB18",
-  "currentBriefPath": "docs/mission-briefs/MB18-native-battlefield-presentation-camera-mobile-input.md",
-  "readyMissionIds": ["MB18"],
+  "currentMissionId": "MB19",
+  "currentBriefPath": "docs/mission-briefs/MB19-battle-outcomes-retreat-settlement-campaign-reintegration.md",
+  "readyMissionIds": ["MB19"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -113,15 +113,21 @@
       "briefPath": "docs/mission-briefs/MB17-deterministic-tactical-ai.md",
       "reportPath": "docs/migration/mission-reports/MB17-deterministic-tactical-ai.md",
       "commit": "88c6311"
+    },
+    {
+      "id": "MB18",
+      "briefPath": "docs/mission-briefs/MB18-native-battlefield-presentation-camera-mobile-input.md",
+      "reportPath": "docs/migration/mission-reports/MB18-native-battlefield-presentation-camera-mobile-input.md",
+      "commit": "ccb1236"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB17",
-    "commit": "88c6311",
+    "missionId": "MB18",
+    "commit": "ccb1236",
     "date": "2026-08-03"
   },
-  "nextAction": "Implement MB18 native battlefield presentation, bounded camera, and touch/mouse input on the existing tactical contracts; defer settlement, full HUD, and platform hardening.",
+  "nextAction": "Implement MB19 deterministic battle outcomes, retreat, settlement, and campaign reintegration; defer full HUD and platform hardening.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
