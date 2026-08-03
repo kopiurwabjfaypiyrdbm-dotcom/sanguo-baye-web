@@ -3,6 +3,7 @@ extends RefCounted
 
 const BattleState = preload("res://src/domain/tactical/battle_state.gd")
 const Canonical = preload("res://src/domain/validation/canonical_json.gd")
+const Battlefield = preload("res://src/domain/tactical/battlefield.gd")
 
 
 static func validate(snapshot: Dictionary) -> Array[Dictionary]:
@@ -62,6 +63,7 @@ static func validate(snapshot: Dictionary) -> Array[Dictionary]:
 		_validate_roster(snapshot, issues)
 		_validate_acted(snapshot, issues)
 		_validate_terminal_invariants(snapshot, issues)
+	Battlefield.validate_grid(snapshot, issues)
 	if typeof(snapshot.get("guard")) != TYPE_DICTIONARY: _issue(issues, "guard", "must be an object")
 	else: _validate_guard(snapshot, snapshot["guard"], issues)
 	return issues
@@ -97,6 +99,8 @@ static func _validate_units(snapshot: Dictionary, issues: Array[Dictionary]) -> 
 		if _non_empty_string(unit.get("factionId")) and not expected_faction.is_empty() and String(unit.get("factionId")) != expected_faction:
 			_issue(issues, "units.%s.factionId" % unit_id, "does not match its side faction")
 		if not _is_integer(unit.get("troops")) or int(unit.get("troops")) < 0: _issue(issues, "units.%s.troops" % unit_id, "must be non-negative")
+		if not _is_exact_integer(unit.get("armsType")) or int(unit.get("armsType")) < 0 or int(unit.get("armsType")) >= 6: _issue(issues, "units.%s.armsType" % unit_id, "must be an integer from 0 to 5")
+		if not _is_exact_integer(unit.get("mobility")) or int(unit.get("mobility")) < 0 or int(unit.get("mobility")) > 8: _issue(issues, "units.%s.mobility" % unit_id, "must be an integer from 0 to 8")
 		if not _is_integer(unit.get("slotX")) or not _is_integer(unit.get("slotY")): _issue(issues, "units.%s.slot" % unit_id, "must have integer slot coordinates")
 		if not typeof(unit.get("deployed")) == TYPE_BOOL: _issue(issues, "units.%s.deployed" % unit_id, "must be boolean")
 		if not typeof(unit.get("acted")) == TYPE_BOOL: _issue(issues, "units.%s.acted" % unit_id, "must be boolean")

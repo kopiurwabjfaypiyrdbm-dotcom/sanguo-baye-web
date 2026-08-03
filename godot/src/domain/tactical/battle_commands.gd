@@ -6,6 +6,7 @@ const Validator = preload("res://src/domain/validation/game_state_validator.gd")
 const Canonical = preload("res://src/domain/validation/canonical_json.gd")
 const BattleState = preload("res://src/domain/tactical/battle_state.gd")
 const BattleValidator = preload("res://src/domain/tactical/battle_validator.gd")
+const Battlefield = preload("res://src/domain/tactical/battlefield.gd")
 
 const SIDE_LIMIT = 10
 const WIDTH = 12
@@ -50,6 +51,8 @@ static func create(state: GameState, order: Dictionary) -> Dictionary:
 		"logs": [String(source["name"]) + "军进入" + String(target["name"]) + "战场。"],
 		"guard": _create_guard(before, source, target),
 	}
+	battle["terrainContractVersion"] = 1
+	battle["tiles"] = Battlefield.create_tiles(WIDTH, HEIGHT, approach, String(battle["battlefieldTemplate"]))
 	var attacker_slots = _deployment_positions(attackers.size(), approach, "attacker")
 	var defender_slots = _deployment_positions(defenders.size(), approach, "defender")
 	for index in range(attackers.size()):
@@ -109,6 +112,38 @@ static func move_deployment(battle: BattleState, unit_id: String, slot_x: int, s
 	return _set_deployment(battle, unit_id, slot_x, slot_y, true)
 
 
+static func move_unit(battle: BattleState, unit_id: String, slot_x: int, slot_y: int) -> Dictionary:
+	var data = battle.snapshot()
+	var before_digest = _digest(data)
+	var preflight = _preflight(data, before_digest)
+	if not preflight.is_empty(): return preflight
+	if not data.has("terrainContractVersion") or typeof(data.get("tiles")) != TYPE_ARRAY: return _battle_failure(before_digest, "战场地形网格缺失")
+	if data.get("phase") != "battle": return _battle_failure(before_digest, "战斗回合尚未开始")
+	if data.get("status") != "ongoing": return _battle_failure(before_digest, "战斗已经结束")
+	var unit: Dictionary = data["units"].get(unit_id, {})
+	if unit.is_empty() or not bool(unit.get("deployed", false)): return _battle_failure(before_digest, "部队不存在或尚未部署：%s" % unit_id)
+	if unit.get("side") != data.get("activeSide"): return _battle_failure(before_digest, "当前不是该部队所属阵营的行动阶段")
+	if bool(unit.get("acted", false)): return _battle_failure(before_digest, "该部队本回合已经行动")
+	if bool(unit.get("moved", false)): return _battle_failure(before_digest, "该部队本回合已经移动")
+	if int(unit.get("troops", 0)) <= 0: return _battle_failure(before_digest, "部队没有可行动兵力")
+	if int(unit.get("slotX", -1)) == slot_x and int(unit.get("slotY", -1)) == slot_y: return _battle_failure(before_digest, "目标格不在该单位的可移动范围内")
+	var path: Array = Battlefield.find_path(data, unit_id, Vector2i(slot_x, slot_y))
+	if path.is_empty(): return _battle_failure(before_digest, "目标格不在该单位的可移动范围内")
+	var cost := Battlefield.path_cost(data, unit_id, path)
+	if cost < 0: return _battle_failure(before_digest, "目标格不在该单位的可移动范围内")
+	var mobility := int(unit.get("mobility", 0)); if String(unit.get("status", "")) == "rooted": mobility = mini(mobility, 1)
+	if cost > mobility: return _battle_failure(before_digest, "目标格不在该单位的可移动范围内")
+	unit["slotX"] = slot_x; unit["slotY"] = slot_y; unit["moved"] = true; data["units"][unit_id] = unit
+	var side := String(unit["side"])
+	for index in range(data["deployment"][side].size()):
+		if String(data["deployment"][side][index].get("unitId", "")) == unit_id:
+			data["deployment"][side][index]["slotX"] = slot_x; data["deployment"][side][index]["slotY"] = slot_y
+			break
+	_sort_deployment(data["deployment"][side])
+	data["logs"].append("%s移动至 %d,%d。" % [unit.get("name", unit_id), slot_x, slot_y])
+	return _finish(data, before_digest, "move_unit", {"unitId": unit_id, "path": path, "cost": cost, "remainingMobility": mobility - cost, "seedBefore": data["rngSeed"], "seedAfter": data["rngSeed"]})
+
+
 static func remove_deployment(battle: BattleState, unit_id: String) -> Dictionary:
 	var data = battle.snapshot()
 	var before_digest = _digest(data)
@@ -136,7 +171,7 @@ static func end_unit_turn(battle: BattleState, unit_id: String) -> Dictionary:
 	if unit.is_empty() or not bool(unit.get("deployed", false)): return _battle_failure(before_digest, "部队不存在或尚未部署：%s" % unit_id)
 	if unit.get("side") != data["activeSide"]: return _battle_failure(before_digest, "当前不是该部队所属阵营的行动阶段")
 	if bool(unit.get("acted", false)): return _battle_failure(before_digest, "该部队本回合已经行动")
-	unit["acted"] = true; unit["moved"] = false; data["units"][unit_id] = unit
+	unit["acted"] = true; data["units"][unit_id] = unit
 	data["actedUnitIds"].append(unit_id); data["actedUnitIds"].sort(); data["logs"].append("%s结束本回合行动。" % unit.get("name", unit_id))
 	return _finish(data, before_digest, "end_unit_turn", {"unitId": unit_id, "activeSide": data["activeSide"]})
 

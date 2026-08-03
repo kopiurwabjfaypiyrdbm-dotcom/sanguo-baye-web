@@ -20,6 +20,9 @@
     "godot:tactical-battle:generate": "vite-node scripts/generate-godot-tactical-battle-fixture.ts --write",
     "godot:tactical-battle:check": "vite-node scripts/generate-godot-tactical-battle-fixture.ts",
     "godot:tactical-battle:verify": "npm run godot:tactical-battle:check && node scripts/run-godot-tactical-battle-verification.mjs",
+    "godot:tactical-movement:generate": "vite-node scripts/generate-godot-tactical-battle-movement-fixture.ts --write",
+    "godot:tactical-movement:check": "vite-node scripts/generate-godot-tactical-battle-movement-fixture.ts",
+    "godot:tactical-movement:verify": "npm run godot:tactical-movement:check && node scripts/run-godot-tactical-battle-movement-verification.mjs",
     "godot:project:verify": "node scripts/run-godot-project-verification.mjs",
     "godot:program-check": "node scripts/verify-godot-program.mjs --self-test --recover",
     "icons:generate": "node scripts/generate-app-icons.mjs",
@@ -35,7 +38,7 @@
     "reference:setup:offline": "node scripts/fetch-baye-reference.mjs --full-source --include-offline-runtime",
     "reference:sync-core": "node scripts/sync-baye-core-reference.mjs",
     "reference:check": "node scripts/verify-baye-core-reference.mjs",
-    "check": "npm run godot:program-check && npm run godot:domain-data:check && npm run godot:application-session:check && npm run godot:tactical-battle:verify && npm run reference:check && npm test && npm run build"
+    "check": "npm run godot:program-check && npm run godot:domain-data:check && npm run godot:application-session:check && npm run godot:tactical-battle:verify && npm run godot:tactical-movement:verify && npm run reference:check && npm test && npm run build"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",

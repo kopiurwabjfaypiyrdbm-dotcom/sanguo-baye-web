@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { canonicalJson, canonicalSha256 } from '../src/core/migration/canonicalJson';
 import { createProductionSessionState } from '../src/core/migration/applicationSessionContract';
 import { createTacticalBattle, type TacticalBattleState, type TacticalSide } from '../src/core/tacticalBattle';
+import { MODERN_TERRAIN_MOVE_COSTS } from '../src/compat/baye/tacticalState';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const path = resolve(root, 'godot/data/fixtures/tactical-battle-v1.json');
@@ -233,6 +234,17 @@ function projectBattle(battle: TacticalBattleState, state: any): JsonObject {
     weather: battle.weather, phase: battle.status === 'ongoing' ? 'deployment' : 'ended', activeSide: battle.activeSide, status: battle.status, outcome: battle.status === 'ongoing' ? '' : (battle.victoryReason ?? 'annihilation'), approach: battle.approach,
     battlefieldVersion: battle.battlefieldVersion, battlefieldKey: battle.battlefieldKey, battlefieldTemplate: battle.battlefieldTemplate,
     deployment, units, actedUnitIds: [], logs: [...battle.logs], guard,
+    terrainContractVersion: 1,
+    tiles: battle.tiles.map((tile) => {
+      const costs = [...MODERN_TERRAIN_MOVE_COSTS].map((row) => row[tile.terrain] ?? Number.POSITIVE_INFINITY);
+      return {
+        x: tile.x, y: tile.y, terrainId: tile.terrain,
+        terrainName: ['plain', 'road', 'hill', 'forest', 'village', 'city', 'marsh', 'river'][tile.terrain],
+        movementCosts: costs.map((cost) => Number.isFinite(cost) ? cost : null),
+        passableArms: costs.map((cost) => Number.isFinite(cost)),
+        ...(tile.objective ? { objective: tile.objective } : {}),
+      };
+    }),
   };
 }
 
