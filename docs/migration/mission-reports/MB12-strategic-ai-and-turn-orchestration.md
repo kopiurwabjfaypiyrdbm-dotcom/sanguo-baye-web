@@ -23,11 +23,11 @@ MB12 已在 Godot 4.7.1 GDScript 客户端完成。战略客户端现在可以�
 | `npm run godot:application-session:verify` | 通过；250 transaction cases、追加 selector 覆盖/月循环/幂等/守卫后 1689 assertions |
 | `npm run check` | 通过；Web 47 个测试文件、378 passed、4 skipped，TypeScript/Vite build 通过 |
 | fixture | TypeScript 生成与 Godot 逐案比较通过；MB12 新增 8 strategic-turn cases，含未冻结支持操作、AI selector 覆盖、资源阻断两月 oracle 对照、活动输送与 guard |
-| APK | 当前 HEAD 重新导出的 `godot/builds/sanguo-baye-godot-mb12-final-debug.apk`，57,630,866 bytes，SHA-256 `6AD4E56643C8EF043275B92818B435EC750C3815ACBABFD9812C6F0FFFF44A01`；使用本机已安装的 Godot 4.7.1 官方模板，已覆盖安装 MuMu 并启动 |
+| APK | 当前 HEAD 重新导出的 `godot/builds/sanguo-baye-godot-mb12-final-debug.apk`，57,660,941 bytes，SHA-256 `6AD4E56643C8EF043275B92818B435EC750C3815ACBABFD9812C6F0FFFF44A01`；使用本机已安装的 Godot 4.7.1 官方模板，已覆盖安装 MuMu 并启动 |
 | MuMu | `emulator-5554` 恢复为 device；修复后 APK 离线安装成功并以 `com.sumo91.sanguobaye.godotspike` 启动。 |
-| 设备尺寸 | MuMu override `1280×720` 实际启动、点击结束月份并显示公元 190 年 2 月、AI 摘要和完整安全纪事；`844×390` 当前 APK 已实际启动并验证地图、横屏布局、纪事入口与 48px 级控件目标，低尺寸结束月份的 adb 坐标在本次沙箱复验中未稳定触发，保留此前同场景结束月份截图作为历史设备证据，待真机/交互环境复核。最终当前 APK 截图为 `godot/builds/mb12-final-mumu-1280x720-end-turn.png`、`godot/builds/mb12-final-mumu-844x390-end-turn.png`。 |
+| 设备尺寸 | MuMu override `1280×720` 当前 APK 实际启动、点击结束月份并显示公元 190 年 2 月、AI 摘要和完整安全纪事；`844×390` 当前 APK 已实际启动并验证地图、横屏布局、纪事入口与 48px 级控件目标，ADB 可命中并高亮结束按钮，但本次沙箱没有得到当前 APK 的稳定 190 年 2 月端到端截图，保留此前同场景结束月份截图作为历史设备证据，待真机/人工复核。`godot/builds/mb12-final-mumu-1280x720-end-turn.png` 是当前 1280 证据；`godot/builds/mb12-final-mumu-844x390-end-turn.png` 实际是当前 APK 的 190 年 1 月启动/布局图，不应作为结束月份证据。 |
 
-设备截图为被忽略的本地证据；验证结束后已恢复 MuMu 原始 `wm size`。1280×720 与 844×390 的点击均通过横屏窗口坐标完成，纪事面板展示月份、诸侯行动摘要和滚动日志。
+设备截图为被忽略的本地证据；验证结束后已恢复 MuMu 原始 `wm size`。1280×720 已完成结束月份点击；844×390 已完成布局、纪事和按钮命中冒烟，但端到端月份推进证据仍需人工/真机复核。
 
 ## 审查
 
@@ -37,7 +37,7 @@ MB12 完成前已派发三路只读审查：
 2. 确定性规则与 fixture：复核排序、RNG、receipt、state SHA、连续/恢复路径。
 3. Android/触控体验：复核 4.7.1 APK、MuMu 启动、横屏尺寸、按钮目标、纪事和包审计。
 
-三路最终只读复审在本次 former-ruler 修复前发现 P0=0、P1=1、P2=2；该 P1 已按 `formerFactionId → rulerOfficerId` 修复，需在收口前重跑三路复审。确定性复审已确认外交 loyalty/intelligence/id 与 ruler/唯一守将 guard、道具属性/armsType 过滤、搜索与城市改善排序、在途武将粮食支持和月循环 SHA 对照；selector fixture 当前端到端覆盖粮食、外交、征兵、巡查四类成功操作，道具/搜索/俘虏 fallback 与跨月在途供养仍记录为后续 focused coverage。移动复审确认已审 APK、包审计、MuMu 双尺寸和敌方纪事 ACL 通过；长纪事改为保留完整安全日志并由 ScrollContainer 承载。保留的 P2 是现有应用契约对即时重复命令仍允许返回原始 `ok`（必须保持 TypeScript oracle 语义）、月循环 receipt 尚未细化为阶段级审计 DTO，以及少数候选路径仍需统一词典序；战术攻击/出征仍待 MB13–MB19。
+三路复审结论为 P0=0。架构与确定性复审确认 former-ruler guard 已按 `formerFactionId → rulerOfficerId` 修复，候选城市采用显式 ID 词典序；selector fixture 当前端到端覆盖粮食、外交、征兵、巡查四类成功操作，道具/搜索/俘虏 fallback 与跨月在途供养仍记录为后续 focused coverage。移动复审确认当前 APK SHA、包审计、MuMu 双尺寸启动和敌方纪事 ACL 通过；1280×720 已完成结束月份，844×390 留有一次当前 APK 端到端推进证据缺口，定为 P2 测试/设备证据项，不阻断 MB12。长纪事改为保留完整安全日志并由 ScrollContainer 承载；战术攻击/出征仍待 MB13–MB19。
 
 ## 已知风险与后续
 

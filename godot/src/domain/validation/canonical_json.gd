@@ -86,8 +86,10 @@ static func _failure(error: String) -> Dictionary:
 
 
 static func _compare_keys(left: Variant, right: Variant) -> bool:
-	var left_text: String = String(left)
-	var right_text: String = String(right)
+	var left_type := typeof(left); var right_type := typeof(right)
+	if left_type != right_type: return left_type < right_type
+	var left_text: String = String(left) if left_type == TYPE_STRING or left_type == TYPE_STRING_NAME else str(left)
+	var right_text: String = String(right) if right_type == TYPE_STRING or right_type == TYPE_STRING_NAME else str(right)
 	var shared_length: int = mini(left_text.length(), right_text.length())
 	for index: int in range(shared_length):
 		var difference: int = left_text.unicode_at(index) - right_text.unicode_at(index)
