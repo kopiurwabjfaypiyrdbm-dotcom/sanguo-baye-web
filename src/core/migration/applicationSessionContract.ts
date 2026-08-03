@@ -101,6 +101,8 @@ export class OracleApplicationSession {
   advanceStrategicOrders(): ApplicationAdvanceResult {
     const before = this.snapshot();
     const beforeDigest = canonicalSha256(before);
+    if (before.phase === 'ended') return this.skippedAdvance(before, beforeDigest, 'campaign-ended', 'advance_strategic_orders');
+    if (before.phase === 'succession') return this.rejectedAdvance(before, beforeDigest, '必须先拥立新君');
     try {
       const settling: GameState = {
         ...before,
@@ -152,6 +154,8 @@ export class OracleApplicationSession {
   advanceDiplomaticOrders(): ApplicationAdvanceResult {
     const before = this.snapshot();
     const beforeDigest = canonicalSha256(before);
+    if (before.phase === 'ended') return this.skippedAdvance(before, beforeDigest, 'campaign-ended', 'advance_diplomatic_orders');
+    if (before.phase === 'succession') return this.rejectedAdvance(before, beforeDigest, '必须先拥立新君');
     try {
       const settling: GameState = {
         ...before,
@@ -198,6 +202,22 @@ export class OracleApplicationSession {
         state: before,
       };
     }
+  }
+
+  private skippedAdvance(before: GameState, digest: string, reason: string, kind: string): ApplicationAdvanceResult {
+    return {
+      ok: true, error: '', stateChanged: false,
+      beforeStateSha256: digest, afterStateSha256: digest,
+      receipt: { kind, skipped: reason }, state: before,
+    };
+  }
+
+  private rejectedAdvance(before: GameState, digest: string, error: string): ApplicationAdvanceResult {
+    return {
+      ok: false, error, stateChanged: false,
+      beforeStateSha256: digest, afterStateSha256: digest,
+      receipt: {}, state: before,
+    };
   }
 
   execute(raw: unknown): ApplicationCommandResult {

@@ -113672,6 +113672,175 @@
       }
     }
   ],
+  "annualProgressionPeriodCases": [
+    {
+      "id": "period-1-year-rollover",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "calendar"
+          ],
+          "value": {
+            "year": 191,
+            "month": 1
+          }
+        }
+      ],
+      "previousCalendar": {
+        "year": 190,
+        "month": 12
+      },
+      "initialStateSha256": "72e3096a523c2a650eb1f400483355444d590701e0ef50ea1e1423460378416d",
+      "finalStateSha256": "78dec1c2aeadaec45ed4cccab4ba7eb962b8e730e08b9f6312ea535c60fdab27",
+      "expectedReceipt": {
+        "kind": "settle_annual_progression",
+        "applied": true,
+        "beforeSeed": 48641,
+        "afterSeed": 860746715,
+        "appearedOfficerIds": [
+          "officer-54",
+          "officer-111",
+          "officer-145",
+          "officer-169"
+        ],
+        "appearedItemIds": [],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "年度更新：人物年龄增长 1 岁；各地传来新人才出仕前的活动消息。",
+            "turn": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "period-2-year-rollover",
+      "campaign": {
+        "periodId": 2,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "calendar"
+          ],
+          "value": {
+            "year": 199,
+            "month": 1
+          }
+        }
+      ],
+      "previousCalendar": {
+        "year": 198,
+        "month": 12
+      },
+      "initialStateSha256": "4eacb0a23f1459c07bfc1fc670dffd09263c1bade55e52f4502821f21e46d73e",
+      "finalStateSha256": "1c9446c32cf05972ec5bddd0477eb43482aa45c83410b1df74d91e0bbd95853d",
+      "expectedReceipt": {
+        "kind": "settle_annual_progression",
+        "applied": true,
+        "beforeSeed": 50690,
+        "afterSeed": 50690,
+        "appearedOfficerIds": [],
+        "appearedItemIds": [],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "年度更新：人物年龄增长 1 岁。",
+            "turn": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "period-3-year-rollover",
+      "campaign": {
+        "periodId": 3,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "calendar"
+          ],
+          "value": {
+            "year": 209,
+            "month": 1
+          }
+        }
+      ],
+      "previousCalendar": {
+        "year": 208,
+        "month": 12
+      },
+      "initialStateSha256": "2f967129f5a28d78fa04e7b49e40e80b9631b62ea2476119d4676de7900c0594",
+      "finalStateSha256": "c45d4e9f29dd42a8fb296552e16b41341b9846997154b393e823ff4f9b1d1454",
+      "expectedReceipt": {
+        "kind": "settle_annual_progression",
+        "applied": true,
+        "beforeSeed": 53251,
+        "afterSeed": 3752179078,
+        "appearedOfficerIds": [
+          "officer-154"
+        ],
+        "appearedItemIds": [],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "年度更新：人物年龄增长 1 岁；各地传来新人才出仕前的活动消息。",
+            "turn": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "period-4-year-rollover",
+      "campaign": {
+        "periodId": 4,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "calendar"
+          ],
+          "value": {
+            "year": 226,
+            "month": 1
+          }
+        }
+      ],
+      "previousCalendar": {
+        "year": 225,
+        "month": 12
+      },
+      "initialStateSha256": "7b7d543b52aa478762eeab5091b307df46289f91bdee92cd90c2315bc899c6c2",
+      "finalStateSha256": "36012288d47dd55ec7f2c5f0fb40933643687f616e15e8b548c5a59b80d48df4",
+      "expectedReceipt": {
+        "kind": "settle_annual_progression",
+        "applied": true,
+        "beforeSeed": 57604,
+        "afterSeed": 57604,
+        "appearedOfficerIds": [],
+        "appearedItemIds": [],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "年度更新：人物年龄增长 1 岁。",
+            "turn": 1
+          }
+        ]
+      }
+    }
+  ],
   "lifecycleOutcomeCases": [
     {
       "id": "captive-escape-success",
@@ -115273,6 +115442,1266 @@
         "appendedLogs": [
           {
             "id": "log-1-002",
+            "kind": "system",
+            "message": "我方已失去全部城池，战役失败。",
+            "turn": 1
+          }
+        ],
+        "outcomeMessages": [
+          "我方已失去全部城池，战役失败。"
+        ]
+      }
+    },
+    {
+      "id": "campaign-victory-with-active-orders",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "patches": [
+        {
+          "path": [
+            "actedOfficerIds"
+          ],
+          "value": [
+            "officer-57",
+            "officer-58",
+            "officer-60"
+          ]
+        },
+        {
+          "path": [
+            "campaignStarted"
+          ],
+          "value": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "food"
+          ],
+          "value": 416
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "money"
+          ],
+          "value": 192
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 470
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-19",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-22",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-23",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-25",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-28",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-29",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-30",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-31",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-32",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-34",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-35",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-36",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-37",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "money"
+          ],
+          "value": 167
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "ownerId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "diplomaticOrders",
+            "diplomatic-order-1"
+          ],
+          "value": {
+            "id": "diplomatic-order-1",
+            "kind": "alienate",
+            "factionId": "ruler-5",
+            "officerId": "officer-60",
+            "sourceCityId": "city-8",
+            "targetOfficerId": "officer-32",
+            "targetFactionId": "ruler-1",
+            "targetCityId": "city-12",
+            "createdTurn": 1,
+            "createdYear": 190,
+            "createdMonth": 1,
+            "durationMonths": 1,
+            "remainingMonths": 1,
+            "moneyCost": 50
+          }
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-12"
+          ],
+          "value": {
+            "cityId": "city-12",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 64139,
+            "money": 135,
+            "food": 309,
+            "reserveTroops": 0,
+            "farming": 1238,
+            "commerce": 1223,
+            "defense": 0,
+            "publicLoyalty": 48,
+            "satrapName": "曹操",
+            "officerIds": [
+              "officer-1",
+              "officer-32",
+              "officer-33",
+              "officer-34",
+              "officer-35",
+              "officer-36",
+              "officer-37"
+            ],
+            "officerCount": 7,
+            "totalTroops": 700
+          }
+        },
+        {
+          "path": [
+            "logs"
+          ],
+          "value": [
+            {
+              "id": "log-001",
+              "kind": "system",
+              "message": "已载入原版时期 1：38 城、157 名当前人物，另保留 43 名未登场人物。",
+              "turn": 1
+            },
+            {
+              "id": "log-1-002",
+              "kind": "map",
+              "message": "马超从西凉向安定输送10 金、20 粮、30 后备兵，预计 1 个月完成。",
+              "turn": 1
+            },
+            {
+              "id": "log-1-003",
+              "kind": "map",
+              "message": "庞德从天水侦察濮阳：守军 7 将、700 兵，后备兵 0。",
+              "turn": 1
+            },
+            {
+              "id": "log-1-004",
+              "kind": "map",
+              "message": "程银奉命对夏侯惇执行离间，预计下月回报。",
+              "turn": 1
+            }
+          ]
+        },
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "nextStrategicOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "officers",
+            "officer-57",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "officers",
+            "officer-57",
+            "stamina"
+          ],
+          "value": 92
+        },
+        {
+          "path": [
+            "officers",
+            "officer-58",
+            "stamina"
+          ],
+          "value": 90
+        },
+        {
+          "path": [
+            "officers",
+            "officer-60",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "officers",
+            "officer-60",
+            "stamina"
+          ],
+          "value": 80
+        },
+        {
+          "path": [
+            "strategicOrders",
+            "strategic-order-1"
+          ],
+          "value": {
+            "id": "strategic-order-1",
+            "kind": "transport",
+            "factionId": "ruler-5",
+            "officerId": "officer-57",
+            "sourceCityId": "city-0",
+            "targetCityId": "city-3",
+            "routeCityIds": [
+              "city-0",
+              "city-3"
+            ],
+            "createdTurn": 1,
+            "createdYear": 190,
+            "createdMonth": 1,
+            "durationMonths": 1,
+            "remainingMonths": 1,
+            "cargo": {
+              "money": 10,
+              "food": 20,
+              "reserveTroops": 30
+            }
+          }
+        }
+      ],
+      "operation": "evaluate_outcome",
+      "parameters": {},
+      "initialStateSha256": "83b3aa6774383b51e2143a5e6fcb6d8fc273b0806f79be9ecbb01bdc4b82c357",
+      "finalStateSha256": "a5fc500dd3d48fbbede40c94b70aa5e8d6f5e9aa755011091ec9f65edabe2719",
+      "expectedReceipt": {
+        "kind": "evaluate_outcome",
+        "phase": "ended",
+        "outcome": "victory",
+        "appendedLogs": [
+          {
+            "id": "log-1-005",
+            "kind": "map",
+            "message": "程银对夏侯惇的离间因战役结束而中止。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-006",
+            "kind": "system",
+            "message": "天下再无敌对诸侯，战役胜利。",
+            "turn": 1
+          }
+        ],
+        "outcomeMessages": [
+          "天下再无敌对诸侯，战役胜利。"
+        ]
+      }
+    },
+    {
+      "id": "campaign-defeat-with-active-orders",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "patches": [
+        {
+          "path": [
+            "actedOfficerIds"
+          ],
+          "value": [
+            "officer-57",
+            "officer-58",
+            "officer-60"
+          ]
+        },
+        {
+          "path": [
+            "campaignStarted"
+          ],
+          "value": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "food"
+          ],
+          "value": 416
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "money"
+          ],
+          "value": 192
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "ownerId"
+          ],
+          "value": "ruler-13"
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "reserveTroops"
+          ],
+          "value": 470
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "ownerId"
+          ],
+          "value": "ruler-13"
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "money"
+          ],
+          "value": 167
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "ownerId"
+          ],
+          "value": "ruler-13"
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "diplomaticOrders",
+            "diplomatic-order-1"
+          ],
+          "value": {
+            "id": "diplomatic-order-1",
+            "kind": "alienate",
+            "factionId": "ruler-5",
+            "officerId": "officer-60",
+            "sourceCityId": "city-8",
+            "targetOfficerId": "officer-32",
+            "targetFactionId": "ruler-1",
+            "targetCityId": "city-12",
+            "createdTurn": 1,
+            "createdYear": 190,
+            "createdMonth": 1,
+            "durationMonths": 1,
+            "remainingMonths": 1,
+            "moneyCost": 50
+          }
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-12"
+          ],
+          "value": {
+            "cityId": "city-12",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 64139,
+            "money": 135,
+            "food": 309,
+            "reserveTroops": 0,
+            "farming": 1238,
+            "commerce": 1223,
+            "defense": 0,
+            "publicLoyalty": 48,
+            "satrapName": "曹操",
+            "officerIds": [
+              "officer-1",
+              "officer-32",
+              "officer-33",
+              "officer-34",
+              "officer-35",
+              "officer-36",
+              "officer-37"
+            ],
+            "officerCount": 7,
+            "totalTroops": 700
+          }
+        },
+        {
+          "path": [
+            "logs"
+          ],
+          "value": [
+            {
+              "id": "log-001",
+              "kind": "system",
+              "message": "已载入原版时期 1：38 城、157 名当前人物，另保留 43 名未登场人物。",
+              "turn": 1
+            },
+            {
+              "id": "log-1-002",
+              "kind": "map",
+              "message": "马超从西凉向安定输送10 金、20 粮、30 后备兵，预计 1 个月完成。",
+              "turn": 1
+            },
+            {
+              "id": "log-1-003",
+              "kind": "map",
+              "message": "庞德从天水侦察濮阳：守军 7 将、700 兵，后备兵 0。",
+              "turn": 1
+            },
+            {
+              "id": "log-1-004",
+              "kind": "map",
+              "message": "程银奉命对夏侯惇执行离间，预计下月回报。",
+              "turn": 1
+            }
+          ]
+        },
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "nextStrategicOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "officers",
+            "officer-57",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "officers",
+            "officer-57",
+            "stamina"
+          ],
+          "value": 92
+        },
+        {
+          "path": [
+            "officers",
+            "officer-58",
+            "stamina"
+          ],
+          "value": 90
+        },
+        {
+          "path": [
+            "officers",
+            "officer-60",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "officers",
+            "officer-60",
+            "stamina"
+          ],
+          "value": 80
+        },
+        {
+          "path": [
+            "strategicOrders",
+            "strategic-order-1"
+          ],
+          "value": {
+            "id": "strategic-order-1",
+            "kind": "transport",
+            "factionId": "ruler-5",
+            "officerId": "officer-57",
+            "sourceCityId": "city-0",
+            "targetCityId": "city-3",
+            "routeCityIds": [
+              "city-0",
+              "city-3"
+            ],
+            "createdTurn": 1,
+            "createdYear": 190,
+            "createdMonth": 1,
+            "durationMonths": 1,
+            "remainingMonths": 1,
+            "cargo": {
+              "money": 10,
+              "food": 20,
+              "reserveTroops": 30
+            }
+          }
+        }
+      ],
+      "operation": "evaluate_outcome",
+      "parameters": {},
+      "initialStateSha256": "f13183ff80bf9ed2b28b9294c8d692a538f2864e4df1c6260f58cf4f15a7aece",
+      "finalStateSha256": "236ac4bbd4cc75246053c8347a2515df1caacf462d6cba525fe0198fc3b51de0",
+      "expectedReceipt": {
+        "kind": "evaluate_outcome",
+        "phase": "ended",
+        "outcome": "defeat",
+        "appendedLogs": [
+          {
+            "id": "log-1-005",
+            "kind": "turn",
+            "message": "strategic-order-1随所属势力灭亡而失效，10 金、20 粮、30 后备兵由西凉接收。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-006",
+            "kind": "turn",
+            "message": "diplomatic-order-1随所属势力灭亡而失效。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-007",
             "kind": "system",
             "message": "我方已失去全部城池，战役失败。",
             "turn": 1

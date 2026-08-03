@@ -3,7 +3,9 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canonicalJson, canonicalSha256, compareUnicodeScalar } from '../src/core/migration/canonicalJson';
 import { governCity } from '../src/core/cityCommands';
-import { findOwnedCityRoute } from '../src/core/strategicOrders';
+import { findOwnedCityRoute, issueTransportOrder } from '../src/core/strategicOrders';
+import { issueDiplomaticOrder } from '../src/core/diplomaticOrders';
+import { reconnoitreCity } from '../src/core/reconnaissance';
 import {
   cancelOfficerOrders,
   killOfficer,
@@ -53,6 +55,7 @@ function transactionCaseCount(value: ReturnType<typeof buildFixture>) {
       .reduce((total, sequence) => total + sequence.steps.length, 0)
     + value.calendarEventCases.length
     + value.annualProgressionCases.length
+    + value.annualProgressionPeriodCases.length
     + value.lifecycleOutcomeCases.length
     + value.validationCases.length;
 }
@@ -130,6 +133,7 @@ export function buildFixture() {
     parameters: { cityId: 'city-12', officerId: 'officer-32' },
   };
   const continuationExpected = restoredSession.execute(continuationCommand);
+  const annualProgression = buildAnnualProgressionCases();
   apply('second-success', continuationCommand);
   apply('advanced-duplicate', success);
   const internalAffairsSequence = buildInternalAffairsSequence();
@@ -164,7 +168,8 @@ export function buildFixture() {
     diplomaticOrderBoundaryCases: buildDiplomaticOrderBoundaryCases(),
     diplomaticOrderSettlementSequences: buildDiplomaticOrderSettlementSequences(),
     calendarEventCases: buildCalendarEventCases(),
-    annualProgressionCases: buildAnnualProgressionCases(),
+    annualProgressionCases: annualProgression.cases,
+    annualProgressionPeriodCases: annualProgression.periodCases,
     lifecycleOutcomeCases: buildLifecycleOutcomeCases(),
     validationCases: buildValidationCases(),
     modernRulesetCase: buildModernRulesetCase(),
@@ -252,8 +257,13 @@ function buildAnnualProgressionCases() {
     ...Object.values(state.cities).flatMap((city) => [...(city.itemIds ?? []), ...(city.hiddenItemIds ?? [])]),
     ...Object.values(state.officers).flatMap((officer) => officer.equipmentItemIds ?? []),
   ]);
-  const build = (id: string, patches: StatePatch[], previousCalendar: { year: number; month: number }) => {
-    const input = createProductionSessionState(1, 1);
+  const build = (
+    id: string,
+    patches: StatePatch[],
+    previousCalendar: { year: number; month: number },
+    periodId: 1 | 2 | 3 | 4 = 1,
+  ) => {
+    const input = createProductionSessionState(periodId, 1);
     applyStatePatches(input as unknown as Record<string, unknown>, patches);
     const beforePlaced = placedItems(input);
     const beforeLogs = input.logs.length;
@@ -271,7 +281,7 @@ function buildAnnualProgressionCases() {
       .map((item) => item.id);
     const applied = input.calendar.month === 1 && input.calendar.year === previousCalendar.year + 1;
     return {
-      id, campaign: { periodId: 1, rulerSourceIndex: 1 }, patches, previousCalendar,
+      id, campaign: { periodId, rulerSourceIndex: 1 }, patches, previousCalendar,
       initialStateSha256: canonicalSha256(input), finalStateSha256: canonicalSha256(output),
       expectedReceipt: {
         kind: 'settle_annual_progression', applied, beforeSeed: input.rngSeed, afterSeed: output.rngSeed,
@@ -295,7 +305,17 @@ function buildAnnualProgressionCases() {
       value: (base.officers[officerId].equipmentItemIds ?? []).filter((id) => id !== itemId),
     });
   }
-  return [
+  const periodRolloverCases = ([1, 2, 3, 4] as const).map((periodId) => {
+    const input = createProductionSessionState(periodId, 1);
+    return build(
+      `period-${periodId}-year-rollover`,
+      [{ path: ['calendar'], value: { year: input.calendar.year + 1, month: 1 } }],
+      { year: input.calendar.year, month: 12 },
+      periodId,
+    );
+  });
+  return {
+    cases: [
     build('period-1-year-rollover', [{ path: ['calendar'], value: { year: 191, month: 1 } }], { year: 190, month: 12 }),
     build('age-growth-disabled', [
       { path: ['calendar'], value: { year: 191, month: 1 } },
@@ -308,7 +328,9 @@ function buildAnnualProgressionCases() {
       { path: ['items', itemId, 'appearanceCityId'], value: 'city-12' },
     ], { year: 190, month: 12 }),
     build('non-rollover-no-op', [], { year: 190, month: 1 }),
-  ];
+    ],
+    periodCases: periodRolloverCases,
+  };
 }
 
 function buildLifecycleOutcomeCases() {
@@ -323,13 +345,14 @@ function buildLifecycleOutcomeCases() {
     parameters: Record<string, unknown>,
     output: ProductionState,
     expectedReceipt: Record<string, unknown>,
+    campaign: { periodId: 1 | 2 | 3 | 4; rulerSourceIndex: number } = { periodId: 1, rulerSourceIndex: 1 },
   ) => {
-    const base = createProductionSessionState(1, 1);
+    const base = createProductionSessionState(campaign.periodId, campaign.rulerSourceIndex);
     const cleanInput = jsonClean(input) as ProductionState;
     const cleanOutput = jsonClean(output) as ProductionState;
     cases.push({
       id,
-      campaign: { periodId: 1, rulerSourceIndex: 1 },
+      campaign,
       patches: collectStatePatches(base as unknown as Record<string, unknown>, cleanInput as unknown as Record<string, unknown>),
       operation,
       parameters: jsonClean(parameters),
@@ -462,6 +485,33 @@ function buildLifecycleOutcomeCases() {
       appendedLogs: structuredClone(output.logs.slice(input.logs.length)),
       outcomeMessages: [message],
     });
+  }
+  for (const outcome of ['victory', 'defeat'] as const) {
+    const campaign = { periodId: 1 as const, rulerSourceIndex: 5 };
+    const input = createProductionSessionState(campaign.periodId, campaign.rulerSourceIndex);
+    input.cities['city-0'].reserveTroops = 500;
+    let withTransport = issueTransportOrder(input, {
+      sourceCityId: 'city-0', targetCityId: 'city-3', officerId: 'officer-57',
+      cargo: { money: 10, food: 20, reserveTroops: 30 },
+    });
+    withTransport = reconnoitreCity(withTransport, {
+      sourceCityId: 'city-8', targetCityId: 'city-12', officerId: 'officer-58',
+    });
+    const withOrders = issueDiplomaticOrder(withTransport, {
+      kind: 'alienate', sourceCityId: 'city-8', officerId: 'officer-60', targetOfficerId: 'officer-32',
+    });
+    for (const city of Object.values(withOrders.cities)) {
+      if (outcome === 'victory') city.ownerId = withOrders.playerFactionId;
+      else if (city.ownerId === withOrders.playerFactionId) city.ownerId = 'ruler-13';
+      city.satrapOfficerId = undefined;
+    }
+    const output = evaluateOutcome(structuredClone(withOrders));
+    const message = outcome === 'victory' ? '天下再无敌对诸侯，战役胜利。' : '我方已失去全部城池，战役失败。';
+    add(`campaign-${outcome}-with-active-orders`, 'evaluate_outcome', withOrders, {}, output, {
+      kind: 'evaluate_outcome', phase: output.phase, outcome: output.outcome ?? null,
+      appendedLogs: structuredClone(output.logs.slice(withOrders.logs.length)),
+      outcomeMessages: [message],
+    }, campaign);
   }
   return cases;
 }

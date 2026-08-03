@@ -247,6 +247,7 @@ func _test_transaction_fixture() -> void:
 	_test_diplomatic_order_settlement_sequences(fixture)
 	_test_calendar_event_cases(fixture)
 	_test_annual_progression_cases(fixture)
+	_test_annual_progression_period_cases(fixture)
 	_test_lifecycle_outcome_cases(fixture)
 	_test_validation_cases(fixture, campaign)
 	_test_modern_ruleset_case(fixture, campaign)
@@ -826,28 +827,39 @@ func _test_calendar_event_cases(fixture: Dictionary) -> void:
 
 
 func _test_annual_progression_cases(fixture: Dictionary) -> void:
-	var cases: Array = fixture.get("annualProgressionCases", [])
-	_assert_equal(cases.size(), 4, "fixture must include four MB11 annual-progression cases")
+	_test_annual_progression_case_list(
+		fixture.get("annualProgressionCases", []), "annual-progression", 4
+	)
+
+
+func _test_annual_progression_period_cases(fixture: Dictionary) -> void:
+	_test_annual_progression_case_list(
+		fixture.get("annualProgressionPeriodCases", []), "annual-progression-period", 4
+	)
+
+
+func _test_annual_progression_case_list(cases: Array, label: String, expected_count: int) -> void:
+	_assert_equal(cases.size(), expected_count, "fixture must include four MB11 %s cases" % label)
 	for raw_case: Variant in cases:
 		var test_case: Dictionary = raw_case
 		var session: GameSession = GameSession.new()
 		var campaign: Dictionary = test_case["campaign"]
 		var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
-		_assert_true(started["ok"], "%s MB11 annual campaign must start" % test_case["id"])
+		_assert_true(started["ok"], "%s MB11 %s campaign must start" % [test_case["id"], label])
 		if not started["ok"]: continue
 		var input: Dictionary = session.snapshot()
 		_apply_patches(input, test_case["patches"])
-		_assert_equal(CanonicalJson.try_sha256(input)["value"], test_case["initialStateSha256"], "%s MB11 annual input must match TypeScript" % test_case["id"])
+		_assert_equal(CanonicalJson.try_sha256(input)["value"], test_case["initialStateSha256"], "%s MB11 %s input must match TypeScript" % [test_case["id"], label])
 		var result: Dictionary = AnnualProgression.settle(GameState.new(input), test_case["previousCalendar"])
-		_assert_true(result["ok"], "%s MB11 annual settlement must succeed: %s" % [test_case["id"], result.get("error", "")])
+		_assert_true(result["ok"], "%s MB11 %s settlement must succeed: %s" % [test_case["id"], label, result.get("error", "")])
 		if not result["ok"]: continue
-		_assert_canonical_equal(result["receipt"], test_case["expectedReceipt"], "%s MB11 annual receipt must match TypeScript" % test_case["id"])
-		_assert_equal(CanonicalJson.try_sha256(result["next_state"].snapshot())["value"], test_case["finalStateSha256"], "%s MB11 annual state SHA must match TypeScript" % test_case["id"])
+		_assert_canonical_equal(result["receipt"], test_case["expectedReceipt"], "%s MB11 %s receipt must match TypeScript" % [test_case["id"], label])
+		_assert_equal(CanonicalJson.try_sha256(result["next_state"].snapshot())["value"], test_case["finalStateSha256"], "%s MB11 %s state SHA must match TypeScript" % [test_case["id"], label])
 
 
 func _test_lifecycle_outcome_cases(fixture: Dictionary) -> void:
 	var cases: Array = fixture.get("lifecycleOutcomeCases", [])
-	_assert_equal(cases.size(), 10, "fixture must include ten MB11 lifecycle/outcome cases")
+	_assert_equal(cases.size(), 12, "fixture must include twelve MB11 lifecycle/outcome cases")
 	for raw_case: Variant in cases:
 		var test_case: Dictionary = raw_case
 		var session: GameSession = GameSession.new()
@@ -872,6 +884,31 @@ func _test_lifecycle_outcome_cases(fixture: Dictionary) -> void:
 				var application_result: Dictionary = session.execute_command(test_case["parameters"]["command"]) \
 						if succession_restore["ok"] else {"ok": false, "error": succession_restore["error"]}
 				if application_result.get("ok", false):
+					# Compare the restored continuation with a continuous domain path
+					# that reaches the same pending-succession snapshot through the
+					# real lifecycle operation. This proves save recovery preserves
+					# the next step, not only the final output hash.
+					var continuous := GameSession.new()
+					var continuous_started: Dictionary = continuous.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+					_assert_true(continuous_started["ok"], "%s continuous succession campaign must start" % test_case["id"])
+					if continuous_started["ok"]:
+						var continuous_kill: Dictionary = OfficerLifecycle.kill_officer(
+							GameState.new(continuous.snapshot()),
+							{"officerId": "officer-1", "cause": "natural-death", "cityId": "city-12"},
+						)
+						_assert_true(continuous_kill.get("ok", false), "%s continuous ruler death must succeed" % test_case["id"])
+						if continuous_kill.get("ok", false):
+							var continuous_pending: Dictionary = continuous_kill["next_state"].snapshot()
+							_assert_equal(CanonicalJson.try_sha256(continuous_pending)["value"], test_case["initialStateSha256"], "%s continuous pending succession SHA must match" % test_case["id"])
+							var continuous_restore: Dictionary = continuous.restore_snapshot(continuous_pending)
+							_assert_true(continuous_restore["ok"], "%s continuous pending succession must restore" % test_case["id"])
+							var continuous_result: Dictionary = continuous.execute_command(test_case["parameters"]["command"]) \
+									if continuous_restore["ok"] else {"ok": false, "error": continuous_restore.get("error", "")}
+							_assert_true(continuous_result.get("ok", false), "%s continuous succession resolution must succeed" % test_case["id"])
+							if continuous_result.get("ok", false):
+								_assert_canonical_equal(continuous_result["receipt"], application_result["receipt"], "%s continuous/restored receipt must match" % test_case["id"])
+								_assert_equal(continuous_result["afterStateSha256"], application_result["afterStateSha256"], "%s continuous/restored SHA must match" % test_case["id"])
+								_assert_canonical_equal(continuous_result["state"], application_result["state"], "%s continuous/restored next state must match" % test_case["id"])
 					var duplicate: Dictionary = session.execute_command(test_case["parameters"]["command"])
 					_assert_equal(duplicate.get("code"), "ok", "%s exact succession replay must be idempotent" % test_case["id"])
 					_assert_equal(duplicate.get("afterStateSha256"), application_result.get("afterStateSha256"), "%s succession replay SHA must be stable" % test_case["id"])

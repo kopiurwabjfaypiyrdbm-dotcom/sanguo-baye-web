@@ -8,6 +8,7 @@ signal close_requested
 @onready var title_label: Label = %TitleLabel
 @onready var phase_label: Label = %PhaseLabel
 @onready var chronicle_label: Label = %ChronicleLabel
+@onready var chronicle_scroll: ScrollContainer = %ChronicleScroll
 @onready var succession_row: HBoxContainer = %SuccessionRow
 @onready var successor_option: OptionButton = %SuccessorOption
 @onready var confirm_button: Button = %ConfirmButton
@@ -88,6 +89,7 @@ func show_state(snapshot: Dictionary) -> void:
 		confirm_button.visible = false
 		close_button.text = tr("关闭")
 	set_busy(_busy)
+	chronicle_scroll.scroll_vertical = 0
 	reset_size()
 	show()
 
@@ -108,6 +110,8 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 		control.custom_minimum_size.y = touch
 	var body_size: int = ceili(16.0 / scale) if compact else 18
 	var action_size: int = ceili(17.0 / scale) if compact else 18
+	chronicle_scroll.custom_minimum_size.y = ceili(116.0 / scale) if compact else 116.0
+	chronicle_label.custom_minimum_size.y = chronicle_scroll.custom_minimum_size.y
 	title_label.add_theme_font_size_override("font_size", ceili(22.0 / scale) if compact else 24)
 	for label: Label in [phase_label, chronicle_label]: label.add_theme_font_size_override("font_size", body_size)
 	for control: Control in [close_button, successor_option, confirm_button, event_demo_button, succession_demo_button, outcome_demo_button]:

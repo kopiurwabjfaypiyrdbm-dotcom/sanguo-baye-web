@@ -484,6 +484,14 @@ func _advance_campaign_orders(receipt_kind: String) -> Dictionary:
 		return {"ok": false, "error": "campaign session has not started", "stateChanged": false,
 			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
 			"receipt": {}, "state": before}
+	if before.get("phase", "") == "ended":
+		return {"ok": true, "error": "", "stateChanged": false,
+			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
+			"receipt": {"kind": receipt_kind, "skipped": "campaign-ended"}, "state": before}
+	if before.get("phase", "") == "succession":
+		return {"ok": false, "error": "必须先拥立新君", "stateChanged": false,
+			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
+			"receipt": {}, "state": before}
 	var StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
 	var DiplomaticOrders = preload("res://src/domain/commands/diplomatic_order_commands.gd")
 	var settling: Dictionary = before.duplicate(true)

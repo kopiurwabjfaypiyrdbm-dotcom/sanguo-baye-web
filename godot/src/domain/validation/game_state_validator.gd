@@ -109,7 +109,7 @@ static func _validate(state: Dictionary, initial_contract: bool) -> Array[Dictio
 	var active_faction_id: String = _required_reference(
 		state.get("activeFactionId"), "activeFactionId", factions, issues
 	)
-	if (phase == "player" or phase == "succession") \
+	if (phase == "player" or phase == "succession" or phase == "ended") \
 			and not player_faction_id.is_empty() \
 			and active_faction_id != player_faction_id:
 		_add(issues, "activeFactionId", "must be the player faction during the player phase")
@@ -808,9 +808,9 @@ static func _validate_officers(
 					and typeof(factions[faction_id]) == TYPE_DICTIONARY \
 					and not (factions[faction_id] as Dictionary).get("isNeutral", false):
 				_add(issues, "%s.factionId" % path, "captive officer must be neutral")
-			if int(officer.get("troops", -1)) != 0:
+			if _is_integer_number(officer.get("troops")) and int(officer["troops"]) != 0:
 				_add(issues, "%s.troops" % path, "captive officer must have zero troops")
-			if int(officer.get("stamina", -1)) != 0:
+			if _is_integer_number(officer.get("stamina")) and int(officer["stamina"]) != 0:
 				_add(issues, "%s.stamina" % path, "captive officer must have zero stamina")
 			var captor_id: String = _required_reference(
 				officer.get("captorFactionId"), "%s.captorFactionId" % path, factions, issues
@@ -853,9 +853,9 @@ static func _validate_officers(
 		if status == "dead" and acted_ids.has(key):
 			_add(issues, "%s.status" % path, "dead officer cannot be marked as acted")
 		if status == "dead":
-			if int(officer.get("troops", -1)) != 0:
+			if _is_integer_number(officer.get("troops")) and int(officer["troops"]) != 0:
 				_add(issues, "%s.troops" % path, "dead officer must have zero troops")
-			if int(officer.get("stamina", -1)) != 0:
+			if _is_integer_number(officer.get("stamina")) and int(officer["stamina"]) != 0:
 				_add(issues, "%s.stamina" % path, "dead officer must have zero stamina")
 			if typeof(officer.get("death")) != TYPE_DICTIONARY:
 				_add(issues, "%s.death" % path, "dead officer must retain a death record")

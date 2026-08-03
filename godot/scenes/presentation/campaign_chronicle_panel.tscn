@@ -57,11 +57,19 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.57, 0.8, 0.76, 1)
 text = "公元 190 年 1 月 · 玩家阶段"
 
-[node name="ChronicleLabel" type="Label" parent="OuterMargin/Content"]
+[node name="ChronicleScroll" type="ScrollContainer" parent="OuterMargin/Content"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 116)
 layout_mode = 2
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="ChronicleLabel" type="Label" parent="OuterMargin/Content/ChronicleScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 116)
 text = "尚无战役纪事。"
 autowrap_mode = 2
 vertical_alignment = 1

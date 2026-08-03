@@ -475,6 +475,26 @@ func _run() -> void:
 
 	# MB11 native lifecycle/outcome acceptance paths remain explicit technical
 	# samples, but every state transition crosses the production session boundary.
+	map_world.set_route_preview(["city-12", "city-0"])
+	map_world.preview_recon_target("city-12", "city-0")
+	map_world.preview_diplomacy_target("city-12", "city-0")
+	screen.call("_open_chronicle")
+	_assert_true((map_world.get("_route_preview") as Array).is_empty(), "opening chronicle must clear a stale logistics route preview")
+	_assert_equal(map_world.get("_recon_target_id"), "", "opening chronicle must clear a stale reconnaissance preview")
+	_assert_equal(map_world.get("_diplomacy_target_id"), "", "opening chronicle must clear a stale diplomacy preview")
+	var long_chronicle: Dictionary = screen.get("_snapshot").duplicate(true)
+	for index: int in range(8):
+		long_chronicle["logs"].append({"id": "mb11-long-%d" % index, "kind": "turn", "message": "年度人物与城池事件长日志 %d：这段文字用于验证小屏滚动区域不会挤压操作按钮。" % index, "turn": 1})
+	chronicle_panel.show_state(long_chronicle)
+	chronicle_panel.apply_responsive_layout(true, canvas_scale, physical_size)
+	chronicle_panel.reset_size()
+	await process_frame
+	var chronicle_usable := Rect2(Vector2.ZERO, Vector2(1558.0, 278.0 / canvas_scale))
+	chronicle_panel.place_in(chronicle_usable)
+	_assert_equal(chronicle_panel.get_node("%ChronicleScroll").vertical_scroll_mode, ScrollContainer.SCROLL_MODE_AUTO,
+		"compact chronicle must use a vertical scroll viewport for long logs")
+	_assert_true(chronicle_panel.position.y + chronicle_panel.size.y <= chronicle_usable.end.y + 1.0,
+		"compact chronicle with long logs must remain above the status region")
 	screen.call("_apply_responsive_layout_for_size", physical_size)
 	_assert_true(
 		screen.get_node("%ChronicleButton").custom_minimum_size.y * canvas_scale >= 47.5,
@@ -489,7 +509,6 @@ func _run() -> void:
 	chronicle_panel.apply_responsive_layout(true, canvas_scale, physical_size)
 	chronicle_panel.reset_size()
 	await process_frame
-	var chronicle_usable := Rect2(Vector2.ZERO, Vector2(1558.0, 278.0 / canvas_scale))
 	chronicle_panel.place_in(chronicle_usable)
 	_assert_true(
 		chronicle_panel.position.y >= chronicle_usable.position.y - 1.0
@@ -527,6 +546,9 @@ func _run() -> void:
 	var ended_result: Dictionary = screen.get("_session").settle_natural_deaths()
 	_assert_true(ended_result["ok"] and not ended_result["stateChanged"], "ended campaign progression must be an idempotent no-op")
 	_assert_equal(screen.get("_session").state_sha256(), ended_digest, "ended campaign must preserve exact state and RNG")
+	var ended_order_result: Dictionary = screen.get("_session").advance_strategic_orders()
+	_assert_true(ended_order_result["ok"] and not ended_order_result["stateChanged"], "ended campaign order advancement must be an idempotent no-op")
+	_assert_equal(ended_order_result["receipt"].get("skipped"), "campaign-ended", "ended order advancement must report a stable skip reason")
 
 	if _failures > 0:
 		push_error(

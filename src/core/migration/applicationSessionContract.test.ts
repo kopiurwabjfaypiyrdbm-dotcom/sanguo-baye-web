@@ -7,6 +7,7 @@ import {
 } from './applicationSessionContract';
 import { buildProductionDataBundle } from './productionDataContract';
 import { killOfficer } from '../officerLifecycle';
+import { evaluateOutcome } from '../outcome';
 
 describe('Godot production application session oracle', () => {
   it('starts every declared candidate without consuming the period seed', () => {
@@ -117,6 +118,36 @@ describe('Godot production application session oracle', () => {
     expect(first.state.factions[first.state.playerFactionId].rulerOfficerId).toBe(successorOfficerId);
     expect(first.receipt).toMatchObject({ kind: 'resolve_succession', successorOfficerId });
     expect(duplicate).toEqual(first);
+  });
+
+  it('freezes order-month advancement at succession and ended boundaries', () => {
+    const base = createProductionSessionState(1, 1);
+    const endedInput = structuredClone(base);
+    for (const city of Object.values(endedInput.cities)) city.ownerId = endedInput.playerFactionId;
+    const endedSession = new OracleApplicationSession(JSON.parse(JSON.stringify(evaluateOutcome(endedInput))));
+    const endedDigest = canonicalSha256(endedSession.snapshot());
+    expect(endedSession.advanceStrategicOrders()).toMatchObject({
+      ok: true, stateChanged: false, beforeStateSha256: endedDigest, afterStateSha256: endedDigest,
+      receipt: { kind: 'advance_strategic_orders', skipped: 'campaign-ended' },
+    });
+    expect(endedSession.advanceDiplomaticOrders()).toMatchObject({
+      ok: true, stateChanged: false, beforeStateSha256: endedDigest, afterStateSha256: endedDigest,
+      receipt: { kind: 'advance_diplomatic_orders', skipped: 'campaign-ended' },
+    });
+
+    const pending = JSON.parse(JSON.stringify(killOfficer(base, {
+      officerId: 'officer-1', cause: 'natural-death', cityId: 'city-12',
+    })));
+    const successionSession = new OracleApplicationSession(pending);
+    const successionDigest = canonicalSha256(successionSession.snapshot());
+    expect(successionSession.advanceStrategicOrders()).toMatchObject({
+      ok: false, stateChanged: false, beforeStateSha256: successionDigest, afterStateSha256: successionDigest,
+      error: '必须先拥立新君',
+    });
+    expect(successionSession.advanceDiplomaticOrders()).toMatchObject({
+      ok: false, stateChanged: false, beforeStateSha256: successionDigest, afterStateSha256: successionDigest,
+      error: '必须先拥立新君',
+    });
   });
 
   it('rejects malformed Unicode without throwing from canonical hashing', () => {

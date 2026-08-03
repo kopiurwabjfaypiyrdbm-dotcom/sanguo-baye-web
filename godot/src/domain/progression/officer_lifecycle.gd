@@ -5,6 +5,7 @@ const GameState = preload("res://src/domain/game_state/game_state.gd")
 const Validator = preload("res://src/domain/validation/game_state_validator.gd")
 const CoreLcg = preload("res://src/domain/random/core_lcg.gd")
 const StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
+const DiplomaticOrders = preload("res://src/domain/commands/diplomatic_order_commands.gd")
 const CampaignOutcome = preload("res://src/domain/progression/campaign_outcome.gd")
 
 
@@ -291,6 +292,12 @@ static func _dissolve_faction(data: Dictionary, faction_id: String, former_ruler
 			and (next["pendingSuccession"] as Dictionary).get("factionId") == faction_id:
 		next.erase("pendingSuccession")
 	if faction_id == next["playerFactionId"]:
+		var strategic_termination: Dictionary = StrategicOrders.terminate_all(GameState.new(next), false)
+		if not strategic_termination["ok"]: return _failure(strategic_termination["error"])
+		next = strategic_termination["next_state"].snapshot()
+		var diplomatic_termination: Dictionary = DiplomaticOrders.terminate_all(GameState.new(next))
+		if not diplomatic_termination["ok"]: return _failure(diplomatic_termination["error"])
+		next = diplomatic_termination["next_state"].snapshot()
 		next["phase"] = "ended"; next["activeFactionId"] = next["playerFactionId"]; next["outcome"] = "defeat"
 	_append_logs(next, "system", ["%s在%s失效后无人可继，势力瓦解。" % [data["factions"][faction_id]["name"], data["officers"][former_ruler_id]["name"]]])
 	return {"ok": true, "error": "", "next": _update_city_satraps(next)}

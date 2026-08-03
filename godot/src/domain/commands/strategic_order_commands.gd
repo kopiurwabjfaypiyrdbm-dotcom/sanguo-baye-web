@@ -36,7 +36,7 @@ static func advance(state: GameState, validate_result: bool = true) -> Dictionar
 	var next: Dictionary = before.duplicate(true)
 	var messages: Array[String] = []
 	var completed_ids: Array[String] = []
-	var order_ids: Array[String] = _sorted_keys(before["strategicOrders"])
+	var order_ids: Array = _sorted_keys(before["strategicOrders"])
 	for order_id: String in order_ids:
 		var order: Dictionary = before["strategicOrders"][order_id]
 		var officer: Dictionary = next["officers"].get(order["officerId"], {})
@@ -240,7 +240,7 @@ static func terminate_all(state: GameState, validate_result: bool = true) -> Dic
 			"kind": "terminate_strategic_orders", "terminatedOrderIds": [],
 		}}
 	var next: Dictionary = before.duplicate(true)
-	var order_ids: Array[String] = _sorted_keys(before["strategicOrders"])
+	var order_ids: Array = _sorted_keys(before["strategicOrders"])
 	var neutral_id: String = ""
 	for faction_id: String in _sorted_keys(before["factions"]):
 		if bool(before["factions"][faction_id].get("isNeutral", false)):
@@ -248,7 +248,7 @@ static func terminate_all(state: GameState, validate_result: bool = true) -> Dic
 			break
 	for order_id: String in order_ids:
 		var order: Dictionary = before["strategicOrders"][order_id]
-		var preferred_ids: Array[String] = [str(order["sourceCityId"]), str(order["targetCityId"])] \
+		var preferred_ids: Array = [str(order["sourceCityId"]), str(order["targetCityId"])] \
 				if order["kind"] == "transport" else [str(order["targetCityId"]), str(order["sourceCityId"])]
 		var destination: Dictionary = {}
 		for city_id: String in preferred_ids:
