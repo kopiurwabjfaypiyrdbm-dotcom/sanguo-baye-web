@@ -14,6 +14,11 @@ config/name="三国霸业 Godot 技术样片"
 run/main_scene="res://scenes/presentation/main_menu.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
+config/quit_on_go_back=false
+
+[autoload]
+
+AndroidBackRouter="*res://src/platform/android/android_back_router.gd"
 
 [display]
 
