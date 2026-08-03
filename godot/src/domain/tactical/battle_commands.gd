@@ -765,7 +765,18 @@ static func _stable_serialize(value: Variant) -> String:
 static func _fnv1a(value: String) -> String:
 	var hash = 0x811c9dc5
 	for index in range(value.length()):
-		hash = int(hash ^ value.unicode_at(index)); hash = int((hash * 0x01000193) & 0xffff_ffff)
+		var codepoint := value.unicode_at(index)
+		# The Web oracle uses JS charCodeAt(), which hashes UTF-16 code units.
+		# Godot iterates Unicode scalar values, so explicitly split non-BMP
+		# characters into the same surrogate pair before updating FNV-1a.
+		if codepoint > 0xffff:
+			var scalar := codepoint - 0x10000
+			var high := 0xd800 | (scalar >> 10)
+			var low := 0xdc00 | (scalar & 0x3ff)
+			hash = int(hash ^ high); hash = int((hash * 0x01000193) & 0xffff_ffff)
+			hash = int(hash ^ low); hash = int((hash * 0x01000193) & 0xffff_ffff)
+		else:
+			hash = int(hash ^ codepoint); hash = int((hash * 0x01000193) & 0xffff_ffff)
 	return "%08x" % hash
 
 
@@ -773,3 +784,11 @@ static func strategic_fingerprint(state: Dictionary) -> String:
 	var projected: Dictionary = state.duplicate(true)
 	projected.erase("logs")
 	return _fnv1a(_stable_serialize(projected))
+
+
+static func battle_id(state: Dictionary, order: Dictionary) -> String:
+	return _battle_id(state, order)
+
+
+static func validate_attack_order(state: Dictionary, order: Dictionary) -> Dictionary:
+	return _validate_attack_order(state, order)

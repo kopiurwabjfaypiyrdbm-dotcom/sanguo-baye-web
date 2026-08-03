@@ -9,6 +9,11 @@ var _assertions := 0
 
 
 func _initialize() -> void:
+	# The settlement runner uses the default session path. Clear only its
+	# exact recovery sidecars so a prior interrupted verification cannot make a
+	# fresh test look like a conflicting real battle.
+	var stale_recovery := GameSession.new()
+	stale_recovery.clear_battle_recovery()
 	var fixture := _read_dictionary(FIXTURE_PATH)
 	if fixture.is_empty(): quit(1); return
 	var session := GameSession.new()
@@ -83,6 +88,7 @@ func _initialize() -> void:
 		_assert_true(bool(settle_battle.get("ok", false)), "real settle_battle command must succeed")
 		_assert_equal(settle_battle.get("settlement", {}), attacker_fixture["result"], "real settle_battle result must carry experience order into strategic settlement")
 	var attacker_session := GameSession.new()
+	attacker_session.clear_battle_recovery()
 	var attacker_started := attacker_session.start_campaign(1, 1)
 	_assert_true(bool(attacker_started.get("ok", false)), "attacker-win settlement campaign must start")
 	if bool(attacker_started.get("ok", false)) and not attacker_fixture.is_empty():

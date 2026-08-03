@@ -38,6 +38,9 @@
     "godot:tactical-settlement:generate": "vite-node scripts/generate-godot-tactical-battle-settlement-fixture.ts --write",
     "godot:tactical-settlement:check": "vite-node scripts/generate-godot-tactical-battle-settlement-fixture.ts",
     "godot:tactical-settlement:verify": "npm run godot:tactical-settlement:check && node scripts/run-godot-tactical-battle-settlement-verification.mjs",
+    "godot:production-save:generate": "vite-node scripts/generate-godot-production-save-recovery-fixture.ts --write",
+    "godot:production-save:check": "vite-node scripts/generate-godot-production-save-recovery-fixture.ts",
+    "godot:production-save:verify": "npm run godot:production-save:check && node scripts/run-godot-production-save-recovery-verification.mjs",
     "godot:tactical-presentation:verify": "node scripts/run-godot-tactical-battle-presentation-verification.mjs",
     "godot:project:verify": "node scripts/run-godot-project-verification.mjs",
     "godot:program-check": "node scripts/verify-godot-program.mjs --self-test --recover",
@@ -54,7 +57,7 @@
     "reference:setup:offline": "node scripts/fetch-baye-reference.mjs --full-source --include-offline-runtime",
     "reference:sync-core": "node scripts/sync-baye-core-reference.mjs",
     "reference:check": "node scripts/verify-baye-core-reference.mjs",
-  "check": "npm run godot:program-check && npm run godot:domain-data:check && npm run godot:application-session:check && npm run godot:tactical-battle:verify && npm run godot:tactical-movement:verify && npm run godot:tactical-attack:verify && npm run godot:tactical-skill:verify && npm run godot:tactical-ai:verify && npm run godot:tactical-outcome:verify && npm run godot:tactical-settlement:verify && npm run godot:tactical-presentation:verify && npm run reference:check && npm test && npm run build"
+  "check": "npm run godot:program-check && npm run godot:domain-data:check && npm run godot:application-session:verify && npm run godot:tactical-battle:verify && npm run godot:tactical-movement:verify && npm run godot:tactical-attack:verify && npm run godot:tactical-skill:verify && npm run godot:tactical-ai:verify && npm run godot:tactical-outcome:verify && npm run godot:tactical-settlement:verify && npm run godot:production-save:verify && npm run godot:tactical-presentation:verify && npm run reference:check && npm test && npm run build"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",

@@ -10,6 +10,7 @@ Thumbs.db
 .reference/
 .superpowers/
 godot/.godot/
+godot/.runtime-user/
 godot/builds/
 godot/.android/
 godot/*.apk

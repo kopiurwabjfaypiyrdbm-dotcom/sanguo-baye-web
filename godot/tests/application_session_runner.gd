@@ -107,7 +107,9 @@ func _test_all_campaign_candidates() -> void:
 			"classic ruleset query must reject manual satrap appointment"
 		)
 		_assert_equal(session.state_sha256(), query_before, "snapshot mutation and query must not mutate session")
-		_assert_true(not session.save_game()["ok"], "production state must not use the MB01 spike save envelope")
+		var production_save := session.save_game()
+		_assert_true(production_save.get("ok", false), "production state must use the MB20 production save envelope")
+		_assert_equal(production_save.get("envelope", {}).get("format", ""), "sanguo-baye-godot-production", "production save envelope format must be stable")
 		_assert_equal(session.state_sha256(), query_before, "rejected production save must not mutate session")
 		var invalid_snapshot: Dictionary = session.snapshot()
 		invalid_snapshot["rngSeed"] = "invalid"

@@ -8,6 +8,7 @@ const CommandDispatcher = preload("res://src/application/commands/command_dispat
 const ProductionDataRepository = preload("res://src/application/game_session/production_data_repository.gd")
 const GameSessionQueries = preload("res://src/application/game_session/game_session_queries.gd")
 const SaveRepository = preload("res://src/application/persistence/json_save_repository.gd")
+const BattleRecoveryRepository = preload("res://src/application/persistence/battle_recovery_repository.gd")
 const CalendarEvents = preload("res://src/domain/progression/calendar_events.gd")
 const AnnualProgression = preload("res://src/domain/progression/annual_progression.gd")
 const OfficerLifecycle = preload("res://src/domain/progression/officer_lifecycle.gd")
@@ -21,6 +22,7 @@ const IDEMPOTENCY_WINDOW_LIMIT: int = 256
 
 var _state: GameState
 var _repository: SaveRepository
+var _recovery_repository: BattleRecoveryRepository
 var _campaign: Dictionary = {}
 var _completed_commands: Dictionary = {}
 var _completed_command_order: Array[String] = []
@@ -30,6 +32,7 @@ var _production_bundle: Dictionary = {}
 
 func _init(save_path: String = DEFAULT_SAVE_PATH) -> void:
 	_repository = SaveRepository.new(save_path)
+	_recovery_repository = BattleRecoveryRepository.new(save_path + ".battle-recovery.json")
 
 
 func start_campaign(period_id: Variant, ruler_source_index: Variant) -> Dictionary:
@@ -149,7 +152,7 @@ func campaign_descriptor() -> Dictionary:
 	return _campaign.duplicate(true)
 
 
-func restore_snapshot(raw_snapshot: Variant) -> Dictionary:
+func restore_snapshot(raw_snapshot: Variant, campaign_hint: Variant = null) -> Dictionary:
 	if typeof(raw_snapshot) != TYPE_DICTIONARY:
 		return _failure("snapshot must be an object")
 	var candidate_data: Dictionary = (raw_snapshot as Dictionary).duplicate(true)
@@ -203,6 +206,9 @@ func restore_snapshot(raw_snapshot: Variant) -> Dictionary:
 		"rulerOfficerId": ruler_officer_id,
 		"rulerName": ruler_officer["name"],
 	}
+	if campaign_hint != null:
+		if not _campaign_matches(campaign_hint, next_campaign):
+			return _failure("snapshot campaign descriptor does not match the production state")
 	_state = next_state
 	_campaign = next_campaign
 	_production_bundle = loaded
@@ -275,7 +281,31 @@ func execute_command(raw_envelope: Variant) -> Dictionary:
 	if not after_digest_result["ok"]:
 		return _command_failure(envelope, "invalid_next_state", after_digest_result["error"], before_digest)
 
+	if envelope["kind"] == "settle_tactical_battle" and not bool(_campaign.get("legacySpike", false)):
+		var settlement_receipt: Dictionary = domain_result["receipt"]
+		var settlement: Dictionary = envelope["parameters"].get("battleResult", {})
+		var binding_order: Dictionary = {
+			"sourceCityId": settlement.get("sourceCityId", ""),
+			"targetCityId": settlement.get("targetCityId", ""),
+			"officerIds": (settlement.get("attackerOfficerIds", []) as Array).duplicate(true),
+			"provisions": settlement.get("provisions", 0),
+		}
+		var binding_resume: Dictionary = _recovery_resume_for_state(before_state)
+		var binding_fingerprint := String((settlement.get("guard", {}) as Dictionary).get("strategicFingerprint", ""))
+		var committed_recovery: Dictionary = _recovery_repository.save_committed(
+			next_state, _campaign, String(settlement_receipt.get("battleId", "")), "战后已提交", "",
+			binding_order, binding_resume, binding_fingerprint, before_state, _repository.current_save_revision(),
+			settlement.duplicate(true),
+		)
+		if not committed_recovery["ok"]:
+			return _command_failure(envelope, "persistence_failed", committed_recovery["error"], before_digest)
 	_state = next_state
+	if envelope["kind"] == "resolve_succession":
+		var successor_id := String((domain_result["receipt"] as Dictionary).get("successorOfficerId", ""))
+		var successor: Dictionary = next_snapshot.get("officers", {}).get(successor_id, {})
+		if not successor.is_empty():
+			_campaign["rulerOfficerId"] = successor_id
+			_campaign["rulerName"] = String(successor.get("name", ""))
 	var result: Dictionary = _command_result_base(envelope, true, "ok", "")
 	result["stateChanged"] = after_digest_result["value"] != before_digest
 	result["beforeStateSha256"] = before_digest
@@ -591,22 +621,169 @@ func _less_diplomatic_order_id(left: String, right: String) -> bool:
 func save_game() -> Dictionary:
 	if _state == null:
 		return _failure("尚未载入战役")
-	if not bool(_campaign.get("legacySpike", false)):
-		return _failure("生产 GameState 存档留待 MB20；当前格式只保存 MB01 样片")
-	var result: Dictionary = _repository.save(_state, "Godot migration spike")
+	if bool(_campaign.get("legacySpike", false)):
+		var spike_result: Dictionary = _repository.save(_state, "Godot migration spike")
+		if not spike_result["ok"]:
+			return spike_result
+		var spike_recovery_cleanup := _clear_committed_recovery_after_save()
+		if not spike_recovery_cleanup["ok"]:
+			return spike_recovery_cleanup
+		return {"ok": true, "error": "", "path": spike_result["path"], "envelope": spike_result["envelope"], "state": snapshot()}
+	var result: Dictionary = _repository.save_production(_state, _campaign, "Godot production campaign")
 	if not result["ok"]:
 		return result
+	var recovery_cleanup := _clear_committed_recovery_after_save()
+	if not recovery_cleanup["ok"]:
+		return recovery_cleanup
 	return {"ok": true, "error": "", "path": result["path"], "envelope": result["envelope"], "state": snapshot()}
 
 
+func save_battle_recovery_pending(order: Dictionary, resume: Dictionary, label: String = "", saved_at: String = "") -> Dictionary:
+	if _state == null: return _failure("尚未载入战役")
+	if bool(_campaign.get("legacySpike", false)): return _failure("战斗恢复只支持生产战役")
+	return _recovery_repository.save_pending(_state, _campaign, order, resume, label, saved_at, _repository.current_save_revision())
+
+
+func save_battle_recovery_committed(
+	battle_id: String,
+	label: String = "",
+	saved_at: String = "",
+	order: Dictionary = {},
+	resume: Dictionary = {},
+	strategic_fingerprint: String = "",
+	source_state: Dictionary = {},
+	parent_save_revision: int = -1,
+	settlement_result: Dictionary = {},
+) -> Dictionary:
+	if _state == null: return _failure("尚未载入战役")
+	if bool(_campaign.get("legacySpike", false)): return _failure("战斗恢复只支持生产战役")
+	return _recovery_repository.save_committed(
+		_state, _campaign, battle_id, label, saved_at, order, resume, strategic_fingerprint, source_state,
+		_repository.current_save_revision() if parent_save_revision < 0 else parent_save_revision, settlement_result
+	)
+
+
+func load_battle_recovery() -> Dictionary:
+	return _recovery_repository.load()
+
+
+func clear_battle_recovery() -> Dictionary:
+	return _recovery_repository.clear()
+
+
+func resume_battle_recovery() -> Dictionary:
+	var recovery: Dictionary = _recovery_repository.load()
+	if not recovery["ok"] or not recovery.get("found", false): return recovery
+	if recovery.has("recoveryPromotionError"):
+		return _failure(String(recovery["recoveryPromotionError"]))
+	var recovery_digest: Dictionary = CanonicalJson.try_sha256(recovery["state"])
+	if not recovery_digest["ok"]:
+		return _failure("战斗恢复状态无法计算摘要")
+	if _state == null:
+		# A cold process must not let an old committed marker roll back a newer
+		# main save. If the main save is unavailable/corrupt, recovery remains a
+		# valid last-resort source of truth.
+		var main_save: Dictionary = _repository.load()
+		if main_save.get("ok", false) and main_save.get("state") is GameState:
+			var main_digest: Dictionary = CanonicalJson.try_sha256((main_save["state"] as GameState).snapshot())
+			if main_digest.get("ok", false) and String(main_digest["value"]) != String(recovery_digest["value"]):
+				var main_envelope: Dictionary = main_save.get("envelope", {})
+				var recovery_envelope: Dictionary = recovery.get("envelope", {})
+				var main_revision := int(main_envelope.get("saveRevision", 0))
+				var parent_revision := int(recovery_envelope.get("parentSaveRevision", 0))
+				if main_revision > parent_revision:
+					return _failure("主存档已包含更新状态，拒绝回滚战斗恢复记录")
+	if _state != null:
+		if String(recovery_digest["value"]) != state_sha256():
+			var main_save_for_warm_resume: Dictionary = _repository.load()
+			var main_is_current_baseline := false
+			if main_save_for_warm_resume.get("ok", false) and main_save_for_warm_resume.get("state") is GameState:
+				var main_state_digest: Dictionary = CanonicalJson.try_sha256((main_save_for_warm_resume["state"] as GameState).snapshot())
+				main_is_current_baseline = main_state_digest.get("ok", false) \
+						and String(main_state_digest["value"]) == state_sha256()
+			var main_revision := int(main_save_for_warm_resume.get("envelope", {}).get("saveRevision", 0))
+			var parent_revision := int(recovery.get("envelope", {}).get("parentSaveRevision", 0))
+			if not main_is_current_baseline or main_revision > parent_revision:
+				return _failure("当前 session 已包含更新状态，拒绝覆盖战斗恢复记录")
+	var envelope: Dictionary = recovery.get("envelope", {})
+	var strategic_save: Dictionary = envelope.get("strategicSave", {})
+	var restored: Dictionary = restore_snapshot(recovery["state"], strategic_save.get("campaign", null))
+	if not restored["ok"]: return restored
+	if recovery["status"] == "committed":
+		return {"ok": true, "error": "", "code": "already_committed", "status": "committed", "stateChanged": false, "state": snapshot(), "battleId": recovery["battleId"]}
+	return {"ok": true, "error": "", "code": "resumed", "status": "pending", "stateChanged": false, "state": snapshot(), "battleId": recovery["battleId"], "order": recovery["order"], "resume": recovery["resume"]}
+
+
 func load_game() -> Dictionary:
-	return load_spike_game()
+	var result: Dictionary = _repository.load()
+	if not result["ok"]:
+		return result
+	if result.has("recoveryPromotionError"):
+		return _failure(String(result["recoveryPromotionError"]))
+	var envelope: Dictionary = result.get("envelope", {})
+	if envelope.get("format", "") == SaveRepository.SAVE_FORMAT:
+		return _load_spike_result(result)
+	var previous_state: GameState = _state
+	var previous_campaign: Dictionary = _campaign.duplicate(true)
+	var previous_bundle: Dictionary = _production_bundle
+	var previous_completed: Dictionary = _completed_commands.duplicate(true)
+	var previous_completed_order: Array[String] = _completed_command_order.duplicate()
+	var previous_serial: int = _compat_command_serial
+	var campaign_hint: Variant = envelope.get("campaign", null)
+	var restored: Dictionary = restore_snapshot((result["state"] as GameState).snapshot(), campaign_hint)
+	if not restored["ok"]:
+		return restored
+	var normalized_envelope: Dictionary = envelope.duplicate(true)
+	if bool(result.get("migrated", false)):
+		var migrated: Dictionary = _repository.create_production_envelope(
+			_state, _campaign, String(envelope.get("label", "迁移的旧版生产存档")), String(envelope.get("savedAt", ""))
+		)
+		if not migrated["ok"]:
+			_state = previous_state
+			_campaign = previous_campaign
+			_production_bundle = previous_bundle
+			_completed_commands = previous_completed
+			_completed_command_order = previous_completed_order
+			_compat_command_serial = previous_serial
+			return migrated
+		normalized_envelope = migrated["envelope"]
+	return {
+		"ok": true,
+		"error": "",
+		"path": result["path"],
+		"envelope": normalized_envelope,
+		"migrated": bool(result.get("migrated", false)),
+		"campaign": campaign_descriptor(),
+		"recoveredFrom": result.get("recoveredFrom", ""),
+		"state": snapshot(),
+	}
 
 
 func load_spike_game() -> Dictionary:
 	var result: Dictionary = _repository.load()
 	if not result["ok"]:
 		return result
+	if result.get("envelope", {}).get("format", "") != SaveRepository.SAVE_FORMAT:
+		return _failure("load_spike_game requires the legacy spike save format")
+	return _load_spike_result(result)
+
+
+func _clear_committed_recovery_after_save() -> Dictionary:
+	var recovery: Dictionary = _recovery_repository.load()
+	if not recovery.get("ok", false) or not recovery.get("found", false):
+		return {"ok": true, "error": ""}
+	if recovery.get("status", "") != "committed":
+		return {"ok": true, "error": ""}
+	# The successful main save is authoritative. A committed marker from an
+	# earlier state is stale once the player has continued and saved again; it
+	# must not survive into a cold-start recovery-first path.
+	var cleared := _recovery_repository.clear()
+	if not cleared.get("ok", false):
+		return _failure("主存档已写入，但战斗提交标记清理失败：%s" % cleared.get("error", ""))
+	return {"ok": true, "error": ""}
+
+
+func _load_spike_result(result: Dictionary) -> Dictionary:
 	_state = result["state"]
 	_campaign = {"periodId": 1, "legacySpike": true, "restoredFromSpikeSave": true, "playerFactionId": snapshot()["playerFactionId"]}
 	_completed_commands.clear()
@@ -656,3 +833,34 @@ func _is_integer(raw: Variant) -> bool:
 	return (typeof(raw) == TYPE_INT or typeof(raw) == TYPE_FLOAT) \
 			and is_finite(float(raw)) \
 			and floor(float(raw)) == float(raw)
+
+
+func _campaign_matches(raw: Variant, expected: Dictionary) -> bool:
+	if typeof(raw) != TYPE_DICTIONARY:
+		return false
+	var actual: Dictionary = raw
+	var keys: Array[String] = [
+		"productionDataContractVersion", "periodId", "title", "rulerSourceIndex",
+		"playerFactionId", "rulerOfficerId", "rulerName",
+	]
+	if actual.size() != keys.size():
+		return false
+	for key: String in keys:
+		if not actual.has(key) or not expected.has(key):
+			return false
+	for key: String in ["productionDataContractVersion", "periodId", "rulerSourceIndex"]:
+		if not _is_integer(actual[key]) or int(actual[key]) != int(expected[key]):
+			return false
+	for key: String in ["title", "playerFactionId", "rulerOfficerId", "rulerName"]:
+		if typeof(actual[key]) != TYPE_STRING or String(actual[key]) != String(expected[key]):
+			return false
+	return true
+
+
+func _recovery_resume_for_state(state_data: Dictionary) -> Dictionary:
+	if state_data.get("phase", "") == "player":
+		return {"kind": "player-phase"}
+	if state_data.get("phase", "") == "ai":
+		var faction_order: Array = state_data.get("factionOrder", [])
+		return {"kind": "ai-phase", "nextFactionIndex": faction_order.find(state_data.get("activeFactionId")) + 1}
+	return {}
