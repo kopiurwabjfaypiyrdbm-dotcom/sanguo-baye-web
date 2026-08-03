@@ -28,7 +28,7 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 - campaign setup presentation：62 assertions；38 城、54 道路和生产 GameSession 入口。
 - Web：47 个测试文件、378 tests，构建通过。
 - 聚合 `npm run check`：退出码 0，通过；本轮耗时约 547 秒。日志中的 migration replay 失败项属于预期的负向篡改演练，未改变聚合命令成功结果；根证书、弹窗位置和 Android build-tools 提示为环境警告。
-- 增量项目验证：`npm run godot:project:verify` 退出码 0（211 domain、212 presentation assertions）。当前源码的 Android preset 已将四个 launcher icon 槽位指向合法项目 `res://icon.svg`；这尚未改变下方已安装 APK。
+- 增量项目验证：`npm run godot:project:verify` 退出码 0（211 domain、212 presentation assertions）。当前源码的 Android preset 已使用项目自有 `res://icon.svg` 主图标及独立 adaptive foreground/background/monochrome SVG；这尚未改变下方已安装 APK。
 - 增量导出：沙箱上下文曾把已存在的模板误报为 missing；改用授权环境读取现有模板后导出成功。没有下载或安装组件。
 
 ## 尚未关闭的 P1 与人工交接
