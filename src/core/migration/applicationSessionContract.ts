@@ -111,7 +111,8 @@ export class OracleApplicationSession {
         activeFactionId: before.playerFactionId,
         actedOfficerIds: [],
       };
-      const next = JSON.parse(JSON.stringify(advanceStrategicOrders(settling))) as GameState;
+      const afterStrategic = advanceStrategicOrders(settling, { deferValidation: true });
+      const next = JSON.parse(JSON.stringify(advanceDiplomaticOrders(afterStrategic))) as GameState;
       const afterDigest = canonicalSha256(next);
       const beforeOrderIds = Object.keys(before.strategicOrders).sort(compareUnicodeScalar);
       const completedOrderIds = beforeOrderIds.filter((id) => !next.strategicOrders[id]);
@@ -161,7 +162,8 @@ export class OracleApplicationSession {
         activeFactionId: before.playerFactionId,
         actedOfficerIds: [],
       };
-      const next = JSON.parse(JSON.stringify(advanceDiplomaticOrders(settling))) as GameState;
+      const afterStrategic = advanceStrategicOrders(settling, { deferValidation: true });
+      const next = JSON.parse(JSON.stringify(advanceDiplomaticOrders(afterStrategic))) as GameState;
       const afterDigest = canonicalSha256(next);
       const beforeOrderIds = Object.keys(before.diplomaticOrders).sort(compareDiplomaticOrderIds);
       const completedOrderIds = beforeOrderIds.filter((id) => !next.diplomaticOrders[id]);

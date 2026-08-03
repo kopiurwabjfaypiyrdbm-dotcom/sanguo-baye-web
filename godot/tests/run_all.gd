@@ -5,6 +5,7 @@ const Validator = preload("res://src/domain/validation/game_state_validator.gd")
 const CoreLcg = preload("res://src/domain/random/core_lcg.gd")
 const DevelopFarming = preload("res://src/domain/commands/develop_farming_command.gd")
 const StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
+const DiplomaticOrders = preload("res://src/domain/commands/diplomatic_order_commands.gd")
 const BayeDiplomacy = preload("res://src/domain/compat/baye/baye_diplomacy.gd")
 const GameSession = preload("res://src/application/game_session/game_session.gd")
 const SaveRepository = preload("res://src/application/persistence/json_save_repository.gd")
@@ -29,6 +30,8 @@ func _initialize() -> void:
 	_test_invalid_command_does_not_advance_state()
 	_test_runtime_rejects_unsafe_integer_state()
 	_test_strategic_order_lifecycle_cancellation()
+	_test_diplomatic_order_application_bridge()
+	_test_diplomatic_order_termination_and_invalid_executor()
 	_test_spike_contract_rejects_unmigrated_web_states()
 	_test_save_load_equivalence()
 
@@ -103,6 +106,87 @@ func _test_strategic_order_lifecycle_cancellation() -> void:
 	var rejected: Dictionary = StrategicOrders.cancel_officer_orders(impossible, "officer-56", "生命周期测试")
 	_assert_true(not rejected["ok"], "unsettleable lifecycle cancellation must fail explicitly")
 	_assert_true(impossible["strategicOrders"].has("strategic-order-1"), "failed lifecycle cancellation must retain the input order")
+
+
+func _test_diplomatic_order_application_bridge() -> void:
+	var session: GameSession = GameSession.new()
+	var started: Dictionary = session.start_campaign(1, 1)
+	_assert_true(started["ok"], "diplomatic bridge campaign must start")
+	if not started["ok"]: return
+	var initial_seed: int = int(session.snapshot()["rngSeed"])
+	var recon: Dictionary = session.execute_command({
+		"commandEnvelopeVersion": 1, "commandId": "domain-diplomacy-recon",
+		"expectedStateSha256": session.state_sha256(), "kind": "reconnoitre_city",
+		"parameters": {"sourceCityId": "city-12", "targetCityId": "city-0", "officerId": "officer-32"},
+	})
+	_assert_true(recon["ok"], "diplomatic bridge reconnaissance must succeed")
+	if not recon["ok"]: return
+	var before_issue: Dictionary = session.snapshot()
+	var issued: Dictionary = session.execute_command({
+		"commandEnvelopeVersion": 1, "commandId": "domain-diplomacy-issue",
+		"expectedStateSha256": session.state_sha256(), "kind": "issue_alienate_order",
+		"parameters": {"sourceCityId": "city-12", "officerId": "officer-1", "targetOfficerId": "officer-56"},
+	})
+	_assert_true(issued["ok"], "diplomatic bridge alienate order must issue")
+	if not issued["ok"]: return
+	var issued_state: Dictionary = session.snapshot()
+	_assert_true(issued_state["diplomaticOrders"].has("diplomatic-order-1"), "issued diplomacy must persist as an active order")
+	_assert_equal(issued_state["cities"]["city-12"]["money"], int(before_issue["cities"]["city-12"]["money"]) - 50, "classic alienate must debit 50 money")
+	_assert_equal(issued_state["officers"]["officer-1"]["stamina"], int(before_issue["officers"]["officer-1"]["stamina"]) - 20, "classic alienate must debit 20 stamina")
+	_assert_true(not issued_state["officers"]["officer-1"].has("cityId"), "diplomatic executor must be in transit")
+	_assert_equal(issued_state["rngSeed"], initial_seed, "issuing diplomacy must not consume RNG")
+	var settled: Dictionary = session.advance_diplomatic_orders()
+	_assert_true(settled["ok"], "diplomatic bridge advance must settle: %s" % settled.get("error", ""))
+	if not settled["ok"]: return
+	var settled_state: Dictionary = session.snapshot()
+	_assert_equal(settled_state["diplomaticOrders"], {}, "settled diplomatic order must be removed")
+	_assert_equal(settled_state["officers"]["officer-1"]["cityId"], "city-12", "diplomatic executor must return to the source city")
+	_assert_true(int(settled_state["rngSeed"]) != initial_seed, "valid diplomatic settlement must consume the fixed RNG sequence")
+	_assert_equal(Validator.validate_runtime(settled_state), [], "settled diplomatic state must validate")
+
+
+func _test_diplomatic_order_termination_and_invalid_executor() -> void:
+	var session: GameSession = GameSession.new()
+	_assert_true(session.start_campaign(1, 1)["ok"], "diplomatic closure campaign must start")
+	var recon: Dictionary = session.execute_command({
+		"commandEnvelopeVersion": 1, "commandId": "domain-diplomacy-closure-recon",
+		"expectedStateSha256": session.state_sha256(), "kind": "reconnoitre_city",
+		"parameters": {"sourceCityId": "city-12", "targetCityId": "city-0", "officerId": "officer-32"},
+	})
+	_assert_true(recon["ok"], "diplomatic closure reconnaissance must succeed")
+	if not recon["ok"]: return
+	var issued: Dictionary = session.execute_command({
+		"commandEnvelopeVersion": 1, "commandId": "domain-diplomacy-closure-issue",
+		"expectedStateSha256": session.state_sha256(), "kind": "issue_alienate_order",
+		"parameters": {"sourceCityId": "city-12", "officerId": "officer-33", "targetOfficerId": "officer-56"},
+	})
+	_assert_true(issued["ok"], "diplomatic closure order must issue")
+	if not issued["ok"]: return
+	var in_transit: Dictionary = session.snapshot()
+	var terminated: Dictionary = DiplomaticOrders.terminate_all(GameState.new(in_transit))
+	_assert_true(terminated["ok"], "campaign closure must terminate diplomacy deterministically")
+	if terminated["ok"]:
+		var closed: Dictionary = terminated["next_state"].snapshot()
+		_assert_equal(closed["diplomaticOrders"], {}, "campaign closure must remove every diplomatic order")
+		_assert_equal(closed["officers"]["officer-33"]["cityId"], "city-12", "campaign closure must return the executor")
+		_assert_true("因战役结束而中止" in closed["logs"][-1]["message"], "campaign closure must append an explicit termination log")
+		_assert_equal(Validator.validate_runtime(closed), [], "campaign closure output must validate before outcome transition")
+	var invalid_executor: Dictionary = in_transit.duplicate(true)
+	invalid_executor["turn"] = int(invalid_executor["turn"]) + 1
+	invalid_executor["calendar"]["month"] = int(invalid_executor["calendar"]["month"]) + 1
+	invalid_executor["actedOfficerIds"] = []
+	invalid_executor["officers"]["officer-33"]["status"] = "free"
+	invalid_executor["officers"]["officer-33"]["factionId"] = "neutral"
+	invalid_executor["officers"]["officer-33"]["cityId"] = "city-12"
+	invalid_executor["officers"]["officer-33"]["troops"] = 0
+	invalid_executor["officers"]["officer-33"]["stamina"] = 0
+	var initial_seed: int = int(invalid_executor["rngSeed"])
+	var invalidated: Dictionary = DiplomaticOrders.advance(GameState.new(invalid_executor))
+	_assert_true(invalidated["ok"], "changed executor branch must close without a script error: %s" % invalidated.get("error", ""))
+	if invalidated["ok"]:
+		var invalidated_state: Dictionary = invalidated["next_state"].snapshot()
+		_assert_equal(invalidated_state["rngSeed"], initial_seed, "changed executor branch must not consume RNG")
+		_assert_equal(invalidated_state["diplomaticOrders"], {}, "changed executor branch must remove the stale order")
 
 
 func _test_period_structure_and_roads() -> void:

@@ -24,6 +24,12 @@ var _recon_source_id := ""
 var _recon_target_id := ""
 var _recon_progress := 0.0
 var _recon_tween: Tween
+var _diplomacy_source_id := ""
+var _diplomacy_target_id := ""
+var _diplomacy_progress := 0.0
+var _diplomacy_result_city_id := ""
+var _diplomacy_result_progress := 0.0
+var _diplomacy_tween: Tween
 
 
 func rebuild(snapshot: Dictionary) -> void:
@@ -178,6 +184,68 @@ func _set_recon_progress(value: float) -> void:
 	queue_redraw()
 
 
+func preview_diplomacy_target(source_city_id: String, target_city_id: String) -> void:
+	_kill_diplomacy_tween()
+	_diplomacy_source_id = source_city_id if _city_positions.has(source_city_id) else ""
+	_diplomacy_target_id = target_city_id if _city_positions.has(target_city_id) else ""
+	_diplomacy_progress = 0.72 if not _diplomacy_source_id.is_empty() and not _diplomacy_target_id.is_empty() else 0.0
+	_diplomacy_result_city_id = ""
+	_diplomacy_result_progress = 0.0
+	queue_redraw()
+
+
+func clear_diplomacy_preview() -> void:
+	_kill_diplomacy_tween()
+	_diplomacy_source_id = ""
+	_diplomacy_target_id = ""
+	_diplomacy_progress = 0.0
+	_diplomacy_result_city_id = ""
+	_diplomacy_result_progress = 0.0
+	queue_redraw()
+
+
+func play_diplomacy_dispatch(source_city_id: String, target_city_id: String) -> void:
+	clear_diplomacy_preview()
+	if not _city_positions.has(source_city_id) or not _city_positions.has(target_city_id): return
+	_diplomacy_source_id = source_city_id
+	_diplomacy_target_id = target_city_id
+	_diplomacy_tween = create_tween()
+	_diplomacy_tween.set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
+	_diplomacy_tween.tween_method(_set_diplomacy_progress, 0.0, 1.0, 0.5)
+	_diplomacy_tween.tween_interval(0.24)
+	_diplomacy_tween.set_ease(Tween.EASE_IN)
+	_diplomacy_tween.tween_method(_set_diplomacy_progress, 1.0, 0.0, 0.44)
+	_diplomacy_tween.finished.connect(clear_diplomacy_preview)
+
+
+func play_diplomacy_result(city_id: String) -> void:
+	clear_diplomacy_preview()
+	if not _city_positions.has(city_id): return
+	_diplomacy_result_city_id = city_id
+	_diplomacy_tween = create_tween()
+	_diplomacy_tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_diplomacy_tween.tween_method(_set_diplomacy_result_progress, 0.0, 1.0, 0.46)
+	_diplomacy_tween.tween_interval(0.18)
+	_diplomacy_tween.set_ease(Tween.EASE_IN)
+	_diplomacy_tween.tween_method(_set_diplomacy_result_progress, 1.0, 0.0, 0.5)
+	_diplomacy_tween.finished.connect(clear_diplomacy_preview)
+
+
+func _set_diplomacy_progress(value: float) -> void:
+	_diplomacy_progress = clampf(value, 0.0, 1.0)
+	queue_redraw()
+
+
+func _set_diplomacy_result_progress(value: float) -> void:
+	_diplomacy_result_progress = clampf(value, 0.0, 1.0)
+	queue_redraw()
+
+
+func _kill_diplomacy_tween() -> void:
+	if _diplomacy_tween and _diplomacy_tween.is_valid(): _diplomacy_tween.kill()
+	_diplomacy_tween = null
+
+
 func _draw() -> void:
 	# A procedural parchment-like field avoids raster and licensing dependencies.
 	draw_rect(_map_bounds, Color("#132226"), true)
@@ -200,6 +268,7 @@ func _draw() -> void:
 		draw_circle(Vector2(_city_positions[city_id]), 12.0, Color(1.0, 0.72, 0.18, 0.25))
 		draw_arc(Vector2(_city_positions[city_id]), 15.0, 0.0, TAU, 28, Color(1.0, 0.82, 0.38, 0.95), 2.0, true)
 	_draw_recon_scan()
+	_draw_diplomacy_effect()
 
 	draw_rect(_map_bounds, Color(0.55, 0.68, 0.56, 0.55), false, 2.0)
 
@@ -216,6 +285,30 @@ func _draw_recon_scan() -> void:
 	draw_circle(source, 11.0 + 8.0 * _recon_progress, glow)
 	draw_arc(target, 14.0 + 18.0 * _recon_progress, 0.0, TAU, 40, Color(0.48, 0.94, 1.0, 0.92), 3.0, true)
 	draw_arc(target, 24.0 + 30.0 * _recon_progress, 0.0, TAU, 40, glow, 4.0, true)
+
+
+func _draw_diplomacy_effect() -> void:
+	if _diplomacy_progress > 0.0 and _city_positions.has(_diplomacy_source_id) \
+			and _city_positions.has(_diplomacy_target_id):
+		var source: Vector2 = _city_positions[_diplomacy_source_id]
+		var target: Vector2 = _city_positions[_diplomacy_target_id]
+		var bend: Vector2 = (source + target) * 0.5 + Vector2(-(target.y - source.y), target.x - source.x).normalized() * 46.0
+		var previous := source
+		var segments := 22
+		for index: int in range(1, segments + 1):
+			var ratio: float = float(index) / float(segments)
+			if ratio > _diplomacy_progress: break
+			var point: Vector2 = source.lerp(bend, ratio).lerp(bend.lerp(target, ratio), ratio)
+			if index % 2 == 0:
+				draw_line(previous, point, Color(0.9, 0.48, 1.0, 0.94), 4.0, true)
+			previous = point
+		draw_circle(source, 9.0 + 7.0 * _diplomacy_progress, Color(0.76, 0.32, 0.92, 0.32))
+		draw_arc(target, 15.0 + 12.0 * _diplomacy_progress, 0.0, TAU, 36, Color(0.96, 0.58, 1.0, 0.96), 3.0, true)
+	if _diplomacy_result_progress > 0.0 and _city_positions.has(_diplomacy_result_city_id):
+		var center: Vector2 = _city_positions[_diplomacy_result_city_id]
+		var glow := Color(1.0, 0.68, 0.22, 0.72 * (1.0 - _diplomacy_result_progress * 0.5))
+		draw_circle(center, 12.0 + 20.0 * _diplomacy_result_progress, Color(glow, 0.16))
+		draw_arc(center, 18.0 + 34.0 * _diplomacy_result_progress, 0.0, TAU, 44, glow, 4.0, true)
 
 
 func _draw_route(route: Array, color: Color, width: float) -> void:

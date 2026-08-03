@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { canonicalJson, canonicalSha256 } from '../src/core/migration/canonicalJson';
+import { canonicalJson, canonicalSha256, compareUnicodeScalar } from '../src/core/migration/canonicalJson';
 import { governCity } from '../src/core/cityCommands';
 import { findOwnedCityRoute } from '../src/core/strategicOrders';
 import { cancelOfficerOrders } from '../src/core/officerLifecycle';
@@ -37,7 +37,12 @@ function transactionCaseCount(value: ReturnType<typeof buildFixture>) {
     + value.personnelLifecycleBoundaryCases.length + value.strategicLogisticsSequences
       .reduce((total, sequence) => total + sequence.steps.length, 0)
     + value.strategicLogisticsBoundaryCases.length + value.reconnaissanceSequence.steps.length
-    + value.reconnaissanceBoundaryCases.length + value.validationCases.length;
+    + value.reconnaissanceBoundaryCases.length + value.diplomaticOrderSequences
+      .reduce((total, sequence) => total + sequence.steps.length, 0)
+    + value.diplomaticOrderBoundaryCases.length
+    + value.diplomaticOrderSettlementSequences
+      .reduce((total, sequence) => total + sequence.steps.length, 0)
+    + value.validationCases.length;
 }
 
 export function buildFixture() {
@@ -143,9 +148,472 @@ export function buildFixture() {
     reconnaissanceSequence: buildReconnaissanceSequence(),
     reconnaissanceBoundaryCases: buildReconnaissanceBoundaryCases(),
     reconnaissanceLegacyReportCase: buildReconnaissanceLegacyReportCase(),
+    diplomaticOrderSequences: buildDiplomaticOrderSequences(),
+    diplomaticOrderBoundaryCases: buildDiplomaticOrderBoundaryCases(),
+    diplomaticOrderSettlementSequences: buildDiplomaticOrderSettlementSequences(),
     validationCases: buildValidationCases(),
     modernRulesetCase: buildModernRulesetCase(),
   };
+}
+
+function buildDiplomaticOrderSequences() {
+  const configurations = [
+    {
+      id: 'alienate-success', rulerSourceIndex: 1, seed: 1, kind: 'alienate',
+      sourceCityId: 'city-12', officerId: 'officer-1', targetCityId: 'city-0', targetOfficerId: 'officer-56',
+      patches: [
+        { path: ['officers', 'officer-1', 'intelligence'], value: 100 },
+        { path: ['officers', 'officer-56', 'intelligence'], value: 50 },
+        { path: ['officers', 'officer-56', 'loyalty'], value: 0 },
+        { path: ['officers', 'officer-56', 'character'], value: 0 },
+      ],
+    },
+    {
+      id: 'canvass-success', rulerSourceIndex: 1, seed: 2, kind: 'canvass',
+      sourceCityId: 'city-12', officerId: 'officer-1', targetCityId: 'city-0', targetOfficerId: 'officer-56',
+      patches: [
+        { path: ['officers', 'officer-1', 'intelligence'], value: 100 },
+        { path: ['officers', 'officer-56', 'intelligence'], value: 0 },
+        { path: ['officers', 'officer-56', 'loyalty'], value: 0 },
+        { path: ['officers', 'officer-56', 'character'], value: 1 },
+      ],
+    },
+    {
+      id: 'counterespionage-success', rulerSourceIndex: 1, seed: 1, kind: 'counterespionage',
+      sourceCityId: 'city-12', officerId: 'officer-1', targetCityId: 'city-0', targetOfficerId: 'officer-56',
+      patches: [
+        { path: ['officers', 'officer-1', 'intelligence'], value: 100 },
+        { path: ['officers', 'officer-56', 'intelligence'], value: 50 },
+        { path: ['officers', 'officer-56', 'loyalty'], value: 0 },
+        { path: ['officers', 'officer-56', 'character'], value: 3 },
+      ],
+    },
+    {
+      id: 'induce-success', rulerSourceIndex: 0, seed: 8, kind: 'induce',
+      sourceCityId: 'city-15', officerId: 'officer-31', targetCityId: 'city-11', targetOfficerId: 'officer-10',
+      patches: [
+        { path: ['officers', 'officer-31', 'intelligence'], value: 100 },
+        { path: ['officers', 'officer-10', 'intelligence'], value: 50 },
+        { path: ['officers', 'officer-10', 'character'], value: 4 },
+      ],
+    },
+  ] as const;
+  return configurations.map((configuration) => {
+    const initialState = createProductionSessionState(1, configuration.rulerSourceIndex);
+    const initialPatches: StatePatch[] = [
+      { path: ['rngSeed'], value: configuration.seed },
+      ...configuration.patches.map((patch) => ({ path: [...patch.path], value: patch.value })),
+    ];
+    applyStatePatches(initialState as unknown as Record<string, unknown>, initialPatches);
+    const report = buildCurrentIntelReport(initialState, configuration.targetCityId);
+    const reportPatch: StatePatch = {
+      path: ['intelReports', configuration.targetCityId], value: report,
+    };
+    initialPatches.push(reportPatch);
+    applyStatePatches(initialState as unknown as Record<string, unknown>, [reportPatch]);
+    const session = new OracleApplicationSession(initialState);
+    const issueCommand: ApplicationCommandEnvelope = {
+      commandEnvelopeVersion: 1,
+      commandId: `mb10-${configuration.id}-issue`,
+      expectedStateSha256: canonicalSha256(initialState),
+      kind: `issue_${configuration.kind}_order`,
+      parameters: {
+        sourceCityId: configuration.sourceCityId,
+        officerId: configuration.officerId,
+        targetOfficerId: configuration.targetOfficerId,
+      },
+    };
+    const issueResult = session.execute(issueCommand);
+    if (!issueResult.ok) throw new Error(`${configuration.id} issue failed: ${issueResult.error}`);
+    const { state: _issueState, ...issueCore } = issueResult;
+    const advanceInputSha256 = canonicalSha256(session.snapshot());
+    const advanceResult = session.advanceDiplomaticOrders();
+    if (!advanceResult.ok) throw new Error(`${configuration.id} advance failed: ${advanceResult.error}`);
+    const { state: _advanceState, ...advanceCore } = advanceResult;
+    return {
+      id: configuration.id,
+      campaign: { periodId: 1, rulerSourceIndex: configuration.rulerSourceIndex },
+      initialPatches,
+      initialStateSha256: canonicalSha256(initialState),
+      initialSeed: configuration.seed,
+      steps: [
+        { id: 'issue', operation: 'command' as const, command: issueCommand, expectedCore: issueCore },
+        {
+          id: 'advance', operation: 'advance' as const,
+          preStateSha256: advanceInputSha256, expectedCore: advanceCore,
+        },
+      ],
+      finalStateSha256: canonicalSha256(session.snapshot()),
+    };
+  });
+}
+
+function buildCurrentIntelReport(state: ReturnType<typeof createProductionSessionState>, cityId: string) {
+  const city = state.cities[cityId];
+  const stationed = Object.values(state.officers)
+    .filter((officer) => officer.status === 'serving' && officer.cityId === cityId)
+    .sort((left, right) => compareUnicodeScalar(left.id, right.id));
+  const satrapName = city.satrapOfficerId ? state.officers[city.satrapOfficerId]?.name : undefined;
+  return {
+    cityId,
+    observedTurn: state.turn,
+    observedYear: state.calendar.year,
+    observedMonth: state.calendar.month,
+    population: city.population,
+    money: city.money,
+    food: city.food,
+    reserveTroops: city.reserveTroops,
+    farming: city.farming,
+    commerce: city.commerce,
+    defense: city.defense,
+    publicLoyalty: city.publicLoyalty,
+    ...(satrapName === undefined ? {} : { satrapName }),
+    officerIds: stationed.map((officer) => officer.id),
+    officerCount: stationed.length,
+    totalTroops: stationed.reduce((total, officer) => total + officer.troops, 0),
+  };
+}
+
+function buildDiplomaticOrderBoundaryCases() {
+  type Setup = {
+    id: string;
+    kind?: 'alienate' | 'canvass' | 'counterespionage' | 'induce';
+    parameters?: Record<string, unknown>;
+    patches?: StatePatch[];
+    reportMode?: 'current' | 'none' | 'stale' | 'legacy' | 'without-target';
+  };
+  const valid = { sourceCityId: 'city-12', officerId: 'officer-1', targetOfficerId: 'officer-56' };
+  const setups: Setup[] = [
+    { id: 'modern-cost-success', patches: [{ path: ['rulesetId'], value: 'modern-balanced-v1' }] },
+    { id: 'missing-intelligence-rejected', reportMode: 'none' },
+    { id: 'stale-intelligence-rejected', patches: [
+      { path: ['turn'], value: 2 }, { path: ['calendar', 'month'], value: 2 },
+    ], reportMode: 'stale' },
+    { id: 'legacy-report-without-officers-rejected', reportMode: 'legacy' },
+    { id: 'report-without-target-rejected', reportMode: 'without-target' },
+    { id: 'acted-executor-rejected', patches: [{ path: ['actedOfficerIds'], value: ['officer-1'] }] },
+    { id: 'classic-stamina-insufficient', patches: [{ path: ['officers', 'officer-1', 'stamina'], value: 19 }] },
+    { id: 'money-insufficient', patches: [{ path: ['cities', 'city-12', 'money'], value: 49 }] },
+    { id: 'serial-exhausted', patches: [{ path: ['nextDiplomaticOrderSerial'], value: Number.MAX_SAFE_INTEGER }] },
+    { id: 'counterespionage-requires-satrap', kind: 'counterespionage', parameters: {
+      ...valid, targetOfficerId: 'officer-57',
+    } },
+    { id: 'induce-requires-ruler', kind: 'induce' },
+    { id: 'target-moved-after-report', patches: [
+      { path: ['officers', 'officer-56', 'cityId'], value: 'city-3' },
+      { path: ['cities', 'city-0', 'satrapOfficerId'], value: 'officer-57' },
+    ] },
+    { id: 'sorted-unknown-parameter', parameters: {
+      ...valid, ['\u{10000}']: true, ['\ue000']: true,
+    } },
+    { id: 'missing-target-parameter', parameters: {
+      sourceCityId: 'city-12', officerId: 'officer-1',
+    } },
+  ];
+  return setups.map((setup, index) => {
+    const input = createProductionSessionState(1, 1);
+    const patches: StatePatch[] = (setup.patches ?? []).map((patch) => ({
+      path: [...patch.path], value: patch.value,
+    }));
+    applyStatePatches(input as unknown as Record<string, unknown>, patches);
+    const reportMode = setup.reportMode ?? 'current';
+    if (reportMode !== 'none') {
+      const report = buildCurrentIntelReport(input, 'city-0');
+      if (reportMode === 'stale') {
+        report.observedTurn = 1;
+        report.observedYear = 190;
+        report.observedMonth = 1;
+      } else if (reportMode === 'legacy') {
+        delete (report as Partial<typeof report>).officerIds;
+      } else if (reportMode === 'without-target') {
+        report.officerIds = report.officerIds.filter((id) => id !== 'officer-56');
+        report.officerCount = report.officerIds.length;
+      }
+      const reportPatch: StatePatch = { path: ['intelReports', 'city-0'], value: report };
+      patches.push(reportPatch);
+      applyStatePatches(input as unknown as Record<string, unknown>, [reportPatch]);
+    }
+    const session = new OracleApplicationSession(input);
+    const orderKind = setup.kind ?? 'alienate';
+    const command: ApplicationCommandEnvelope = {
+      commandEnvelopeVersion: 1,
+      commandId: `mb10-boundary-${String(index + 1).padStart(3, '0')}`,
+      expectedStateSha256: canonicalSha256(input),
+      kind: `issue_${orderKind}_order`,
+      parameters: setup.parameters ?? valid,
+    };
+    const expected = session.execute(command);
+    const { state: _stateEvidence, ...expectedCore } = expected;
+    return {
+      id: setup.id, campaign: { periodId: 1, rulerSourceIndex: 1 }, patches,
+      inputStateSha256: canonicalSha256(input), command, expectedCore,
+      expectedStateSha256: canonicalSha256(expected.state),
+    };
+  });
+}
+
+function buildDiplomaticOrderSettlementSequences() {
+  const build = (
+    id: string,
+    initialPatches: StatePatch[],
+    commands: Array<{ kind: string; sourceCityId: string; officerId: string; targetOfficerId: string }>,
+    advancePatches: StatePatch[] = [],
+    rulerSourceIndex = 1,
+  ) => {
+    const initialState = createProductionSessionState(1, rulerSourceIndex);
+    const patches = initialPatches.map((patch) => ({
+      path: [...patch.path], value: patch.value, ...(patch.remove ? { remove: true } : {}),
+    }));
+    applyStatePatches(initialState as unknown as Record<string, unknown>, patches);
+    const reportCityId = initialState.officers[commands[0].targetOfficerId].cityId!;
+    const report = buildCurrentIntelReport(initialState, reportCityId);
+    const reportPatch: StatePatch = { path: ['intelReports', reportCityId], value: report };
+    patches.push(reportPatch);
+    applyStatePatches(initialState as unknown as Record<string, unknown>, [reportPatch]);
+    const session = new OracleApplicationSession(initialState);
+    const steps: Array<Record<string, unknown>> = [];
+    commands.forEach((commandInput, commandIndex) => {
+      const command: ApplicationCommandEnvelope = {
+        commandEnvelopeVersion: 1,
+        commandId: `mb10-${id}-${String(commandIndex + 1).padStart(3, '0')}`,
+        expectedStateSha256: canonicalSha256(session.snapshot()),
+        kind: commandInput.kind,
+        parameters: {
+          sourceCityId: commandInput.sourceCityId,
+          officerId: commandInput.officerId,
+          targetOfficerId: commandInput.targetOfficerId,
+        },
+      };
+      const result = session.execute(command);
+      if (!result.ok) throw new Error(`${id} issue ${commandIndex + 1} failed: ${result.error}`);
+      const { state: _stateEvidence, ...expectedCore } = result;
+      steps.push({ id: `issue-${commandIndex + 1}`, operation: 'command', command, expectedCore });
+    });
+    let preStateSha256 = canonicalSha256(session.snapshot());
+    if (advancePatches.length > 0) {
+      const patched = session.snapshot();
+      applyStatePatches(patched as unknown as Record<string, unknown>, advancePatches);
+      session.restoreSnapshot(patched);
+      preStateSha256 = canonicalSha256(patched);
+    }
+    const advanced = session.advanceDiplomaticOrders();
+    if (!advanced.ok) throw new Error(`${id} advance failed: ${advanced.error}`);
+    const { state: _stateEvidence, ...expectedCore } = advanced;
+    steps.push({
+      id: 'advance', operation: 'advance', prePatches: advancePatches,
+      preStateSha256, expectedCore,
+    });
+    return {
+      id, campaign: { periodId: 1, rulerSourceIndex }, initialPatches: patches,
+      initialStateSha256: canonicalSha256(initialState), initialSeed: initialState.rngSeed,
+      steps, finalStateSha256: canonicalSha256(session.snapshot()),
+    };
+  };
+  const alienate = {
+    kind: 'issue_alienate_order', sourceCityId: 'city-12',
+    officerId: 'officer-1', targetOfficerId: 'officer-56',
+  };
+  const preissuedAiInduce = () => {
+    const initialState = createProductionSessionState(1, 1);
+    const initialPatches: StatePatch[] = [
+      { path: ['rngSeed'], value: 8 },
+      { path: ['officers', 'officer-31', 'intelligence'], value: 100 },
+      { path: ['officers', 'officer-10', 'intelligence'], value: 50 },
+      { path: ['officers', 'officer-10', 'character'], value: 1 },
+      { path: ['officers', 'officer-31', 'cityId'], value: null, remove: true },
+      { path: ['diplomaticOrders'], value: {
+        'diplomatic-order-1': {
+          id: 'diplomatic-order-1', kind: 'induce', factionId: 'ruler-0',
+          officerId: 'officer-31', sourceCityId: 'city-15', targetOfficerId: 'officer-10',
+          targetFactionId: 'ruler-10', targetCityId: 'city-11', createdTurn: 1,
+          createdYear: 190, createdMonth: 1, durationMonths: 1, remainingMonths: 1,
+          moneyCost: 50,
+        },
+      } },
+      { path: ['nextDiplomaticOrderSerial'], value: 2 },
+      { path: ['actedOfficerIds'], value: ['officer-31'] },
+    ];
+    applyStatePatches(initialState as unknown as Record<string, unknown>, initialPatches);
+    const session = new OracleApplicationSession(initialState);
+    const preStateSha256 = canonicalSha256(initialState);
+    const advanced = session.advanceDiplomaticOrders();
+    if (!advanced.ok) throw new Error(`failed-induce-ai advance failed: ${advanced.error}`);
+    const { state: _stateEvidence, ...expectedCore } = advanced;
+    return {
+      id: 'failed-induce-ai', campaign: { periodId: 1, rulerSourceIndex: 1 },
+      initialPatches, initialStateSha256: preStateSha256, initialSeed: initialState.rngSeed,
+      steps: [{ id: 'advance', operation: 'advance', prePatches: [], preStateSha256, expectedCore }],
+      finalStateSha256: canonicalSha256(session.snapshot()),
+    };
+  };
+  return [
+    build('failed-alienate', [
+      { path: ['rngSeed'], value: 1 },
+      { path: ['officers', 'officer-1', 'intelligence'], value: 100 },
+      { path: ['officers', 'officer-56', 'intelligence'], value: 50 },
+      { path: ['officers', 'officer-56', 'loyalty'], value: 100 },
+    ], [alienate]),
+    build('target-moved-without-rng', [
+      { path: ['rngSeed'], value: 1 },
+    ], [alienate], [
+      { path: ['officers', 'officer-56', 'cityId'], value: 'city-3' },
+      { path: ['cities', 'city-0', 'satrapOfficerId'], value: 'officer-57' },
+    ]),
+    build('numeric-order-and-equipment', [
+      { path: ['rngSeed'], value: 1 },
+      { path: ['nextDiplomaticOrderSerial'], value: 9 },
+      { path: ['items', 'item-16', 'intelligenceBonus'], value: 50 },
+      { path: ['cities', 'city-12', 'hiddenItemIds'], value: ['item-20'] },
+      { path: ['officers', 'officer-1', 'intelligence'], value: 30 },
+      { path: ['officers', 'officer-1', 'equipmentItemIds'], value: ['item-16'] },
+      { path: ['officers', 'officer-56', 'intelligence'], value: 80 },
+      { path: ['officers', 'officer-56', 'loyalty'], value: 4 },
+      { path: ['officers', 'officer-56', 'character'], value: 0 },
+    ], [alienate, {
+      kind: 'issue_alienate_order', sourceCityId: 'city-12',
+      officerId: 'officer-32', targetOfficerId: 'officer-57',
+    }]),
+    build('source-city-lost-stable-fallback', [
+      { path: ['rngSeed'], value: 1 },
+      { path: ['officers', 'officer-56', 'intelligence'], value: 100 },
+      { path: ['officers', 'officer-32', 'intelligence'], value: 50 },
+      { path: ['officers', 'officer-32', 'loyalty'], value: 100 },
+    ], [{
+      kind: 'issue_alienate_order', sourceCityId: 'city-0',
+      officerId: 'officer-56', targetOfficerId: 'officer-32',
+    }], [
+      { path: ['cities', 'city-0', 'ownerId'], value: 'ruler-1' },
+      { path: ['cities', 'city-0', 'satrapOfficerId'], value: null, remove: true },
+      { path: ['officers', 'officer-57', 'cityId'], value: 'city-3' },
+    ], 5),
+    build('counterespionage-reuses-rebel-and-liberates-captive', [
+      { path: ['rngSeed'], value: 1 },
+      { path: ['officers', 'officer-1', 'intelligence'], value: 100 },
+      { path: ['officers', 'officer-56', 'intelligence'], value: 50 },
+      { path: ['officers', 'officer-56', 'loyalty'], value: 0 },
+      { path: ['officers', 'officer-56', 'character'], value: 3 },
+      { path: ['factions', 'rebel-officer-56'], value: {
+        id: 'rebel-officer-56', name: '韩遂军', rulerOfficerId: 'officer-56',
+        color: '#123456', isPlayer: false, aiProfile: 'balanced',
+      } },
+      { path: ['factionOrder'], value: [
+        'ruler-5', 'ruler-16', 'ruler-17', 'ruler-9', 'ruler-13', 'ruler-2', 'ruler-7',
+        'ruler-11', 'ruler-0', 'ruler-10', 'ruler-1', 'ruler-6', 'ruler-18', 'ruler-8',
+        'ruler-3', 'ruler-15', 'ruler-14', 'ruler-4', 'rebel-officer-56',
+      ] },
+      { path: ['officers', 'officer-161', 'status'], value: 'captive' },
+      { path: ['officers', 'officer-161', 'factionId'], value: 'neutral' },
+      { path: ['officers', 'officer-161', 'captorFactionId'], value: 'ruler-5' },
+      { path: ['officers', 'officer-161', 'formerFactionId'], value: 'rebel-officer-56' },
+      { path: ['officers', 'officer-161', 'troops'], value: 0 },
+      { path: ['officers', 'officer-161', 'stamina'], value: 0 },
+    ], [{
+      kind: 'issue_counterespionage_order', sourceCityId: 'city-12',
+      officerId: 'officer-1', targetOfficerId: 'officer-56',
+    }]),
+    build('induce-absorbs-faction-orders-and-captive', [
+      { path: ['rngSeed'], value: 8 },
+      { path: ['officers', 'officer-31', 'intelligence'], value: 100 },
+      { path: ['officers', 'officer-10', 'intelligence'], value: 50 },
+      { path: ['officers', 'officer-10', 'character'], value: 4 },
+      { path: ['strategicOrders'], value: {
+        'strategic-order-1': {
+          id: 'strategic-order-1', kind: 'move', factionId: 'ruler-10',
+          officerId: 'officer-81', sourceCityId: 'city-11', targetCityId: 'city-5',
+          routeCityIds: ['city-11', 'city-5'], createdTurn: 1, createdYear: 190,
+          createdMonth: 1, durationMonths: 1, remainingMonths: 1,
+          cargo: { money: 0, food: 0, reserveTroops: 0 },
+        },
+      } },
+      { path: ['nextStrategicOrderSerial'], value: 2 },
+      { path: ['officers', 'officer-81', 'cityId'], value: null, remove: true },
+      { path: ['actedOfficerIds'], value: ['officer-81'] },
+      { path: ['officers', 'officer-110', 'status'], value: 'captive' },
+      { path: ['officers', 'officer-110', 'factionId'], value: 'neutral' },
+      { path: ['officers', 'officer-110', 'cityId'], value: 'city-11' },
+      { path: ['officers', 'officer-110', 'captorFactionId'], value: 'ruler-10' },
+      { path: ['officers', 'officer-110', 'formerFactionId'], value: 'ruler-0' },
+      { path: ['officers', 'officer-110', 'troops'], value: 0 },
+      { path: ['officers', 'officer-110', 'stamina'], value: 0 },
+    ], [{
+      kind: 'issue_induce_order', sourceCityId: 'city-15',
+      officerId: 'officer-31', targetOfficerId: 'officer-10',
+    }], [], 0),
+    build('landless-executor-released-without-rng', [
+      { path: ['rngSeed'], value: 1 },
+    ], [alienate], [
+      { path: ['cities', 'city-12', 'ownerId'], value: 'ruler-0' },
+      { path: ['cities', 'city-12', 'satrapOfficerId'], value: null, remove: true },
+      ...['officer-32', 'officer-33', 'officer-34', 'officer-35', 'officer-36', 'officer-37']
+        .flatMap((officerId): StatePatch[] => [
+          { path: ['officers', officerId, 'status'], value: 'free' },
+          { path: ['officers', officerId, 'factionId'], value: 'neutral' },
+          { path: ['officers', officerId, 'troops'], value: 0 },
+          { path: ['officers', officerId, 'stamina'], value: 0 },
+        ]),
+    ]),
+    build('failed-canvass-dialog-draw', [
+      { path: ['rngSeed'], value: 1 },
+      { path: ['officers', 'officer-1', 'intelligence'], value: 100 },
+      { path: ['officers', 'officer-56', 'intelligence'], value: 50 },
+      { path: ['officers', 'officer-56', 'loyalty'], value: 100 },
+    ], [{
+      kind: 'issue_canvass_order', sourceCityId: 'city-12',
+      officerId: 'officer-1', targetOfficerId: 'officer-56',
+    }]),
+    build('failed-counterespionage-dialog-draw', [
+      { path: ['rngSeed'], value: 1 },
+      { path: ['officers', 'officer-1', 'intelligence'], value: 100 },
+      { path: ['officers', 'officer-56', 'intelligence'], value: 50 },
+      { path: ['officers', 'officer-56', 'loyalty'], value: 100 },
+    ], [{
+      kind: 'issue_counterespionage_order', sourceCityId: 'city-12',
+      officerId: 'officer-1', targetOfficerId: 'officer-56',
+    }]),
+    build('failed-induce-player-dialog-draw', [
+      { path: ['rngSeed'], value: 8 },
+      { path: ['officers', 'officer-31', 'intelligence'], value: 100 },
+      { path: ['officers', 'officer-10', 'intelligence'], value: 50 },
+      { path: ['officers', 'officer-10', 'character'], value: 1 },
+    ], [{
+      kind: 'issue_induce_order', sourceCityId: 'city-15',
+      officerId: 'officer-31', targetOfficerId: 'officer-10',
+    }], [], 0),
+    preissuedAiInduce(),
+    build('induce-dominance-lost-without-rng', [
+      { path: ['rngSeed'], value: 8 },
+    ], [{
+      kind: 'issue_induce_order', sourceCityId: 'city-15',
+      officerId: 'officer-31', targetOfficerId: 'officer-10',
+    }], [
+      { path: ['cities', 'city-19', 'ownerId'], value: 'ruler-10' },
+    ], 0),
+    build('target-allegiance-changed-without-rng', [
+      { path: ['rngSeed'], value: 1 },
+    ], [alienate], [
+      { path: ['officers', 'officer-56', 'status'], value: 'free' },
+      { path: ['officers', 'officer-56', 'factionId'], value: 'neutral' },
+      { path: ['officers', 'officer-56', 'troops'], value: 0 },
+      { path: ['officers', 'officer-56', 'stamina'], value: 0 },
+      { path: ['cities', 'city-0', 'satrapOfficerId'], value: 'officer-57' },
+    ]),
+    build('mixed-strategic-and-diplomatic-month', [
+      { path: ['rngSeed'], value: 1 },
+      { path: ['officers', 'officer-56', 'loyalty'], value: 100 },
+      { path: ['strategicOrders'], value: {
+        'strategic-order-1': {
+          id: 'strategic-order-1', kind: 'move', factionId: 'ruler-5',
+          officerId: 'officer-57', sourceCityId: 'city-0', targetCityId: 'city-3',
+          routeCityIds: ['city-0', 'city-3'], createdTurn: 1, createdYear: 190,
+          createdMonth: 1, durationMonths: 1, remainingMonths: 1,
+          cargo: { money: 0, food: 0, reserveTroops: 0 },
+        },
+      } },
+      { path: ['nextStrategicOrderSerial'], value: 2 },
+      { path: ['officers', 'officer-57', 'cityId'], value: null, remove: true },
+      { path: ['actedOfficerIds'], value: ['officer-57'] },
+    ], [alienate]),
+  ];
 }
 
 function buildReconnaissanceSequence() {
@@ -902,7 +1370,7 @@ function buildOfficerManagementBoundaryCases() {
   return cases;
 }
 
-type StatePatch = { path: string[]; value: unknown };
+type StatePatch = { path: string[]; value: unknown; remove?: boolean };
 
 function buildInternalAffairsBoundaryCases() {
   const base = createProductionSessionState(1, 1);
@@ -983,6 +1451,12 @@ function buildValidationCases() {
     sourceCityId: 'city-0', targetCityId: 'city-3', routeCityIds: ['city-0', 'city-3'],
     createdTurn: 1, createdYear: 190, createdMonth: 1, durationMonths: 1, remainingMonths: 1,
     cargo: { money: 1, food: 0, reserveTroops: 0 },
+  };
+  const validDiplomaticOrder = {
+    id: 'diplomatic-order-1', kind: 'alienate', factionId: 'ruler-1', officerId: 'officer-1',
+    sourceCityId: 'city-12', targetOfficerId: 'officer-56', targetFactionId: 'ruler-5',
+    targetCityId: 'city-0', createdTurn: 1, createdYear: 190, createdMonth: 1,
+    durationMonths: 1, remainingMonths: 1, moneyCost: 50,
   };
   return [
     {
@@ -1105,6 +1579,121 @@ function buildValidationCases() {
       expectedMessage: 'must exceed every active strategic order serial',
     },
     {
+      id: 'diplomatic-order-malformed-record',
+      patches: [{ path: ['diplomaticOrders'], value: { 'diplomatic-order-1': 'malformed' } }],
+      expectedPath: 'diplomaticOrders.diplomatic-order-1',
+      expectedMessage: 'must be an object',
+    },
+    {
+      id: 'diplomatic-order-unknown-field',
+      patches: [
+        { path: ['diplomaticOrders'], value: { 'diplomatic-order-1': { ...validDiplomaticOrder, surprise: true } } },
+        { path: ['nextDiplomaticOrderSerial'], value: 2 },
+        { path: ['officers', 'officer-1', 'cityId'], value: null },
+      ],
+      expectedPath: 'diplomaticOrders.diplomatic-order-1.surprise',
+      expectedMessage: 'is an unknown field',
+    },
+    {
+      id: 'diplomatic-order-leading-zero-id',
+      patches: [
+        { path: ['diplomaticOrders'], value: { 'diplomatic-order-01': { ...validDiplomaticOrder, id: 'diplomatic-order-01' } } },
+        { path: ['nextDiplomaticOrderSerial'], value: 2 },
+        { path: ['officers', 'officer-1', 'cityId'], value: null },
+      ],
+      expectedPath: 'diplomaticOrders.diplomatic-order-01.id',
+      expectedMessage: 'must use diplomatic-order-N format',
+    },
+    {
+      id: 'diplomatic-order-same-target-faction',
+      patches: [
+        { path: ['diplomaticOrders'], value: { 'diplomatic-order-1': { ...validDiplomaticOrder, targetFactionId: 'ruler-1' } } },
+        { path: ['nextDiplomaticOrderSerial'], value: 2 },
+        { path: ['officers', 'officer-1', 'cityId'], value: null },
+      ],
+      expectedPath: 'diplomaticOrders.diplomatic-order-1.targetFactionId',
+      expectedMessage: 'must differ from the issuing faction',
+    },
+    {
+      id: 'diplomatic-order-unknown-target-officer',
+      patches: [
+        { path: ['diplomaticOrders'], value: { 'diplomatic-order-1': { ...validDiplomaticOrder, targetOfficerId: 'officer-999' } } },
+        { path: ['nextDiplomaticOrderSerial'], value: 2 },
+        { path: ['officers', 'officer-1', 'cityId'], value: null },
+      ],
+      expectedPath: 'diplomaticOrders.diplomatic-order-1.targetOfficerId',
+      expectedMessage: 'unknown officer: officer-999',
+    },
+    {
+      id: 'diplomatic-order-clock-mismatch',
+      patches: [
+        { path: ['diplomaticOrders'], value: { 'diplomatic-order-1': { ...validDiplomaticOrder, durationMonths: 2, remainingMonths: 1 } } },
+        { path: ['nextDiplomaticOrderSerial'], value: 2 },
+        { path: ['officers', 'officer-1', 'cityId'], value: null },
+      ],
+      expectedPath: 'diplomaticOrders.diplomatic-order-1.remainingMonths',
+      expectedMessage: 'must agree with durationMonths and elapsed campaign turns',
+    },
+    {
+      id: 'diplomatic-order-unsafe-money-cost',
+      patches: [
+        { path: ['diplomaticOrders'], value: { 'diplomatic-order-1': { ...validDiplomaticOrder, moneyCost: '9007199254740992' } } },
+        { path: ['nextDiplomaticOrderSerial'], value: 2 },
+        { path: ['officers', 'officer-1', 'cityId'], value: null },
+      ],
+      expectedPath: 'diplomaticOrders.diplomatic-order-1.moneyCost',
+      expectedMessage: 'must be a non-negative safe integer',
+    },
+    {
+      id: 'diplomatic-order-future-calendar',
+      patches: [
+        { path: ['diplomaticOrders'], value: { 'diplomatic-order-1': { ...validDiplomaticOrder, createdYear: 191 } } },
+        { path: ['nextDiplomaticOrderSerial'], value: 2 },
+        { path: ['officers', 'officer-1', 'cityId'], value: null },
+      ],
+      expectedPath: 'diplomaticOrders.diplomatic-order-1.createdYear',
+      expectedMessage: 'creation date must not be later than the current calendar',
+    },
+    {
+      id: 'diplomatic-order-serial-not-monotonic',
+      patches: [
+        { path: ['diplomaticOrders'], value: { 'diplomatic-order-1': validDiplomaticOrder } },
+        { path: ['nextDiplomaticOrderSerial'], value: 1 },
+        { path: ['officers', 'officer-1', 'cityId'], value: null },
+      ],
+      expectedPath: 'nextDiplomaticOrderSerial',
+      expectedMessage: 'must be greater than every existing diplomatic order serial',
+    },
+    {
+      id: 'diplomatic-order-malformed-turn-does-not-crash-validator',
+      patches: [
+        { path: ['diplomaticOrders'], value: { 'diplomatic-order-1': validDiplomaticOrder } },
+        { path: ['nextDiplomaticOrderSerial'], value: 2 },
+        { path: ['officers', 'officer-1', 'cityId'], value: null },
+        { path: ['turn'], value: {} },
+      ],
+      expectedPath: 'turn',
+      expectedMessage: 'must be a positive integer',
+    },
+    {
+      id: 'diplomatic-order-serial-unsafe',
+      patches: [{ path: ['nextDiplomaticOrderSerial'], value: '9007199254740992' }],
+      expectedPath: 'nextDiplomaticOrderSerial',
+      expectedMessage: 'must be a positive safe integer',
+    },
+    {
+      id: 'ended-campaign-rejects-active-diplomatic-order',
+      patches: [
+        { path: ['phase'], value: 'ended' },
+        { path: ['outcome'], value: 'victory' },
+        { path: ['diplomaticOrders'], value: { 'diplomatic-order-1': validDiplomaticOrder } },
+        { path: ['nextDiplomaticOrderSerial'], value: 2 },
+        { path: ['officers', 'officer-1', 'cityId'], value: null },
+      ],
+      expectedPath: 'strategicOrders',
+      expectedMessage: 'all active campaign orders must be empty when the campaign has ended',
+    },
+    {
       id: 'intel-report-malformed-record',
       patches: [{ path: ['intelReports'], value: { 'city-0': 'malformed' } }],
       expectedPath: 'intelReports.city-0',
@@ -1196,7 +1785,8 @@ function applyStatePatches(target: Record<string, unknown>, patches: StatePatch[
   for (const patch of patches) {
     let cursor: Record<string, unknown> = target;
     for (const segment of patch.path.slice(0, -1)) cursor = cursor[segment] as Record<string, unknown>;
-    cursor[patch.path.at(-1)!] = structuredClone(patch.value);
+    if (patch.remove) delete cursor[patch.path.at(-1)!];
+    else cursor[patch.path.at(-1)!] = structuredClone(patch.value);
   }
 }
 

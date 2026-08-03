@@ -17,6 +17,10 @@ const COMMAND_COSTS: Dictionary = {
 		"move": {"stamina": 0, "money": 0},
 		"transport": {"stamina": 8, "money": 0},
 		"reconnoitre": {"stamina": 10, "money": 20},
+		"alienate": {"stamina": 20, "money": 50},
+		"canvass": {"stamina": 20, "money": 50},
+		"counterespionage": {"stamina": 20, "money": 50},
+		"induce": {"stamina": 10, "money": 50},
 	},
 	"modern-balanced-v1": {
 		"develop": {"stamina": 8, "money": 50},
@@ -29,6 +33,10 @@ const COMMAND_COSTS: Dictionary = {
 		"move": {"stamina": 4, "money": 0},
 		"transport": {"stamina": 4, "money": 0},
 		"reconnoitre": {"stamina": 4, "money": 50},
+		"alienate": {"stamina": 4, "money": 50},
+		"canvass": {"stamina": 4, "money": 50},
+		"counterespionage": {"stamina": 4, "money": 50},
+		"induce": {"stamina": 4, "money": 50},
 	},
 }
 

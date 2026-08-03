@@ -158,6 +158,43 @@ func _test_all_campaign_candidates() -> void:
 			"personnel query must consume domain-owned confiscation impact text"
 		)
 		_assert_equal(session.state_sha256(), personnel_before, "personnel query must not mutate session")
+		_assert_true(session.start_campaign(1, 1)["ok"], "diplomacy query campaign must restart")
+		var recon_result: Dictionary = session.execute_command({
+			"commandEnvelopeVersion": 1,
+			"commandId": "mb10-query-recon-001",
+			"expectedStateSha256": session.state_sha256(),
+			"kind": "reconnoitre_city",
+			"parameters": {"sourceCityId": "city-12", "targetCityId": "city-0", "officerId": "officer-1"},
+		})
+		_assert_true(recon_result["ok"], "diplomacy query setup reconnaissance must succeed")
+		var diplomacy_before: String = session.state_sha256()
+		var diplomacy: Dictionary = session.diplomacy_query("city-12")["diplomacy"]
+		var diplomacy_kinds: Array[String] = []
+		for raw_command: Variant in diplomacy["commands"]:
+			diplomacy_kinds.append(str((raw_command as Dictionary)["kind"]))
+		_assert_equal(diplomacy_kinds, [
+			"issue_alienate_order", "issue_canvass_order",
+			"issue_counterespionage_order", "issue_induce_order",
+		], "diplomacy query command order must be explicit")
+		_assert_true(not (diplomacy["targets"] as Array).is_empty(), "current report must expose reported diplomacy targets")
+		for raw_target: Variant in diplomacy["targets"]:
+			var target: Dictionary = raw_target
+			for forbidden_key: String in ["loyalty", "intelligence", "cityId", "factionId", "stamina", "troops"]:
+				_assert_true(not target.has(forbidden_key), "diplomacy target DTO must not expose live %s" % forbidden_key)
+			_assert_equal(target["reportedCityId"], "city-0", "diplomacy target must retain report city evidence")
+			_assert_equal(target["observedTurn"], 1, "diplomacy target must retain report turn evidence")
+		_assert_equal(diplomacy["commands"][0]["cost"], {"stamina": 20, "money": 50, "usesAction": true}, "classic alienate query cost must match ruleset")
+		_assert_equal(diplomacy["commands"][3]["cost"], {"stamina": 10, "money": 50, "usesAction": true}, "classic induce query cost must match ruleset")
+		var hostile_diplomacy: Dictionary = session.diplomacy_query("city-0")
+		_assert_true(not hostile_diplomacy["found"], "diplomacy query must reject a hostile source city")
+		_assert_equal(hostile_diplomacy["sourceCity"], {}, "hostile diplomacy query must not expose live city resources")
+		_assert_equal(session.state_sha256(), diplomacy_before, "diplomacy query must not mutate session")
+		var stale_report_state: Dictionary = session.snapshot()
+		stale_report_state["turn"] = 2
+		stale_report_state["calendar"]["month"] = 2
+		_assert_true(session.restore_snapshot(stale_report_state)["ok"], "stale diplomacy report state must restore")
+		var stale_diplomacy: Dictionary = session.diplomacy_query("city-12")["diplomacy"]
+		_assert_equal(stale_diplomacy["targets"], [], "stale report must not expose diplomacy targets")
 
 
 func _test_transaction_fixture() -> void:
@@ -201,6 +238,9 @@ func _test_transaction_fixture() -> void:
 	_test_reconnaissance_sequence(fixture)
 	_test_reconnaissance_boundary_cases(fixture)
 	_test_reconnaissance_legacy_report_case(fixture)
+	_test_diplomatic_order_sequences(fixture)
+	_test_diplomatic_order_boundary_cases(fixture)
+	_test_diplomatic_order_settlement_sequences(fixture)
 	_test_validation_cases(fixture, campaign)
 	_test_modern_ruleset_case(fixture, campaign)
 
@@ -640,6 +680,124 @@ func _test_reconnaissance_legacy_report_case(fixture: Dictionary) -> void:
 	_assert_true(not visibility["report"].has("officerIds"), "legacy report query must not invent an officer list")
 
 
+func _test_diplomatic_order_sequences(fixture: Dictionary) -> void:
+	var sequences: Array = fixture.get("diplomaticOrderSequences", [])
+	_assert_equal(sequences.size(), 4, "fixture must include all four MB10 diplomatic-order sequences")
+	for raw_sequence: Variant in sequences:
+		var sequence: Dictionary = raw_sequence
+		var session: GameSession = GameSession.new()
+		var campaign: Dictionary = sequence["campaign"]
+		var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+		_assert_true(started["ok"], "%s MB10 campaign must start" % sequence["id"])
+		if not started["ok"]: continue
+		var input: Dictionary = session.snapshot()
+		_apply_patches(input, sequence["initialPatches"])
+		var restored: Dictionary = session.restore_snapshot(input)
+		_assert_true(restored["ok"], "%s MB10 initial state must restore: %s" % [sequence["id"], restored.get("error", "")])
+		if not restored["ok"]: continue
+		_assert_equal(session.state_sha256(), sequence["initialStateSha256"], "%s MB10 initial SHA must match TypeScript" % sequence["id"])
+		for raw_step: Variant in sequence["steps"]:
+			var step: Dictionary = raw_step
+			var actual: Dictionary
+			if step["operation"] == "command":
+				actual = session.execute_command(step["command"])
+			else:
+				_assert_equal(session.state_sha256(), step["preStateSha256"], "%s MB10 advance input must match TypeScript" % sequence["id"])
+				var recovered: GameSession = GameSession.new()
+				var recovery: Dictionary = recovered.restore_snapshot(session.snapshot())
+				_assert_true(recovery["ok"], "%s MB10 in-transit save must restore" % sequence["id"])
+				var recovered_result: Dictionary = recovered.advance_diplomatic_orders() if recovery["ok"] else {}
+				actual = session.advance_diplomatic_orders()
+				if recovery["ok"]:
+					_assert_canonical_equal(recovered_result, actual, "%s MB10 restored settlement must equal continuous settlement" % sequence["id"])
+			var actual_core: Dictionary = actual.duplicate(true)
+			actual_core.erase("state")
+			_assert_canonical_equal(actual_core, step["expectedCore"], "%s %s MB10 result core must match TypeScript" % [sequence["id"], step["id"]])
+			_assert_equal(session.state_sha256(), step["expectedCore"]["afterStateSha256"], "%s %s MB10 state SHA must match TypeScript" % [sequence["id"], step["id"]])
+			if step["operation"] == "command":
+				_assert_equal(session.snapshot()["rngSeed"], sequence["initialSeed"], "%s issue must not consume RNG" % sequence["id"])
+		_assert_equal(session.state_sha256(), sequence["finalStateSha256"], "%s MB10 final SHA must match TypeScript" % sequence["id"])
+
+
+func _test_diplomatic_order_boundary_cases(fixture: Dictionary) -> void:
+	var cases: Array = fixture.get("diplomaticOrderBoundaryCases", [])
+	_assert_true(not cases.is_empty(), "fixture must include MB10 diplomatic-order boundaries")
+	for raw_case: Variant in cases:
+		var test_case: Dictionary = raw_case
+		var session: GameSession = GameSession.new()
+		var campaign: Dictionary = test_case["campaign"]
+		var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+		_assert_true(started["ok"], "%s MB10 boundary campaign must start" % test_case["id"])
+		if not started["ok"]: continue
+		var input: Dictionary = session.snapshot()
+		_apply_patches(input, test_case["patches"])
+		var restored: Dictionary = session.restore_snapshot(input)
+		_assert_true(restored["ok"], "%s MB10 boundary input must restore: %s" % [test_case["id"], restored.get("error", "")])
+		if not restored["ok"]: continue
+		_assert_equal(session.state_sha256(), test_case["inputStateSha256"], "%s MB10 boundary input SHA must match" % test_case["id"])
+		var before_digest: String = session.state_sha256()
+		var actual: Dictionary = session.execute_command(test_case["command"])
+		var actual_core: Dictionary = actual.duplicate(true)
+		actual_core.erase("state")
+		_assert_canonical_equal(actual_core, test_case["expectedCore"], "%s MB10 boundary result must match TypeScript" % test_case["id"])
+		_assert_equal(session.state_sha256(), test_case["expectedStateSha256"], "%s MB10 boundary state SHA must match" % test_case["id"])
+		if not bool(test_case["expectedCore"]["stateChanged"]):
+			_assert_equal(session.state_sha256(), before_digest, "%s MB10 rejection must remain atomic" % test_case["id"])
+
+
+func _test_diplomatic_order_settlement_sequences(fixture: Dictionary) -> void:
+	var sequences: Array = fixture.get("diplomaticOrderSettlementSequences", [])
+	_assert_equal(sequences.size(), 14, "fixture must include MB10 settlement and RNG edge sequences")
+	for raw_sequence: Variant in sequences:
+		var sequence: Dictionary = raw_sequence
+		var session := GameSession.new()
+		var campaign: Dictionary = sequence["campaign"]
+		var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+		_assert_true(started["ok"], "%s MB10 settlement campaign must start" % sequence["id"])
+		if not started["ok"]:
+			continue
+		var input: Dictionary = session.snapshot()
+		_apply_patches(input, sequence["initialPatches"])
+		var restored: Dictionary = session.restore_snapshot(input)
+		_assert_true(restored["ok"], "%s MB10 settlement input must restore: %s" % [sequence["id"], restored.get("error", "")])
+		if not restored["ok"]:
+			continue
+		_assert_equal(session.state_sha256(), sequence["initialStateSha256"], "%s MB10 settlement initial SHA must match" % sequence["id"])
+		for raw_step: Variant in sequence["steps"]:
+			var step: Dictionary = raw_step
+			var actual: Dictionary
+			if step["operation"] == "command":
+				actual = session.execute_command(step["command"])
+				_assert_equal(session.snapshot()["rngSeed"], sequence["initialSeed"], "%s settlement issue must not consume RNG" % sequence["id"])
+			else:
+				var advance_patches: Array = step.get("prePatches", [])
+				if not advance_patches.is_empty():
+					var patched: Dictionary = session.snapshot()
+					_apply_patches(patched, advance_patches)
+					var patched_restore: Dictionary = session.restore_snapshot(patched)
+					_assert_true(patched_restore["ok"], "%s MB10 advance patches must restore: %s" % [sequence["id"], patched_restore.get("error", "")])
+					if not patched_restore["ok"]:
+						continue
+				_assert_equal(session.state_sha256(), step["preStateSha256"], "%s MB10 settlement advance input must match" % sequence["id"])
+				var recovered := GameSession.new()
+				var recovery: Dictionary = recovered.restore_snapshot(session.snapshot())
+				_assert_true(recovery["ok"], "%s MB10 settlement in-transit save must restore" % sequence["id"])
+				var recovered_result: Dictionary = recovered.advance_diplomatic_orders() if recovery["ok"] else {}
+				actual = session.advance_diplomatic_orders()
+				if recovery["ok"]:
+					_assert_canonical_equal(recovered_result, actual, "%s MB10 recovered settlement must equal continuous settlement" % sequence["id"])
+			var actual_core: Dictionary = actual.duplicate(true)
+			actual_core.erase("state")
+			_assert_canonical_equal(actual_core, step["expectedCore"], "%s %s MB10 settlement result must match TypeScript" % [sequence["id"], step["id"]])
+			_assert_equal(session.state_sha256(), step["expectedCore"]["afterStateSha256"], "%s %s MB10 settlement state SHA must match" % [sequence["id"], step["id"]])
+		_assert_equal(session.state_sha256(), sequence["finalStateSha256"], "%s MB10 settlement final SHA must match" % sequence["id"])
+		if sequence["id"] in [
+			"target-moved-without-rng", "landless-executor-released-without-rng",
+			"induce-dominance-lost-without-rng", "target-allegiance-changed-without-rng",
+		]:
+			_assert_equal(session.snapshot()["rngSeed"], sequence["initialSeed"], "%s settlement must not consume RNG" % sequence["id"])
+
+
 func _test_validation_cases(fixture: Dictionary, campaign: Dictionary) -> void:
 	var cases: Array = fixture.get("validationCases", [])
 	_assert_true(not cases.is_empty(), "fixture must include shared invalid-state cases")
@@ -673,7 +831,10 @@ func _apply_patches(target: Dictionary, patches: Array) -> void:
 		var cursor: Dictionary = target
 		for index: int in range(path.size() - 1):
 			cursor = cursor[str(path[index])]
-		cursor[str(path[-1])] = patch["value"]
+		if bool(patch.get("remove", false)):
+			cursor.erase(str(path[-1]))
+		else:
+			cursor[str(path[-1])] = patch["value"]
 
 
 func _test_modern_ruleset_case(fixture: Dictionary, campaign: Dictionary) -> void:

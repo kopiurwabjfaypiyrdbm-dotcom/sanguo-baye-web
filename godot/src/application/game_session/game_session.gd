@@ -342,12 +342,26 @@ func reconnaissance_query(source_city_id: String) -> Dictionary:
 	return GameSessionQueries.reconnaissance_city(_state, source_city_id)
 
 
+func diplomacy_query(source_city_id: String) -> Dictionary:
+	if _state == null:
+		return {"found": false, "sourceCity": {}, "diplomacy": {}}
+	return GameSessionQueries.diplomacy_city(_state, source_city_id)
+
+
 func city_visibility_query(city_id: String) -> Dictionary:
 	if _state == null: return {"found": false, "knowledge": "unknown"}
 	return GameSessionQueries.city_visibility(_state, city_id)
 
 
 func advance_strategic_orders() -> Dictionary:
+	return _advance_campaign_orders("advance_strategic_orders")
+
+
+func advance_diplomatic_orders() -> Dictionary:
+	return _advance_campaign_orders("advance_diplomatic_orders")
+
+
+func _advance_campaign_orders(receipt_kind: String) -> Dictionary:
 	var before: Dictionary = snapshot()
 	var before_digest: String = state_sha256()
 	if _state == null:
@@ -355,6 +369,7 @@ func advance_strategic_orders() -> Dictionary:
 			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
 			"receipt": {}, "state": before}
 	var StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
+	var DiplomaticOrders = preload("res://src/domain/commands/diplomatic_order_commands.gd")
 	var settling: Dictionary = before.duplicate(true)
 	settling["turn"] = int(before["turn"]) + 1
 	var calendar: Dictionary = before["calendar"]
@@ -363,12 +378,19 @@ func advance_strategic_orders() -> Dictionary:
 	settling["phase"] = "player"
 	settling["activeFactionId"] = before["playerFactionId"]
 	settling["actedOfficerIds"] = []
-	var domain_result: Dictionary = StrategicOrders.advance(GameState.new(settling))
-	if not domain_result["ok"]:
-		return {"ok": false, "error": domain_result["error"], "stateChanged": false,
+	# Both order families observe one shared month boundary. Their deterministic
+	# settlement order is fixed here; validation happens only after both finish.
+	var strategic_result: Dictionary = StrategicOrders.advance(GameState.new(settling), false)
+	if not strategic_result["ok"]:
+		return {"ok": false, "error": strategic_result["error"], "stateChanged": false,
 			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
 			"receipt": {}, "state": before}
-	var next_state: GameState = domain_result["next_state"]
+	var diplomatic_result: Dictionary = DiplomaticOrders.advance(strategic_result["next_state"], false)
+	if not diplomatic_result["ok"]:
+		return {"ok": false, "error": diplomatic_result["error"], "stateChanged": false,
+			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
+			"receipt": {}, "state": before}
+	var next_state: GameState = diplomatic_result["next_state"]
 	var next_snapshot: Dictionary = next_state.snapshot()
 	var issues: Array[Dictionary] = Validator.validate_runtime(next_snapshot)
 	if not issues.is_empty():
@@ -383,8 +405,44 @@ func advance_strategic_orders() -> Dictionary:
 	_state = next_state
 	return {"ok": true, "error": "", "stateChanged": digest["value"] != before_digest,
 		"beforeStateSha256": before_digest, "afterStateSha256": digest["value"],
-		"receipt": (domain_result["receipt"] as Dictionary).duplicate(true),
+		"receipt": _advance_orders_receipt(before, next_snapshot, receipt_kind),
 		"state": next_snapshot}
+
+
+func _advance_orders_receipt(before: Dictionary, after: Dictionary, kind: String) -> Dictionary:
+	var record_name: String = "diplomaticOrders" if kind == "advance_diplomatic_orders" else "strategicOrders"
+	var before_ids: Array[String] = []
+	for raw_id: Variant in (before[record_name] as Dictionary).keys(): before_ids.append(str(raw_id))
+	var after_ids: Array[String] = []
+	for raw_id: Variant in (after[record_name] as Dictionary).keys(): after_ids.append(str(raw_id))
+	if record_name == "diplomaticOrders":
+		before_ids.sort_custom(_less_diplomatic_order_id)
+		after_ids.sort_custom(_less_diplomatic_order_id)
+	else:
+		before_ids.sort()
+		after_ids.sort()
+	var completed_ids: Array[String] = []
+	for order_id: String in before_ids:
+		if not (after[record_name] as Dictionary).has(order_id): completed_ids.append(order_id)
+	var active_orders: Array[Dictionary] = []
+	for order_id: String in after_ids:
+		active_orders.append((after[record_name][order_id] as Dictionary).duplicate(true))
+	return {
+		"kind": kind,
+		"state": {"turn": after["turn"], "rngSeed": after["rngSeed"],
+			"campaignStarted": after["campaignStarted"],
+			"actedOfficerIds": (after["actedOfficerIds"] as Array).duplicate(true),
+			"logCount": (after["logs"] as Array).size()},
+		"completedOrderIds": completed_ids,
+		"activeOrders": active_orders,
+		"appendedLogs": (after["logs"] as Array).slice((before["logs"] as Array).size()).duplicate(true),
+	}
+
+
+func _less_diplomatic_order_id(left: String, right: String) -> bool:
+	var left_serial: int = int(left.trim_prefix("diplomatic-order-"))
+	var right_serial: int = int(right.trim_prefix("diplomatic-order-"))
+	return left < right if left_serial == right_serial else left_serial < right_serial
 
 
 func save_game() -> Dictionary:

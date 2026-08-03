@@ -7,6 +7,7 @@ const OfficerManagement = preload("res://src/domain/commands/officer_management_
 const PersonnelLifecycle = preload("res://src/domain/commands/personnel_lifecycle_commands.gd")
 const StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
 const Reconnaissance = preload("res://src/domain/commands/reconnaissance_commands.gd")
+const DiplomaticOrders = preload("res://src/domain/commands/diplomatic_order_commands.gd")
 
 const INTERNAL_COMMANDS: Array[Dictionary] = [
 	{"kind": "develop_farming", "label": "开垦", "mode": "executor", "dangerous": false},
@@ -110,6 +111,47 @@ static func strategic_logistics_city(state: RefCounted, city_id: String) -> Dict
 
 static func reconnaissance_city(state: RefCounted, source_city_id: String) -> Dictionary:
 	return Reconnaissance.query_city_context(state, source_city_id)
+
+
+static func diplomacy_city(state: RefCounted, source_city_id: String) -> Dictionary:
+	var data: Dictionary = state.snapshot()
+	if not data["cities"].has(source_city_id) \
+			or data["cities"][source_city_id].get("ownerId", "") != data.get("playerFactionId", ""):
+		return {"found": false, "sourceCity": {}, "diplomacy": {}}
+	var catalog: Dictionary = DiplomaticOrders.query_city_catalog(state, source_city_id)
+	var targets: Array[Dictionary] = []
+	for raw_target: Variant in catalog.get("targets", []):
+		var target: Dictionary = (raw_target as Dictionary).duplicate(true)
+		var officer: Dictionary = data["officers"].get(target["id"], {})
+		var reported_city: Dictionary = data["cities"].get(target["reportedCityId"], {})
+		var reported_faction: Dictionary = data["factions"].get(target["reportedFactionId"], {})
+		target["name"] = officer.get("name", target["id"])
+		target["reportedCityName"] = reported_city.get("name", target["reportedCityId"])
+		target["reportedFactionName"] = reported_faction.get("name", target["reportedFactionId"])
+		targets.append(target)
+	var executors: Array[Dictionary] = []
+	for raw_officer_id: Variant in catalog.get("executorIds", []):
+		var officer_id: String = str(raw_officer_id)
+		var officer: Dictionary = data["officers"][officer_id]
+		executors.append({"id": officer_id, "name": officer["name"], "stamina": officer["stamina"]})
+	var active_orders: Array[Dictionary] = []
+	for raw_order: Variant in catalog.get("activeOrders", []):
+		var order: Dictionary = (raw_order as Dictionary).duplicate(true)
+		order["officerName"] = data["officers"].get(order["officerId"], {}).get("name", order["officerId"])
+		order["targetOfficerName"] = data["officers"].get(order["targetOfficerId"], {}).get("name", order["targetOfficerId"])
+		order["sourceCityName"] = data["cities"].get(order["sourceCityId"], {}).get("name", order["sourceCityId"])
+		order["targetCityName"] = data["cities"].get(order["targetCityId"], {}).get("name", order["targetCityId"])
+		active_orders.append(order)
+	var diplomacy: Dictionary = catalog.duplicate(true)
+	diplomacy.erase("executorIds")
+	diplomacy["targets"] = targets
+	diplomacy["executors"] = executors
+	diplomacy["activeOrders"] = active_orders
+	return {
+		"found": true,
+		"sourceCity": (data["cities"][source_city_id] as Dictionary).duplicate(true),
+		"diplomacy": diplomacy,
+	}
 
 
 static func city_visibility(state: RefCounted, city_id: String) -> Dictionary:

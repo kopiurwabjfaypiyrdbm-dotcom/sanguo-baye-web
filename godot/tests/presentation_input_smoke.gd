@@ -23,6 +23,7 @@ func _run() -> void:
 	var personnel_panel = screen.get_node("%PersonnelLifecyclePanel")
 	var logistics_panel = screen.get_node("%StrategicLogisticsPanel")
 	var reconnaissance_panel = screen.get_node("%ReconnaissancePanel")
+	var diplomacy_panel = screen.get_node("%DiplomaticOrderPanel")
 	var physical_size := Vector2i(844, 390)
 	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
 	_assert_equal(map_world.get_ordered_city_ids().size(), 38, "main scene must render all 38 cities")
@@ -338,6 +339,54 @@ func _run() -> void:
 	_assert_equal(int(frozen_report["money"]), int(live_target_before["money"]), "fresh report must snapshot the target's observed money")
 	_assert_true("旧情报" in reconnaissance_panel.get_node("%IntelLabel").text, "successful reconnaissance must refresh the panel to report mode")
 	_assert_equal(map_world.get("_recon_target_id"), recon_target_id, "successful reconnaissance must play its native map scan on the target")
+	screen.call("_open_diplomacy", "city-12")
+	_assert_true(diplomacy_panel.visible and not city_card.visible, "native diplomacy panel must replace the city card")
+	var diplomacy_command: OptionButton = diplomacy_panel.get_node("%CommandOption")
+	_assert_equal(diplomacy_command.item_count, 4, "diplomacy panel must expose all four strategic orders")
+	for command_index: int in range(4):
+		_assert_equal(
+			diplomacy_command.get_item_metadata(command_index),
+			["issue_alienate_order", "issue_canvass_order", "issue_counterespionage_order", "issue_induce_order"][command_index],
+			"diplomacy command order must be explicit at index %d" % command_index
+		)
+	var diplomacy_target: OptionButton = diplomacy_panel.get_node("%TargetOption")
+	var diplomacy_executor: OptionButton = diplomacy_panel.get_node("%ExecutorOption")
+	_assert_true(diplomacy_target.item_count > 0 and diplomacy_executor.item_count > 0, "current report must populate diplomacy target and executor controls")
+	_assert_true("不显示实时忠诚、智力与位置" in diplomacy_panel.get_node("%EvidenceLabel").text, "diplomacy panel must state its fail-closed intelligence boundary")
+	var cross_city_catalog: Dictionary = (diplomacy_panel.get("_catalog") as Dictionary).duplicate(true)
+	var cross_city_target: Dictionary = (cross_city_catalog["targets"][0] as Dictionary).duplicate(true)
+	cross_city_target["id"] = "preview-cross-city"
+	cross_city_target["reportedCityId"] = "city-1"
+	cross_city_target["reportedCityName"] = "北平"
+	(cross_city_catalog["targets"] as Array).append(cross_city_target)
+	(cross_city_catalog["commands"][1] as Dictionary)["defaultTargetId"] = "preview-cross-city"
+	diplomacy_panel.refresh(cross_city_catalog)
+	diplomacy_command.select(1)
+	diplomacy_panel.call("_on_command_selected", 1)
+	_assert_equal(map_world.get("_diplomacy_target_id"), "city-1", "changing diplomacy kind must preview its cross-city default target")
+	diplomacy_panel.refresh(screen.get("_session").diplomacy_query("city-12")["diplomacy"])
+	diplomacy_command.select(0)
+	diplomacy_panel.call("_on_command_selected", 0)
+	diplomacy_panel.apply_responsive_layout(true, canvas_scale, physical_size)
+	diplomacy_panel.reset_size()
+	await process_frame
+	var diplomacy_usable := Rect2(Vector2.ZERO, Vector2(1558.0, 278.0 / canvas_scale))
+	diplomacy_panel.place_in(diplomacy_usable)
+	_assert_true(diplomacy_panel.position.y + diplomacy_panel.size.y <= diplomacy_usable.end.y + 1.0, "compact diplomacy panel must remain above the status region")
+	for control_name: String in ["CloseButton", "CommandOption", "TargetOption", "ExecutorOption", "AdvanceButton", "ExecuteButton"]:
+		var control: Control = diplomacy_panel.get_node("%%%s" % control_name)
+		_assert_true(control.custom_minimum_size.y * canvas_scale >= 47.5, "compact diplomacy %s must retain a 48px-class physical target" % control_name)
+	var diplomacy_seed_before: int = int(screen.get("_snapshot")["rngSeed"])
+	diplomacy_panel.call("_emit_command")
+	var diplomacy_after_issue: Dictionary = screen.get("_snapshot")
+	_assert_equal(int(diplomacy_after_issue["rngSeed"]), diplomacy_seed_before, "diplomacy issue must not consume deterministic RNG")
+	_assert_equal((diplomacy_after_issue["diplomaticOrders"] as Dictionary).size(), 1, "native diplomacy issue must create one in-transit order")
+	_assert_true("在途：" in diplomacy_panel.get_node("%OrdersLabel").text, "diplomacy panel must render the in-transit order")
+	_assert_true(not diplomacy_panel.get_node("%AdvanceButton").disabled, "new in-transit diplomacy order must enable settlement without reopening the panel")
+	_assert_true(float(map_world.get("_diplomacy_progress")) >= 0.0, "diplomacy dispatch must use the native map effect channel")
+	screen.call("_advance_diplomatic_orders")
+	_assert_equal((screen.get("_snapshot")["diplomaticOrders"] as Dictionary).size(), 0, "diplomacy advance must settle the in-transit order")
+	_assert_true("种子" in screen.get_node("%StatusLine").text, "diplomacy settlement feedback must expose the resulting seed")
 	var stale_state: Dictionary = screen.get("_session").snapshot()
 	var stale_live_money: int = mini(9999, int(frozen_report["money"]) + 777)
 	stale_state["cities"][recon_target_id]["money"] = stale_live_money

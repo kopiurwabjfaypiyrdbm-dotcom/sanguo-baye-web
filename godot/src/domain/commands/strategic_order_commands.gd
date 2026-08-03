@@ -25,7 +25,7 @@ static func execute(state: GameState, kind: String, parameters: Dictionary) -> D
 	return _issue(before, kind, parameters, availability)
 
 
-static func advance(state: GameState) -> Dictionary:
+static func advance(state: GameState, validate_result: bool = true) -> Dictionary:
 	var before: Dictionary = state.snapshot()
 	if (before["strategicOrders"] as Dictionary).is_empty():
 		return {
@@ -70,9 +70,10 @@ static func advance(state: GameState) -> Dictionary:
 
 	next = _update_city_satraps(next)
 	_append_logs(next, "turn", messages)
-	var issues: Array[Dictionary] = Validator.validate_runtime(next)
-	if not issues.is_empty():
-		return _failure(Validator.first_error(issues))
+	if validate_result:
+		var issues: Array[Dictionary] = Validator.validate_runtime(next)
+		if not issues.is_empty():
+			return _failure(Validator.first_error(issues))
 	return {
 		"ok": true, "error": "", "next_state": GameState.new(next),
 		"receipt": _advance_receipt(before, next, completed_ids),

@@ -105181,6 +105181,5029 @@
     },
     "stateSha256": "ffc30eff6bf92ff0277cb789c66130af5d366d8642b6428d5a60018cf3c1072b"
   },
+  "diplomaticOrderSequences": [
+    {
+      "id": "alienate-success",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "intelligence"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "intelligence"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "loyalty"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "character"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "initialStateSha256": "85f0560d8a2f71a3233295bdcdd52d1ebf9556dc04d750fabc18e6f610a86530",
+      "initialSeed": 1,
+      "steps": [
+        {
+          "id": "issue",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-alienate-success-issue",
+            "expectedStateSha256": "85f0560d8a2f71a3233295bdcdd52d1ebf9556dc04d750fabc18e6f610a86530",
+            "kind": "issue_alienate_order",
+            "parameters": {
+              "sourceCityId": "city-12",
+              "officerId": "officer-1",
+              "targetOfficerId": "officer-56"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-alienate-success-issue",
+            "kind": "issue_alienate_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "85f0560d8a2f71a3233295bdcdd52d1ebf9556dc04d750fabc18e6f610a86530",
+            "afterStateSha256": "a0db33bfd764b11e1d57b8cb25a83d875f71d8a27ec69cdd566e4098c6866851",
+            "receipt": {
+              "kind": "issue_alienate_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "alienate",
+                "factionId": "ruler-1",
+                "officerId": "officer-1",
+                "sourceCityId": "city-12",
+                "targetOfficerId": "officer-56",
+                "targetFactionId": "ruler-5",
+                "targetCityId": "city-0",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-12",
+                "before": {
+                  "money": 135
+                },
+                "after": {
+                  "money": 85
+                }
+              },
+              "officer": {
+                "id": "officer-1",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": null,
+                  "stamina": 80
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-56"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "曹操奉命对韩遂执行离间，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "preStateSha256": "a0db33bfd764b11e1d57b8cb25a83d875f71d8a27ec69cdd566e4098c6866851",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "a0db33bfd764b11e1d57b8cb25a83d875f71d8a27ec69cdd566e4098c6866851",
+            "afterStateSha256": "341e160568381e55186c5d6a853b853cbe809cce574286965742e2a33aa36736",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 2165703038,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "map",
+                  "message": "曹操成功离间韩遂，其忠诚由 0 降至 0。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "341e160568381e55186c5d6a853b853cbe809cce574286965742e2a33aa36736"
+    },
+    {
+      "id": "canvass-success",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "intelligence"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "intelligence"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "loyalty"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "character"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "initialStateSha256": "457e11b588fb0770ededdb4767162cb9ca9d1377d88641eb942d06e3f02c4783",
+      "initialSeed": 2,
+      "steps": [
+        {
+          "id": "issue",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-canvass-success-issue",
+            "expectedStateSha256": "457e11b588fb0770ededdb4767162cb9ca9d1377d88641eb942d06e3f02c4783",
+            "kind": "issue_canvass_order",
+            "parameters": {
+              "sourceCityId": "city-12",
+              "officerId": "officer-1",
+              "targetOfficerId": "officer-56"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-canvass-success-issue",
+            "kind": "issue_canvass_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "457e11b588fb0770ededdb4767162cb9ca9d1377d88641eb942d06e3f02c4783",
+            "afterStateSha256": "df8c58f5df3da68d5c96105e1aac21350fe33d1c75232bc9967fbdd0baf7c818",
+            "receipt": {
+              "kind": "issue_canvass_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 2,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "canvass",
+                "factionId": "ruler-1",
+                "officerId": "officer-1",
+                "sourceCityId": "city-12",
+                "targetOfficerId": "officer-56",
+                "targetFactionId": "ruler-5",
+                "targetCityId": "city-0",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-12",
+                "before": {
+                  "money": 135
+                },
+                "after": {
+                  "money": 85
+                }
+              },
+              "officer": {
+                "id": "officer-1",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": null,
+                  "stamina": 80
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-56"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "曹操奉命对韩遂执行招揽，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "preStateSha256": "df8c58f5df3da68d5c96105e1aac21350fe33d1c75232bc9967fbdd0baf7c818",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "df8c58f5df3da68d5c96105e1aac21350fe33d1c75232bc9967fbdd0baf7c818",
+            "afterStateSha256": "388dec282e001e05aa18e0da78870965c8c3eda0260fc5a407e6340a274700f0",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 3079534013,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "map",
+                  "message": "韩遂接受曹操招揽，转投曹操军。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "388dec282e001e05aa18e0da78870965c8c3eda0260fc5a407e6340a274700f0"
+    },
+    {
+      "id": "counterespionage-success",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "intelligence"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "intelligence"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "loyalty"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "character"
+          ],
+          "value": 3
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "initialStateSha256": "b2ec4c51d184b0242f0a27fc383dac0c3520ef7d267885beb98236ad84e781eb",
+      "initialSeed": 1,
+      "steps": [
+        {
+          "id": "issue",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-counterespionage-success-issue",
+            "expectedStateSha256": "b2ec4c51d184b0242f0a27fc383dac0c3520ef7d267885beb98236ad84e781eb",
+            "kind": "issue_counterespionage_order",
+            "parameters": {
+              "sourceCityId": "city-12",
+              "officerId": "officer-1",
+              "targetOfficerId": "officer-56"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-counterespionage-success-issue",
+            "kind": "issue_counterespionage_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "b2ec4c51d184b0242f0a27fc383dac0c3520ef7d267885beb98236ad84e781eb",
+            "afterStateSha256": "06f161f630cbd3057119f853cc270c26e9cbdbe5d08e2b6bfbbdb7edddc06d38",
+            "receipt": {
+              "kind": "issue_counterespionage_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "counterespionage",
+                "factionId": "ruler-1",
+                "officerId": "officer-1",
+                "sourceCityId": "city-12",
+                "targetOfficerId": "officer-56",
+                "targetFactionId": "ruler-5",
+                "targetCityId": "city-0",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-12",
+                "before": {
+                  "money": 135
+                },
+                "after": {
+                  "money": 85
+                }
+              },
+              "officer": {
+                "id": "officer-1",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": null,
+                  "stamina": 80
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-56"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "曹操奉命对韩遂执行策反，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "preStateSha256": "06f161f630cbd3057119f853cc270c26e9cbdbe5d08e2b6bfbbdb7edddc06d38",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "06f161f630cbd3057119f853cc270c26e9cbdbe5d08e2b6bfbbdb7edddc06d38",
+            "afterStateSha256": "ada7fb3eabd72d01ec188925fd13f8a69ca13cef5b0813ee74fbb16b5309ff52",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "map",
+                  "message": "曹操返回濮阳：策反目标已经失效。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "ada7fb3eabd72d01ec188925fd13f8a69ca13cef5b0813ee74fbb16b5309ff52"
+    },
+    {
+      "id": "induce-success",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 0
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 8
+        },
+        {
+          "path": [
+            "officers",
+            "officer-31",
+            "intelligence"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-10",
+            "intelligence"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-10",
+            "character"
+          ],
+          "value": 4
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-11"
+          ],
+          "value": {
+            "cityId": "city-11",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 158134,
+            "money": 220,
+            "food": 660,
+            "reserveTroops": 0,
+            "farming": 2642,
+            "commerce": 1984,
+            "defense": 0,
+            "publicLoyalty": 35,
+            "satrapName": "韩馥",
+            "officerIds": [
+              "officer-10",
+              "officer-81",
+              "officer-82",
+              "officer-83",
+              "officer-84"
+            ],
+            "officerCount": 5,
+            "totalTroops": 500
+          }
+        }
+      ],
+      "initialStateSha256": "6d9756a7248a1f840e0a149c226ee48bcf13d352acca5920515e5a0db126b99d",
+      "initialSeed": 8,
+      "steps": [
+        {
+          "id": "issue",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-induce-success-issue",
+            "expectedStateSha256": "6d9756a7248a1f840e0a149c226ee48bcf13d352acca5920515e5a0db126b99d",
+            "kind": "issue_induce_order",
+            "parameters": {
+              "sourceCityId": "city-15",
+              "officerId": "officer-31",
+              "targetOfficerId": "officer-10"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-induce-success-issue",
+            "kind": "issue_induce_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "6d9756a7248a1f840e0a149c226ee48bcf13d352acca5920515e5a0db126b99d",
+            "afterStateSha256": "2f8819eaeee08b0a2b80c3d37109209b5dfc294d1db258fcd2b8ece24faa9a1e",
+            "receipt": {
+              "kind": "issue_induce_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 8,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-31"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "induce",
+                "factionId": "ruler-0",
+                "officerId": "officer-31",
+                "sourceCityId": "city-15",
+                "targetOfficerId": "officer-10",
+                "targetFactionId": "ruler-10",
+                "targetCityId": "city-11",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-15",
+                "before": {
+                  "money": 517
+                },
+                "after": {
+                  "money": 467
+                }
+              },
+              "officer": {
+                "id": "officer-31",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-0",
+                  "cityId": "city-15",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-0",
+                  "cityId": null,
+                  "stamina": 90
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-10"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "荀攸奉命对韩馥执行劝降，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "preStateSha256": "2f8819eaeee08b0a2b80c3d37109209b5dfc294d1db258fcd2b8ece24faa9a1e",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "2f8819eaeee08b0a2b80c3d37109209b5dfc294d1db258fcd2b8ece24faa9a1e",
+            "afterStateSha256": "58b548d6c27e3113b4a9af0b164655eb2679d8706f012cbcd534e9799618378b",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 1276464017,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "map",
+                  "message": "韩馥接受劝降，韩馥军所属城池并入董卓军。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "58b548d6c27e3113b4a9af0b164655eb2679d8706f012cbcd534e9799618378b"
+    }
+  ],
+  "diplomaticOrderBoundaryCases": [
+    {
+      "id": "modern-cost-success",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "rulesetId"
+          ],
+          "value": "modern-balanced-v1"
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "inputStateSha256": "3769b221a61f2d228b48e8f5b7b04ecf5565e25720379e845eb9c417d76f6518",
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-001",
+        "expectedStateSha256": "3769b221a61f2d228b48e8f5b7b04ecf5565e25720379e845eb9c417d76f6518",
+        "kind": "issue_alienate_order",
+        "parameters": {
+          "sourceCityId": "city-12",
+          "officerId": "officer-1",
+          "targetOfficerId": "officer-56"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-001",
+        "kind": "issue_alienate_order",
+        "ok": true,
+        "code": "ok",
+        "error": "",
+        "stateChanged": true,
+        "beforeStateSha256": "3769b221a61f2d228b48e8f5b7b04ecf5565e25720379e845eb9c417d76f6518",
+        "afterStateSha256": "db1f05c33220cce997c94b179fa742d71e2108ac9d27b1f350914c323824935b",
+        "receipt": {
+          "kind": "issue_alienate_order",
+          "state": {
+            "turn": 1,
+            "rngSeed": 48641,
+            "campaignStarted": true,
+            "actedOfficerIds": [
+              "officer-1"
+            ],
+            "logCount": 2
+          },
+          "order": {
+            "id": "diplomatic-order-1",
+            "kind": "alienate",
+            "factionId": "ruler-1",
+            "officerId": "officer-1",
+            "sourceCityId": "city-12",
+            "targetOfficerId": "officer-56",
+            "targetFactionId": "ruler-5",
+            "targetCityId": "city-0",
+            "createdTurn": 1,
+            "createdYear": 190,
+            "createdMonth": 1,
+            "durationMonths": 1,
+            "remainingMonths": 1,
+            "moneyCost": 50
+          },
+          "sourceCity": {
+            "id": "city-12",
+            "before": {
+              "money": 135
+            },
+            "after": {
+              "money": 85
+            }
+          },
+          "officer": {
+            "id": "officer-1",
+            "before": {
+              "status": "serving",
+              "factionId": "ruler-1",
+              "cityId": "city-12",
+              "stamina": 100
+            },
+            "after": {
+              "status": "serving",
+              "factionId": "ruler-1",
+              "cityId": null,
+              "stamina": 96
+            }
+          },
+          "targetOfficer": {
+            "id": "officer-56"
+          },
+          "appendedLog": {
+            "id": "log-1-002",
+            "kind": "map",
+            "message": "曹操奉命对韩遂执行离间，预计下月回报。",
+            "turn": 1
+          }
+        }
+      },
+      "expectedStateSha256": "db1f05c33220cce997c94b179fa742d71e2108ac9d27b1f350914c323824935b"
+    },
+    {
+      "id": "missing-intelligence-rejected",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [],
+      "inputStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-002",
+        "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "kind": "issue_alienate_order",
+        "parameters": {
+          "sourceCityId": "city-12",
+          "officerId": "officer-1",
+          "targetOfficerId": "officer-56"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-002",
+        "kind": "issue_alienate_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "离间目标无效或情报已经过期",
+        "stateChanged": false,
+        "beforeStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "afterStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+        "receipt": {}
+      },
+      "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38"
+    },
+    {
+      "id": "stale-intelligence-rejected",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "turn"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "calendar",
+            "month"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "inputStateSha256": "af7b29ca9ee1b92d4629572b704805448afabc857324e85cdaac9d66e6a6b089",
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-003",
+        "expectedStateSha256": "af7b29ca9ee1b92d4629572b704805448afabc857324e85cdaac9d66e6a6b089",
+        "kind": "issue_alienate_order",
+        "parameters": {
+          "sourceCityId": "city-12",
+          "officerId": "officer-1",
+          "targetOfficerId": "officer-56"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-003",
+        "kind": "issue_alienate_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "离间目标无效或情报已经过期",
+        "stateChanged": false,
+        "beforeStateSha256": "af7b29ca9ee1b92d4629572b704805448afabc857324e85cdaac9d66e6a6b089",
+        "afterStateSha256": "af7b29ca9ee1b92d4629572b704805448afabc857324e85cdaac9d66e6a6b089",
+        "receipt": {}
+      },
+      "expectedStateSha256": "af7b29ca9ee1b92d4629572b704805448afabc857324e85cdaac9d66e6a6b089"
+    },
+    {
+      "id": "legacy-report-without-officers-rejected",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "inputStateSha256": "a32ca1558ff61b0a554baa31bb26334195ebf28008832ba0ce473583449c89c1",
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-004",
+        "expectedStateSha256": "a32ca1558ff61b0a554baa31bb26334195ebf28008832ba0ce473583449c89c1",
+        "kind": "issue_alienate_order",
+        "parameters": {
+          "sourceCityId": "city-12",
+          "officerId": "officer-1",
+          "targetOfficerId": "officer-56"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-004",
+        "kind": "issue_alienate_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "离间目标无效或情报已经过期",
+        "stateChanged": false,
+        "beforeStateSha256": "a32ca1558ff61b0a554baa31bb26334195ebf28008832ba0ce473583449c89c1",
+        "afterStateSha256": "a32ca1558ff61b0a554baa31bb26334195ebf28008832ba0ce473583449c89c1",
+        "receipt": {}
+      },
+      "expectedStateSha256": "a32ca1558ff61b0a554baa31bb26334195ebf28008832ba0ce473583449c89c1"
+    },
+    {
+      "id": "report-without-target-rejected",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-57"
+            ],
+            "officerCount": 1,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "inputStateSha256": "1211c998ba461200ccdd10ab761b71e1f847acac2972c93aab60982bdd5834d6",
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-005",
+        "expectedStateSha256": "1211c998ba461200ccdd10ab761b71e1f847acac2972c93aab60982bdd5834d6",
+        "kind": "issue_alienate_order",
+        "parameters": {
+          "sourceCityId": "city-12",
+          "officerId": "officer-1",
+          "targetOfficerId": "officer-56"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-005",
+        "kind": "issue_alienate_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "离间目标无效或情报已经过期",
+        "stateChanged": false,
+        "beforeStateSha256": "1211c998ba461200ccdd10ab761b71e1f847acac2972c93aab60982bdd5834d6",
+        "afterStateSha256": "1211c998ba461200ccdd10ab761b71e1f847acac2972c93aab60982bdd5834d6",
+        "receipt": {}
+      },
+      "expectedStateSha256": "1211c998ba461200ccdd10ab761b71e1f847acac2972c93aab60982bdd5834d6"
+    },
+    {
+      "id": "acted-executor-rejected",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "actedOfficerIds"
+          ],
+          "value": [
+            "officer-1"
+          ]
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "inputStateSha256": "ec3c0253a4418d5fcd3d1c9c67f88dc9364a5a59356be61d7e28f56c0ba9cf7a",
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-006",
+        "expectedStateSha256": "ec3c0253a4418d5fcd3d1c9c67f88dc9364a5a59356be61d7e28f56c0ba9cf7a",
+        "kind": "issue_alienate_order",
+        "parameters": {
+          "sourceCityId": "city-12",
+          "officerId": "officer-1",
+          "targetOfficerId": "officer-56"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-006",
+        "kind": "issue_alienate_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "该武将本月已经执行过命令",
+        "stateChanged": false,
+        "beforeStateSha256": "ec3c0253a4418d5fcd3d1c9c67f88dc9364a5a59356be61d7e28f56c0ba9cf7a",
+        "afterStateSha256": "ec3c0253a4418d5fcd3d1c9c67f88dc9364a5a59356be61d7e28f56c0ba9cf7a",
+        "receipt": {}
+      },
+      "expectedStateSha256": "ec3c0253a4418d5fcd3d1c9c67f88dc9364a5a59356be61d7e28f56c0ba9cf7a"
+    },
+    {
+      "id": "classic-stamina-insufficient",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "stamina"
+          ],
+          "value": 19
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "inputStateSha256": "d9b9c4a5ff3718c92c7ec9296679de6f377b8ff33b569c8f2494cb8fe8e6e07f",
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-007",
+        "expectedStateSha256": "d9b9c4a5ff3718c92c7ec9296679de6f377b8ff33b569c8f2494cb8fe8e6e07f",
+        "kind": "issue_alienate_order",
+        "parameters": {
+          "sourceCityId": "city-12",
+          "officerId": "officer-1",
+          "targetOfficerId": "officer-56"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-007",
+        "kind": "issue_alienate_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "离间需要至少 20 点体力",
+        "stateChanged": false,
+        "beforeStateSha256": "d9b9c4a5ff3718c92c7ec9296679de6f377b8ff33b569c8f2494cb8fe8e6e07f",
+        "afterStateSha256": "d9b9c4a5ff3718c92c7ec9296679de6f377b8ff33b569c8f2494cb8fe8e6e07f",
+        "receipt": {}
+      },
+      "expectedStateSha256": "d9b9c4a5ff3718c92c7ec9296679de6f377b8ff33b569c8f2494cb8fe8e6e07f"
+    },
+    {
+      "id": "money-insufficient",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "money"
+          ],
+          "value": 49
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "inputStateSha256": "39cb79819a9ac95a0c8c504748ebad94bdb5ba10f14ac7234ef3abb938f7624f",
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-008",
+        "expectedStateSha256": "39cb79819a9ac95a0c8c504748ebad94bdb5ba10f14ac7234ef3abb938f7624f",
+        "kind": "issue_alienate_order",
+        "parameters": {
+          "sourceCityId": "city-12",
+          "officerId": "officer-1",
+          "targetOfficerId": "officer-56"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-008",
+        "kind": "issue_alienate_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "离间需要 50 金",
+        "stateChanged": false,
+        "beforeStateSha256": "39cb79819a9ac95a0c8c504748ebad94bdb5ba10f14ac7234ef3abb938f7624f",
+        "afterStateSha256": "39cb79819a9ac95a0c8c504748ebad94bdb5ba10f14ac7234ef3abb938f7624f",
+        "receipt": {}
+      },
+      "expectedStateSha256": "39cb79819a9ac95a0c8c504748ebad94bdb5ba10f14ac7234ef3abb938f7624f"
+    },
+    {
+      "id": "serial-exhausted",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 9007199254740991
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "inputStateSha256": "caf817a2849e42b79c53fba80651e2acd7fdb0b6d38f4236bf8050c4ccbf073a",
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-009",
+        "expectedStateSha256": "caf817a2849e42b79c53fba80651e2acd7fdb0b6d38f4236bf8050c4ccbf073a",
+        "kind": "issue_alienate_order",
+        "parameters": {
+          "sourceCityId": "city-12",
+          "officerId": "officer-1",
+          "targetOfficerId": "officer-56"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-009",
+        "kind": "issue_alienate_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "谋略命令序号已经耗尽",
+        "stateChanged": false,
+        "beforeStateSha256": "caf817a2849e42b79c53fba80651e2acd7fdb0b6d38f4236bf8050c4ccbf073a",
+        "afterStateSha256": "caf817a2849e42b79c53fba80651e2acd7fdb0b6d38f4236bf8050c4ccbf073a",
+        "receipt": {}
+      },
+      "expectedStateSha256": "caf817a2849e42b79c53fba80651e2acd7fdb0b6d38f4236bf8050c4ccbf073a"
+    },
+    {
+      "id": "counterespionage-requires-satrap",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "inputStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-010",
+        "expectedStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+        "kind": "issue_counterespionage_order",
+        "parameters": {
+          "sourceCityId": "city-12",
+          "officerId": "officer-1",
+          "targetOfficerId": "officer-57"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-010",
+        "kind": "issue_counterespionage_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "策反目标无效或情报已经过期",
+        "stateChanged": false,
+        "beforeStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+        "afterStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+        "receipt": {}
+      },
+      "expectedStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af"
+    },
+    {
+      "id": "induce-requires-ruler",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "inputStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-011",
+        "expectedStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+        "kind": "issue_induce_order",
+        "parameters": {
+          "sourceCityId": "city-12",
+          "officerId": "officer-1",
+          "targetOfficerId": "officer-56"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-011",
+        "kind": "issue_induce_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "劝降目标无效或情报已经过期",
+        "stateChanged": false,
+        "beforeStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+        "afterStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+        "receipt": {}
+      },
+      "expectedStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af"
+    },
+    {
+      "id": "target-moved-after-report",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "cityId"
+          ],
+          "value": "city-3"
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "satrapOfficerId"
+          ],
+          "value": "officer-57"
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "马超",
+            "officerIds": [
+              "officer-57"
+            ],
+            "officerCount": 1,
+            "totalTroops": 100
+          }
+        }
+      ],
+      "inputStateSha256": "417ed5ab799ad24a9dc617706b34fd3825a37fdccd85b9cda2be511d3145b95b",
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-012",
+        "expectedStateSha256": "417ed5ab799ad24a9dc617706b34fd3825a37fdccd85b9cda2be511d3145b95b",
+        "kind": "issue_alienate_order",
+        "parameters": {
+          "sourceCityId": "city-12",
+          "officerId": "officer-1",
+          "targetOfficerId": "officer-56"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-012",
+        "kind": "issue_alienate_order",
+        "ok": false,
+        "code": "domain_rejected",
+        "error": "离间目标无效或情报已经过期",
+        "stateChanged": false,
+        "beforeStateSha256": "417ed5ab799ad24a9dc617706b34fd3825a37fdccd85b9cda2be511d3145b95b",
+        "afterStateSha256": "417ed5ab799ad24a9dc617706b34fd3825a37fdccd85b9cda2be511d3145b95b",
+        "receipt": {}
+      },
+      "expectedStateSha256": "417ed5ab799ad24a9dc617706b34fd3825a37fdccd85b9cda2be511d3145b95b"
+    },
+    {
+      "id": "sorted-unknown-parameter",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "inputStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-013",
+        "expectedStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+        "kind": "issue_alienate_order",
+        "parameters": {
+          "sourceCityId": "city-12",
+          "officerId": "officer-1",
+          "targetOfficerId": "officer-56",
+          "𐀀": true,
+          "": true
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-013",
+        "kind": "issue_alienate_order",
+        "ok": false,
+        "code": "invalid_parameters",
+        "error": "unknown issue_alienate_order parameter: ",
+        "stateChanged": false,
+        "beforeStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+        "afterStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+        "receipt": {}
+      },
+      "expectedStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af"
+    },
+    {
+      "id": "missing-target-parameter",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "inputStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+      "command": {
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-014",
+        "expectedStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+        "kind": "issue_alienate_order",
+        "parameters": {
+          "sourceCityId": "city-12",
+          "officerId": "officer-1"
+        }
+      },
+      "expectedCore": {
+        "resultEnvelopeVersion": 1,
+        "commandEnvelopeVersion": 1,
+        "commandId": "mb10-boundary-014",
+        "kind": "issue_alienate_order",
+        "ok": false,
+        "code": "invalid_parameters",
+        "error": "targetOfficerId is required",
+        "stateChanged": false,
+        "beforeStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+        "afterStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af",
+        "receipt": {}
+      },
+      "expectedStateSha256": "8fe965017a589e9368b1549f59c4401dc611e83c92e4056369e5e94a7d3bb1af"
+    }
+  ],
+  "diplomaticOrderSettlementSequences": [
+    {
+      "id": "failed-alienate",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "intelligence"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "intelligence"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "loyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "initialStateSha256": "08682c9f34193f7e8b2ce10c4ca4f1bf7353855681d4b004883f61b225e5e28f",
+      "initialSeed": 1,
+      "steps": [
+        {
+          "id": "issue-1",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-failed-alienate-001",
+            "expectedStateSha256": "08682c9f34193f7e8b2ce10c4ca4f1bf7353855681d4b004883f61b225e5e28f",
+            "kind": "issue_alienate_order",
+            "parameters": {
+              "sourceCityId": "city-12",
+              "officerId": "officer-1",
+              "targetOfficerId": "officer-56"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-failed-alienate-001",
+            "kind": "issue_alienate_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "08682c9f34193f7e8b2ce10c4ca4f1bf7353855681d4b004883f61b225e5e28f",
+            "afterStateSha256": "dcf3dca288ea1c96eca714076f93042de2b81ef5742e1e9228d8bfbb661fef8a",
+            "receipt": {
+              "kind": "issue_alienate_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "alienate",
+                "factionId": "ruler-1",
+                "officerId": "officer-1",
+                "sourceCityId": "city-12",
+                "targetOfficerId": "officer-56",
+                "targetFactionId": "ruler-5",
+                "targetCityId": "city-0",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-12",
+                "before": {
+                  "money": 135
+                },
+                "after": {
+                  "money": 85
+                }
+              },
+              "officer": {
+                "id": "officer-1",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": null,
+                  "stamina": 80
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-56"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "曹操奉命对韩遂执行离间，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "prePatches": [],
+          "preStateSha256": "dcf3dca288ea1c96eca714076f93042de2b81ef5742e1e9228d8bfbb661fef8a",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "dcf3dca288ea1c96eca714076f93042de2b81ef5742e1e9228d8bfbb661fef8a",
+            "afterStateSha256": "bc792b4a6b43dac7b0d5c2a4aa1eb122529569ad1a382a895624741a1b570c47",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 1586005467,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "map",
+                  "message": "曹操返回濮阳：对韩遂的离间失败。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "bc792b4a6b43dac7b0d5c2a4aa1eb122529569ad1a382a895624741a1b570c47"
+    },
+    {
+      "id": "target-moved-without-rng",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "initialStateSha256": "1f39d9b447e9235c84eb734c5bbc4f06ea640238bad54b5e2415754132930db2",
+      "initialSeed": 1,
+      "steps": [
+        {
+          "id": "issue-1",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-target-moved-without-rng-001",
+            "expectedStateSha256": "1f39d9b447e9235c84eb734c5bbc4f06ea640238bad54b5e2415754132930db2",
+            "kind": "issue_alienate_order",
+            "parameters": {
+              "sourceCityId": "city-12",
+              "officerId": "officer-1",
+              "targetOfficerId": "officer-56"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-target-moved-without-rng-001",
+            "kind": "issue_alienate_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "1f39d9b447e9235c84eb734c5bbc4f06ea640238bad54b5e2415754132930db2",
+            "afterStateSha256": "8cfb2eb207f73597a3e1bc4981f19cdecc0487790bffe7ad90d03f691d64fc2c",
+            "receipt": {
+              "kind": "issue_alienate_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "alienate",
+                "factionId": "ruler-1",
+                "officerId": "officer-1",
+                "sourceCityId": "city-12",
+                "targetOfficerId": "officer-56",
+                "targetFactionId": "ruler-5",
+                "targetCityId": "city-0",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-12",
+                "before": {
+                  "money": 135
+                },
+                "after": {
+                  "money": 85
+                }
+              },
+              "officer": {
+                "id": "officer-1",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": null,
+                  "stamina": 80
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-56"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "曹操奉命对韩遂执行离间，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "prePatches": [
+            {
+              "path": [
+                "officers",
+                "officer-56",
+                "cityId"
+              ],
+              "value": "city-3"
+            },
+            {
+              "path": [
+                "cities",
+                "city-0",
+                "satrapOfficerId"
+              ],
+              "value": "officer-57"
+            }
+          ],
+          "preStateSha256": "5e30e8b84b6f68cc5543b36d864e5092aadde704019def5bff583a7ca4bad36a",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "5e30e8b84b6f68cc5543b36d864e5092aadde704019def5bff583a7ca4bad36a",
+            "afterStateSha256": "aaa4cdbdb3840b6d70d2dcd4d21170262e79c69654fd2473ec6808c0964f8e7d",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "map",
+                  "message": "曹操返回濮阳：离间目标已经失效。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "aaa4cdbdb3840b6d70d2dcd4d21170262e79c69654fd2473ec6808c0964f8e7d"
+    },
+    {
+      "id": "numeric-order-and-equipment",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 9
+        },
+        {
+          "path": [
+            "items",
+            "item-16",
+            "intelligenceBonus"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-20"
+          ]
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "intelligence"
+          ],
+          "value": 30
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "equipmentItemIds"
+          ],
+          "value": [
+            "item-16"
+          ]
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "intelligence"
+          ],
+          "value": 80
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "loyalty"
+          ],
+          "value": 4
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "character"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "initialStateSha256": "c5dbf4c9562bbf9822d73ec7d3f88fa9ab448978350533c0563638ecb3a9754a",
+      "initialSeed": 1,
+      "steps": [
+        {
+          "id": "issue-1",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-numeric-order-and-equipment-001",
+            "expectedStateSha256": "c5dbf4c9562bbf9822d73ec7d3f88fa9ab448978350533c0563638ecb3a9754a",
+            "kind": "issue_alienate_order",
+            "parameters": {
+              "sourceCityId": "city-12",
+              "officerId": "officer-1",
+              "targetOfficerId": "officer-56"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-numeric-order-and-equipment-001",
+            "kind": "issue_alienate_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "c5dbf4c9562bbf9822d73ec7d3f88fa9ab448978350533c0563638ecb3a9754a",
+            "afterStateSha256": "60ee115a2d61cdd8d49926a7f572a9643f74efdce17469855a010524f20b8801",
+            "receipt": {
+              "kind": "issue_alienate_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-9",
+                "kind": "alienate",
+                "factionId": "ruler-1",
+                "officerId": "officer-1",
+                "sourceCityId": "city-12",
+                "targetOfficerId": "officer-56",
+                "targetFactionId": "ruler-5",
+                "targetCityId": "city-0",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-12",
+                "before": {
+                  "money": 135
+                },
+                "after": {
+                  "money": 85
+                }
+              },
+              "officer": {
+                "id": "officer-1",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": null,
+                  "stamina": 80
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-56"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "曹操奉命对韩遂执行离间，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "issue-2",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-numeric-order-and-equipment-002",
+            "expectedStateSha256": "60ee115a2d61cdd8d49926a7f572a9643f74efdce17469855a010524f20b8801",
+            "kind": "issue_alienate_order",
+            "parameters": {
+              "sourceCityId": "city-12",
+              "officerId": "officer-32",
+              "targetOfficerId": "officer-57"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-numeric-order-and-equipment-002",
+            "kind": "issue_alienate_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "60ee115a2d61cdd8d49926a7f572a9643f74efdce17469855a010524f20b8801",
+            "afterStateSha256": "7b16cab564a7a057414f9a7113a1bde76b27e5cfec14d17f66d0f566d7048562",
+            "receipt": {
+              "kind": "issue_alienate_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1",
+                  "officer-32"
+                ],
+                "logCount": 3
+              },
+              "order": {
+                "id": "diplomatic-order-10",
+                "kind": "alienate",
+                "factionId": "ruler-1",
+                "officerId": "officer-32",
+                "sourceCityId": "city-12",
+                "targetOfficerId": "officer-57",
+                "targetFactionId": "ruler-5",
+                "targetCityId": "city-0",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-12",
+                "before": {
+                  "money": 85
+                },
+                "after": {
+                  "money": 35
+                }
+              },
+              "officer": {
+                "id": "officer-32",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": null,
+                  "stamina": 80
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-57"
+              },
+              "appendedLog": {
+                "id": "log-1-003",
+                "kind": "map",
+                "message": "夏侯惇奉命对马超执行离间，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "prePatches": [],
+          "preStateSha256": "7b16cab564a7a057414f9a7113a1bde76b27e5cfec14d17f66d0f566d7048562",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "7b16cab564a7a057414f9a7113a1bde76b27e5cfec14d17f66d0f566d7048562",
+            "afterStateSha256": "601ac2403f539918faea8bbbab73a2ca5e80f4f483178c4684052d7ae7ab96ac",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 3027450565,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 5
+              },
+              "completedOrderIds": [
+                "diplomatic-order-9",
+                "diplomatic-order-10"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-004",
+                  "kind": "map",
+                  "message": "曹操成功离间韩遂，其忠诚由 4 降至 0。",
+                  "turn": 2
+                },
+                {
+                  "id": "log-2-005",
+                  "kind": "map",
+                  "message": "夏侯惇返回濮阳：对马超的离间失败。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "601ac2403f539918faea8bbbab73a2ca5e80f4f483178c4684052d7ae7ab96ac"
+    },
+    {
+      "id": "source-city-lost-stable-fallback",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 5
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "intelligence"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "intelligence"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "loyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-12"
+          ],
+          "value": {
+            "cityId": "city-12",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 64139,
+            "money": 135,
+            "food": 309,
+            "reserveTroops": 0,
+            "farming": 1238,
+            "commerce": 1223,
+            "defense": 0,
+            "publicLoyalty": 48,
+            "satrapName": "曹操",
+            "officerIds": [
+              "officer-1",
+              "officer-32",
+              "officer-33",
+              "officer-34",
+              "officer-35",
+              "officer-36",
+              "officer-37"
+            ],
+            "officerCount": 7,
+            "totalTroops": 700
+          }
+        }
+      ],
+      "initialStateSha256": "70c5bed45797bf67532be1401c432c5113408a28b36ddd3cc410c747bfffc9a4",
+      "initialSeed": 1,
+      "steps": [
+        {
+          "id": "issue-1",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-source-city-lost-stable-fallback-001",
+            "expectedStateSha256": "70c5bed45797bf67532be1401c432c5113408a28b36ddd3cc410c747bfffc9a4",
+            "kind": "issue_alienate_order",
+            "parameters": {
+              "sourceCityId": "city-0",
+              "officerId": "officer-56",
+              "targetOfficerId": "officer-32"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-source-city-lost-stable-fallback-001",
+            "kind": "issue_alienate_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "70c5bed45797bf67532be1401c432c5113408a28b36ddd3cc410c747bfffc9a4",
+            "afterStateSha256": "d39ece92e2a33095719d9b09e84463782cb457f7c130924b574304f82c92a6bc",
+            "receipt": {
+              "kind": "issue_alienate_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-56"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "alienate",
+                "factionId": "ruler-5",
+                "officerId": "officer-56",
+                "sourceCityId": "city-0",
+                "targetOfficerId": "officer-32",
+                "targetFactionId": "ruler-1",
+                "targetCityId": "city-12",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-0",
+                "before": {
+                  "money": 202
+                },
+                "after": {
+                  "money": 152
+                }
+              },
+              "officer": {
+                "id": "officer-56",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": "city-0",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-5",
+                  "cityId": null,
+                  "stamina": 80
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-32"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "韩遂奉命对夏侯惇执行离间，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "prePatches": [
+            {
+              "path": [
+                "cities",
+                "city-0",
+                "ownerId"
+              ],
+              "value": "ruler-1"
+            },
+            {
+              "path": [
+                "cities",
+                "city-0",
+                "satrapOfficerId"
+              ],
+              "value": null,
+              "remove": true
+            },
+            {
+              "path": [
+                "officers",
+                "officer-57",
+                "cityId"
+              ],
+              "value": "city-3"
+            }
+          ],
+          "preStateSha256": "e6abf90cb47dc0ce9a204abf8c6e703aabe7339df9ded11a4e4ceb3fdd6f093f",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "e6abf90cb47dc0ce9a204abf8c6e703aabe7339df9ded11a4e4ceb3fdd6f093f",
+            "afterStateSha256": "4ab5ee53ead4579bdbc31d190e46387811a9d73c9f0779adfbd360746eec0226",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 1586005467,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "map",
+                  "message": "韩遂返回安定：对夏侯惇的离间失败。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "4ab5ee53ead4579bdbc31d190e46387811a9d73c9f0779adfbd360746eec0226"
+    },
+    {
+      "id": "counterespionage-reuses-rebel-and-liberates-captive",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "intelligence"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "intelligence"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "loyalty"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "character"
+          ],
+          "value": 3
+        },
+        {
+          "path": [
+            "factions",
+            "rebel-officer-56"
+          ],
+          "value": {
+            "id": "rebel-officer-56",
+            "name": "韩遂军",
+            "rulerOfficerId": "officer-56",
+            "color": "#123456",
+            "isPlayer": false,
+            "aiProfile": "balanced"
+          }
+        },
+        {
+          "path": [
+            "factionOrder"
+          ],
+          "value": [
+            "ruler-5",
+            "ruler-16",
+            "ruler-17",
+            "ruler-9",
+            "ruler-13",
+            "ruler-2",
+            "ruler-7",
+            "ruler-11",
+            "ruler-0",
+            "ruler-10",
+            "ruler-1",
+            "ruler-6",
+            "ruler-18",
+            "ruler-8",
+            "ruler-3",
+            "ruler-15",
+            "ruler-14",
+            "ruler-4",
+            "rebel-officer-56"
+          ]
+        },
+        {
+          "path": [
+            "officers",
+            "officer-161",
+            "status"
+          ],
+          "value": "captive"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-161",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-161",
+            "captorFactionId"
+          ],
+          "value": "ruler-5"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-161",
+            "formerFactionId"
+          ],
+          "value": "rebel-officer-56"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-161",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-161",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "initialStateSha256": "be86018f801fb0f0cc295d88432e1712fc53a4a8451b8c53465516021a965fa5",
+      "initialSeed": 1,
+      "steps": [
+        {
+          "id": "issue-1",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-counterespionage-reuses-rebel-and-liberates-captive-001",
+            "expectedStateSha256": "be86018f801fb0f0cc295d88432e1712fc53a4a8451b8c53465516021a965fa5",
+            "kind": "issue_counterespionage_order",
+            "parameters": {
+              "sourceCityId": "city-12",
+              "officerId": "officer-1",
+              "targetOfficerId": "officer-56"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-counterespionage-reuses-rebel-and-liberates-captive-001",
+            "kind": "issue_counterespionage_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "be86018f801fb0f0cc295d88432e1712fc53a4a8451b8c53465516021a965fa5",
+            "afterStateSha256": "774ac814a3fbd56ee066af92be8ff0ba7bb1c625ef749d47a77c2d328d0833a8",
+            "receipt": {
+              "kind": "issue_counterespionage_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "counterespionage",
+                "factionId": "ruler-1",
+                "officerId": "officer-1",
+                "sourceCityId": "city-12",
+                "targetOfficerId": "officer-56",
+                "targetFactionId": "ruler-5",
+                "targetCityId": "city-0",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-12",
+                "before": {
+                  "money": 135
+                },
+                "after": {
+                  "money": 85
+                }
+              },
+              "officer": {
+                "id": "officer-1",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": null,
+                  "stamina": 80
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-56"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "曹操奉命对韩遂执行策反，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "prePatches": [],
+          "preStateSha256": "774ac814a3fbd56ee066af92be8ff0ba7bb1c625ef749d47a77c2d328d0833a8",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "774ac814a3fbd56ee066af92be8ff0ba7bb1c625ef749d47a77c2d328d0833a8",
+            "afterStateSha256": "928573a727e8890503349e842e9dc33698ed4b5f8e51d5a0521dc870a6ba9ecb",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "map",
+                  "message": "曹操返回濮阳：策反目标已经失效。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "928573a727e8890503349e842e9dc33698ed4b5f8e51d5a0521dc870a6ba9ecb"
+    },
+    {
+      "id": "induce-absorbs-faction-orders-and-captive",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 0
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 8
+        },
+        {
+          "path": [
+            "officers",
+            "officer-31",
+            "intelligence"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-10",
+            "intelligence"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-10",
+            "character"
+          ],
+          "value": 4
+        },
+        {
+          "path": [
+            "strategicOrders"
+          ],
+          "value": {
+            "strategic-order-1": {
+              "id": "strategic-order-1",
+              "kind": "move",
+              "factionId": "ruler-10",
+              "officerId": "officer-81",
+              "sourceCityId": "city-11",
+              "targetCityId": "city-5",
+              "routeCityIds": [
+                "city-11",
+                "city-5"
+              ],
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "cargo": {
+                "money": 0,
+                "food": 0,
+                "reserveTroops": 0
+              }
+            }
+          }
+        },
+        {
+          "path": [
+            "nextStrategicOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "officers",
+            "officer-81",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "actedOfficerIds"
+          ],
+          "value": [
+            "officer-81"
+          ]
+        },
+        {
+          "path": [
+            "officers",
+            "officer-110",
+            "status"
+          ],
+          "value": "captive"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-110",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-110",
+            "cityId"
+          ],
+          "value": "city-11"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-110",
+            "captorFactionId"
+          ],
+          "value": "ruler-10"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-110",
+            "formerFactionId"
+          ],
+          "value": "ruler-0"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-110",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-110",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-11"
+          ],
+          "value": {
+            "cityId": "city-11",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 158134,
+            "money": 220,
+            "food": 660,
+            "reserveTroops": 0,
+            "farming": 2642,
+            "commerce": 1984,
+            "defense": 0,
+            "publicLoyalty": 35,
+            "satrapName": "韩馥",
+            "officerIds": [
+              "officer-10",
+              "officer-82",
+              "officer-83",
+              "officer-84"
+            ],
+            "officerCount": 4,
+            "totalTroops": 400
+          }
+        }
+      ],
+      "initialStateSha256": "fe10914419a980ce2d2dfd5c27bd886ed711c460bfba44bf2f49fb23fdd31d90",
+      "initialSeed": 8,
+      "steps": [
+        {
+          "id": "issue-1",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-induce-absorbs-faction-orders-and-captive-001",
+            "expectedStateSha256": "fe10914419a980ce2d2dfd5c27bd886ed711c460bfba44bf2f49fb23fdd31d90",
+            "kind": "issue_induce_order",
+            "parameters": {
+              "sourceCityId": "city-15",
+              "officerId": "officer-31",
+              "targetOfficerId": "officer-10"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-induce-absorbs-faction-orders-and-captive-001",
+            "kind": "issue_induce_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "fe10914419a980ce2d2dfd5c27bd886ed711c460bfba44bf2f49fb23fdd31d90",
+            "afterStateSha256": "3ddae328e33244abe2f2ebf0530d348aa34c7db1664dae1d4257bf07a4b088d4",
+            "receipt": {
+              "kind": "issue_induce_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 8,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-81",
+                  "officer-31"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "induce",
+                "factionId": "ruler-0",
+                "officerId": "officer-31",
+                "sourceCityId": "city-15",
+                "targetOfficerId": "officer-10",
+                "targetFactionId": "ruler-10",
+                "targetCityId": "city-11",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-15",
+                "before": {
+                  "money": 517
+                },
+                "after": {
+                  "money": 467
+                }
+              },
+              "officer": {
+                "id": "officer-31",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-0",
+                  "cityId": "city-15",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-0",
+                  "cityId": null,
+                  "stamina": 90
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-10"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "荀攸奉命对韩馥执行劝降，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "prePatches": [],
+          "preStateSha256": "3ddae328e33244abe2f2ebf0530d348aa34c7db1664dae1d4257bf07a4b088d4",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "3ddae328e33244abe2f2ebf0530d348aa34c7db1664dae1d4257bf07a4b088d4",
+            "afterStateSha256": "44f2d730446c53922d522a76eccc56440ec5b65c54e29625c998643061e9ab56",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 1276464017,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 4
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "turn",
+                  "message": "荀谌因目标易主，返回邺。",
+                  "turn": 2
+                },
+                {
+                  "id": "log-2-004",
+                  "kind": "map",
+                  "message": "韩馥接受劝降，韩馥军所属城池并入董卓军。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "44f2d730446c53922d522a76eccc56440ec5b65c54e29625c998643061e9ab56"
+    },
+    {
+      "id": "landless-executor-released-without-rng",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "initialStateSha256": "1f39d9b447e9235c84eb734c5bbc4f06ea640238bad54b5e2415754132930db2",
+      "initialSeed": 1,
+      "steps": [
+        {
+          "id": "issue-1",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-landless-executor-released-without-rng-001",
+            "expectedStateSha256": "1f39d9b447e9235c84eb734c5bbc4f06ea640238bad54b5e2415754132930db2",
+            "kind": "issue_alienate_order",
+            "parameters": {
+              "sourceCityId": "city-12",
+              "officerId": "officer-1",
+              "targetOfficerId": "officer-56"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-landless-executor-released-without-rng-001",
+            "kind": "issue_alienate_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "1f39d9b447e9235c84eb734c5bbc4f06ea640238bad54b5e2415754132930db2",
+            "afterStateSha256": "8cfb2eb207f73597a3e1bc4981f19cdecc0487790bffe7ad90d03f691d64fc2c",
+            "receipt": {
+              "kind": "issue_alienate_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "alienate",
+                "factionId": "ruler-1",
+                "officerId": "officer-1",
+                "sourceCityId": "city-12",
+                "targetOfficerId": "officer-56",
+                "targetFactionId": "ruler-5",
+                "targetCityId": "city-0",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-12",
+                "before": {
+                  "money": 135
+                },
+                "after": {
+                  "money": 85
+                }
+              },
+              "officer": {
+                "id": "officer-1",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": null,
+                  "stamina": 80
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-56"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "曹操奉命对韩遂执行离间，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "prePatches": [
+            {
+              "path": [
+                "cities",
+                "city-12",
+                "ownerId"
+              ],
+              "value": "ruler-0"
+            },
+            {
+              "path": [
+                "cities",
+                "city-12",
+                "satrapOfficerId"
+              ],
+              "value": null,
+              "remove": true
+            },
+            {
+              "path": [
+                "officers",
+                "officer-32",
+                "status"
+              ],
+              "value": "free"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-32",
+                "factionId"
+              ],
+              "value": "neutral"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-32",
+                "troops"
+              ],
+              "value": 0
+            },
+            {
+              "path": [
+                "officers",
+                "officer-32",
+                "stamina"
+              ],
+              "value": 0
+            },
+            {
+              "path": [
+                "officers",
+                "officer-33",
+                "status"
+              ],
+              "value": "free"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-33",
+                "factionId"
+              ],
+              "value": "neutral"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-33",
+                "troops"
+              ],
+              "value": 0
+            },
+            {
+              "path": [
+                "officers",
+                "officer-33",
+                "stamina"
+              ],
+              "value": 0
+            },
+            {
+              "path": [
+                "officers",
+                "officer-34",
+                "status"
+              ],
+              "value": "free"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-34",
+                "factionId"
+              ],
+              "value": "neutral"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-34",
+                "troops"
+              ],
+              "value": 0
+            },
+            {
+              "path": [
+                "officers",
+                "officer-34",
+                "stamina"
+              ],
+              "value": 0
+            },
+            {
+              "path": [
+                "officers",
+                "officer-35",
+                "status"
+              ],
+              "value": "free"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-35",
+                "factionId"
+              ],
+              "value": "neutral"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-35",
+                "troops"
+              ],
+              "value": 0
+            },
+            {
+              "path": [
+                "officers",
+                "officer-35",
+                "stamina"
+              ],
+              "value": 0
+            },
+            {
+              "path": [
+                "officers",
+                "officer-36",
+                "status"
+              ],
+              "value": "free"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-36",
+                "factionId"
+              ],
+              "value": "neutral"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-36",
+                "troops"
+              ],
+              "value": 0
+            },
+            {
+              "path": [
+                "officers",
+                "officer-36",
+                "stamina"
+              ],
+              "value": 0
+            },
+            {
+              "path": [
+                "officers",
+                "officer-37",
+                "status"
+              ],
+              "value": "free"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-37",
+                "factionId"
+              ],
+              "value": "neutral"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-37",
+                "troops"
+              ],
+              "value": 0
+            },
+            {
+              "path": [
+                "officers",
+                "officer-37",
+                "stamina"
+              ],
+              "value": 0
+            }
+          ],
+          "preStateSha256": "5a4302c8c500f7fa90c8fccfd842c2b233eb456f33175f9d50b5df04edd15e6b",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "5a4302c8c500f7fa90c8fccfd842c2b233eb456f33175f9d50b5df04edd15e6b",
+            "afterStateSha256": "b2c53e878a58976f81c9d24fe02933b6bd88dafdb626a529f2e395b7ab048af8",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "map",
+                  "message": "曹操因所属势力失去全部城池，离间中止并转为在野。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "b2c53e878a58976f81c9d24fe02933b6bd88dafdb626a529f2e395b7ab048af8"
+    },
+    {
+      "id": "failed-canvass-dialog-draw",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "intelligence"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "intelligence"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "loyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "initialStateSha256": "08682c9f34193f7e8b2ce10c4ca4f1bf7353855681d4b004883f61b225e5e28f",
+      "initialSeed": 1,
+      "steps": [
+        {
+          "id": "issue-1",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-failed-canvass-dialog-draw-001",
+            "expectedStateSha256": "08682c9f34193f7e8b2ce10c4ca4f1bf7353855681d4b004883f61b225e5e28f",
+            "kind": "issue_canvass_order",
+            "parameters": {
+              "sourceCityId": "city-12",
+              "officerId": "officer-1",
+              "targetOfficerId": "officer-56"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-failed-canvass-dialog-draw-001",
+            "kind": "issue_canvass_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "08682c9f34193f7e8b2ce10c4ca4f1bf7353855681d4b004883f61b225e5e28f",
+            "afterStateSha256": "09c98eb898f0218572f81c0a24152e88c32512b67945d7d410e5a11c0aa4335a",
+            "receipt": {
+              "kind": "issue_canvass_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "canvass",
+                "factionId": "ruler-1",
+                "officerId": "officer-1",
+                "sourceCityId": "city-12",
+                "targetOfficerId": "officer-56",
+                "targetFactionId": "ruler-5",
+                "targetCityId": "city-0",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-12",
+                "before": {
+                  "money": 135
+                },
+                "after": {
+                  "money": 85
+                }
+              },
+              "officer": {
+                "id": "officer-1",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": null,
+                  "stamina": 80
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-56"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "曹操奉命对韩遂执行招揽，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "prePatches": [],
+          "preStateSha256": "09c98eb898f0218572f81c0a24152e88c32512b67945d7d410e5a11c0aa4335a",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "09c98eb898f0218572f81c0a24152e88c32512b67945d7d410e5a11c0aa4335a",
+            "afterStateSha256": "c5883570522ae123b3f95a7b8e196742a783b7307a7a34d4659aeb7080a5df9e",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 2165703038,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "map",
+                  "message": "曹操返回濮阳：对韩遂的招揽失败。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "c5883570522ae123b3f95a7b8e196742a783b7307a7a34d4659aeb7080a5df9e"
+    },
+    {
+      "id": "failed-counterespionage-dialog-draw",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "intelligence"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "intelligence"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "loyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "initialStateSha256": "08682c9f34193f7e8b2ce10c4ca4f1bf7353855681d4b004883f61b225e5e28f",
+      "initialSeed": 1,
+      "steps": [
+        {
+          "id": "issue-1",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-failed-counterespionage-dialog-draw-001",
+            "expectedStateSha256": "08682c9f34193f7e8b2ce10c4ca4f1bf7353855681d4b004883f61b225e5e28f",
+            "kind": "issue_counterespionage_order",
+            "parameters": {
+              "sourceCityId": "city-12",
+              "officerId": "officer-1",
+              "targetOfficerId": "officer-56"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-failed-counterespionage-dialog-draw-001",
+            "kind": "issue_counterespionage_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "08682c9f34193f7e8b2ce10c4ca4f1bf7353855681d4b004883f61b225e5e28f",
+            "afterStateSha256": "78ea807b7acf95358d7db41913905b017cf27ce0101528c9f1cdf94a92be2882",
+            "receipt": {
+              "kind": "issue_counterespionage_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "counterespionage",
+                "factionId": "ruler-1",
+                "officerId": "officer-1",
+                "sourceCityId": "city-12",
+                "targetOfficerId": "officer-56",
+                "targetFactionId": "ruler-5",
+                "targetCityId": "city-0",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-12",
+                "before": {
+                  "money": 135
+                },
+                "after": {
+                  "money": 85
+                }
+              },
+              "officer": {
+                "id": "officer-1",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": null,
+                  "stamina": 80
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-56"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "曹操奉命对韩遂执行策反，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "prePatches": [],
+          "preStateSha256": "78ea807b7acf95358d7db41913905b017cf27ce0101528c9f1cdf94a92be2882",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "78ea807b7acf95358d7db41913905b017cf27ce0101528c9f1cdf94a92be2882",
+            "afterStateSha256": "fc3517471a2e83debd967bb98fa7de8afcde58d5494c3ec3cb628e72f23eeac5",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "map",
+                  "message": "曹操返回濮阳：策反目标已经失效。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "fc3517471a2e83debd967bb98fa7de8afcde58d5494c3ec3cb628e72f23eeac5"
+    },
+    {
+      "id": "failed-induce-player-dialog-draw",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 0
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 8
+        },
+        {
+          "path": [
+            "officers",
+            "officer-31",
+            "intelligence"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-10",
+            "intelligence"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-10",
+            "character"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-11"
+          ],
+          "value": {
+            "cityId": "city-11",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 158134,
+            "money": 220,
+            "food": 660,
+            "reserveTroops": 0,
+            "farming": 2642,
+            "commerce": 1984,
+            "defense": 0,
+            "publicLoyalty": 35,
+            "satrapName": "韩馥",
+            "officerIds": [
+              "officer-10",
+              "officer-81",
+              "officer-82",
+              "officer-83",
+              "officer-84"
+            ],
+            "officerCount": 5,
+            "totalTroops": 500
+          }
+        }
+      ],
+      "initialStateSha256": "3a943cf60350a39d2f4f24537ab48e86ea4f74455dc5768bf865ed88a007c031",
+      "initialSeed": 8,
+      "steps": [
+        {
+          "id": "issue-1",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-failed-induce-player-dialog-draw-001",
+            "expectedStateSha256": "3a943cf60350a39d2f4f24537ab48e86ea4f74455dc5768bf865ed88a007c031",
+            "kind": "issue_induce_order",
+            "parameters": {
+              "sourceCityId": "city-15",
+              "officerId": "officer-31",
+              "targetOfficerId": "officer-10"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-failed-induce-player-dialog-draw-001",
+            "kind": "issue_induce_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "3a943cf60350a39d2f4f24537ab48e86ea4f74455dc5768bf865ed88a007c031",
+            "afterStateSha256": "4511bd142d4a9dea7f576d48e5908056107e920417962e986be01afaf5e5f778",
+            "receipt": {
+              "kind": "issue_induce_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 8,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-31"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "induce",
+                "factionId": "ruler-0",
+                "officerId": "officer-31",
+                "sourceCityId": "city-15",
+                "targetOfficerId": "officer-10",
+                "targetFactionId": "ruler-10",
+                "targetCityId": "city-11",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-15",
+                "before": {
+                  "money": 517
+                },
+                "after": {
+                  "money": 467
+                }
+              },
+              "officer": {
+                "id": "officer-31",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-0",
+                  "cityId": "city-15",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-0",
+                  "cityId": null,
+                  "stamina": 90
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-10"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "荀攸奉命对韩馥执行劝降，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "prePatches": [],
+          "preStateSha256": "4511bd142d4a9dea7f576d48e5908056107e920417962e986be01afaf5e5f778",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "4511bd142d4a9dea7f576d48e5908056107e920417962e986be01afaf5e5f778",
+            "afterStateSha256": "453d14d62c0d2e7bfe57565e5da89aada17151ed59b6d5c62299292db0fe6721",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 1276464017,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "map",
+                  "message": "韩馥接受劝降，韩馥军所属城池并入董卓军。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "453d14d62c0d2e7bfe57565e5da89aada17151ed59b6d5c62299292db0fe6721"
+    },
+    {
+      "id": "failed-induce-ai",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 8
+        },
+        {
+          "path": [
+            "officers",
+            "officer-31",
+            "intelligence"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "officers",
+            "officer-10",
+            "intelligence"
+          ],
+          "value": 50
+        },
+        {
+          "path": [
+            "officers",
+            "officer-10",
+            "character"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "officers",
+            "officer-31",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "diplomaticOrders"
+          ],
+          "value": {
+            "diplomatic-order-1": {
+              "id": "diplomatic-order-1",
+              "kind": "induce",
+              "factionId": "ruler-0",
+              "officerId": "officer-31",
+              "sourceCityId": "city-15",
+              "targetOfficerId": "officer-10",
+              "targetFactionId": "ruler-10",
+              "targetCityId": "city-11",
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "moneyCost": 50
+            }
+          }
+        },
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "actedOfficerIds"
+          ],
+          "value": [
+            "officer-31"
+          ]
+        }
+      ],
+      "initialStateSha256": "b70368d586b22f31398363d5904602d1b96d5ae10ad154fac2a7e94cd5837f1b",
+      "initialSeed": 8,
+      "steps": [
+        {
+          "id": "advance",
+          "operation": "advance",
+          "prePatches": [],
+          "preStateSha256": "b70368d586b22f31398363d5904602d1b96d5ae10ad154fac2a7e94cd5837f1b",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "b70368d586b22f31398363d5904602d1b96d5ae10ad154fac2a7e94cd5837f1b",
+            "afterStateSha256": "37635b9f81aea0374455c0727b15334830140a1188553b695e9d1adaffeadef7",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 18026106,
+                "campaignStarted": false,
+                "actedOfficerIds": [],
+                "logCount": 2
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-002",
+                  "kind": "ai",
+                  "message": "董卓军完成了一项谋略行动。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "37635b9f81aea0374455c0727b15334830140a1188553b695e9d1adaffeadef7"
+    },
+    {
+      "id": "induce-dominance-lost-without-rng",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 0
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 8
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-11"
+          ],
+          "value": {
+            "cityId": "city-11",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 158134,
+            "money": 220,
+            "food": 660,
+            "reserveTroops": 0,
+            "farming": 2642,
+            "commerce": 1984,
+            "defense": 0,
+            "publicLoyalty": 35,
+            "satrapName": "韩馥",
+            "officerIds": [
+              "officer-10",
+              "officer-81",
+              "officer-82",
+              "officer-83",
+              "officer-84"
+            ],
+            "officerCount": 5,
+            "totalTroops": 500
+          }
+        }
+      ],
+      "initialStateSha256": "69ab816717a08079aa20316eedd3555dbd14d09fecf22d109e21b376a07b6190",
+      "initialSeed": 8,
+      "steps": [
+        {
+          "id": "issue-1",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-induce-dominance-lost-without-rng-001",
+            "expectedStateSha256": "69ab816717a08079aa20316eedd3555dbd14d09fecf22d109e21b376a07b6190",
+            "kind": "issue_induce_order",
+            "parameters": {
+              "sourceCityId": "city-15",
+              "officerId": "officer-31",
+              "targetOfficerId": "officer-10"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-induce-dominance-lost-without-rng-001",
+            "kind": "issue_induce_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "69ab816717a08079aa20316eedd3555dbd14d09fecf22d109e21b376a07b6190",
+            "afterStateSha256": "1801f8ea98ffbfd786c459e10176ddd61eb886ced5f600ad5766818f24ab6dde",
+            "receipt": {
+              "kind": "issue_induce_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 8,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-31"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "induce",
+                "factionId": "ruler-0",
+                "officerId": "officer-31",
+                "sourceCityId": "city-15",
+                "targetOfficerId": "officer-10",
+                "targetFactionId": "ruler-10",
+                "targetCityId": "city-11",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-15",
+                "before": {
+                  "money": 517
+                },
+                "after": {
+                  "money": 467
+                }
+              },
+              "officer": {
+                "id": "officer-31",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-0",
+                  "cityId": "city-15",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-0",
+                  "cityId": null,
+                  "stamina": 90
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-10"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "荀攸奉命对韩馥执行劝降，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "prePatches": [
+            {
+              "path": [
+                "cities",
+                "city-19",
+                "ownerId"
+              ],
+              "value": "ruler-10"
+            }
+          ],
+          "preStateSha256": "c1dfc36695ce01f336e914d46ba8ad1a1329f8bc869a374007844512cfa7cf0f",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "c1dfc36695ce01f336e914d46ba8ad1a1329f8bc869a374007844512cfa7cf0f",
+            "afterStateSha256": "7019ee7032c9365af20d0db5c78fb1c069ce3edab6bc1810d53c1d1de8ff5c81",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 8,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "map",
+                  "message": "荀攸返回洛阳：势力差距不足，劝降未能展开。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "7019ee7032c9365af20d0db5c78fb1c069ce3edab6bc1810d53c1d1de8ff5c81"
+    },
+    {
+      "id": "target-allegiance-changed-without-rng",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56",
+              "officer-57"
+            ],
+            "officerCount": 2,
+            "totalTroops": 200
+          }
+        }
+      ],
+      "initialStateSha256": "1f39d9b447e9235c84eb734c5bbc4f06ea640238bad54b5e2415754132930db2",
+      "initialSeed": 1,
+      "steps": [
+        {
+          "id": "issue-1",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-target-allegiance-changed-without-rng-001",
+            "expectedStateSha256": "1f39d9b447e9235c84eb734c5bbc4f06ea640238bad54b5e2415754132930db2",
+            "kind": "issue_alienate_order",
+            "parameters": {
+              "sourceCityId": "city-12",
+              "officerId": "officer-1",
+              "targetOfficerId": "officer-56"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-target-allegiance-changed-without-rng-001",
+            "kind": "issue_alienate_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "1f39d9b447e9235c84eb734c5bbc4f06ea640238bad54b5e2415754132930db2",
+            "afterStateSha256": "8cfb2eb207f73597a3e1bc4981f19cdecc0487790bffe7ad90d03f691d64fc2c",
+            "receipt": {
+              "kind": "issue_alienate_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "alienate",
+                "factionId": "ruler-1",
+                "officerId": "officer-1",
+                "sourceCityId": "city-12",
+                "targetOfficerId": "officer-56",
+                "targetFactionId": "ruler-5",
+                "targetCityId": "city-0",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-12",
+                "before": {
+                  "money": 135
+                },
+                "after": {
+                  "money": 85
+                }
+              },
+              "officer": {
+                "id": "officer-1",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": null,
+                  "stamina": 80
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-56"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "曹操奉命对韩遂执行离间，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "prePatches": [
+            {
+              "path": [
+                "officers",
+                "officer-56",
+                "status"
+              ],
+              "value": "free"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-56",
+                "factionId"
+              ],
+              "value": "neutral"
+            },
+            {
+              "path": [
+                "officers",
+                "officer-56",
+                "troops"
+              ],
+              "value": 0
+            },
+            {
+              "path": [
+                "officers",
+                "officer-56",
+                "stamina"
+              ],
+              "value": 0
+            },
+            {
+              "path": [
+                "cities",
+                "city-0",
+                "satrapOfficerId"
+              ],
+              "value": "officer-57"
+            }
+          ],
+          "preStateSha256": "0995ccce305f9067ca9d18e961425b8b7a9ab2cfca4954302cb3f5074c61ec5f",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "0995ccce305f9067ca9d18e961425b8b7a9ab2cfca4954302cb3f5074c61ec5f",
+            "afterStateSha256": "4cb8364657049efb27c6c4caa3cc689278f8fd9d9b9ffb994d0ebd2b32f59b97",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 3
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "map",
+                  "message": "曹操返回濮阳：离间目标已经失效。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "4cb8364657049efb27c6c4caa3cc689278f8fd9d9b9ffb994d0ebd2b32f59b97"
+    },
+    {
+      "id": "mixed-strategic-and-diplomatic-month",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "initialPatches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "officers",
+            "officer-56",
+            "loyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "strategicOrders"
+          ],
+          "value": {
+            "strategic-order-1": {
+              "id": "strategic-order-1",
+              "kind": "move",
+              "factionId": "ruler-5",
+              "officerId": "officer-57",
+              "sourceCityId": "city-0",
+              "targetCityId": "city-3",
+              "routeCityIds": [
+                "city-0",
+                "city-3"
+              ],
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "cargo": {
+                "money": 0,
+                "food": 0,
+                "reserveTroops": 0
+              }
+            }
+          }
+        },
+        {
+          "path": [
+            "nextStrategicOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "officers",
+            "officer-57",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "actedOfficerIds"
+          ],
+          "value": [
+            "officer-57"
+          ]
+        },
+        {
+          "path": [
+            "intelReports",
+            "city-0"
+          ],
+          "value": {
+            "cityId": "city-0",
+            "observedTurn": 1,
+            "observedYear": 190,
+            "observedMonth": 1,
+            "population": 157101,
+            "money": 202,
+            "food": 436,
+            "reserveTroops": 0,
+            "farming": 1747,
+            "commerce": 1820,
+            "defense": 0,
+            "publicLoyalty": 59,
+            "satrapName": "韩遂",
+            "officerIds": [
+              "officer-56"
+            ],
+            "officerCount": 1,
+            "totalTroops": 100
+          }
+        }
+      ],
+      "initialStateSha256": "2e6d989af55768bed84f9dcc8a7c5ebb0d88c7b6bf755f2577599d1815913829",
+      "initialSeed": 1,
+      "steps": [
+        {
+          "id": "issue-1",
+          "operation": "command",
+          "command": {
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-mixed-strategic-and-diplomatic-month-001",
+            "expectedStateSha256": "2e6d989af55768bed84f9dcc8a7c5ebb0d88c7b6bf755f2577599d1815913829",
+            "kind": "issue_alienate_order",
+            "parameters": {
+              "sourceCityId": "city-12",
+              "officerId": "officer-1",
+              "targetOfficerId": "officer-56"
+            }
+          },
+          "expectedCore": {
+            "resultEnvelopeVersion": 1,
+            "commandEnvelopeVersion": 1,
+            "commandId": "mb10-mixed-strategic-and-diplomatic-month-001",
+            "kind": "issue_alienate_order",
+            "ok": true,
+            "code": "ok",
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "2e6d989af55768bed84f9dcc8a7c5ebb0d88c7b6bf755f2577599d1815913829",
+            "afterStateSha256": "ebc843232d2ed41ef480d4c48a132d873946ef0db68c6be3f9a5a1dc7cdd1104",
+            "receipt": {
+              "kind": "issue_alienate_order",
+              "state": {
+                "turn": 1,
+                "rngSeed": 1,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-57",
+                  "officer-1"
+                ],
+                "logCount": 2
+              },
+              "order": {
+                "id": "diplomatic-order-1",
+                "kind": "alienate",
+                "factionId": "ruler-1",
+                "officerId": "officer-1",
+                "sourceCityId": "city-12",
+                "targetOfficerId": "officer-56",
+                "targetFactionId": "ruler-5",
+                "targetCityId": "city-0",
+                "createdTurn": 1,
+                "createdYear": 190,
+                "createdMonth": 1,
+                "durationMonths": 1,
+                "remainingMonths": 1,
+                "moneyCost": 50
+              },
+              "sourceCity": {
+                "id": "city-12",
+                "before": {
+                  "money": 135
+                },
+                "after": {
+                  "money": 85
+                }
+              },
+              "officer": {
+                "id": "officer-1",
+                "before": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": "city-12",
+                  "stamina": 100
+                },
+                "after": {
+                  "status": "serving",
+                  "factionId": "ruler-1",
+                  "cityId": null,
+                  "stamina": 80
+                }
+              },
+              "targetOfficer": {
+                "id": "officer-56"
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "曹操奉命对韩遂执行离间，预计下月回报。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "id": "advance",
+          "operation": "advance",
+          "prePatches": [],
+          "preStateSha256": "ebc843232d2ed41ef480d4c48a132d873946ef0db68c6be3f9a5a1dc7cdd1104",
+          "expectedCore": {
+            "ok": true,
+            "error": "",
+            "stateChanged": true,
+            "beforeStateSha256": "ebc843232d2ed41ef480d4c48a132d873946ef0db68c6be3f9a5a1dc7cdd1104",
+            "afterStateSha256": "b38c1a431db49eefe1823bc5343155b7f285d92dff59bef305e74bc1dd1af908",
+            "receipt": {
+              "kind": "advance_diplomatic_orders",
+              "state": {
+                "turn": 2,
+                "rngSeed": 1586005467,
+                "campaignStarted": true,
+                "actedOfficerIds": [],
+                "logCount": 4
+              },
+              "completedOrderIds": [
+                "diplomatic-order-1"
+              ],
+              "activeOrders": [],
+              "appendedLogs": [
+                {
+                  "id": "log-2-003",
+                  "kind": "turn",
+                  "message": "马超抵达安定。",
+                  "turn": 2
+                },
+                {
+                  "id": "log-2-004",
+                  "kind": "map",
+                  "message": "曹操返回濮阳：对韩遂的离间失败。",
+                  "turn": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "b38c1a431db49eefe1823bc5343155b7f285d92dff59bef305e74bc1dd1af908"
+    }
+  ],
   "validationCases": [
     {
       "id": "unsafe-city-money",
@@ -105752,6 +110775,493 @@
       ],
       "expectedPath": "nextStrategicOrderSerial",
       "expectedMessage": "must exceed every active strategic order serial"
+    },
+    {
+      "id": "diplomatic-order-malformed-record",
+      "patches": [
+        {
+          "path": [
+            "diplomaticOrders"
+          ],
+          "value": {
+            "diplomatic-order-1": "malformed"
+          }
+        }
+      ],
+      "expectedPath": "diplomaticOrders.diplomatic-order-1",
+      "expectedMessage": "must be an object"
+    },
+    {
+      "id": "diplomatic-order-unknown-field",
+      "patches": [
+        {
+          "path": [
+            "diplomaticOrders"
+          ],
+          "value": {
+            "diplomatic-order-1": {
+              "id": "diplomatic-order-1",
+              "kind": "alienate",
+              "factionId": "ruler-1",
+              "officerId": "officer-1",
+              "sourceCityId": "city-12",
+              "targetOfficerId": "officer-56",
+              "targetFactionId": "ruler-5",
+              "targetCityId": "city-0",
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "moneyCost": 50,
+              "surprise": true
+            }
+          }
+        },
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "cityId"
+          ],
+          "value": null
+        }
+      ],
+      "expectedPath": "diplomaticOrders.diplomatic-order-1.surprise",
+      "expectedMessage": "is an unknown field"
+    },
+    {
+      "id": "diplomatic-order-leading-zero-id",
+      "patches": [
+        {
+          "path": [
+            "diplomaticOrders"
+          ],
+          "value": {
+            "diplomatic-order-01": {
+              "id": "diplomatic-order-01",
+              "kind": "alienate",
+              "factionId": "ruler-1",
+              "officerId": "officer-1",
+              "sourceCityId": "city-12",
+              "targetOfficerId": "officer-56",
+              "targetFactionId": "ruler-5",
+              "targetCityId": "city-0",
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "moneyCost": 50
+            }
+          }
+        },
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "cityId"
+          ],
+          "value": null
+        }
+      ],
+      "expectedPath": "diplomaticOrders.diplomatic-order-01.id",
+      "expectedMessage": "must use diplomatic-order-N format"
+    },
+    {
+      "id": "diplomatic-order-same-target-faction",
+      "patches": [
+        {
+          "path": [
+            "diplomaticOrders"
+          ],
+          "value": {
+            "diplomatic-order-1": {
+              "id": "diplomatic-order-1",
+              "kind": "alienate",
+              "factionId": "ruler-1",
+              "officerId": "officer-1",
+              "sourceCityId": "city-12",
+              "targetOfficerId": "officer-56",
+              "targetFactionId": "ruler-1",
+              "targetCityId": "city-0",
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "moneyCost": 50
+            }
+          }
+        },
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "cityId"
+          ],
+          "value": null
+        }
+      ],
+      "expectedPath": "diplomaticOrders.diplomatic-order-1.targetFactionId",
+      "expectedMessage": "must differ from the issuing faction"
+    },
+    {
+      "id": "diplomatic-order-unknown-target-officer",
+      "patches": [
+        {
+          "path": [
+            "diplomaticOrders"
+          ],
+          "value": {
+            "diplomatic-order-1": {
+              "id": "diplomatic-order-1",
+              "kind": "alienate",
+              "factionId": "ruler-1",
+              "officerId": "officer-1",
+              "sourceCityId": "city-12",
+              "targetOfficerId": "officer-999",
+              "targetFactionId": "ruler-5",
+              "targetCityId": "city-0",
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "moneyCost": 50
+            }
+          }
+        },
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "cityId"
+          ],
+          "value": null
+        }
+      ],
+      "expectedPath": "diplomaticOrders.diplomatic-order-1.targetOfficerId",
+      "expectedMessage": "unknown officer: officer-999"
+    },
+    {
+      "id": "diplomatic-order-clock-mismatch",
+      "patches": [
+        {
+          "path": [
+            "diplomaticOrders"
+          ],
+          "value": {
+            "diplomatic-order-1": {
+              "id": "diplomatic-order-1",
+              "kind": "alienate",
+              "factionId": "ruler-1",
+              "officerId": "officer-1",
+              "sourceCityId": "city-12",
+              "targetOfficerId": "officer-56",
+              "targetFactionId": "ruler-5",
+              "targetCityId": "city-0",
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 2,
+              "remainingMonths": 1,
+              "moneyCost": 50
+            }
+          }
+        },
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "cityId"
+          ],
+          "value": null
+        }
+      ],
+      "expectedPath": "diplomaticOrders.diplomatic-order-1.remainingMonths",
+      "expectedMessage": "must agree with durationMonths and elapsed campaign turns"
+    },
+    {
+      "id": "diplomatic-order-unsafe-money-cost",
+      "patches": [
+        {
+          "path": [
+            "diplomaticOrders"
+          ],
+          "value": {
+            "diplomatic-order-1": {
+              "id": "diplomatic-order-1",
+              "kind": "alienate",
+              "factionId": "ruler-1",
+              "officerId": "officer-1",
+              "sourceCityId": "city-12",
+              "targetOfficerId": "officer-56",
+              "targetFactionId": "ruler-5",
+              "targetCityId": "city-0",
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "moneyCost": "9007199254740992"
+            }
+          }
+        },
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "cityId"
+          ],
+          "value": null
+        }
+      ],
+      "expectedPath": "diplomaticOrders.diplomatic-order-1.moneyCost",
+      "expectedMessage": "must be a non-negative safe integer"
+    },
+    {
+      "id": "diplomatic-order-future-calendar",
+      "patches": [
+        {
+          "path": [
+            "diplomaticOrders"
+          ],
+          "value": {
+            "diplomatic-order-1": {
+              "id": "diplomatic-order-1",
+              "kind": "alienate",
+              "factionId": "ruler-1",
+              "officerId": "officer-1",
+              "sourceCityId": "city-12",
+              "targetOfficerId": "officer-56",
+              "targetFactionId": "ruler-5",
+              "targetCityId": "city-0",
+              "createdTurn": 1,
+              "createdYear": 191,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "moneyCost": 50
+            }
+          }
+        },
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "cityId"
+          ],
+          "value": null
+        }
+      ],
+      "expectedPath": "diplomaticOrders.diplomatic-order-1.createdYear",
+      "expectedMessage": "creation date must not be later than the current calendar"
+    },
+    {
+      "id": "diplomatic-order-serial-not-monotonic",
+      "patches": [
+        {
+          "path": [
+            "diplomaticOrders"
+          ],
+          "value": {
+            "diplomatic-order-1": {
+              "id": "diplomatic-order-1",
+              "kind": "alienate",
+              "factionId": "ruler-1",
+              "officerId": "officer-1",
+              "sourceCityId": "city-12",
+              "targetOfficerId": "officer-56",
+              "targetFactionId": "ruler-5",
+              "targetCityId": "city-0",
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "moneyCost": 50
+            }
+          }
+        },
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 1
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "cityId"
+          ],
+          "value": null
+        }
+      ],
+      "expectedPath": "nextDiplomaticOrderSerial",
+      "expectedMessage": "must be greater than every existing diplomatic order serial"
+    },
+    {
+      "id": "diplomatic-order-malformed-turn-does-not-crash-validator",
+      "patches": [
+        {
+          "path": [
+            "diplomaticOrders"
+          ],
+          "value": {
+            "diplomatic-order-1": {
+              "id": "diplomatic-order-1",
+              "kind": "alienate",
+              "factionId": "ruler-1",
+              "officerId": "officer-1",
+              "sourceCityId": "city-12",
+              "targetOfficerId": "officer-56",
+              "targetFactionId": "ruler-5",
+              "targetCityId": "city-0",
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "moneyCost": 50
+            }
+          }
+        },
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "cityId"
+          ],
+          "value": null
+        },
+        {
+          "path": [
+            "turn"
+          ],
+          "value": {}
+        }
+      ],
+      "expectedPath": "turn",
+      "expectedMessage": "must be a positive integer"
+    },
+    {
+      "id": "diplomatic-order-serial-unsafe",
+      "patches": [
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": "9007199254740992"
+        }
+      ],
+      "expectedPath": "nextDiplomaticOrderSerial",
+      "expectedMessage": "must be a positive safe integer"
+    },
+    {
+      "id": "ended-campaign-rejects-active-diplomatic-order",
+      "patches": [
+        {
+          "path": [
+            "phase"
+          ],
+          "value": "ended"
+        },
+        {
+          "path": [
+            "outcome"
+          ],
+          "value": "victory"
+        },
+        {
+          "path": [
+            "diplomaticOrders"
+          ],
+          "value": {
+            "diplomatic-order-1": {
+              "id": "diplomatic-order-1",
+              "kind": "alienate",
+              "factionId": "ruler-1",
+              "officerId": "officer-1",
+              "sourceCityId": "city-12",
+              "targetOfficerId": "officer-56",
+              "targetFactionId": "ruler-5",
+              "targetCityId": "city-0",
+              "createdTurn": 1,
+              "createdYear": 190,
+              "createdMonth": 1,
+              "durationMonths": 1,
+              "remainingMonths": 1,
+              "moneyCost": 50
+            }
+          }
+        },
+        {
+          "path": [
+            "nextDiplomaticOrderSerial"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "cityId"
+          ],
+          "value": null
+        }
+      ],
+      "expectedPath": "strategicOrders",
+      "expectedMessage": "all active campaign orders must be empty when the campaign has ended"
     },
     {
       "id": "intel-report-malformed-record",

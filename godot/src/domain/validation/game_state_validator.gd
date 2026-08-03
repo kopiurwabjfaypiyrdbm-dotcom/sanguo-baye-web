@@ -116,6 +116,8 @@ static func _validate(state: Dictionary, initial_contract: bool) -> Array[Dictio
 	var active_order_officers: Dictionary = _validate_active_orders(
 		strategic_orders, diplomatic_orders, factions, cities, officers, issues
 	)
+	if phase == "ended" and (not strategic_orders.is_empty() or not diplomatic_orders.is_empty()):
+		_add(issues, "strategicOrders", "all active campaign orders must be empty when the campaign has ended")
 
 	var item_locations: Dictionary = {}
 	var graph_facts: Dictionary = _validate_cities(
@@ -393,15 +395,18 @@ static func _validate_strategic_orders(
 		if not _is_integer_number(order.get("createdMonth")) or int(order.get("createdMonth", 0)) < 1 \
 				or int(order.get("createdMonth", 0)) > 12:
 			_add(issues, "%s.createdMonth" % path, "must be an integer from 1 to 12")
-		if _is_positive_integer(order.get("createdTurn")) and int(order["createdTurn"]) > int(state.get("turn", 0)):
+		var current_turn_valid: bool = _is_positive_integer(state.get("turn"))
+		var current_turn: int = int(state["turn"]) if current_turn_valid else 0
+		if _is_positive_integer(order.get("createdTurn")) and current_turn_valid \
+				and int(order["createdTurn"]) > current_turn:
 			_add(issues, "%s.createdTurn" % path, "must not be later than the current turn")
 		if _is_positive_integer(order.get("createdYear")) and _is_integer_number(order.get("createdMonth")) \
 				and int(order["createdYear"]) * 12 + int(order["createdMonth"]) \
 				> int(state.get("calendar", {}).get("year", 0)) * 12 + int(state.get("calendar", {}).get("month", 0)):
 			_add(issues, "%s.createdYear" % path, "creation date must not be later than the current calendar")
-		if _is_positive_integer(order.get("createdTurn")) and _is_positive_integer(order.get("durationMonths")) \
+		if current_turn_valid and _is_positive_integer(order.get("createdTurn")) and _is_positive_integer(order.get("durationMonths")) \
 				and _is_positive_integer(order.get("remainingMonths")):
-			var elapsed_turns: int = int(state.get("turn", 0)) - int(order["createdTurn"])
+			var elapsed_turns: int = current_turn - int(order["createdTurn"])
 			if int(order["remainingMonths"]) != int(order["durationMonths"]) - elapsed_turns:
 				_add(issues, "%s.remainingMonths" % path, "must agree with durationMonths and elapsed campaign turns")
 			if _is_positive_integer(order.get("createdYear")) and _is_integer_number(order.get("createdMonth")):
@@ -496,9 +501,10 @@ static func _validate_diplomatic_orders(
 			var officer: Dictionary = officers[officer_id]
 			if officer.get("status") != "serving" or officer.get("factionId") != faction_id:
 				_add(issues, "%s.officerId" % path, "executor must be a serving officer of the order faction")
-		var target_officer_id: String = _required_reference(
-			order.get("targetOfficerId"), "%s.targetOfficerId" % path, officers, issues
-		)
+		var target_officer_id: String = str(order.get("targetOfficerId", ""))
+		if typeof(order.get("targetOfficerId")) != TYPE_STRING or target_officer_id.is_empty() \
+				or not officers.has(target_officer_id):
+			_add(issues, "%s.targetOfficerId" % path, "unknown officer: %s" % target_officer_id)
 		if not target_officer_id.is_empty() and target_officer_id == officer_id:
 			_add(issues, "%s.targetOfficerId" % path, "must differ from the executing officer")
 		for field: String in ["createdTurn", "createdYear", "durationMonths", "remainingMonths"]:
@@ -511,7 +517,10 @@ static func _validate_diplomatic_orders(
 				or int(order.get("createdMonth", 0)) > 12:
 			_add(issues, "%s.createdMonth" % path, "must be an integer from 1 to 12")
 		_validate_non_negative_integer(order.get("moneyCost"), "%s.moneyCost" % path, issues)
-		if _is_positive_integer(order.get("createdTurn")) and int(order["createdTurn"]) > int(state.get("turn", 0)):
+		var current_turn_valid: bool = _is_positive_integer(state.get("turn"))
+		var current_turn: int = int(state["turn"]) if current_turn_valid else 0
+		if _is_positive_integer(order.get("createdTurn")) and current_turn_valid \
+				and int(order["createdTurn"]) > current_turn:
 			_add(issues, "%s.createdTurn" % path, "must not be later than the current turn")
 		var raw_calendar: Variant = state.get("calendar", {})
 		var calendar: Dictionary = raw_calendar if raw_calendar is Dictionary else {}
@@ -520,9 +529,9 @@ static func _validate_diplomatic_orders(
 				and int(order["createdYear"]) * 12 + int(order["createdMonth"]) \
 				> int(calendar.get("year", 0)) * 12 + int(calendar.get("month", 0)):
 			_add(issues, "%s.createdYear" % path, "creation date must not be later than the current calendar")
-		if _is_positive_integer(order.get("createdTurn")) and _is_positive_integer(order.get("durationMonths")) \
+		if current_turn_valid and _is_positive_integer(order.get("createdTurn")) and _is_positive_integer(order.get("durationMonths")) \
 				and _is_positive_integer(order.get("remainingMonths")):
-			var elapsed_turns: int = int(state.get("turn", 0)) - int(order["createdTurn"])
+			var elapsed_turns: int = current_turn - int(order["createdTurn"])
 			if int(order["remainingMonths"]) != int(order["durationMonths"]) - elapsed_turns:
 				_add(issues, "%s.remainingMonths" % path, "must agree with durationMonths and elapsed campaign turns")
 			if _is_positive_integer(order.get("createdYear")) and _is_integer_number(order.get("createdMonth")) \
@@ -533,7 +542,7 @@ static func _validate_diplomatic_orders(
 					_add(issues, "%s.createdYear" % path, "creation date must agree with createdTurn and the current calendar")
 	if _is_positive_integer(state.get("nextDiplomaticOrderSerial")) \
 			and int(state["nextDiplomaticOrderSerial"]) <= highest_serial:
-		_add(issues, "nextDiplomaticOrderSerial", "must exceed every active diplomatic order serial")
+		_add(issues, "nextDiplomaticOrderSerial", "must be greater than every existing diplomatic order serial")
 
 
 static func _validate_cities(
@@ -1045,8 +1054,8 @@ static func _validate_record_id(
 static func _validate_serial(
 		raw: Variant, path: String, initial_contract: bool, issues: Array[Dictionary]
 ) -> void:
-	if not _is_positive_integer(raw):
-		_add(issues, path, "must be a positive integer")
+	if not _is_positive_integer(raw) or int(raw) > JS_MAX_SAFE_INTEGER:
+		_add(issues, path, "must be a positive safe integer")
 	elif initial_contract and int(raw) != 1:
 		_add(issues, path, "must remain 1 in the initial-state contract")
 

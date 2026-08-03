@@ -7,6 +7,7 @@ const OfficerManagementAdapter = preload("res://src/application/commands/officer
 const PersonnelLifecycleAdapter = preload("res://src/application/commands/personnel_lifecycle_adapter.gd")
 const StrategicOrderAdapter = preload("res://src/application/commands/strategic_order_adapter.gd")
 const ReconnaissanceAdapter = preload("res://src/application/commands/reconnaissance_adapter.gd")
+const DiplomaticOrderAdapter = preload("res://src/application/commands/diplomatic_order_adapter.gd")
 const StringContract = preload("res://src/application/commands/application_string_contract.gd")
 
 const ENVELOPE_VERSION: int = 1
@@ -35,6 +36,10 @@ const ADAPTERS: Dictionary = {
 	"issue_move_order": {"module": StrategicOrderAdapter, "generic": true},
 	"issue_transport_order": {"module": StrategicOrderAdapter, "generic": true},
 	"reconnoitre_city": {"module": ReconnaissanceAdapter, "generic": true},
+	"issue_alienate_order": {"module": DiplomaticOrderAdapter, "generic": true},
+	"issue_canvass_order": {"module": DiplomaticOrderAdapter, "generic": true},
+	"issue_counterespionage_order": {"module": DiplomaticOrderAdapter, "generic": true},
+	"issue_induce_order": {"module": DiplomaticOrderAdapter, "generic": true},
 }
 
 
