@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB09",
-  "currentBriefPath": "docs/mission-briefs/MB09-reconnaissance-intelligence-visibility.md",
-  "readyMissionIds": ["MB09"],
+  "currentMissionId": "MB10",
+  "currentBriefPath": "docs/mission-briefs/MB10-diplomacy-and-strategic-orders.md",
+  "readyMissionIds": ["MB10"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -59,15 +59,21 @@
       "briefPath": "docs/mission-briefs/MB08-movement-transport-strategic-logistics.md",
       "reportPath": "docs/migration/mission-reports/MB08-movement-transport-strategic-logistics.md",
       "commit": "4a4f658"
+    },
+    {
+      "id": "MB09",
+      "briefPath": "docs/mission-briefs/MB09-reconnaissance-intelligence-visibility.md",
+      "reportPath": "docs/migration/mission-reports/MB09-reconnaissance-intelligence-visibility.md",
+      "commit": "a2cd2ac"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB08",
-    "commit": "4a4f658",
+    "missionId": "MB09",
+    "commit": "a2cd2ac",
     "date": "2026-08-03"
   },
-  "nextAction": "Implement MB09 by migrating deterministic reconnaissance, validated intelligence snapshots, visibility-safe native queries and touch presentation, and shared TypeScript/Godot fixture evidence.",
+  "nextAction": "Implement MB10 by migrating the four deterministic diplomatic orders, their intelligence-gated cross-month lifecycle and legal faction/officer closure, plus native touch presentation and shared TypeScript/Godot fixture evidence.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
