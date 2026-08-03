@@ -86,13 +86,16 @@ func show_state(snapshot: Dictionary) -> void:
 			if not raw_entry is Dictionary:
 				continue
 			var entry: Dictionary = raw_entry
-			# Map logs contain command-level detail. They are kept in canonical
-			# state for replay, but must not become an enemy-intelligence channel
-			# when the same panel is used for the player's month summary.
-			if str(entry.get("kind", "")) == "map":
+			# Canonical logs are replay evidence, not a presentation ACL. Only
+			# summaries safe for the player's known information are allowed here;
+			# command-level map/turn records can contain hostile resource, route,
+			# officer, or target details and must remain hidden from this panel.
+			if not _is_player_visible_log(entry):
 				continue
 			visible_logs.append(entry)
-		for index: int in range(maxi(0, visible_logs.size() - 6), visible_logs.size()):
+		# Keep the complete safe chronicle in the ScrollContainer. The viewport
+		# remains bounded on compact layouts while users can inspect older entries.
+		for index: int in range(visible_logs.size()):
 			lines.append("• %s" % str(visible_logs[index].get("message", "")))
 		chronicle_label.text = "\n".join(lines) if not lines.is_empty() else tr("尚无战役纪事。城池灾害、人物登场、逃脱与死亡会记录在这里。")
 		succession_row.visible = false
@@ -102,6 +105,23 @@ func show_state(snapshot: Dictionary) -> void:
 	chronicle_scroll.scroll_vertical = 0
 	reset_size()
 	show()
+
+
+func _is_player_visible_log(entry: Dictionary) -> bool:
+	var kind := str(entry.get("kind", ""))
+	if kind in ["ai", "system", "battle"]:
+		return true
+	if kind != "turn":
+		return false
+	var message := str(entry.get("message", ""))
+	# Keep month/calendar and public event summaries while rejecting strategic
+	# order settlement text that names hostile cargo, routes, or officers.
+	if message.begins_with("进入 ") or message.begins_with("各城完成") or message.begins_with("年度更新："):
+		return true
+	for keyword: String in ["饥荒", "旱灾", "水灾", "暴动", "战役结束", "势力瓦解", "病逝", "战死", "新君"]:
+		if message.contains(keyword):
+			return true
+	return false
 
 
 func set_busy(value: bool) -> void:

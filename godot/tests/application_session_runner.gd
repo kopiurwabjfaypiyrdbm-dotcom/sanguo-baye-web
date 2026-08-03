@@ -935,7 +935,7 @@ func _test_lifecycle_outcome_cases(fixture: Dictionary) -> void:
 
 func _test_strategic_turn_cases(fixture: Dictionary) -> void:
 	var cases: Array = fixture.get("strategicTurnCases", [])
-	_assert_equal(cases.size(), 7, "fixture must include seven MB12 strategic-turn cases")
+	_assert_equal(cases.size(), 8, "fixture must include eight MB12 strategic-turn cases")
 	for raw_case: Variant in cases:
 		var test_case: Dictionary = raw_case
 		var campaign: Dictionary = test_case["campaign"]
@@ -978,7 +978,7 @@ func _test_strategic_turn_cases(fixture: Dictionary) -> void:
 			if recovered_result["ok"]:
 				_assert_canonical_equal(recovered_result["receipt"], result["receipt"], "%s MB12 recovered receipt must match" % test_case["id"])
 				_assert_equal(recovered_result["afterStateSha256"], result["afterStateSha256"], "%s MB12 recovered SHA must match" % test_case["id"])
-		if test_case["id"] == "period-1-unattended-month":
+		if test_case["id"] == "period-1-ai-unfrozen-resource-block":
 			var second_command := {
 				"commandEnvelopeVersion": 1,
 				"commandId": "mb12-turn-second",
@@ -995,6 +995,8 @@ func _test_strategic_turn_cases(fixture: Dictionary) -> void:
 				if continuous_second["ok"] and restored_second["ok"]:
 					_assert_canonical_equal(continuous_second["receipt"], restored_second["receipt"], "MB12 second-month receipt must survive recovery")
 					_assert_equal(continuous_second["afterStateSha256"], restored_second["afterStateSha256"], "MB12 second-month SHA must survive recovery")
+					_assert_canonical_equal(continuous_second["receipt"], test_case["secondExpectedReceipt"], "MB12 second-month receipt must match TypeScript")
+					_assert_equal(continuous_second["afterStateSha256"], test_case["secondFinalStateSha256"], "MB12 second-month SHA must match TypeScript")
 	var ended_session := GameSession.new()
 	var ended_started: Dictionary = ended_session.start_mb11_acceptance_demo("victory")
 	_assert_true(ended_started["ok"], "MB12 ended guard fixture must initialize")

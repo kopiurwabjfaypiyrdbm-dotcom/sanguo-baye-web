@@ -485,7 +485,7 @@ func _run() -> void:
 	_assert_equal(map_world.get("_diplomacy_target_id"), "", "opening chronicle must clear a stale diplomacy preview")
 	var long_chronicle: Dictionary = screen.get("_snapshot").duplicate(true)
 	for index: int in range(8):
-		long_chronicle["logs"].append({"id": "mb11-long-%d" % index, "kind": "turn", "message": "年度人物与城池事件长日志 %d：这段文字用于验证小屏滚动区域不会挤压操作按钮。" % index, "turn": 1})
+		long_chronicle["logs"].append({"id": "mb11-long-%d" % index, "kind": "ai", "message": "年度人物与城池事件长日志 %d：这段文字用于验证小屏滚动区域不会挤压操作按钮。" % index, "turn": 1})
 	chronicle_panel.show_state(long_chronicle)
 	chronicle_panel.apply_responsive_layout(true, canvas_scale, physical_size)
 	chronicle_panel.reset_size()
@@ -508,6 +508,18 @@ func _run() -> void:
 	})
 	chronicle_panel.show_state(filtered_chronicle)
 	_assert_true("敌将暗中" not in chronicle_panel.get_node("%ChronicleLabel").text, "chronicle must filter command-level map logs from player summaries")
+	(filtered_chronicle["logs"] as Array).append({
+		"id": "mb12-hidden-turn-log", "kind": "turn", "turn": int(filtered_chronicle["turn"]),
+		"message": "蔡瑁完成对江夏的输送，59 金、31 粮入库，并返回襄阳。",
+	})
+	chronicle_panel.show_state(filtered_chronicle)
+	_assert_true("蔡瑁完成" not in chronicle_panel.get_node("%ChronicleLabel").text, "chronicle must filter hostile strategic-order turn logs from player summaries")
+	(filtered_chronicle["logs"] as Array).append({
+		"id": "mb12-safe-ai-log", "kind": "ai", "turn": int(filtered_chronicle["turn"]),
+		"message": "刘备完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+	})
+	chronicle_panel.show_state(filtered_chronicle)
+	_assert_true("完成 0 项经营行动" in chronicle_panel.get_node("%ChronicleLabel").text, "chronicle must retain safe AI summary logs")
 	# MB12: the production end-turn control must cross the application boundary,
 	# settle deterministic AI/month progression, and surface the resulting chronicle.
 	var turn_before: int = int(screen.get("_snapshot")["turn"])

@@ -535,21 +535,40 @@ function buildStrategicTurnCases() {
     const cleanInput = jsonClean(input) as ProductionState;
     const cleanOutput = jsonClean(output) as ProductionState;
     const aiFactionIds = cleanInput.factionOrder.filter((factionId) => factionId !== cleanInput.playerFactionId);
+    const expectedReceipt = {
+      kind: 'advance_turn',
+      phase: cleanOutput.phase,
+      turn: cleanOutput.turn,
+      calendar: cleanOutput.calendar,
+      rngSeed: cleanOutput.rngSeed,
+      aiFactionIds,
+      appendedLogs: structuredClone(cleanOutput.logs.slice(cleanInput.logs.length)),
+    };
+    // Use the explicitly resource-blocked case for the two-month oracle
+    // comparison: MB12 does not yet migrate tactical attacks, so this case
+    // proves monthly continuity without introducing the deferred battle rule.
+    const secondMonth = id === 'period-1-ai-unfrozen-resource-block'
+      ? jsonClean(advanceTurn(jsonClean(cleanOutput))) as ProductionState
+      : undefined;
     return {
       id,
       campaign: { periodId, rulerSourceIndex },
       patches,
       initialStateSha256: canonicalSha256(cleanInput),
       finalStateSha256: canonicalSha256(cleanOutput),
-      expectedReceipt: {
-        kind: 'advance_turn',
-        phase: cleanOutput.phase,
-        turn: cleanOutput.turn,
-        calendar: cleanOutput.calendar,
-        rngSeed: cleanOutput.rngSeed,
-        aiFactionIds,
-        appendedLogs: structuredClone(cleanOutput.logs.slice(cleanInput.logs.length)),
-      },
+      expectedReceipt,
+      ...(secondMonth ? {
+        secondFinalStateSha256: canonicalSha256(secondMonth),
+        secondExpectedReceipt: {
+          kind: 'advance_turn',
+          phase: secondMonth.phase,
+          turn: secondMonth.turn,
+          calendar: secondMonth.calendar,
+          rngSeed: secondMonth.rngSeed,
+          aiFactionIds: secondMonth.factionOrder.filter((factionId) => factionId !== secondMonth.playerFactionId),
+          appendedLogs: structuredClone(secondMonth.logs.slice(cleanOutput.logs.length)),
+        },
+      } : {}),
     };
   };
   const cases = ([1, 2, 3, 4] as const).map((periodId) => build(`period-${periodId}-unattended-month`, periodId, 1, (state, patches) => {
@@ -561,21 +580,71 @@ function buildStrategicTurnCases() {
   }));
   cases.push(build('period-1-ai-food-stabilization', 1, 1, (state, patches) => {
     const firstAiFactionId = state.factionOrder.find((factionId) => factionId !== state.playerFactionId)!;
+    const neutralFactionId = Object.values(state.factions).find((faction) => faction.isNeutral)?.id;
     const available = Object.values(state.officers)
       .filter((officer) => officer.status === 'serving' && officer.factionId === firstAiFactionId)
       .sort((left, right) => left.id.localeCompare(right.id))[0];
     if (!available?.cityId) throw new Error('MB12 fixture requires a stationed AI officer');
     const cityId = available.cityId;
     const acted = Object.values(state.officers)
-      .filter((officer) => officer.status === 'serving' && officer.factionId !== state.playerFactionId)
+      .filter((officer) => officer.status === 'serving' && officer.factionId === firstAiFactionId)
       .map((officer) => officer.id)
       .filter((officerId) => officerId !== available.id)
       .sort(compareUnicodeScalar);
-    patches.push(
-      { path: ['actedOfficerIds'], value: acted },
-      { path: ['cities', cityId, 'food'], value: 0 },
-      { path: ['cities', cityId, 'money'], value: 2_000 },
-    );
+    for (const officer of Object.values(state.officers)) {
+      if (officer.status !== 'serving' || officer.factionId === state.playerFactionId || officer.factionId === firstAiFactionId) continue;
+      const rulerId = state.factions[officer.factionId].rulerOfficerId;
+      if (officer.id === rulerId) patches.push({ path: ['officers', officer.id, 'stamina'], value: 0 });
+      else patches.push(
+        { path: ['officers', officer.id, 'status'], value: 'free' },
+        { path: ['officers', officer.id, 'factionId'], value: neutralFactionId },
+      );
+    }
+    patches.push({ path: ['actedOfficerIds'], value: acted }, { path: ['cities', cityId, 'food'], value: 0 }, { path: ['cities', cityId, 'money'], value: 2_000 });
+  }));
+  cases.push(build('period-1-ai-selector-coverage', 1, 1, (state, patches, base) => {
+    const firstAiFactionId = state.factionOrder.find((factionId) => factionId !== state.playerFactionId)!;
+    const neutralFactionId = Object.values(state.factions).find((faction) => faction.isNeutral)?.id;
+    const firstAiOfficerIds = Object.values(state.officers)
+      .filter((officer) => officer.status === 'serving' && officer.factionId === firstAiFactionId)
+      .map((officer) => officer.id)
+      .sort(compareUnicodeScalar);
+    for (const officerId of firstAiOfficerIds) {
+      patches.push({ path: ['officers', officerId, 'troops'], value: 0 });
+    }
+    const otherAiOfficerIds: string[] = [];
+    for (const officer of Object.values(state.officers)) {
+      if (officer.status !== 'serving' || officer.factionId === state.playerFactionId || officer.factionId === firstAiFactionId) continue;
+      const rulerId = state.factions[officer.factionId].rulerOfficerId;
+      if (officer.id === rulerId) {
+        patches.push({ path: ['officers', officer.id, 'stamina'], value: 0 });
+      } else if (officer.id !== 'officer-16') {
+        otherAiOfficerIds.push(officer.id);
+        patches.push({ path: ['officers', officer.id, 'status'], value: 'free' },
+          { path: ['officers', officer.id, 'factionId'], value: neutralFactionId });
+      }
+    }
+    otherAiOfficerIds.sort(compareUnicodeScalar);
+    const target = state.officers['officer-16'];
+    if (target && target.factionId !== firstAiFactionId && target.factionId !== state.playerFactionId) {
+      patches.push({ path: ['officers', target.id, 'loyalty'], value: 20 });
+    }
+    const item = state.cities['city-1'].hiddenItemIds?.[0];
+    if (item) {
+      patches.push({ path: ['cities', 'city-1', 'hiddenItemIds'], value: state.cities['city-1'].hiddenItemIds.filter((id) => id !== item) },
+        { path: ['cities', 'city-8', 'itemIds'], value: [item] });
+    }
+    patches.push({ path: ['actedOfficerIds'], value: otherAiOfficerIds },
+      { path: ['cities', 'city-0', 'food'], value: 0 },
+      { path: ['cities', 'city-0', 'money'], value: 2_000 },
+      { path: ['cities', 'city-0', 'reserveTroops'], value: 1_000 },
+      { path: ['cities', 'city-8', 'food'], value: 1_000 },
+      { path: ['cities', 'city-8', 'money'], value: 2_000 },
+      { path: ['cities', 'city-3', 'food'], value: 1_000 },
+      { path: ['cities', 'city-3', 'money'], value: 2_000 });
+    void firstAiOfficerIds;
+    void neutralFactionId;
+    void base;
   }));
   cases.push(build('period-1-ai-unfrozen-resource-block', 1, 1, (state, patches) => {
     const neutralFactionId = Object.values(state.factions).find((faction) => faction.isNeutral)?.id;
