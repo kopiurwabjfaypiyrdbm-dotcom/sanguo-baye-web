@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB23",
-  "currentBriefPath": "docs/mission-briefs/MB23-android-windows-platform-hardening-performance.md",
-  "readyMissionIds": ["MB23"],
+  "currentMissionId": "MB24",
+  "currentBriefPath": "docs/mission-briefs/MB24-full-parity-deterministic-regression-closure.md",
+  "readyMissionIds": ["MB24"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -143,15 +143,21 @@
       "briefPath": "docs/mission-briefs/MB22-tactical-hud-feedback-settings-accessibility.md",
       "reportPath": "docs/migration/mission-reports/MB22-tactical-hud-feedback-settings-accessibility.md",
       "commit": "bbe869b"
+    },
+    {
+      "id": "MB23",
+      "briefPath": "docs/mission-briefs/MB23-android-windows-platform-hardening-performance.md",
+      "reportPath": "docs/migration/mission-reports/MB23-android-windows-platform-hardening-performance.md",
+      "commit": "95b01f4"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB22",
-    "commit": "bbe869b",
+    "missionId": "MB23",
+    "commit": "95b01f4",
     "date": "2026-08-04"
   },
-  "nextAction": "Implement MB23 Android/Windows platform hardening, APK export, device evidence, lifecycle checks, and performance evidence; preserve MB22 tactical HUD contracts.",
+  "nextAction": "Implement MB24 full parity and deterministic regression closure; preserve MB23 platform evidence and carry the bounded MuMu physical-touch P2 gap into the final release evidence.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
