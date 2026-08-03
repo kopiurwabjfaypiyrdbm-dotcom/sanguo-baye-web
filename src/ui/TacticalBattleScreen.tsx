@@ -23,6 +23,7 @@ import type { GameState } from '../core/types';
 import { getOfficerEquipmentIds } from '../core/equipment';
 import type { TacticalMapController } from '../game/createBattleGame';
 import type { GameBridge } from '../game/events';
+import { formatTacticalUnitStatus } from './tacticalBattleUnitStatus';
 
 type TacticalBattleScreenProps = {
   campaign: GameState;
@@ -362,11 +363,11 @@ export function TacticalBattleScreen({
           </div>
         )}
 
-        <button type="button" className="battle-selection-card" disabled={!selectedUnit || isConfirmingAction} onClick={() => togglePanel('details')}>
+        <button type="button" className="battle-selection-card" aria-label="current unit status" disabled={!selectedUnit || isConfirmingAction} onClick={() => togglePanel('details')}>
           {selectedUnit ? (
             <>
               <strong>{selectedUnit.name}</strong>
-              <span>{BAYE_ARMS_LABELS[selectedUnit.armsType]} · 兵 {number.format(selectedUnit.troops)} · {statusLabel(selectedUnit.status)}</span>
+              <span>{formatTacticalUnitStatus(selectedUnit, BAYE_ARMS_LABELS[selectedUnit.armsType], statusLabel(selectedUnit.status))}</span>
               <small>{selectedTerrain === undefined ? '选择单位详情' : `${BAYE_TERRAIN_LABELS[selectedTerrain]} · 计谋点 ${selectedUnit.skillPoints}/${selectedUnit.maxSkillPoints}`}</small>
             </>
           ) : <span>{canCommand ? '点击战场或我军名单选择单位' : isResolving ? '敌方正在行动……' : '等待战斗结算'}</span>}
