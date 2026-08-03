@@ -99,10 +99,6 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 func _open_campaign_setup() -> void:
 	SESSION_CONTEXT.clear()
 	TACTICAL_CONTEXT.clear()
-	var clear_result := PauseRepository.clear_candidates()
-	if not bool(clear_result.get("ok", false)):
-		status_label.text = tr("无法清理战术恢复检查点：错误 %d") % int(clear_result.get("error", ERR_CANT_OPEN))
-		return
 	var error := get_tree().change_scene_to_file("res://scenes/presentation/campaign_setup.tscn")
 	if error != OK:
 		status_label.text = tr("无法打开战役设置：错误 %d") % error

@@ -713,7 +713,9 @@ func resume_battle_recovery() -> Dictionary:
 				var main_revision := int(main_envelope.get("saveRevision", 0))
 				var parent_revision := int(recovery_envelope.get("parentSaveRevision", 0))
 				if main_revision > parent_revision:
-					return _failure("主存档已包含更新状态，拒绝回滚战斗恢复记录")
+					var stale_cold_error := _failure("主存档已包含更新状态，拒绝回滚战斗恢复记录")
+					stale_cold_error["code"] = "stale_recovery"
+					return stale_cold_error
 	if _state != null:
 		if String(recovery_digest["value"]) != state_sha256():
 			var main_save_for_warm_resume: Dictionary = _repository.load()
@@ -725,7 +727,9 @@ func resume_battle_recovery() -> Dictionary:
 			var main_revision := int(main_save_for_warm_resume.get("envelope", {}).get("saveRevision", 0))
 			var parent_revision := int(recovery.get("envelope", {}).get("parentSaveRevision", 0))
 			if not main_is_current_baseline or main_revision > parent_revision:
-				return _failure("当前 session 已包含更新状态，拒绝覆盖战斗恢复记录")
+				var stale_warm_error := _failure("当前 session 已包含更新状态，拒绝覆盖战斗恢复记录")
+				stale_warm_error["code"] = "stale_recovery"
+				return stale_warm_error
 	var envelope: Dictionary = recovery.get("envelope", {})
 	var strategic_save: Dictionary = envelope.get("strategicSave", {})
 	var restored: Dictionary = restore_snapshot(recovery["state"], strategic_save.get("campaign", null))
@@ -777,6 +781,23 @@ func load_game() -> Dictionary:
 	if bool(committed_recovery.get("ok", false)) and bool(committed_recovery.get("found", false)) and str(committed_recovery.get("status", "")) == "committed":
 		var resumed_committed: Dictionary = resume_battle_recovery()
 		if not bool(resumed_committed.get("ok", false)):
+			if String(resumed_committed.get("code", "")) == "stale_recovery":
+				# The main save is newer and remains authoritative. Isolate the old
+				# marker so it cannot brick every subsequent cold start.
+				var stale_clear := _recovery_repository.clear()
+				if not bool(stale_clear.get("ok", false)):
+					return _failure("主存档已载入，但过期战斗标记隔离失败：%s" % stale_clear.get("error", ""))
+				return {
+					"ok": true,
+					"error": "",
+					"path": result["path"],
+					"envelope": normalized_envelope,
+					"migrated": bool(result.get("migrated", false)),
+					"campaign": campaign_descriptor(),
+					"recoveredFrom": result.get("recoveredFrom", ""),
+					"recoveryIgnored": "stale-committed-marker",
+					"state": snapshot(),
+				}
 			return resumed_committed
 		var recovered_save: Dictionary = save_game()
 		if not bool(recovered_save.get("ok", false)):

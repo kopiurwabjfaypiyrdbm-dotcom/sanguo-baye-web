@@ -383,6 +383,13 @@ func _initialize() -> void:
 		_assert_true(stale_written.get("ok", false), "old committed marker must be writable for crash simulation")
 	var cold_stale_resume := GameSession.new(SAVE_PATH).resume_battle_recovery()
 	_assert_true(not cold_stale_resume.get("ok", false), "cold resume must reject marker older than main save: %s" % cold_stale_resume.get("error", ""))
+	var cold_stale_load_session := GameSession.new(SAVE_PATH)
+	var cold_stale_load := cold_stale_load_session.load_game()
+	_assert_true(cold_stale_load.get("ok", false), "cold load must continue from the newer main save after isolating stale marker: %s" % cold_stale_load.get("error", ""))
+	_assert_equal(_digest(cold_stale_load.get("state", {})), _digest(advanced_save.get("state", {})), "stale committed marker must not roll back the newer main save")
+	_assert_equal(cold_stale_load.get("recoveryIgnored", ""), "stale-committed-marker", "cold load must record stale marker isolation")
+	var stale_cleared_after_load := cold_stale_load_session.load_battle_recovery()
+	_assert_true(stale_cleared_after_load.get("ok", false) and not stale_cleared_after_load.get("found", false), "stale committed marker must be cleared after isolation")
 
 	FileAccess.open(ProjectSettings.globalize_path(SAVE_PATH), FileAccess.WRITE).close()
 	var cleaner := GameSession.new(SAVE_PATH)

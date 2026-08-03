@@ -17,6 +17,7 @@ func _run() -> void:
 		root.add_child(screen)
 		await process_frame
 		await process_frame
+		screen.call("_apply_responsive_layout_for_size", viewport_size)
 		_assert_true(screen.get("_session") != null, "tactical presentation must restore its demo session at %s" % viewport_size)
 		var snapshot: Dictionary = screen.get("_snapshot")
 		_assert_true(String(screen.get("_round_label").text).contains("第 1/30 天"), "tactical HUD must show day progress at %s" % viewport_size)
@@ -25,6 +26,9 @@ func _run() -> void:
 		var responsive_scale := minf(float(viewport_size.x) / 1280.0, float(viewport_size.y) / 720.0)
 		for hud_button: Button in [screen.get("_settings_button"), screen.get("_back_button"), screen.get("_turn_button")]:
 			_assert_true(hud_button.custom_minimum_size.y * responsive_scale >= 47.5, "tactical HUD controls must retain 48px physical targets at %s" % viewport_size)
+		var return_dialog: ConfirmationDialog = screen.get("_return_confirmation")
+		for dialog_button: Button in [return_dialog.get_ok_button(), return_dialog.get_cancel_button()]:
+			_assert_true(dialog_button.custom_minimum_size.y * responsive_scale >= 47.5, "tactical return confirmation must retain 48px physical targets at %s" % viewport_size)
 		screen._open_settings()
 		_assert_true(screen.get("_settings_panel").visible, "settings panel must open from tactical HUD at %s" % viewport_size)
 		screen._on_text_scale_selected(1)

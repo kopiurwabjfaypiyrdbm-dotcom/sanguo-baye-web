@@ -3,6 +3,7 @@ extends Control
 const CONTEXT = preload("res://src/application/campaign_launch_context.gd")
 const SESSION_CONTEXT = preload("res://src/application/campaign_session_context.gd")
 const ProductionDataRepository = preload("res://src/application/game_session/production_data_repository.gd")
+const PauseRepository = preload("res://src/application/persistence/tactical_pause_repository.gd")
 const SafeArea = preload("res://src/presentation/safe_area_margin.gd")
 
 @onready var period_option: OptionButton = %PeriodOption
@@ -147,6 +148,12 @@ func _selection_label_reset() -> void:
 
 func _start_campaign() -> void:
 	if start_button.disabled:
+		return
+	# Opening this setup screen is non-destructive. Only an explicit start of a
+	# different campaign is allowed to discard a prior tactical checkpoint.
+	var clear_result := PauseRepository.clear_candidates()
+	if not bool(clear_result.get("ok", false)):
+		selection_label.text = tr("无法清理旧战术恢复检查点：错误 %d") % int(clear_result.get("error", ERR_CANT_OPEN))
 		return
 	SESSION_CONTEXT.clear()
 	CONTEXT.request_campaign(_selected_period, _selected_ruler_source)

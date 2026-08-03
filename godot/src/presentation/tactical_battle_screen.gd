@@ -501,6 +501,13 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	var safe_left := safe_rect.position.x
 	var safe_right := get_viewport_rect().size.x - safe_rect.end.x
 	var compact := physical_size.x <= 900 or physical_size.y <= 440
+	if is_instance_valid(_return_confirmation):
+		var dialog_width := minf(520.0, maxf(300.0, safe_rect.size.x - 24.0))
+		var dialog_touch_size := ceilf(48.0 / maxf(canvas_scale, 0.01))
+		_return_confirmation.min_size = Vector2i(ceili(dialog_width), ceili(dialog_touch_size * 2.0 + 72.0))
+		for dialog_button: Button in [_return_confirmation.get_ok_button(), _return_confirmation.get_cancel_button()]:
+			dialog_button.custom_minimum_size = Vector2(maxf(140.0, dialog_width * 0.34), dialog_touch_size)
+			dialog_button.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)) if compact else 18)
 	_compact_layout = compact
 	var scale := maxf(canvas_scale, 0.01)
 	var touch_size := ceilf(48.0 / scale)
