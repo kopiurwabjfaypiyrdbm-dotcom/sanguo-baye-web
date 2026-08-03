@@ -40,6 +40,7 @@
 | `src/data/itemCatalog.ts` 的 33 项内容 | 仓库初始化时已有的 `data/source/tool-catalog.csv`，固定上游资源、解析器版本和内容哈希尚未重关联 | 为形成可玩闭环而沿用的临时结构化数据；不据此声明原版内容一致，也没有从本地 `.lib`、GPL 包或未授权文档复制新增记录 | `src/data/itemCatalog.test.ts` 只验证内部完整性；重新关联前不得提升证据等级 |
 | `src/core/tacticalBattle.ts`、`src/core/battleRecovery.ts` | `citycmdd.c:g_FgtParam/FightResultDeal`；`Fight.c`；`FightSub.c`；`FgtCount.c`；`FgtPkAi.c:FgtGetCmdRng/FgtGetSklBuf`；本地哈希固定形状证据 | 依据阶段、状态、主将、全军撤退、三类普通攻击语义与道具覆盖顺序重写确定性 Web 战术核心；未导入原版地图与资源。七张程序化结构地图、十项计谋、AI 评分、刷新重开与占城阶段确认仍为现代设计 | `src/core/tacticalBattle.test.ts`、`src/core/battleRecovery.test.ts`、`references/original-rules-calibration-notes.md` |
 | `tools/reference/baye-battle-oracle.c` | 同上 | 参考专用最小 C oracle，保留原常量与运算顺序，不进入产品包 | GCC 生成固定 JSON 后与 TypeScript 差异测试 |
+| `godot/src/domain/ai/strategic_ai.gd`、`godot/src/domain/progression/monthly_economy.gd`、`godot/src/domain/progression/strategic_turn.gd` | Web `src/core/ai.ts`、`src/core/gameLoop.ts`、`src/core/turn.ts`、`src/core/economy.ts`、`src/core/monthReview.ts`；月度事实参考 `infdeal.c` 与 `tactic.c` | 以 GDScript 独立重写稳定势力/城市/人物顺序、内政 AI 子集、月度经济与在途订单阶段；复用 Godot 既有命令适配器与 validator，不链接 TypeScript/C，不复制上游控制流或素材。AI 攻击与战术出征保留到 MB13–MB19 | `godot/data/fixtures/application-session-suite-v1.json` MB12 序列、`godot/tests/application_session_runner.gd`、`godot/tests/presentation_input_smoke.gd`、`npm run godot:application-session:verify` |
 
 上述上游 C 核心标记为 MIT；离线 GPL JavaScript/WASM 只在用户本地执行以产生数值样本，没有复制进仓库或产品构建。`references/vendor/baye-c-core/MANIFEST.json` 绑定锁定提交并校验逐文件内容；早期本地 ZIP 快照仍由 `source-manifest.json` 与夹具内 SHA-256 约束。
 

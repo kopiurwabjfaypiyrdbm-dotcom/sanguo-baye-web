@@ -17,6 +17,7 @@ import { validateGameState } from '../src/core/validation';
 import { nextRandom } from '../src/core/random';
 import { settleCityEvents } from '../src/core/cityEvents';
 import { settleAnnualProgression } from '../src/core/annualProgression';
+import { advanceTurn } from '../src/core/turn';
 import {
   createProductionSessionState,
   OracleApplicationSession,
@@ -57,6 +58,7 @@ function transactionCaseCount(value: ReturnType<typeof buildFixture>) {
     + value.annualProgressionCases.length
     + value.annualProgressionPeriodCases.length
     + value.lifecycleOutcomeCases.length
+    + value.strategicTurnCases.length
     + value.validationCases.length;
 }
 
@@ -171,6 +173,7 @@ export function buildFixture() {
     annualProgressionCases: annualProgression.cases,
     annualProgressionPeriodCases: annualProgression.periodCases,
     lifecycleOutcomeCases: buildLifecycleOutcomeCases(),
+    strategicTurnCases: buildStrategicTurnCases(),
     validationCases: buildValidationCases(),
     modernRulesetCase: buildModernRulesetCase(),
   };
@@ -513,6 +516,59 @@ function buildLifecycleOutcomeCases() {
       outcomeMessages: [message],
     }, campaign);
   }
+  return cases;
+}
+
+function buildStrategicTurnCases() {
+  type ProductionState = ReturnType<typeof createProductionSessionState>;
+  const build = (id: string, periodId: 1 | 2 | 3 | 4, configure?: (state: ProductionState, patches: StatePatch[]) => void) => {
+    const base = createProductionSessionState(periodId, 1);
+    const input = jsonClean(base);
+    const patches: StatePatch[] = [];
+    const aiServingIds = Object.values(input.officers)
+      .filter((officer) => officer.status === 'serving' && officer.factionId !== input.playerFactionId)
+      .map((officer) => officer.id)
+      .sort(compareUnicodeScalar);
+    patches.push({ path: ['actedOfficerIds'], value: aiServingIds });
+    configure?.(input, patches);
+    applyStatePatches(input as unknown as Record<string, unknown>, patches);
+    const output = advanceTurn(jsonClean(input));
+    const cleanInput = jsonClean(input) as ProductionState;
+    const cleanOutput = jsonClean(output) as ProductionState;
+    const aiFactionIds = cleanInput.factionOrder.filter((factionId) => factionId !== cleanInput.playerFactionId);
+    return {
+      id,
+      campaign: { periodId, rulerSourceIndex: 1 },
+      patches,
+      initialStateSha256: canonicalSha256(cleanInput),
+      finalStateSha256: canonicalSha256(cleanOutput),
+      expectedReceipt: {
+        kind: 'advance_turn',
+        phase: cleanOutput.phase,
+        turn: cleanOutput.turn,
+        calendar: cleanOutput.calendar,
+        rngSeed: cleanOutput.rngSeed,
+        aiFactionIds,
+        appendedLogs: structuredClone(cleanOutput.logs.slice(cleanInput.logs.length)),
+      },
+    };
+  };
+  const cases = ([1, 2, 3, 4] as const).map((periodId) => build(`period-${periodId}-unattended-month`, periodId));
+  cases.push(build('period-1-ai-food-stabilization', 1, (state, patches) => {
+    const firstAiFactionId = state.factionOrder.find((factionId) => factionId !== state.playerFactionId)!;
+    const available = Object.values(state.officers)
+      .filter((officer) => officer.status === 'serving' && officer.factionId === firstAiFactionId)
+      .sort((left, right) => left.id.localeCompare(right.id))[0];
+    if (!available?.cityId) throw new Error('MB12 fixture requires a stationed AI officer');
+    const cityId = available.cityId;
+    const acted = (patches.find((patch) => patch.path.join('.') === 'actedOfficerIds')?.value as string[])
+      .filter((officerId) => officerId !== available.id);
+    patches.push(
+      { path: ['actedOfficerIds'], value: acted },
+      { path: ['cities', cityId, 'food'], value: 0 },
+      { path: ['cities', cityId, 'money'], value: 2_000 },
+    );
+  }));
   return cases;
 }
 

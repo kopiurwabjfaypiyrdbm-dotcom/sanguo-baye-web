@@ -249,6 +249,7 @@ func _test_transaction_fixture() -> void:
 	_test_annual_progression_cases(fixture)
 	_test_annual_progression_period_cases(fixture)
 	_test_lifecycle_outcome_cases(fixture)
+	_test_strategic_turn_cases(fixture)
 	_test_validation_cases(fixture, campaign)
 	_test_modern_ruleset_case(fixture, campaign)
 
@@ -930,6 +931,39 @@ func _test_lifecycle_outcome_cases(fixture: Dictionary) -> void:
 		_assert_true(recovery["ok"], "%s MB11 lifecycle output must survive save recovery: %s" % [test_case["id"], recovery.get("error", "")])
 		if recovery["ok"]:
 			_assert_equal(recovered.state_sha256(), test_case["finalStateSha256"], "%s MB11 recovered state SHA must match" % test_case["id"])
+
+
+func _test_strategic_turn_cases(fixture: Dictionary) -> void:
+	var cases: Array = fixture.get("strategicTurnCases", [])
+	_assert_equal(cases.size(), 5, "fixture must include five MB12 strategic-turn cases")
+	for raw_case: Variant in cases:
+		var test_case: Dictionary = raw_case
+		var campaign: Dictionary = test_case["campaign"]
+		var session := GameSession.new()
+		var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+		_assert_true(started["ok"], "%s MB12 campaign must start" % test_case["id"])
+		if not started["ok"]: continue
+		var input: Dictionary = session.snapshot()
+		_apply_patches(input, test_case["patches"])
+		_assert_equal(CanonicalJson.try_sha256(input)["value"], test_case["initialStateSha256"], "%s MB12 input must match TypeScript" % test_case["id"])
+		var restored: Dictionary = session.restore_snapshot(input)
+		_assert_true(restored["ok"], "%s MB12 input must restore before month advance" % test_case["id"])
+		if not restored["ok"]: continue
+		var result: Dictionary = session.advance_turn_month()
+		_assert_true(result["ok"], "%s MB12 month advance must succeed: %s" % [test_case["id"], result.get("error", "")])
+		if not result["ok"]: continue
+		_assert_canonical_equal(result["receipt"], test_case["expectedReceipt"], "%s MB12 receipt must match TypeScript" % test_case["id"])
+		_assert_equal(result["afterStateSha256"], test_case["finalStateSha256"], "%s MB12 state SHA must match TypeScript" % test_case["id"])
+		_assert_equal(Validator.validate_runtime(result["state"]), [], "%s MB12 output must validate" % test_case["id"])
+		var recovered := GameSession.new()
+		var recovered_input: Dictionary = recovered.restore_snapshot(input)
+		_assert_true(recovered_input["ok"], "%s MB12 recovered input must restore" % test_case["id"])
+		if recovered_input["ok"]:
+			var recovered_result: Dictionary = recovered.advance_turn_month()
+			_assert_true(recovered_result["ok"], "%s MB12 recovered month advance must succeed" % test_case["id"])
+			if recovered_result["ok"]:
+				_assert_canonical_equal(recovered_result["receipt"], result["receipt"], "%s MB12 recovered receipt must match" % test_case["id"])
+				_assert_equal(recovered_result["afterStateSha256"], result["afterStateSha256"], "%s MB12 recovered SHA must match" % test_case["id"])
 
 
 func _test_validation_cases(fixture: Dictionary, campaign: Dictionary) -> void:

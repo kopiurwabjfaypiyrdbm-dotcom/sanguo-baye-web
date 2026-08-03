@@ -116713,6 +116713,1420 @@
       }
     }
   ],
+  "strategicTurnCases": [
+    {
+      "id": "period-1-unattended-month",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "actedOfficerIds"
+          ],
+          "value": [
+            "officer-0",
+            "officer-10",
+            "officer-100",
+            "officer-101",
+            "officer-102",
+            "officer-103",
+            "officer-104",
+            "officer-105",
+            "officer-106",
+            "officer-107",
+            "officer-108",
+            "officer-11",
+            "officer-13",
+            "officer-14",
+            "officer-15",
+            "officer-16",
+            "officer-17",
+            "officer-18",
+            "officer-19",
+            "officer-2",
+            "officer-20",
+            "officer-21",
+            "officer-22",
+            "officer-23",
+            "officer-24",
+            "officer-25",
+            "officer-26",
+            "officer-27",
+            "officer-29",
+            "officer-3",
+            "officer-30",
+            "officer-31",
+            "officer-38",
+            "officer-39",
+            "officer-4",
+            "officer-40",
+            "officer-41",
+            "officer-42",
+            "officer-43",
+            "officer-44",
+            "officer-45",
+            "officer-46",
+            "officer-47",
+            "officer-49",
+            "officer-5",
+            "officer-50",
+            "officer-51",
+            "officer-52",
+            "officer-53",
+            "officer-56",
+            "officer-57",
+            "officer-58",
+            "officer-6",
+            "officer-60",
+            "officer-61",
+            "officer-62",
+            "officer-63",
+            "officer-64",
+            "officer-65",
+            "officer-66",
+            "officer-67",
+            "officer-68",
+            "officer-7",
+            "officer-70",
+            "officer-71",
+            "officer-72",
+            "officer-73",
+            "officer-74",
+            "officer-75",
+            "officer-76",
+            "officer-77",
+            "officer-78",
+            "officer-79",
+            "officer-8",
+            "officer-80",
+            "officer-81",
+            "officer-82",
+            "officer-83",
+            "officer-84",
+            "officer-85",
+            "officer-89",
+            "officer-9",
+            "officer-90",
+            "officer-91",
+            "officer-92",
+            "officer-93",
+            "officer-94",
+            "officer-95",
+            "officer-96",
+            "officer-97",
+            "officer-98",
+            "officer-99"
+          ]
+        }
+      ],
+      "initialStateSha256": "f936a05d2e3c2175585ed323324c0d111882a91dba7eb3db4cfd5b4becf06838",
+      "finalStateSha256": "aeca7eb81e8f4bb2d032378379910c26b5a54d04454e6b80b5871615a2763846",
+      "expectedReceipt": {
+        "kind": "advance_turn",
+        "phase": "player",
+        "turn": 2,
+        "calendar": {
+          "year": 190,
+          "month": 2
+        },
+        "rngSeed": 966516736,
+        "aiFactionIds": [
+          "ruler-5",
+          "ruler-16",
+          "ruler-17",
+          "ruler-9",
+          "ruler-13",
+          "ruler-2",
+          "ruler-7",
+          "ruler-11",
+          "ruler-0",
+          "ruler-10",
+          "ruler-6",
+          "ruler-18",
+          "ruler-8",
+          "ruler-3",
+          "ruler-15",
+          "ruler-14",
+          "ruler-4"
+        ],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "玩家阶段结束，进入 AI 阶段。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-003",
+            "kind": "ai",
+            "message": "马腾军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-004",
+            "kind": "ai",
+            "message": "公孙瓒军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-005",
+            "kind": "ai",
+            "message": "公孙度军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-006",
+            "kind": "ai",
+            "message": "张杨军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-007",
+            "kind": "ai",
+            "message": "刘备军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-008",
+            "kind": "ai",
+            "message": "袁绍军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-009",
+            "kind": "ai",
+            "message": "孔融军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-010",
+            "kind": "ai",
+            "message": "王匡军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-011",
+            "kind": "ai",
+            "message": "董卓军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-012",
+            "kind": "ai",
+            "message": "韩馥军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-013",
+            "kind": "ai",
+            "message": "陶谦军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-014",
+            "kind": "ai",
+            "message": "张鲁军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-015",
+            "kind": "ai",
+            "message": "刘岱军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-016",
+            "kind": "ai",
+            "message": "袁术军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-017",
+            "kind": "ai",
+            "message": "刘焉军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-018",
+            "kind": "ai",
+            "message": "刘表军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-019",
+            "kind": "ai",
+            "message": "孙坚军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-2-020",
+            "kind": "turn",
+            "message": "各城完成军粮、人口和体力结算。本月没有季节性税收或粮食收获。",
+            "turn": 2
+          },
+          {
+            "id": "log-2-021",
+            "kind": "turn",
+            "message": "进入 190 年 2 月。",
+            "turn": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "period-2-unattended-month",
+      "campaign": {
+        "periodId": 2,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "actedOfficerIds"
+          ],
+          "value": [
+            "officer-0",
+            "officer-10",
+            "officer-100",
+            "officer-101",
+            "officer-102",
+            "officer-103",
+            "officer-104",
+            "officer-105",
+            "officer-106",
+            "officer-107",
+            "officer-108",
+            "officer-109",
+            "officer-11",
+            "officer-110",
+            "officer-111",
+            "officer-112",
+            "officer-113",
+            "officer-114",
+            "officer-115",
+            "officer-116",
+            "officer-117",
+            "officer-118",
+            "officer-119",
+            "officer-12",
+            "officer-120",
+            "officer-121",
+            "officer-122",
+            "officer-123",
+            "officer-124",
+            "officer-125",
+            "officer-126",
+            "officer-127",
+            "officer-128",
+            "officer-129",
+            "officer-13",
+            "officer-130",
+            "officer-131",
+            "officer-132",
+            "officer-133",
+            "officer-134",
+            "officer-135",
+            "officer-136",
+            "officer-137",
+            "officer-138",
+            "officer-139",
+            "officer-14",
+            "officer-15",
+            "officer-16",
+            "officer-17",
+            "officer-179",
+            "officer-18",
+            "officer-2",
+            "officer-3",
+            "officer-31",
+            "officer-32",
+            "officer-33",
+            "officer-34",
+            "officer-35",
+            "officer-36",
+            "officer-37",
+            "officer-38",
+            "officer-39",
+            "officer-4",
+            "officer-40",
+            "officer-41",
+            "officer-42",
+            "officer-43",
+            "officer-44",
+            "officer-45",
+            "officer-46",
+            "officer-47",
+            "officer-48",
+            "officer-49",
+            "officer-5",
+            "officer-50",
+            "officer-51",
+            "officer-52",
+            "officer-53",
+            "officer-54",
+            "officer-55",
+            "officer-56",
+            "officer-57",
+            "officer-58",
+            "officer-59",
+            "officer-6",
+            "officer-60",
+            "officer-61",
+            "officer-62",
+            "officer-63",
+            "officer-64",
+            "officer-65",
+            "officer-66",
+            "officer-67",
+            "officer-68",
+            "officer-69",
+            "officer-7",
+            "officer-70",
+            "officer-71",
+            "officer-72",
+            "officer-73",
+            "officer-74",
+            "officer-75",
+            "officer-76",
+            "officer-77",
+            "officer-78",
+            "officer-79",
+            "officer-8",
+            "officer-80",
+            "officer-81",
+            "officer-82",
+            "officer-83",
+            "officer-84",
+            "officer-85",
+            "officer-86",
+            "officer-87",
+            "officer-88",
+            "officer-89",
+            "officer-9",
+            "officer-90",
+            "officer-91",
+            "officer-92",
+            "officer-93",
+            "officer-94",
+            "officer-95",
+            "officer-96",
+            "officer-97",
+            "officer-98",
+            "officer-99"
+          ]
+        }
+      ],
+      "initialStateSha256": "64701bb778a5ecedfcaa5fe0277c5f33c7b54af8ce09eeffc00252f88af50675",
+      "finalStateSha256": "9ad330d8e8cb529fbf28a81b5ab2f6d072d9b2ea24c78149314e453026e93192",
+      "expectedReceipt": {
+        "kind": "advance_turn",
+        "phase": "player",
+        "turn": 2,
+        "calendar": {
+          "year": 198,
+          "month": 2
+        },
+        "rngSeed": 4062994929,
+        "aiFactionIds": [
+          "ruler-11",
+          "ruler-3",
+          "ruler-10",
+          "ruler-15",
+          "ruler-0",
+          "ruler-8",
+          "ruler-2",
+          "ruler-14",
+          "ruler-13",
+          "ruler-7",
+          "ruler-4",
+          "ruler-5",
+          "ruler-12",
+          "ruler-9",
+          "ruler-6"
+        ],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "玩家阶段结束，进入 AI 阶段。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-003",
+            "kind": "ai",
+            "message": "马腾军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-004",
+            "kind": "ai",
+            "message": "袁绍军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-005",
+            "kind": "ai",
+            "message": "公孙度军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-006",
+            "kind": "ai",
+            "message": "孔融军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-007",
+            "kind": "ai",
+            "message": "李傕军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-008",
+            "kind": "ai",
+            "message": "吕布军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-009",
+            "kind": "ai",
+            "message": "刘备军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-010",
+            "kind": "ai",
+            "message": "张鲁军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-011",
+            "kind": "ai",
+            "message": "刘璋军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-012",
+            "kind": "ai",
+            "message": "张绣军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-013",
+            "kind": "ai",
+            "message": "袁术军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-014",
+            "kind": "ai",
+            "message": "孙策军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-015",
+            "kind": "ai",
+            "message": "刘表军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-016",
+            "kind": "ai",
+            "message": "韩玄军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-017",
+            "kind": "ai",
+            "message": "张邈军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-2-018",
+            "kind": "turn",
+            "message": "各城完成军粮、人口和体力结算。本月没有季节性税收或粮食收获。",
+            "turn": 2
+          },
+          {
+            "id": "log-2-019",
+            "kind": "turn",
+            "message": "许昌发生旱灾。",
+            "turn": 2
+          },
+          {
+            "id": "log-2-020",
+            "kind": "turn",
+            "message": "进入 198 年 2 月。",
+            "turn": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "period-3-unattended-month",
+      "campaign": {
+        "periodId": 3,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "actedOfficerIds"
+          ],
+          "value": [
+            "officer-0",
+            "officer-10",
+            "officer-100",
+            "officer-101",
+            "officer-102",
+            "officer-103",
+            "officer-104",
+            "officer-105",
+            "officer-106",
+            "officer-107",
+            "officer-108",
+            "officer-109",
+            "officer-11",
+            "officer-110",
+            "officer-111",
+            "officer-112",
+            "officer-113",
+            "officer-114",
+            "officer-115",
+            "officer-116",
+            "officer-117",
+            "officer-118",
+            "officer-119",
+            "officer-12",
+            "officer-120",
+            "officer-121",
+            "officer-122",
+            "officer-123",
+            "officer-124",
+            "officer-125",
+            "officer-126",
+            "officer-127",
+            "officer-128",
+            "officer-129",
+            "officer-130",
+            "officer-131",
+            "officer-132",
+            "officer-133",
+            "officer-134",
+            "officer-135",
+            "officer-136",
+            "officer-137",
+            "officer-138",
+            "officer-139",
+            "officer-14",
+            "officer-140",
+            "officer-141",
+            "officer-142",
+            "officer-143",
+            "officer-144",
+            "officer-145",
+            "officer-146",
+            "officer-147",
+            "officer-148",
+            "officer-149",
+            "officer-150",
+            "officer-151",
+            "officer-158",
+            "officer-17",
+            "officer-173",
+            "officer-18",
+            "officer-19",
+            "officer-2",
+            "officer-20",
+            "officer-21",
+            "officer-22",
+            "officer-23",
+            "officer-24",
+            "officer-25",
+            "officer-26",
+            "officer-27",
+            "officer-28",
+            "officer-29",
+            "officer-3",
+            "officer-30",
+            "officer-31",
+            "officer-32",
+            "officer-33",
+            "officer-34",
+            "officer-35",
+            "officer-36",
+            "officer-37",
+            "officer-38",
+            "officer-39",
+            "officer-4",
+            "officer-40",
+            "officer-41",
+            "officer-42",
+            "officer-43",
+            "officer-44",
+            "officer-45",
+            "officer-46",
+            "officer-47",
+            "officer-48",
+            "officer-49",
+            "officer-5",
+            "officer-50",
+            "officer-51",
+            "officer-52",
+            "officer-53",
+            "officer-54",
+            "officer-55",
+            "officer-56",
+            "officer-57",
+            "officer-58",
+            "officer-59",
+            "officer-6",
+            "officer-60",
+            "officer-61",
+            "officer-62",
+            "officer-63",
+            "officer-64",
+            "officer-65",
+            "officer-66",
+            "officer-67",
+            "officer-68",
+            "officer-69",
+            "officer-7",
+            "officer-70",
+            "officer-71",
+            "officer-72",
+            "officer-73",
+            "officer-74",
+            "officer-75",
+            "officer-76",
+            "officer-77",
+            "officer-78",
+            "officer-79",
+            "officer-8",
+            "officer-80",
+            "officer-81",
+            "officer-82",
+            "officer-83",
+            "officer-84",
+            "officer-85",
+            "officer-86",
+            "officer-87",
+            "officer-88",
+            "officer-89",
+            "officer-9",
+            "officer-90",
+            "officer-91",
+            "officer-92",
+            "officer-93",
+            "officer-94",
+            "officer-95",
+            "officer-96",
+            "officer-97",
+            "officer-98",
+            "officer-99"
+          ]
+        }
+      ],
+      "initialStateSha256": "fa0a588c854f102b9d0c6ae5cade814bd90df01001077514974988b2ca4ae4c0",
+      "finalStateSha256": "76ccfcab5a6eef27583f1c786ebff7c7d6c0645d12c065e3335945405a3967e1",
+      "expectedReceipt": {
+        "kind": "advance_turn",
+        "phase": "player",
+        "turn": 2,
+        "calendar": {
+          "year": 208,
+          "month": 2
+        },
+        "rngSeed": 3690204201,
+        "aiFactionIds": [
+          "ruler-7",
+          "ruler-4",
+          "ruler-10",
+          "ruler-8",
+          "ruler-9",
+          "ruler-6",
+          "ruler-5",
+          "ruler-3",
+          "ruler-0",
+          "ruler-2"
+        ],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "玩家阶段结束，进入 AI 阶段。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-003",
+            "kind": "ai",
+            "message": "马腾军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-004",
+            "kind": "ai",
+            "message": "曹操军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-005",
+            "kind": "ai",
+            "message": "公孙康军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-006",
+            "kind": "ai",
+            "message": "张鲁军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-007",
+            "kind": "ai",
+            "message": "刘璋军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-008",
+            "kind": "ai",
+            "message": "孙权军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-009",
+            "kind": "ai",
+            "message": "刘备军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-010",
+            "kind": "ai",
+            "message": "金旋军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-011",
+            "kind": "ai",
+            "message": "韩玄军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-012",
+            "kind": "ai",
+            "message": "赵范军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-2-013",
+            "kind": "turn",
+            "message": "各城完成军粮、人口和体力结算。本月没有季节性税收或粮食收获。",
+            "turn": 2
+          },
+          {
+            "id": "log-2-014",
+            "kind": "turn",
+            "message": "进入 208 年 2 月。",
+            "turn": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "period-4-unattended-month",
+      "campaign": {
+        "periodId": 4,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "actedOfficerIds"
+          ],
+          "value": [
+            "officer-0",
+            "officer-10",
+            "officer-104",
+            "officer-105",
+            "officer-106",
+            "officer-107",
+            "officer-108",
+            "officer-109",
+            "officer-11",
+            "officer-110",
+            "officer-111",
+            "officer-112",
+            "officer-113",
+            "officer-114",
+            "officer-115",
+            "officer-116",
+            "officer-117",
+            "officer-118",
+            "officer-119",
+            "officer-12",
+            "officer-120",
+            "officer-121",
+            "officer-122",
+            "officer-123",
+            "officer-124",
+            "officer-125",
+            "officer-126",
+            "officer-127",
+            "officer-128",
+            "officer-129",
+            "officer-130",
+            "officer-131",
+            "officer-132",
+            "officer-133",
+            "officer-134",
+            "officer-135",
+            "officer-136",
+            "officer-137",
+            "officer-138",
+            "officer-139",
+            "officer-14",
+            "officer-140",
+            "officer-141",
+            "officer-142",
+            "officer-143",
+            "officer-144",
+            "officer-145",
+            "officer-146",
+            "officer-147",
+            "officer-148",
+            "officer-149",
+            "officer-16",
+            "officer-17",
+            "officer-18",
+            "officer-19",
+            "officer-2",
+            "officer-20",
+            "officer-21",
+            "officer-22",
+            "officer-23",
+            "officer-24",
+            "officer-25",
+            "officer-26",
+            "officer-27",
+            "officer-28",
+            "officer-29",
+            "officer-3",
+            "officer-30",
+            "officer-31",
+            "officer-32",
+            "officer-33",
+            "officer-34",
+            "officer-35",
+            "officer-36",
+            "officer-37",
+            "officer-38",
+            "officer-39",
+            "officer-4",
+            "officer-40",
+            "officer-41",
+            "officer-42",
+            "officer-43",
+            "officer-44",
+            "officer-45",
+            "officer-46",
+            "officer-47",
+            "officer-48",
+            "officer-49",
+            "officer-5",
+            "officer-50",
+            "officer-51",
+            "officer-52",
+            "officer-53",
+            "officer-54",
+            "officer-55",
+            "officer-56",
+            "officer-57",
+            "officer-58",
+            "officer-59",
+            "officer-6",
+            "officer-60",
+            "officer-61",
+            "officer-62",
+            "officer-63",
+            "officer-64",
+            "officer-65",
+            "officer-66",
+            "officer-67",
+            "officer-68",
+            "officer-69",
+            "officer-7",
+            "officer-70",
+            "officer-71",
+            "officer-8",
+            "officer-9"
+          ]
+        }
+      ],
+      "initialStateSha256": "7ebdc9ed34d29260f30463a7ca0f078972ec89f450660edf58f12accfe5f515d",
+      "finalStateSha256": "e2910c208dadcccc991ee194edc8f11ef8847b391f4ec7ba94f9e722e9d4ad14",
+      "expectedReceipt": {
+        "kind": "advance_turn",
+        "phase": "player",
+        "turn": 2,
+        "calendar": {
+          "year": 225,
+          "month": 2
+        },
+        "rngSeed": 67956271,
+        "aiFactionIds": [
+          "ruler-0",
+          "ruler-4",
+          "ruler-2",
+          "ruler-3"
+        ],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "玩家阶段结束，进入 AI 阶段。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-003",
+            "kind": "ai",
+            "message": "曹丕军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-004",
+            "kind": "ai",
+            "message": "公孙康军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-005",
+            "kind": "ai",
+            "message": "孙权军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-006",
+            "kind": "ai",
+            "message": "孟获军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-2-007",
+            "kind": "turn",
+            "message": "各城完成军粮、人口和体力结算。本月没有季节性税收或粮食收获。",
+            "turn": 2
+          },
+          {
+            "id": "log-2-008",
+            "kind": "turn",
+            "message": "汉中发生水灾。",
+            "turn": 2
+          },
+          {
+            "id": "log-2-009",
+            "kind": "turn",
+            "message": "成都发生旱灾。",
+            "turn": 2
+          },
+          {
+            "id": "log-2-010",
+            "kind": "turn",
+            "message": "棉竹发生水灾。",
+            "turn": 2
+          },
+          {
+            "id": "log-2-011",
+            "kind": "turn",
+            "message": "进入 225 年 2 月。",
+            "turn": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "period-1-ai-food-stabilization",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "actedOfficerIds"
+          ],
+          "value": [
+            "officer-0",
+            "officer-10",
+            "officer-100",
+            "officer-101",
+            "officer-102",
+            "officer-103",
+            "officer-104",
+            "officer-105",
+            "officer-106",
+            "officer-107",
+            "officer-108",
+            "officer-11",
+            "officer-13",
+            "officer-14",
+            "officer-15",
+            "officer-16",
+            "officer-17",
+            "officer-18",
+            "officer-19",
+            "officer-2",
+            "officer-20",
+            "officer-21",
+            "officer-22",
+            "officer-23",
+            "officer-24",
+            "officer-25",
+            "officer-26",
+            "officer-27",
+            "officer-29",
+            "officer-3",
+            "officer-30",
+            "officer-31",
+            "officer-38",
+            "officer-39",
+            "officer-4",
+            "officer-40",
+            "officer-41",
+            "officer-42",
+            "officer-43",
+            "officer-44",
+            "officer-45",
+            "officer-46",
+            "officer-47",
+            "officer-49",
+            "officer-5",
+            "officer-50",
+            "officer-51",
+            "officer-52",
+            "officer-53",
+            "officer-56",
+            "officer-57",
+            "officer-58",
+            "officer-6",
+            "officer-60",
+            "officer-61",
+            "officer-62",
+            "officer-63",
+            "officer-64",
+            "officer-65",
+            "officer-66",
+            "officer-67",
+            "officer-68",
+            "officer-7",
+            "officer-70",
+            "officer-71",
+            "officer-72",
+            "officer-73",
+            "officer-74",
+            "officer-75",
+            "officer-76",
+            "officer-77",
+            "officer-78",
+            "officer-79",
+            "officer-8",
+            "officer-80",
+            "officer-81",
+            "officer-82",
+            "officer-83",
+            "officer-84",
+            "officer-85",
+            "officer-89",
+            "officer-9",
+            "officer-90",
+            "officer-91",
+            "officer-92",
+            "officer-93",
+            "officer-94",
+            "officer-95",
+            "officer-96",
+            "officer-97",
+            "officer-98",
+            "officer-99"
+          ]
+        },
+        {
+          "path": [
+            "actedOfficerIds"
+          ],
+          "value": [
+            "officer-0",
+            "officer-10",
+            "officer-100",
+            "officer-101",
+            "officer-102",
+            "officer-103",
+            "officer-104",
+            "officer-105",
+            "officer-106",
+            "officer-107",
+            "officer-108",
+            "officer-11",
+            "officer-13",
+            "officer-14",
+            "officer-15",
+            "officer-16",
+            "officer-17",
+            "officer-18",
+            "officer-19",
+            "officer-2",
+            "officer-20",
+            "officer-21",
+            "officer-22",
+            "officer-23",
+            "officer-24",
+            "officer-25",
+            "officer-26",
+            "officer-27",
+            "officer-29",
+            "officer-3",
+            "officer-30",
+            "officer-31",
+            "officer-38",
+            "officer-39",
+            "officer-4",
+            "officer-40",
+            "officer-41",
+            "officer-42",
+            "officer-43",
+            "officer-44",
+            "officer-45",
+            "officer-46",
+            "officer-47",
+            "officer-49",
+            "officer-50",
+            "officer-51",
+            "officer-52",
+            "officer-53",
+            "officer-56",
+            "officer-57",
+            "officer-58",
+            "officer-6",
+            "officer-60",
+            "officer-61",
+            "officer-62",
+            "officer-63",
+            "officer-64",
+            "officer-65",
+            "officer-66",
+            "officer-67",
+            "officer-68",
+            "officer-7",
+            "officer-70",
+            "officer-71",
+            "officer-72",
+            "officer-73",
+            "officer-74",
+            "officer-75",
+            "officer-76",
+            "officer-77",
+            "officer-78",
+            "officer-79",
+            "officer-8",
+            "officer-80",
+            "officer-81",
+            "officer-82",
+            "officer-83",
+            "officer-84",
+            "officer-85",
+            "officer-89",
+            "officer-9",
+            "officer-90",
+            "officer-91",
+            "officer-92",
+            "officer-93",
+            "officer-94",
+            "officer-95",
+            "officer-96",
+            "officer-97",
+            "officer-98",
+            "officer-99"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "food"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "money"
+          ],
+          "value": 2000
+        }
+      ],
+      "initialStateSha256": "8e85e1a32bec88d2848bf27b55f979fbdbba72de6b5199ee3975a43d4b3ad184",
+      "finalStateSha256": "fa12c98f77116553bcf49af996c1822c1d0a1bfcca4c48b2a46105d3d3857db4",
+      "expectedReceipt": {
+        "kind": "advance_turn",
+        "phase": "player",
+        "turn": 2,
+        "calendar": {
+          "year": 190,
+          "month": 2
+        },
+        "rngSeed": 966516736,
+        "aiFactionIds": [
+          "ruler-5",
+          "ruler-16",
+          "ruler-17",
+          "ruler-9",
+          "ruler-13",
+          "ruler-2",
+          "ruler-7",
+          "ruler-11",
+          "ruler-0",
+          "ruler-10",
+          "ruler-6",
+          "ruler-18",
+          "ruler-8",
+          "ruler-3",
+          "ruler-15",
+          "ruler-14",
+          "ruler-4"
+        ],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "玩家阶段结束，进入 AI 阶段。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-003",
+            "kind": "map",
+            "message": "马腾在天水买入 33 粮，花费 165 金，消耗体力 12。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-004",
+            "kind": "ai",
+            "message": "马腾军完成 1 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-005",
+            "kind": "ai",
+            "message": "公孙瓒军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-006",
+            "kind": "ai",
+            "message": "公孙度军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-007",
+            "kind": "ai",
+            "message": "张杨军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-008",
+            "kind": "ai",
+            "message": "刘备军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-009",
+            "kind": "ai",
+            "message": "袁绍军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-010",
+            "kind": "ai",
+            "message": "孔融军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-011",
+            "kind": "ai",
+            "message": "王匡军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-012",
+            "kind": "ai",
+            "message": "董卓军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-013",
+            "kind": "ai",
+            "message": "韩馥军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-014",
+            "kind": "ai",
+            "message": "陶谦军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-015",
+            "kind": "ai",
+            "message": "张鲁军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-016",
+            "kind": "ai",
+            "message": "刘岱军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-017",
+            "kind": "ai",
+            "message": "袁术军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-018",
+            "kind": "ai",
+            "message": "刘焉军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-019",
+            "kind": "ai",
+            "message": "刘表军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-020",
+            "kind": "ai",
+            "message": "孙坚军完成 0 项经营行动，未出征：没有具备出征条件的边境部队。",
+            "turn": 1
+          },
+          {
+            "id": "log-2-021",
+            "kind": "turn",
+            "message": "各城完成军粮、人口和体力结算。本月没有季节性税收或粮食收获。",
+            "turn": 2
+          },
+          {
+            "id": "log-2-022",
+            "kind": "turn",
+            "message": "进入 190 年 2 月。",
+            "turn": 2
+          }
+        ]
+      }
+    }
+  ],
   "validationCases": [
     {
       "id": "unsafe-city-money",

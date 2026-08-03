@@ -29,6 +29,7 @@ const ZOOM_STEP := 1.14
 @onready var save_button: Button = %SaveButton
 @onready var load_button: Button = %LoadButton
 @onready var chronicle_button: Button = %ChronicleButton
+@onready var end_turn_button: Button = %EndTurnButton
 @onready var city_card: CityCard = %CityCard
 @onready var officer_panel = %OfficerManagementPanel
 @onready var personnel_panel = %PersonnelLifecyclePanel
@@ -121,6 +122,7 @@ func _configure_localized_ui() -> void:
 	save_button.tooltip_text = tr("保存当前最小 GameState")
 	load_button.tooltip_text = tr("重建 GameSession 并载入存档")
 	chronicle_button.tooltip_text = tr("查看年月、事件、继承与战役结局")
+	end_turn_button.tooltip_text = tr("结束玩家阶段，执行确定性 AI 与月度结算")
 	_apply_responsive_labels()
 
 
@@ -130,6 +132,7 @@ func _connect_ui() -> void:
 	save_button.pressed.connect(_save_game)
 	load_button.pressed.connect(_load_game)
 	chronicle_button.pressed.connect(_open_chronicle)
+	end_turn_button.pressed.connect(_advance_turn_month)
 	city_card.command_requested.connect(_execute_internal_command)
 	city_card.officer_management_requested.connect(_open_officer_management)
 	city_card.personnel_lifecycle_requested.connect(_open_personnel_lifecycle)
@@ -169,6 +172,7 @@ func _refresh_snapshot(keep_card_open: bool = true) -> bool:
 	_snapshot = value as Dictionary
 	map_world.rebuild(_snapshot)
 	_update_hud_from_snapshot()
+	end_turn_button.disabled = str(_snapshot.get("phase", "")) != "player"
 	if str(_snapshot.get("phase", "")) in ["succession", "ended"]:
 		chronicle_panel.show_state(_snapshot)
 
@@ -421,6 +425,23 @@ func _open_chronicle() -> void:
 	chronicle_panel.show_state(_snapshot)
 	chronicle_panel.apply_responsive_layout(_compact_layout, _current_canvas_scale(), DisplayServer.window_get_size())
 	chronicle_panel.place_in(_get_card_usable_rect())
+
+
+func _advance_turn_month() -> void:
+	if not is_instance_valid(_session) or str(_snapshot.get("phase", "")) != "player":
+		_set_status(tr("当前阶段不能结束玩家回合"), "warning")
+		return
+	_set_interaction_busy(true)
+	_set_status(tr("正在执行诸侯行动与月度结算……"), "busy")
+	var result: Dictionary = _call_session("advance_turn_month")
+	_set_interaction_busy(false)
+	if not bool(result.get("ok", false)):
+		_set_status(tr("月度推进失败：%s") % _result_error(result), "error")
+		return
+	_refresh_snapshot(false)
+	_open_chronicle()
+	var calendar: Dictionary = _as_dictionary(_snapshot.get("calendar", {}))
+	_set_status(tr("已进入 %d 年 %d 月 · AI 与月度结算完成") % [int(calendar.get("year", 0)), int(calendar.get("month", 0))], "success")
 
 
 func _close_chronicle() -> void:
@@ -960,13 +981,14 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	save_button.text = tr("存" if compact else "保存")
 	load_button.text = tr("读" if compact else "读取")
 	chronicle_button.text = tr("纪" if compact else "纪事")
+	end_turn_button.text = tr("月" if compact else "结束本月")
 
 	if compact:
 		var touch_size := ceilf(48.0 / maxf(canvas_scale, 0.01))
 		var label_font_size := ceili(15.0 / maxf(canvas_scale, 0.01))
 		var action_font_size := ceili(17.0 / maxf(canvas_scale, 0.01))
 		top_panel.custom_minimum_size = Vector2(0.0, touch_size + 14.0)
-		for button: Button in [world_button, player_button, save_button, load_button, chronicle_button]:
+		for button: Button in [world_button, player_button, save_button, load_button, chronicle_button, end_turn_button]:
 			button.custom_minimum_size = Vector2(touch_size, touch_size)
 			button.add_theme_font_size_override("font_size", action_font_size)
 		status_badge_panel.custom_minimum_size = Vector2(touch_size, touch_size)
@@ -981,7 +1003,8 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		save_button.custom_minimum_size = Vector2(68.0, 52.0)
 		load_button.custom_minimum_size = Vector2(68.0, 52.0)
 		chronicle_button.custom_minimum_size = Vector2(76.0, 52.0)
-		for button: Button in [world_button, player_button, save_button, load_button, chronicle_button]:
+		end_turn_button.custom_minimum_size = Vector2(92.0, 52.0)
+		for button: Button in [world_button, player_button, save_button, load_button, chronicle_button, end_turn_button]:
 			button.add_theme_font_size_override("font_size", 18)
 		status_badge_panel.custom_minimum_size = Vector2(82.0, 48.0)
 		year_label.add_theme_font_size_override("font_size", 18)
@@ -1003,6 +1026,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 func _set_interaction_busy(busy: bool) -> void:
 	save_button.disabled = busy or not _spike_persistence_enabled
 	load_button.disabled = busy or not _spike_persistence_enabled
+	end_turn_button.disabled = busy or str(_snapshot.get("phase", "")) != "player"
 	world_button.disabled = busy
 	player_button.disabled = busy
 	chronicle_button.disabled = busy

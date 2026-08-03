@@ -25,6 +25,7 @@ func _run() -> void:
 	var reconnaissance_panel = screen.get_node("%ReconnaissancePanel")
 	var diplomacy_panel = screen.get_node("%DiplomaticOrderPanel")
 	var chronicle_panel = screen.get_node("%CampaignChroniclePanel")
+	var end_turn_button: Button = screen.get_node("%EndTurnButton")
 	var physical_size := Vector2i(844, 390)
 	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
 	_assert_equal(map_world.get_ordered_city_ids().size(), 38, "main scene must render all 38 cities")
@@ -500,6 +501,16 @@ func _run() -> void:
 		screen.get_node("%ChronicleButton").custom_minimum_size.y * canvas_scale >= 47.5,
 		"compact chronicle entry must retain a 48px-class physical target"
 	)
+	# MB12: the production end-turn control must cross the application boundary,
+	# settle deterministic AI/month progression, and surface the resulting chronicle.
+	var turn_before: int = int(screen.get("_snapshot")["turn"])
+	_assert_true(not end_turn_button.disabled, "player phase must expose the end-turn control")
+	end_turn_button.emit_signal("pressed")
+	await process_frame
+	_assert_equal(int(screen.get("_snapshot")["turn"]), turn_before + 1, "end-turn control must advance exactly one month")
+	_assert_equal(screen.get("_snapshot")["phase"], "player", "end-turn control must settle back into the player phase")
+	_assert_true(chronicle_panel.visible, "end-turn control must open the month chronicle")
+	_assert_true("进入" in chronicle_panel.get_node("%ChronicleLabel").text, "month chronicle must expose the settled calendar entry")
 	screen.call("_run_mb11_demo", "city_event")
 	var city_event_snapshot: Dictionary = screen.get("_snapshot")
 	_assert_equal(city_event_snapshot["cities"]["city-12"]["condition"], "flood", "city-event sample must expose the settled flood state")
