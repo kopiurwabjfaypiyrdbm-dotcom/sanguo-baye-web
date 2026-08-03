@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB12",
-  "currentBriefPath": "docs/mission-briefs/MB12-strategic-ai-and-turn-orchestration.md",
-  "readyMissionIds": ["MB12"],
+  "currentMissionId": "MB13",
+  "currentBriefPath": "docs/mission-briefs/MB13-deterministic-battle-state-deployment-turn-framework.md",
+  "readyMissionIds": ["MB13"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -77,15 +77,21 @@
       "briefPath": "docs/mission-briefs/MB11-calendar-events-lifecycle-succession-outcomes.md",
       "reportPath": "docs/migration/mission-reports/MB11-calendar-events-lifecycle-succession-outcomes.md",
       "commit": "b4185cb"
+    },
+    {
+      "id": "MB12",
+      "briefPath": "docs/mission-briefs/MB12-strategic-ai-and-turn-orchestration.md",
+      "reportPath": "docs/migration/mission-reports/MB12-strategic-ai-and-turn-orchestration.md",
+      "commit": "26137ad"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB11",
-    "commit": "b4185cb",
+    "missionId": "MB12",
+    "commit": "26137ad",
     "date": "2026-08-03"
   },
-  "nextAction": "Implement MB12 by wiring deterministic strategic AI and complete turn-month orchestration across the existing Godot domain and application boundaries, with shared fixture and device evidence.",
+  "nextAction": "Implement MB13 by establishing the deterministic battle state, deployment, and turn framework against the TypeScript tactical oracle; keep terrain, attacks, skills, tactical AI, and campaign reintegration deferred.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",

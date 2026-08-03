@@ -93,9 +93,11 @@ static func _recruit_local_captive(state: GameState, faction_id: String) -> Dict
 			})
 			if result.get("ok", false): return result
 		var faction: Dictionary = data["factions"].get(faction_id, {})
+		var former_faction: Dictionary = data["factions"].get(str(captive.get("formerFactionId", "")), {})
+		var former_ruler_id: String = str(former_faction.get("rulerOfficerId", ""))
 		if str(faction.get("aiProfile", "")) == "aggressive" \
 				and int(captive.get("loyalty", 0)) >= 80 \
-				and str(faction.get("rulerOfficerId", "")) != str(captive.get("id", "")):
+				and former_ruler_id != str(captive.get("id", "")):
 			var execution := PersonnelLifecycle.execute(state, "execute_captive", {
 				"cityId": city_id, "captiveOfficerId": captive["id"],
 			})
@@ -111,10 +113,7 @@ static func _use_diplomatic_opportunity(state: GameState, faction_id: String) ->
 		{"name": "issue_canvass_order", "loyalty": 25},
 		{"name": "issue_alienate_order", "loyalty": 65},
 	]
-	var owned_city_ids: Array[String] = []
-	for raw_city_id: Variant in data["cityOrder"]:
-		var city_id := str(raw_city_id)
-		if data["cities"][city_id].get("ownerId", "") == faction_id: owned_city_ids.append(city_id)
+	var owned_city_ids: Array[String] = _owned_city_ids_sorted(data, faction_id)
 	for candidate: Dictionary in candidates:
 		var command_name: String = candidate["name"]
 		var targets: Array[Dictionary] = []
@@ -152,10 +151,8 @@ static func _use_diplomatic_opportunity(state: GameState, faction_id: String) ->
 
 static func _use_city_item(state: GameState, faction_id: String) -> Dictionary:
 	var data := state.snapshot()
-	for raw_city_id: Variant in data["cityOrder"]:
-		var city_id := str(raw_city_id)
+	for city_id: String in _owned_city_ids_sorted(data, faction_id):
 		var city: Dictionary = data["cities"][city_id]
-		if city.get("ownerId", "") != faction_id: continue
 		for raw_item_id: Variant in city.get("itemIds", []):
 			var item_id := str(raw_item_id)
 			var item: Dictionary = data["items"].get(item_id, {})
@@ -180,10 +177,8 @@ static func _use_city_item(state: GameState, faction_id: String) -> Dictionary:
 
 static func _search_local_talent(state: GameState, faction_id: String) -> Dictionary:
 	var data := state.snapshot()
-	for raw_city_id: Variant in data["cityOrder"]:
-		var city_id := str(raw_city_id)
+	for city_id: String in _owned_city_ids_sorted(data, faction_id):
 		var city: Dictionary = data["cities"][city_id]
-		if city.get("ownerId", "") != faction_id: continue
 		if city.get("hiddenItemIds", []).is_empty() and not _has_free_officer(data, city_id): continue
 		for officer: Dictionary in _sort_by_intelligence(_available_officers(data, faction_id, city_id, PersonnelLifecycle.SEARCH_STAMINA_COST)):
 			var result := PersonnelLifecycle.execute(state, "search_city", {"cityId": city_id, "officerId": officer["id"]})
@@ -201,8 +196,7 @@ static func _has_free_officer(data: Dictionary, city_id: String) -> bool:
 static func _supply_frontier(state: GameState, faction_id: String) -> Dictionary:
 	var data := state.snapshot()
 	var projected: Dictionary = {}
-	for raw_city_id: Variant in data["cityOrder"]:
-		var city_id := str(raw_city_id)
+	for city_id: String in _owned_city_ids_sorted(data, faction_id):
 		var city: Dictionary = data["cities"][city_id]
 		if city.get("ownerId", "") != faction_id: continue
 		projected[city_id] = {"money": int(city.get("money", 0)), "food": int(city.get("food", 0)), "reserveTroops": int(city.get("reserveTroops", 0))}
@@ -310,8 +304,7 @@ static func _is_border_city(data: Dictionary, city_id: String, faction_id: Strin
 static func _balance_troops(state: GameState, faction_id: String) -> Dictionary:
 	var data := state.snapshot()
 	var candidates: Array[Dictionary] = []
-	for raw_city_id: Variant in data["cityOrder"]:
-		var city_id := str(raw_city_id)
+	for city_id: String in _owned_city_ids_sorted(data, faction_id):
 		var city: Dictionary = data["cities"][city_id]
 		if city.get("ownerId", "") != faction_id or int(city.get("reserveTroops", 0)) <= 0: continue
 		for raw_officer_id: Variant in data["officerOrder"]:
@@ -445,8 +438,7 @@ static func _improve_city(state: GameState, faction_id: String) -> Dictionary:
 	var govern_cost: Dictionary = Rulesets.get_command_cost(data["rulesetId"], "govern")
 	var inspect_cost: Dictionary = Rulesets.get_command_cost(data["rulesetId"], "inspect")
 	var develop_cost: Dictionary = Rulesets.get_command_cost(data["rulesetId"], "develop")
-	for raw_city_id: Variant in data["cityOrder"]:
-		var city_id := str(raw_city_id)
+	for city_id: String in _owned_city_ids_sorted(data, faction_id):
 		var city: Dictionary = data["cities"][city_id]
 		if city.get("ownerId", "") != faction_id or str(city.get("condition", "normal")) == "normal" \
 				or _is_exposed_sole_garrison(data, city_id, faction_id) or int(city.get("money", 0)) < int(govern_cost.get("money", 0)): continue
@@ -538,6 +530,15 @@ static func _sorted_dictionary_keys(record: Dictionary) -> Array[String]:
 	for raw_key: Variant in record.keys(): keys.append(str(raw_key))
 	keys.sort()
 	return keys
+
+
+static func _owned_city_ids_sorted(data: Dictionary, faction_id: String) -> Array[String]:
+	var ids: Array[String] = []
+	for raw_city_id: Variant in data["cityOrder"]:
+		var city_id := str(raw_city_id)
+		if data["cities"][city_id].get("ownerId", "") == faction_id: ids.append(city_id)
+	ids.sort()
+	return ids
 
 
 static func _is_exposed_sole_garrison(data: Dictionary, city_id: String, faction_id: String) -> bool:

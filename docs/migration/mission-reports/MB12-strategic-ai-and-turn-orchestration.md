@@ -23,9 +23,9 @@ MB12 已在 Godot 4.7.1 GDScript 客户端完成。战略客户端现在可以�
 | `npm run godot:application-session:verify` | 通过；250 transaction cases、追加 selector 覆盖/月循环/幂等/守卫后 1689 assertions |
 | `npm run check` | 通过；Web 47 个测试文件、378 passed、4 skipped，TypeScript/Vite build 通过 |
 | fixture | TypeScript 生成与 Godot 逐案比较通过；MB12 新增 8 strategic-turn cases，含未冻结支持操作、AI selector 覆盖、资源阻断两月 oracle 对照、活动输送与 guard |
-| APK | 最近一次成功导出的审查 APK `godot/builds/sanguo-baye-godot-mb12-final-debug.apk`，57,656,845 bytes，SHA-256 `4D64FAE483E38561379A0533A71FBE3DCD83482F54252510F5BD4B8F0426E322`；最终 selector/完整安全纪事改动已由源代码验证覆盖，但本机当前缺少 Godot 4.7.1 Android export template，重新导出待获组件安装授权 |
+| APK | 当前 HEAD 重新导出的 `godot/builds/sanguo-baye-godot-mb12-final-debug.apk`，57,630,866 bytes，SHA-256 `6AD4E56643C8EF043275B92818B435EC750C3815ACBABFD9812C6F0FFFF44A01`；使用本机已安装的 Godot 4.7.1 官方模板，已覆盖安装 MuMu 并启动 |
 | MuMu | `emulator-5554` 恢复为 device；修复后 APK 离线安装成功并以 `com.sumo91.sanguobaye.godotspike` 启动。 |
-| 设备尺寸 | MuMu override `1280×720` 与 `844×390` 均实际启动、点击“结束本月/结束”并显示公元 190 年 2 月、AI 摘要和战役纪事；最终截图分别为 `godot/builds/mb12-final-mumu-1280x720-end-turn.png` 与 `godot/builds/mb12-final-mumu-844x390-end-turn.png`。 |
+| 设备尺寸 | MuMu override `1280×720` 实际启动、点击结束月份并显示公元 190 年 2 月、AI 摘要和完整安全纪事；`844×390` 当前 APK 已实际启动并验证地图、横屏布局、纪事入口与 48px 级控件目标，低尺寸结束月份的 adb 坐标在本次沙箱复验中未稳定触发，保留此前同场景结束月份截图作为历史设备证据，待真机/交互环境复核。最终当前 APK 截图为 `godot/builds/mb12-final-mumu-1280x720-end-turn.png`、`godot/builds/mb12-final-mumu-844x390-end-turn.png`。 |
 
 设备截图为被忽略的本地证据；验证结束后已恢复 MuMu 原始 `wm size`。1280×720 与 844×390 的点击均通过横屏窗口坐标完成，纪事面板展示月份、诸侯行动摘要和滚动日志。
 
@@ -37,12 +37,12 @@ MB12 完成前已派发三路只读审查：
 2. 确定性规则与 fixture：复核排序、RNG、receipt、state SHA、连续/恢复路径。
 3. Android/触控体验：复核 4.7.1 APK、MuMu 启动、横屏尺寸、按钮目标、纪事和包审计。
 
-三路最终只读复审结论为 P0=0、P1=0、P2=2。确定性复审提出的外交 loyalty/intelligence/id 与 ruler/唯一守将 guard、道具属性/armsType 过滤、搜索与城市改善排序、俘虏 aggressive 处决 fallback、在途武将粮食支持均已对齐；新增 selector 覆盖 fixture 与 TypeScript/Godot SHA 对照通过。移动复审确认 APK、包审计、MuMu 双尺寸和敌方纪事 ACL 通过；长纪事改为保留完整安全日志并由 ScrollContainer 承载。保留的 P2 是现有应用契约对即时重复命令仍允许返回原始 `ok`（必须保持 TypeScript oracle 语义），以及月循环 receipt 尚未细化为阶段级审计 DTO；战术攻击/出征仍待 MB13–MB19。
+三路最终只读复审在本次 former-ruler 修复前发现 P0=0、P1=1、P2=2；该 P1 已按 `formerFactionId → rulerOfficerId` 修复，需在收口前重跑三路复审。确定性复审已确认外交 loyalty/intelligence/id 与 ruler/唯一守将 guard、道具属性/armsType 过滤、搜索与城市改善排序、在途武将粮食支持和月循环 SHA 对照；selector fixture 当前端到端覆盖粮食、外交、征兵、巡查四类成功操作，道具/搜索/俘虏 fallback 与跨月在途供养仍记录为后续 focused coverage。移动复审确认已审 APK、包审计、MuMu 双尺寸和敌方纪事 ACL 通过；长纪事改为保留完整安全日志并由 ScrollContainer 承载。保留的 P2 是现有应用契约对即时重复命令仍允许返回原始 `ok`（必须保持 TypeScript oracle 语义）、月循环 receipt 尚未细化为阶段级审计 DTO，以及少数候选路径仍需统一词典序；战术攻击/出征仍待 MB13–MB19。
 
 ## 已知风险与后续
 
 - AI 目前完成战略经营和月循环闭环；攻击决策、战场创建、战术部署与战术 AI 不在 MB12，下一阶段为 MB13“确定性战斗状态、部署与回合框架”。
-- MuMu 当前通过上次审查 APK 的离线安装和启动验证；本次最终工作树重新导出受本机缺少 Godot 4.7.1 Android export template 阻塞，真机、正式 Android 性能/签名仍属于后续平台硬化验收。组件安装需用户明确授权。
+- MuMu 当前通过当前 HEAD APK 的离线安装和启动验证；1280×720 结束月份已复验，844×390 的 adb 触控坐标在本次沙箱环境未稳定触发，需要人工/真机复验；真机、正式 Android 性能/签名仍属于后续平台硬化验收。
 - 月循环采用当前 Web/modern ruleset 语义，不提升尚未有设备证据的原版 AI 权重、月份单位或默认生命周期策略的原版一致性等级。
 
 ## 人工复验步骤
