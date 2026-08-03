@@ -23,7 +23,7 @@ The captured cold-launch screen shows the native main menu and the Godot 4.7.1 l
 
 - The MuMu display reports a 1440×2560 physical panel with a 90° landscape surface orientation. The native app starts in landscape and renders the main menu without a crash or Java/FATAL exception in the sampled logcat.
 - ADB key navigation (`input keyevent 66`) successfully entered campaign setup, confirming the installed APK and focus route. This is diagnostic evidence only.
-- ADB `input tap` and `input touchscreen tap` attempts at the rotated-window coordinates did not activate the main-menu button. This reproduces the known rotation/input-injection limitation; it is not evidence that a human finger tap fails.
+- ADB `input tap`, `input touchscreen tap`, and MuMu `mumu-cli control tool cmd --cmd "input tap …"` attempts at the rotated-window coordinates did not activate the main-menu button. This reproduces the known rotation/input-injection limitation; it is not evidence that a human finger tap fails.
 - Consequently, direct human touch or an equivalent MuMu GUI interaction is still required for tap, drag, pinch/zoom, city selection, tactical entry, Android Back/confirmation, pause/restart, and return-to-strategy at 1280×720 and 844×390. These remain an Android-first P1 acceptance gap rather than a fabricated pass.
 
 ## Recovery and determinism closure
