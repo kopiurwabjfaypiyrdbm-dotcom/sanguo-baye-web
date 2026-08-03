@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB24",
-  "currentBriefPath": "docs/mission-briefs/MB24-full-parity-deterministic-regression-closure.md",
-  "readyMissionIds": ["MB24"],
+  "currentMissionId": "MB25",
+  "currentBriefPath": "docs/mission-briefs/MB25-release-candidate-and-migration-completion-evidence.md",
+  "readyMissionIds": ["MB25"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -149,15 +149,21 @@
       "briefPath": "docs/mission-briefs/MB23-android-windows-platform-hardening-performance.md",
       "reportPath": "docs/migration/mission-reports/MB23-android-windows-platform-hardening-performance.md",
       "commit": "95b01f4"
+    },
+    {
+      "id": "MB24",
+      "briefPath": "docs/mission-briefs/MB24-full-parity-deterministic-regression-closure.md",
+      "reportPath": "docs/migration/mission-reports/MB24-full-parity-deterministic-regression-closure.md",
+      "commit": "962432d"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB23",
-    "commit": "95b01f4",
+    "missionId": "MB24",
+    "commit": "962432d",
     "date": "2026-08-04"
   },
-  "nextAction": "Implement MB24 full parity and deterministic regression closure; preserve MB23 platform evidence and carry the bounded MuMu physical-touch P2 gap into the final release evidence.",
+  "nextAction": "Implement MB25 release-candidate and migration-completion evidence; obtain direct MuMu/real-device touch evidence, complete the cold terminal recovery path, and issue a bounded migration recommendation.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
