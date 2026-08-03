@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB13",
-  "currentBriefPath": "docs/mission-briefs/MB13-deterministic-battle-state-deployment-turn-framework.md",
-  "readyMissionIds": ["MB13"],
+  "currentMissionId": "MB14",
+  "currentBriefPath": "docs/mission-briefs/MB14-battlefields-terrain-pathfinding-movement.md",
+  "readyMissionIds": ["MB14"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -83,15 +83,21 @@
       "briefPath": "docs/mission-briefs/MB12-strategic-ai-and-turn-orchestration.md",
       "reportPath": "docs/migration/mission-reports/MB12-strategic-ai-and-turn-orchestration.md",
       "commit": "26137ad"
+    },
+    {
+      "id": "MB13",
+      "briefPath": "docs/mission-briefs/MB13-deterministic-battle-state-deployment-turn-framework.md",
+      "reportPath": "docs/migration/mission-reports/MB13-deterministic-battle-state-deployment-turn-framework.md",
+      "commit": "9f3bd0b"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB12",
-    "commit": "26137ad",
+    "missionId": "MB13",
+    "commit": "9f3bd0b",
     "date": "2026-08-03"
   },
-  "nextAction": "Implement MB13 by establishing the deterministic battle state, deployment, and turn framework against the TypeScript tactical oracle; keep terrain, attacks, skills, tactical AI, and campaign reintegration deferred.",
+  "nextAction": "Implement MB14 by adding deterministic battlefield terrain, pathfinding, and movement transactions on top of the MB13 battle contract; keep attacks, skills, tactical AI, and campaign reintegration deferred.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
