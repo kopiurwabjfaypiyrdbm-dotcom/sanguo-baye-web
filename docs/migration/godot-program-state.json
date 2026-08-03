@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB11",
-  "currentBriefPath": "docs/mission-briefs/MB11-calendar-events-lifecycle-succession-outcomes.md",
-  "readyMissionIds": ["MB11"],
+  "currentMissionId": "MB12",
+  "currentBriefPath": "docs/mission-briefs/MB12-strategic-ai-and-turn-orchestration.md",
+  "readyMissionIds": ["MB12"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -71,15 +71,21 @@
       "briefPath": "docs/mission-briefs/MB10-diplomacy-and-strategic-orders.md",
       "reportPath": "docs/migration/mission-reports/MB10-diplomacy-and-strategic-orders.md",
       "commit": "6abe8d7"
+    },
+    {
+      "id": "MB11",
+      "briefPath": "docs/mission-briefs/MB11-calendar-events-lifecycle-succession-outcomes.md",
+      "reportPath": "docs/migration/mission-reports/MB11-calendar-events-lifecycle-succession-outcomes.md",
+      "commit": "b4185cb"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB10",
-    "commit": "6abe8d7",
+    "missionId": "MB11",
+    "commit": "b4185cb",
     "date": "2026-08-03"
   },
-  "nextAction": "Implement MB11 by migrating deterministic calendar and city-event stages, annual people/item progression, lifecycle policy, succession and outcome closure, plus native touch presentation and shared TypeScript/Godot fixture evidence.",
+  "nextAction": "Implement MB12 by wiring deterministic strategic AI and complete turn-month orchestration across the existing Godot domain and application boundaries, with shared fixture and device evidence.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
