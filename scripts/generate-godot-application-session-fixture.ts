@@ -17,6 +17,7 @@ import { validateGameState } from '../src/core/validation';
 import { nextRandom } from '../src/core/random';
 import { settleCityEvents } from '../src/core/cityEvents';
 import { settleAnnualProgression } from '../src/core/annualProgression';
+import { updateCitySatraps } from '../src/core/administration';
 import { advanceTurn } from '../src/core/turn';
 import {
   createProductionSessionState,
@@ -521,24 +522,22 @@ function buildLifecycleOutcomeCases() {
 
 function buildStrategicTurnCases() {
   type ProductionState = ReturnType<typeof createProductionSessionState>;
-  const build = (id: string, periodId: 1 | 2 | 3 | 4, configure?: (state: ProductionState, patches: StatePatch[]) => void) => {
-    const base = createProductionSessionState(periodId, 1);
+  const build = (id: string, periodId: 1 | 2 | 3 | 4, rulerSourceIndex = 1,
+    configure?: (state: ProductionState, patches: StatePatch[], base: ProductionState) => void) => {
+    const base = jsonClean(createProductionSessionState(periodId, rulerSourceIndex));
     const input = jsonClean(base);
     const patches: StatePatch[] = [];
-    const aiServingIds = Object.values(input.officers)
-      .filter((officer) => officer.status === 'serving' && officer.factionId !== input.playerFactionId)
-      .map((officer) => officer.id)
-      .sort(compareUnicodeScalar);
-    patches.push({ path: ['actedOfficerIds'], value: aiServingIds });
-    configure?.(input, patches);
+    configure?.(input, patches, base);
     applyStatePatches(input as unknown as Record<string, unknown>, patches);
+    Object.assign(input, jsonClean(updateCitySatraps(input)));
+    patches.splice(0, patches.length, ...collectStatePatches(base, input));
     const output = advanceTurn(jsonClean(input));
     const cleanInput = jsonClean(input) as ProductionState;
     const cleanOutput = jsonClean(output) as ProductionState;
     const aiFactionIds = cleanInput.factionOrder.filter((factionId) => factionId !== cleanInput.playerFactionId);
     return {
       id,
-      campaign: { periodId, rulerSourceIndex: 1 },
+      campaign: { periodId, rulerSourceIndex },
       patches,
       initialStateSha256: canonicalSha256(cleanInput),
       finalStateSha256: canonicalSha256(cleanOutput),
@@ -553,21 +552,74 @@ function buildStrategicTurnCases() {
       },
     };
   };
-  const cases = ([1, 2, 3, 4] as const).map((periodId) => build(`period-${periodId}-unattended-month`, periodId));
-  cases.push(build('period-1-ai-food-stabilization', 1, (state, patches) => {
+  const cases = ([1, 2, 3, 4] as const).map((periodId) => build(`period-${periodId}-unattended-month`, periodId, 1, (state, patches) => {
+    const aiServingIds = Object.values(state.officers)
+      .filter((officer) => officer.status === 'serving' && officer.factionId !== state.playerFactionId)
+      .map((officer) => officer.id)
+      .sort(compareUnicodeScalar);
+    patches.push({ path: ['actedOfficerIds'], value: aiServingIds });
+  }));
+  cases.push(build('period-1-ai-food-stabilization', 1, 1, (state, patches) => {
     const firstAiFactionId = state.factionOrder.find((factionId) => factionId !== state.playerFactionId)!;
     const available = Object.values(state.officers)
       .filter((officer) => officer.status === 'serving' && officer.factionId === firstAiFactionId)
       .sort((left, right) => left.id.localeCompare(right.id))[0];
     if (!available?.cityId) throw new Error('MB12 fixture requires a stationed AI officer');
     const cityId = available.cityId;
-    const acted = (patches.find((patch) => patch.path.join('.') === 'actedOfficerIds')?.value as string[])
-      .filter((officerId) => officerId !== available.id);
+    const acted = Object.values(state.officers)
+      .filter((officer) => officer.status === 'serving' && officer.factionId !== state.playerFactionId)
+      .map((officer) => officer.id)
+      .filter((officerId) => officerId !== available.id)
+      .sort(compareUnicodeScalar);
     patches.push(
       { path: ['actedOfficerIds'], value: acted },
       { path: ['cities', cityId, 'food'], value: 0 },
       { path: ['cities', cityId, 'money'], value: 2_000 },
     );
+  }));
+  cases.push(build('period-1-ai-unfrozen-resource-block', 1, 1, (state, patches) => {
+    const neutralFactionId = Object.values(state.factions).find((faction) => faction.isNeutral)?.id;
+    for (const officer of Object.values(state.officers)) {
+      if (officer.status === 'serving' && officer.factionId !== state.playerFactionId) {
+        const rulerId = state.factions[officer.factionId].rulerOfficerId;
+        if (officer.id === rulerId) patches.push({ path: ['officers', officer.id, 'stamina'], value: 0 });
+        else patches.push(
+          { path: ['officers', officer.id, 'status'], value: 'free' },
+          { path: ['officers', officer.id, 'factionId'], value: neutralFactionId },
+        );
+      }
+    }
+    for (const city of Object.values(state.cities)) {
+      if (city.ownerId !== state.playerFactionId) {
+        patches.push({ path: ['cities', city.id, 'food'], value: 0 });
+        patches.push({ path: ['cities', city.id, 'itemIds'], value: [] });
+      }
+    }
+  }));
+  cases.push(build('period-1-ai-active-transport-order', 1, 5, (state, patches, base) => {
+    const neutralFactionId = Object.values(state.factions).find((faction) => faction.isNeutral)?.id;
+    for (const officer of Object.values(state.officers)) {
+      if (officer.status === 'serving' && officer.factionId !== state.playerFactionId) {
+        const rulerId = state.factions[officer.factionId].rulerOfficerId;
+        if (officer.id === rulerId) patches.push({ path: ['officers', officer.id, 'stamina'], value: 0 });
+        else patches.push(
+          { path: ['officers', officer.id, 'status'], value: 'free' },
+          { path: ['officers', officer.id, 'factionId'], value: neutralFactionId },
+        );
+      }
+    }
+    const source = state.cities['city-0'];
+    const target = state.cities['city-3'];
+    source.reserveTroops = 1_000;
+    source.money = 1_000;
+    source.food = 1_000;
+    const ordered = issueTransportOrder(state, {
+      sourceCityId: 'city-0', targetCityId: 'city-3', officerId: 'officer-57',
+      cargo: { money: 10, food: 20, reserveTroops: 30 },
+    });
+    Object.assign(state, jsonClean(ordered));
+    patches.push(...collectStatePatches(base, state));
+    void target;
   }));
   return cases;
 }

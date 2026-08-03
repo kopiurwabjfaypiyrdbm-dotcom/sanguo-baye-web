@@ -501,6 +501,13 @@ func _run() -> void:
 		screen.get_node("%ChronicleButton").custom_minimum_size.y * canvas_scale >= 47.5,
 		"compact chronicle entry must retain a 48px-class physical target"
 	)
+	var filtered_chronicle: Dictionary = screen.get("_snapshot").duplicate(true)
+	(filtered_chronicle["logs"] as Array).append({
+		"id": "mb12-hidden-map-log", "kind": "map", "turn": int(filtered_chronicle["turn"]),
+		"message": "敌将暗中在敌城买入 999 粮，花费 4995 金。",
+	})
+	chronicle_panel.show_state(filtered_chronicle)
+	_assert_true("敌将暗中" not in chronicle_panel.get_node("%ChronicleLabel").text, "chronicle must filter command-level map logs from player summaries")
 	# MB12: the production end-turn control must cross the application boundary,
 	# settle deterministic AI/month progression, and surface the resulting chronicle.
 	var turn_before: int = int(screen.get("_snapshot")["turn"])

@@ -15,6 +15,8 @@ const DiplomaticOrders = preload("res://src/domain/commands/diplomatic_order_com
 
 static func advance(state: GameState) -> Dictionary:
 	var before: Dictionary = state.snapshot()
+	if before.get("phase", "") == "ai":
+		return _continue_ai_phase(state, before)
 	if before.get("phase", "") != "player": return _failure("只能从玩家阶段结束本月")
 	var ai_data: Dictionary = before.duplicate(true)
 	ai_data["campaignStarted"] = true
@@ -29,11 +31,21 @@ static func advance(state: GameState) -> Dictionary:
 	ai_data["phase"] = "ai"
 	ai_data["activeFactionId"] = first_ai_id
 	_append_logs(ai_data, "turn", ["玩家阶段结束，进入 AI 阶段。"])
-	var ai_state: GameState = GameState.new(ai_data)
+	return _run_ai_phase(GameState.new(ai_data), before, 0)
+
+
+static func _continue_ai_phase(state: GameState, before: Dictionary) -> Dictionary:
+	var faction_order: Array = before["factionOrder"]
+	var resume_index: int = faction_order.find(before.get("activeFactionId", "")) + 1
+	return _run_ai_phase(state, before, maxi(0, resume_index))
+
+
+static func _run_ai_phase(ai_state: GameState, before: Dictionary, start_index: int) -> Dictionary:
 	var ai_factions: Array[String] = []
-	for raw_faction_id: Variant in ai_data["factionOrder"]:
-		var faction_id: String = str(raw_faction_id)
-		if faction_id == ai_data["playerFactionId"]: continue
+	var order: Array = ai_state.snapshot()["factionOrder"]
+	for index: int in range(start_index, order.size()):
+		var faction_id: String = str(order[index])
+		if faction_id == ai_state.snapshot()["playerFactionId"]: continue
 		if ai_state.snapshot().get("phase", "") in ["ended", "succession"]: break
 		var faction_snapshot: Dictionary = ai_state.snapshot()
 		faction_snapshot["activeFactionId"] = faction_id

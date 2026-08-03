@@ -277,7 +277,7 @@ func execute_command(raw_envelope: Variant) -> Dictionary:
 
 	_state = next_state
 	var result: Dictionary = _command_result_base(envelope, true, "ok", "")
-	result["stateChanged"] = true
+	result["stateChanged"] = after_digest_result["value"] != before_digest
 	result["beforeStateSha256"] = before_digest
 	result["afterStateSha256"] = after_digest_result["value"]
 	result["receipt"] = (domain_result["receipt"] as Dictionary).duplicate(true)
@@ -398,35 +398,22 @@ func evaluate_campaign_outcome() -> Dictionary:
 	return _apply_progression_result(CampaignOutcome.evaluate(_state), "evaluate_outcome", true)
 
 
-func advance_turn_month() -> Dictionary:
-	var before: Dictionary = snapshot()
-	var before_digest: String = state_sha256()
-	if _state == null:
-		return {"ok": false, "error": "campaign session has not started", "stateChanged": false,
-			"beforeStateSha256": before_digest, "afterStateSha256": before_digest, "receipt": {}, "state": before}
-	if before.get("phase", "") == "ended":
-		return {"ok": true, "error": "", "stateChanged": false, "beforeStateSha256": before_digest,
-			"afterStateSha256": before_digest, "receipt": {"kind": "advance_turn", "skipped": "campaign-ended"}, "state": before}
-	if before.get("phase", "") == "succession":
-		return {"ok": false, "error": "必须先拥立新君", "stateChanged": false, "beforeStateSha256": before_digest,
-			"afterStateSha256": before_digest, "receipt": {}, "state": before}
-	var result: Dictionary = StrategicTurn.advance(_state)
-	if not result.get("ok", false):
-		return {"ok": false, "error": result.get("error", "战略月循环失败"), "stateChanged": false,
-			"beforeStateSha256": before_digest, "afterStateSha256": before_digest, "receipt": {}, "state": before}
-	var next_snapshot: Dictionary = result["next_state"].snapshot()
-	var issues: Array[Dictionary] = Validator.validate_runtime(next_snapshot)
-	if not issues.is_empty():
-		return {"ok": false, "error": Validator.first_error(issues), "stateChanged": false,
-			"beforeStateSha256": before_digest, "afterStateSha256": before_digest, "receipt": {}, "state": before}
-	var digest: Dictionary = CanonicalJson.try_sha256(next_snapshot)
-	if not digest["ok"]:
-		return {"ok": false, "error": digest["error"], "stateChanged": false,
-			"beforeStateSha256": before_digest, "afterStateSha256": before_digest, "receipt": {}, "state": before}
-	_state = result["next_state"]
-	return {"ok": true, "error": "", "stateChanged": digest["value"] != before_digest,
-		"beforeStateSha256": before_digest, "afterStateSha256": digest["value"],
-		"receipt": result["receipt"].duplicate(true), "state": next_snapshot}
+func advance_turn_month(raw_envelope: Variant = null) -> Dictionary:
+	var envelope: Variant = raw_envelope
+	if envelope == null:
+		_compat_command_serial += 1
+		envelope = {
+			"commandEnvelopeVersion": 1,
+			"commandId": "compat-advance-turn-%06d" % _compat_command_serial,
+			"expectedStateSha256": state_sha256(),
+			"kind": "advance_turn_month",
+			"parameters": {},
+		}
+	return execute_command(envelope)
+
+
+func continue_ai_turn(raw_envelope: Variant = null) -> Dictionary:
+	return advance_turn_month(raw_envelope)
 
 
 ## Deterministic, explicitly labeled acceptance states for the MB11 technical

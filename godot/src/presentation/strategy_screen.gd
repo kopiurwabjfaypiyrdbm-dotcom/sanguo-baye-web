@@ -433,7 +433,14 @@ func _advance_turn_month() -> void:
 		return
 	_set_interaction_busy(true)
 	_set_status(tr("正在执行诸侯行动与月度结算……"), "busy")
-	var result: Dictionary = _call_session("advance_turn_month")
+	_command_serial += 1
+	var result: Dictionary = _call_session("advance_turn_month", [{
+		"commandEnvelopeVersion": 1,
+		"commandId": "strategy-screen-turn-%06d" % _command_serial,
+		"expectedStateSha256": str(_session.call("state_sha256")),
+		"kind": "advance_turn_month",
+		"parameters": {},
+	}])
 	_set_interaction_busy(false)
 	if not bool(result.get("ok", false)):
 		_set_status(tr("月度推进失败：%s") % _result_error(result), "error")
@@ -600,6 +607,18 @@ func _execute_internal_command(kind: String, parameters: Dictionary) -> void:
 	_refresh_reconnaissance()
 	_refresh_diplomacy()
 	if kind == "resolve_succession":
+		if str(_snapshot.get("phase", "")) == "ai":
+			_set_interaction_busy(true)
+			_set_status(tr("继承完成，继续诸侯阶段……"), "busy")
+			var continuation: Dictionary = _call_session("continue_ai_turn")
+			_set_interaction_busy(false)
+			if bool(continuation.get("ok", false)):
+				_refresh_snapshot(false)
+				_open_chronicle()
+				_set_status(tr("继承完成，诸侯阶段与月份结算已继续"), "success")
+			else:
+				_set_status(tr("继承后续失败：%s") % _result_error(continuation), "error")
+			return
 		chronicle_panel.show_state(_snapshot)
 		chronicle_panel.place_in(_get_card_usable_rect())
 		_set_status(tr("新君已拥立，战役恢复"), "success")
@@ -981,7 +1000,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	save_button.text = tr("存" if compact else "保存")
 	load_button.text = tr("读" if compact else "读取")
 	chronicle_button.text = tr("纪" if compact else "纪事")
-	end_turn_button.text = tr("月" if compact else "结束本月")
+	end_turn_button.text = tr("结束" if compact else "结束本月")
 
 	if compact:
 		var touch_size := ceilf(48.0 / maxf(canvas_scale, 0.01))

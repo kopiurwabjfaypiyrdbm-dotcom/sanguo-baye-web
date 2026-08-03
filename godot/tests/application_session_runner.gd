@@ -935,7 +935,7 @@ func _test_lifecycle_outcome_cases(fixture: Dictionary) -> void:
 
 func _test_strategic_turn_cases(fixture: Dictionary) -> void:
 	var cases: Array = fixture.get("strategicTurnCases", [])
-	_assert_equal(cases.size(), 5, "fixture must include five MB12 strategic-turn cases")
+	_assert_equal(cases.size(), 7, "fixture must include seven MB12 strategic-turn cases")
 	for raw_case: Variant in cases:
 		var test_case: Dictionary = raw_case
 		var campaign: Dictionary = test_case["campaign"]
@@ -949,12 +949,26 @@ func _test_strategic_turn_cases(fixture: Dictionary) -> void:
 		var restored: Dictionary = session.restore_snapshot(input)
 		_assert_true(restored["ok"], "%s MB12 input must restore before month advance" % test_case["id"])
 		if not restored["ok"]: continue
-		var result: Dictionary = session.advance_turn_month()
+		var turn_command := {
+			"commandEnvelopeVersion": 1,
+			"commandId": "mb12-turn-%s" % test_case["id"],
+			"expectedStateSha256": test_case["initialStateSha256"],
+			"kind": "advance_turn_month",
+			"parameters": {},
+		}
+		var result: Dictionary = session.advance_turn_month(turn_command)
 		_assert_true(result["ok"], "%s MB12 month advance must succeed: %s" % [test_case["id"], result.get("error", "")])
 		if not result["ok"]: continue
 		_assert_canonical_equal(result["receipt"], test_case["expectedReceipt"], "%s MB12 receipt must match TypeScript" % test_case["id"])
 		_assert_equal(result["afterStateSha256"], test_case["finalStateSha256"], "%s MB12 state SHA must match TypeScript" % test_case["id"])
 		_assert_equal(Validator.validate_runtime(result["state"]), [], "%s MB12 output must validate" % test_case["id"])
+		var duplicate: Dictionary = session.advance_turn_month(turn_command)
+		_assert_true(["ok", "already_committed"].has(str(duplicate.get("code"))), "%s repeated month command must be idempotent" % test_case["id"])
+		_assert_equal(duplicate.get("afterStateSha256"), result.get("afterStateSha256"), "%s repeated month command SHA must be stable" % test_case["id"])
+		var stale_command: Dictionary = turn_command.duplicate(true)
+		stale_command["commandId"] = "%s-stale" % test_case["id"]
+		var stale: Dictionary = session.advance_turn_month(stale_command)
+		_assert_equal(stale.get("code"), "stale_state", "%s stale month command must be rejected" % test_case["id"])
 		var recovered := GameSession.new()
 		var recovered_input: Dictionary = recovered.restore_snapshot(input)
 		_assert_true(recovered_input["ok"], "%s MB12 recovered input must restore" % test_case["id"])
@@ -964,6 +978,40 @@ func _test_strategic_turn_cases(fixture: Dictionary) -> void:
 			if recovered_result["ok"]:
 				_assert_canonical_equal(recovered_result["receipt"], result["receipt"], "%s MB12 recovered receipt must match" % test_case["id"])
 				_assert_equal(recovered_result["afterStateSha256"], result["afterStateSha256"], "%s MB12 recovered SHA must match" % test_case["id"])
+		if test_case["id"] == "period-1-unattended-month":
+			var second_command := {
+				"commandEnvelopeVersion": 1,
+				"commandId": "mb12-turn-second",
+				"expectedStateSha256": result["afterStateSha256"],
+				"kind": "advance_turn_month", "parameters": {},
+			}
+			var continuous_second: Dictionary = session.advance_turn_month(second_command)
+			var restored_second_session := GameSession.new()
+			var restored_second_input: Dictionary = restored_second_session.restore_snapshot(result["state"])
+			_assert_true(restored_second_input["ok"], "MB12 second-month recovery input must restore")
+			if restored_second_input["ok"]:
+				var restored_second: Dictionary = restored_second_session.advance_turn_month(second_command)
+				_assert_true(continuous_second["ok"] and restored_second["ok"], "MB12 continuous and restored second month must succeed")
+				if continuous_second["ok"] and restored_second["ok"]:
+					_assert_canonical_equal(continuous_second["receipt"], restored_second["receipt"], "MB12 second-month receipt must survive recovery")
+					_assert_equal(continuous_second["afterStateSha256"], restored_second["afterStateSha256"], "MB12 second-month SHA must survive recovery")
+	var ended_session := GameSession.new()
+	var ended_started: Dictionary = ended_session.start_mb11_acceptance_demo("victory")
+	_assert_true(ended_started["ok"], "MB12 ended guard fixture must initialize")
+	if ended_started["ok"]:
+		var ended_digest := ended_session.state_sha256()
+		var ended_result := ended_session.advance_turn_month()
+		_assert_true(ended_result["ok"] and not ended_result["stateChanged"], "ended month command must be an idempotent no-op")
+		_assert_equal(ended_result["receipt"].get("skipped"), "campaign-ended", "ended month command must expose a stable skip reason")
+		_assert_equal(ended_session.state_sha256(), ended_digest, "ended month command must preserve state SHA")
+	var succession_session := GameSession.new()
+	var succession_started: Dictionary = succession_session.start_mb11_acceptance_demo("succession")
+	_assert_true(succession_started["ok"], "MB12 succession guard fixture must initialize")
+	if succession_started["ok"]:
+		var succession_digest := succession_session.state_sha256()
+		var succession_result := succession_session.advance_turn_month()
+		_assert_true(not succession_result["ok"] and "拥立新君" in str(succession_result["error"]), "succession month command must reject without mutation")
+		_assert_equal(succession_session.state_sha256(), succession_digest, "succession month command must preserve state SHA")
 
 
 func _test_validation_cases(fixture: Dictionary, campaign: Dictionary) -> void:

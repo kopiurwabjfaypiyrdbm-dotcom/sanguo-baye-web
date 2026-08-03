@@ -98,8 +98,12 @@ static func _supported_officers(data: Dictionary) -> Dictionary:
 		var city_id: String = str(officer["cityId"])
 		if not supported.has(city_id): supported[city_id] = []
 		(supported[city_id] as Array).append(officer_id)
+	var order_ids: Array[String] = []
 	for raw_order_id: Variant in data["strategicOrders"].keys():
-		var order: Dictionary = data["strategicOrders"][str(raw_order_id)]
+		order_ids.append(str(raw_order_id))
+	order_ids.sort()
+	for order_id: String in order_ids:
+		var order: Dictionary = data["strategicOrders"][order_id]
 		var officer: Dictionary = data["officers"].get(order["officerId"], {})
 		if officer.is_empty() or officer.get("status", "") != "serving" or officer.has("cityId"): continue
 		var support_city: String = ""
@@ -108,8 +112,10 @@ static func _supported_officers(data: Dictionary) -> Dictionary:
 				support_city = city_id
 				break
 		if support_city.is_empty():
-			for raw_city_id: Variant in data["cityOrder"]:
-				var city_id: String = str(raw_city_id)
+			var city_ids: Array[String] = []
+			for raw_city_id: Variant in data["cities"].keys(): city_ids.append(str(raw_city_id))
+			city_ids.sort()
+			for city_id: String in city_ids:
 				if data["cities"][city_id]["ownerId"] == order["factionId"]:
 					support_city = city_id
 					break

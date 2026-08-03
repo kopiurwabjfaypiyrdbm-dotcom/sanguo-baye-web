@@ -81,9 +81,19 @@ func show_state(snapshot: Dictionary) -> void:
 					int(city.get("disasterPrevention", 0)),
 				])
 		var logs: Array = snapshot.get("logs", [])
-		for index: int in range(maxi(0, logs.size() - 6), logs.size()):
-			var entry: Dictionary = logs[index]
-			lines.append("• %s" % str(entry.get("message", "")))
+		var visible_logs: Array[Dictionary] = []
+		for raw_entry: Variant in logs:
+			if not raw_entry is Dictionary:
+				continue
+			var entry: Dictionary = raw_entry
+			# Map logs contain command-level detail. They are kept in canonical
+			# state for replay, but must not become an enemy-intelligence channel
+			# when the same panel is used for the player's month summary.
+			if str(entry.get("kind", "")) == "map":
+				continue
+			visible_logs.append(entry)
+		for index: int in range(maxi(0, visible_logs.size() - 6), visible_logs.size()):
+			lines.append("• %s" % str(visible_logs[index].get("message", "")))
 		chronicle_label.text = "\n".join(lines) if not lines.is_empty() else tr("尚无战役纪事。城池灾害、人物登场、逃脱与死亡会记录在这里。")
 		succession_row.visible = false
 		confirm_button.visible = false

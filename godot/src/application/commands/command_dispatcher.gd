@@ -9,6 +9,7 @@ const StrategicOrderAdapter = preload("res://src/application/commands/strategic_
 const ReconnaissanceAdapter = preload("res://src/application/commands/reconnaissance_adapter.gd")
 const DiplomaticOrderAdapter = preload("res://src/application/commands/diplomatic_order_adapter.gd")
 const SuccessionAdapter = preload("res://src/application/commands/succession_adapter.gd")
+const StrategicTurnAdapter = preload("res://src/application/commands/strategic_turn_adapter.gd")
 const StringContract = preload("res://src/application/commands/application_string_contract.gd")
 
 const ENVELOPE_VERSION: int = 1
@@ -42,6 +43,7 @@ const ADAPTERS: Dictionary = {
 	"issue_counterespionage_order": {"module": DiplomaticOrderAdapter, "generic": true},
 	"issue_induce_order": {"module": DiplomaticOrderAdapter, "generic": true},
 	"resolve_succession": {"module": SuccessionAdapter, "generic": true},
+	"advance_turn_month": {"module": StrategicTurnAdapter, "generic": false},
 }
 
 
