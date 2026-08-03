@@ -6,6 +6,8 @@ import { governCity } from '../src/core/cityCommands';
 import { findOwnedCityRoute } from '../src/core/strategicOrders';
 import { cancelOfficerOrders } from '../src/core/officerLifecycle';
 import { validateGameState } from '../src/core/validation';
+import { nextRandom } from '../src/core/random';
+import { settleCityEvents } from '../src/core/cityEvents';
 import {
   createProductionSessionState,
   OracleApplicationSession,
@@ -42,6 +44,7 @@ function transactionCaseCount(value: ReturnType<typeof buildFixture>) {
     + value.diplomaticOrderBoundaryCases.length
     + value.diplomaticOrderSettlementSequences
       .reduce((total, sequence) => total + sequence.steps.length, 0)
+    + value.calendarEventCases.length
     + value.validationCases.length;
 }
 
@@ -151,9 +154,86 @@ export function buildFixture() {
     diplomaticOrderSequences: buildDiplomaticOrderSequences(),
     diplomaticOrderBoundaryCases: buildDiplomaticOrderBoundaryCases(),
     diplomaticOrderSettlementSequences: buildDiplomaticOrderSettlementSequences(),
+    calendarEventCases: buildCalendarEventCases(),
     validationCases: buildValidationCases(),
     modernRulesetCase: buildModernRulesetCase(),
   };
+}
+
+function buildCalendarEventCases() {
+  const build = (id: string, configure: (state: ReturnType<typeof createProductionSessionState>, patches: StatePatch[]) => void) => {
+    const input = createProductionSessionState(1, 1);
+    const patches: StatePatch[] = [];
+    for (const cityId of input.cityOrder) {
+      const city = input.cities[cityId];
+      const faction = input.factions[city.ownerId];
+      if (!faction || faction.isNeutral) continue;
+      patches.push(
+        { path: ['cities', cityId, 'condition'], value: 'normal' },
+        { path: ['cities', cityId, 'disasterPrevention'], value: 100 },
+        { path: ['cities', cityId, 'publicLoyalty'], value: 100 },
+      );
+    }
+    configure(input, patches);
+    applyStatePatches(input as unknown as Record<string, unknown>, patches);
+    const beforeLogs = input.logs.length;
+    const output = settleCityEvents(structuredClone(input));
+    const transitions = input.cityOrder.flatMap((cityId) => {
+      const before = input.cities[cityId].condition ?? 'normal';
+      const after = output.cities[cityId].condition ?? 'normal';
+      return before === after ? [] : [{ cityId, from: before, to: after }];
+    });
+    return {
+      id, campaign: { periodId: 1, rulerSourceIndex: 1 }, patches,
+      initialStateSha256: canonicalSha256(input), finalStateSha256: canonicalSha256(output),
+      expectedReceipt: {
+        kind: 'settle_city_events', beforeSeed: input.rngSeed, afterSeed: output.rngSeed,
+        transitions, appendedLogs: structuredClone(output.logs.slice(beforeLogs)),
+      },
+    };
+  };
+  const findTargetSeed = (kind: 0 | 2) => {
+    const base = createProductionSessionState(1, 1);
+    const targetIndex = base.cityOrder.filter((cityId) => {
+      const faction = base.factions[base.cities[cityId].ownerId];
+      return faction && !faction.isNeutral;
+    }).indexOf('city-12');
+    for (let candidate = 1; candidate < 1_000_000; candidate += 1) {
+      let seed = candidate;
+      for (let index = 0; index < targetIndex; index += 1) seed = nextRandom(seed).seed;
+      const primary = nextRandom(seed);
+      const kindDraw = nextRandom(primary.seed);
+      const rebellion = nextRandom(kindDraw.seed);
+      if (Math.floor(primary.value * 100) > 0 && Math.floor(kindDraw.value * 5) === kind
+        && (kind !== 2 || Math.floor(rebellion.value * 100) > 0)) return candidate;
+    }
+    throw new Error(`missing period-1 event seed for kind ${kind}`);
+  };
+  return [
+    build('famine-recovery', (_state, patches) => patches.push(
+      { path: ['cities', 'city-12', 'condition'], value: 'famine' },
+      { path: ['cities', 'city-12', 'food'], value: 100 },
+    )),
+    build('ongoing-flood-losses', (_state, patches) => patches.push(
+      { path: ['cities', 'city-12', 'condition'], value: 'flood' },
+      { path: ['cities', 'city-12', 'disasterPrevention'], value: 0 },
+      { path: ['cities', 'city-12', 'farming'], value: 101 },
+      { path: ['cities', 'city-12', 'commerce'], value: 101 },
+      { path: ['cities', 'city-12', 'money'], value: 101 },
+      { path: ['cities', 'city-12', 'food'], value: 101 },
+      { path: ['cities', 'city-12', 'reserveTroops'], value: 101 },
+      { path: ['cities', 'city-12', 'population'], value: 101 },
+    )),
+    build('new-drought-fixed-draws', (_state, patches) => patches.push(
+      { path: ['rngSeed'], value: findTargetSeed(0) },
+      { path: ['cities', 'city-12', 'disasterPrevention'], value: 0 },
+    )),
+    build('new-rebellion-fixed-draws', (_state, patches) => patches.push(
+      { path: ['rngSeed'], value: findTargetSeed(2) },
+      { path: ['cities', 'city-12', 'disasterPrevention'], value: 0 },
+      { path: ['cities', 'city-12', 'publicLoyalty'], value: 0 },
+    )),
+  ];
 }
 
 function buildDiplomaticOrderSequences() {

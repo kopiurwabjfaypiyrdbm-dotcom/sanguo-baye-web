@@ -110204,6 +110204,2635 @@
       "finalStateSha256": "b38c1a431db49eefe1823bc5343155b7f285d92dff59bef305e74bc1dd1af908"
     }
   ],
+  "calendarEventCases": [
+    {
+      "id": "famine-recovery",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "condition"
+          ],
+          "value": "famine"
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "food"
+          ],
+          "value": 100
+        }
+      ],
+      "initialStateSha256": "5452984a7ee4f48604ca873a9eaff53d5b536d36417cda7643e15ac826219f16",
+      "finalStateSha256": "8395f31e37732e790cfe771409ae2040e76f9f51d0296197f7f8f5cf0ddc78d2",
+      "expectedReceipt": {
+        "kind": "settle_city_events",
+        "beforeSeed": 48641,
+        "afterSeed": 1524594148,
+        "transitions": [
+          {
+            "cityId": "city-12",
+            "from": "famine",
+            "to": "normal"
+          }
+        ],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "濮阳已从饥荒中恢复。",
+            "turn": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ongoing-flood-losses",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "condition"
+          ],
+          "value": "flood"
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "disasterPrevention"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "farming"
+          ],
+          "value": 101
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "commerce"
+          ],
+          "value": 101
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "money"
+          ],
+          "value": 101
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "food"
+          ],
+          "value": 101
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "reserveTroops"
+          ],
+          "value": 101
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "population"
+          ],
+          "value": 101
+        }
+      ],
+      "initialStateSha256": "3ce1e26e8394907214af08f157e939e77001ce7025525c43d669ac84519dfdb4",
+      "finalStateSha256": "cb6af4f68dbb63f26807b44d33f4c9903ce54cabbdc4fb290b5d2324647a9700",
+      "expectedReceipt": {
+        "kind": "settle_city_events",
+        "beforeSeed": 48641,
+        "afterSeed": 1524594148,
+        "transitions": [],
+        "appendedLogs": []
+      }
+    },
+    {
+      "id": "new-drought-fixed-draws",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 15
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "disasterPrevention"
+          ],
+          "value": 0
+        }
+      ],
+      "initialStateSha256": "0fa5f74afa5b5327a5a14067ffba23a7d96c6d0f36db3b1cfe45f91cac21819a",
+      "finalStateSha256": "cfd85ae22477406f04014b0665f3065a4f71a5ddeb78d5212cafdb0e4d606c1a",
+      "expectedReceipt": {
+        "kind": "settle_city_events",
+        "beforeSeed": 15,
+        "afterSeed": 3833694833,
+        "transitions": [
+          {
+            "cityId": "city-12",
+            "from": "normal",
+            "to": "drought"
+          }
+        ],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "濮阳发生旱灾。",
+            "turn": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "new-rebellion-fixed-draws",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "condition"
+          ],
+          "value": "normal"
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "disasterPrevention"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "publicLoyalty"
+          ],
+          "value": 100
+        },
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 6
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "disasterPrevention"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "publicLoyalty"
+          ],
+          "value": 0
+        }
+      ],
+      "initialStateSha256": "710289e8f6370a8847ff78a6c75e04c6d38f2f1be98c40aa083223c197088fec",
+      "finalStateSha256": "5c6cab7a37936335c463dc80f647e79c56f98459016a82262405602dfbe5e8a3",
+      "expectedReceipt": {
+        "kind": "settle_city_events",
+        "beforeSeed": 6,
+        "afterSeed": 2489028351,
+        "transitions": [
+          {
+            "cityId": "city-12",
+            "from": "normal",
+            "to": "rebellion"
+          }
+        ],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "濮阳发生暴动。",
+            "turn": 1
+          }
+        ]
+      }
+    }
+  ],
   "validationCases": [
     {
       "id": "unsafe-city-money",

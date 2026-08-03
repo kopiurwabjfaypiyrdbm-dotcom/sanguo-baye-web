@@ -6,6 +6,7 @@ const CoreLcg = preload("res://src/domain/random/core_lcg.gd")
 const DevelopFarming = preload("res://src/domain/commands/develop_farming_command.gd")
 const StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
 const DiplomaticOrders = preload("res://src/domain/commands/diplomatic_order_commands.gd")
+const CalendarEvents = preload("res://src/domain/progression/calendar_events.gd")
 const BayeDiplomacy = preload("res://src/domain/compat/baye/baye_diplomacy.gd")
 const GameSession = preload("res://src/application/game_session/game_session.gd")
 const SaveRepository = preload("res://src/application/persistence/json_save_repository.gd")
@@ -32,6 +33,7 @@ func _initialize() -> void:
 	_test_strategic_order_lifecycle_cancellation()
 	_test_diplomatic_order_application_bridge()
 	_test_diplomatic_order_termination_and_invalid_executor()
+	_test_calendar_and_city_event_contract()
 	_test_spike_contract_rejects_unmigrated_web_states()
 	_test_save_load_equivalence()
 
@@ -187,6 +189,44 @@ func _test_diplomatic_order_termination_and_invalid_executor() -> void:
 		var invalidated_state: Dictionary = invalidated["next_state"].snapshot()
 		_assert_equal(invalidated_state["rngSeed"], initial_seed, "changed executor branch must not consume RNG")
 		_assert_equal(invalidated_state["diplomaticOrders"], {}, "changed executor branch must remove the stale order")
+
+
+func _test_calendar_and_city_event_contract() -> void:
+	_assert_equal(CalendarEvents.advance_calendar({"year": 190, "month": 12}), {"year": 191, "month": 1}, "calendar must cross a year exactly once")
+	_assert_equal(CalendarEvents.advance_calendar({"year": 191, "month": 1}), {"year": 191, "month": 2}, "calendar must advance an ordinary month")
+	var session: GameSession = GameSession.new()
+	var started: Dictionary = session.start_campaign(1, 1)
+	_assert_true(started["ok"], "city-event contract campaign must start")
+	if not started["ok"]: return
+	var state: Dictionary = session.snapshot()
+	var flood: Dictionary = (state["cities"]["city-12"] as Dictionary).duplicate(true)
+	flood["condition"] = "flood"
+	for field: String in ["farming", "commerce", "money", "food", "reserveTroops", "population"]: flood[field] = 101
+	var affected: Dictionary = CalendarEvents.apply_city_condition_effect(flood)
+	_assert_equal({
+		"farming": affected["farming"], "commerce": affected["commerce"], "money": affected["money"],
+		"food": affected["food"], "reserveTroops": affected["reserveTroops"], "population": affected["population"],
+	}, {"farming": 96, "commerce": 91, "money": 91, "food": 96, "reserveTroops": 76, "population": 76}, "flood losses must preserve fixed integer truncation")
+	var boundary: Dictionary = flood.duplicate(true)
+	boundary["condition"] = "normal"
+	boundary["disasterPrevention"] = 50
+	boundary["publicLoyalty"] = 50
+	_assert_equal(CalendarEvents.resolve_city_condition(boundary, 50, 0), "normal", "event prevention comparison must be inclusive")
+	_assert_equal(CalendarEvents.resolve_city_condition(boundary, 51, 2, 51), "rebellion", "rebellion comparison must be strict")
+	for raw_city_id: Variant in state["cityOrder"]:
+		var city: Dictionary = state["cities"][raw_city_id]
+		if not bool(state["factions"][city["ownerId"]].get("isNeutral", false)):
+			city["condition"] = "normal"
+			city["disasterPrevention"] = 100
+	state["cities"]["city-12"]["condition"] = "famine"
+	state["cities"]["city-12"]["food"] = 100
+	var first: Dictionary = CalendarEvents.settle_city_events(GameState.new(state))
+	var second: Dictionary = CalendarEvents.settle_city_events(GameState.new(state))
+	_assert_true(first["ok"] and second["ok"], "city-event settlement must produce valid runtime state")
+	if first["ok"] and second["ok"]:
+		_assert_equal(first["next_state"].snapshot(), second["next_state"].snapshot(), "city-event settlement must be deterministic")
+		_assert_equal(first["next_state"].snapshot()["cities"]["city-12"]["condition"], "normal", "famine must recover after food is restored")
+		_assert_true("已从饥荒中恢复" in first["next_state"].snapshot()["logs"][-1]["message"], "player event recovery must append a visible log")
 
 
 func _test_period_structure_and_roads() -> void:
