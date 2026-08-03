@@ -22,7 +22,7 @@
 
 结果 envelope 固定包含 `resultEnvelopeVersion`、请求身份、`ok/code/error`、`stateChanged`、前后 state SHA-256、领域 `receipt` 和当前深拷贝状态。摘要复用 MB02 的 `canonical-json-v1`，不建立应用层专用序列化。
 
-`CommandDispatcher` 先按排序后的字段名稳定拒绝未知字段，再校验版本、身份、前置摘要、命令种类和闭合参数。MB06 时显式注册 11 项生产命令：七项内政以及奖赏、任命太守、赏赐道具、卸下装备；扩展必须新增 adapter 注册，不把规则复制到场景。
+`CommandDispatcher` 先按排序后的字段名稳定拒绝未知字段，再校验版本、身份、前置摘要、命令种类和闭合参数。至 MB09 显式注册 21 项生产命令：七项内政、四项人物管理、七项人才/俘虏操作、两项战略后勤和侦察；扩展必须新增 adapter 注册，不把规则复制到场景。
 
 ## 事务和幂等
 
@@ -34,7 +34,7 @@
 
 ## 查询边界
 
-`game_session_queries.gd` 负责城市详情、内政候选以及人物管理 DTO。默认执行者和城内人物只按领域 `officerOrder` 选择，库存与装备保持数组顺序；人物 DTO 包含太守、装备槽、基础/有效属性和逐操作可用性。查询从深拷贝读取且不改变 seed、日志或行动列表。表现层仍可用快照绘制地图，但不自行判断命令合法性。
+`game_session_queries.gd` 负责城市详情、内政、人物、人才、后勤和侦察 DTO。默认执行者和城内人物只按领域显式顺序选择，库存与装备保持数组顺序。侦察可见性是唯一例外边界：己方城返回实时城市副本，未侦察敌城只返回 ID、名称与公开归属，已侦察敌城只返回保存的报告；表现层即使持有地图绘制快照，也不得以其中的敌城实时字段填充详情。所有查询均不改变 seed、日志或行动列表。
 
 `restore_snapshot()` 提供 MB04 范围内的内存恢复演练：先深拷贝、完整校验和计算 canonical 摘要，再一次替换状态并清空进程内命令缓存。它不是生产存档 schema；多槽存档、命令幂等记录持久化和版本迁移仍属于 MB20。
 
@@ -50,6 +50,6 @@ npm run godot:application-session:check
 npm run godot:application-session:verify
 ```
 
-MB05 在同一 fixture 内追加紧凑的内政序列；MB06 继续追加人物/装备连续序列和独立边界矩阵。新增步骤保存 result core 和 state SHA，不重复嵌入完整状态。支持命令及参数见 `docs/migration/godot-internal-affairs-contract.md` 与 `docs/migration/godot-officer-management-contract.md`。
+MB05 在同一 fixture 内追加紧凑的内政序列；MB06–MB09 继续追加人物/装备、人才/俘虏、战略后勤和侦察的连续序列与独立边界矩阵。新增步骤保存 result core 和 state SHA，不重复嵌入完整状态。侦察部分固定成功与覆盖式快照、classic/modern 成本、主要命令拒绝、损坏报告/时钟、聚合安全整数溢出、旧式无 `officerIds` 报告和保存恢复；完整边界见 `docs/migration/godot-reconnaissance-contract.md`。
 
 验证脚本把 Windows `APPDATA/LOCALAPPDATA` 和跨平台 `XDG_CONFIG_HOME/XDG_CACHE_HOME/XDG_DATA_HOME` 重定向到被忽略的 `godot/.godot/runtime/`。`npm run godot:project:verify` 统一覆盖领域、表现/触控、editor import 和主场景启动；隔离不改变游戏运行时路径或 APK 内容。

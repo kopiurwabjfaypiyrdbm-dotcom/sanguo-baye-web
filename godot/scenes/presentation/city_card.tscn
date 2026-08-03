@@ -67,6 +67,7 @@ size_flags_vertical = 3
 text = "城市信息"
 
 [node name="CommandRow" type="HBoxContainer" parent="OuterMargin/Content"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
@@ -97,6 +98,7 @@ focus_mode = 2
 text = "›"
 
 [node name="ExecutorRow" type="HBoxContainer" parent="OuterMargin/Content"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
@@ -146,6 +148,13 @@ custom_minimum_size = Vector2(112, 54)
 layout_mode = 2
 focus_mode = 2
 text = "人才"
+
+[node name="ReconnaissanceButton" type="Button" parent="OuterMargin/Content/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(82, 54)
+layout_mode = 2
+focus_mode = 2
+text = "侦察"
 
 [node name="LogisticsButton" type="Button" parent="OuterMargin/Content/ActionRow"]
 unique_name_in_owner = true

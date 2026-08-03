@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://src/presentation/strategy_screen.gd" id="1_screen"]
 [ext_resource type="Script" path="res://src/presentation/strategy_map_world.gd" id="2_map"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://scenes/presentation/officer_management_panel.tscn" id="6_officers"]
 [ext_resource type="PackedScene" path="res://scenes/presentation/personnel_lifecycle_panel.tscn" id="7_personnel"]
 [ext_resource type="PackedScene" path="res://scenes/presentation/strategic_logistics_panel.tscn" id="8_logistics"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/reconnaissance_panel.tscn" id="9_recon"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_bar"]
 bg_color = Color(0.035, 0.059, 0.068, 0.94)
@@ -189,6 +190,11 @@ layout_mode = 0
 z_index = 30
 
 [node name="StrategicLogisticsPanel" parent="UILayer/HUDRoot" instance=ExtResource("8_logistics")]
+unique_name_in_owner = true
+layout_mode = 0
+z_index = 30
+
+[node name="ReconnaissancePanel" parent="UILayer/HUDRoot" instance=ExtResource("9_recon")]
 unique_name_in_owner = true
 layout_mode = 0
 z_index = 30

@@ -41,6 +41,11 @@ const ALLOWED: Dictionary = {
 		"remainingMonths", "cargo",
 	],
 	"strategicCargo": ["money", "food", "reserveTroops"],
+	"intelReport": [
+		"cityId", "observedTurn", "observedYear", "observedMonth", "population",
+		"money", "food", "reserveTroops", "farming", "commerce", "defense",
+		"publicLoyalty", "satrapName", "officerIds", "officerCount", "totalTroops",
+	],
 	"log": ["id", "turn", "kind", "message"],
 }
 
@@ -87,6 +92,7 @@ static func validate(state: Dictionary) -> Array[Dictionary]:
 					(raw_order as Dictionary)["cargo"], ALLOWED["strategicCargo"],
 					"strategicOrders.%s.cargo" % order_id, issues
 				)
+	_validate_record(state.get("intelReports"), ALLOWED["intelReport"], "intelReports", issues)
 	var logs: Variant = state.get("logs")
 	if logs is Array:
 		for index: int in range((logs as Array).size()):

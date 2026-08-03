@@ -93,7 +93,7 @@ static func _validate(state: Dictionary, initial_contract: bool) -> Array[Dictio
 	else:
 		_validate_strategic_orders(strategic_orders, factions, cities, officers, state, issues)
 		_validate_empty_runtime_record(diplomatic_orders, "diplomaticOrders", issues)
-		_validate_empty_runtime_record(intel_reports, "intelReports", issues)
+		_validate_intel_reports(intel_reports, cities, officers, state, issues)
 
 	_validate_exact_order(state.get("cityOrder"), "cityOrder", cities, issues)
 	_validate_exact_order(state.get("officerOrder"), "officerOrder", officers, issues)
@@ -162,6 +162,70 @@ static func _validate_runtime_phase_fields(
 	var outcome: Variant = state.get("outcome")
 	if outcome != null:
 		_add(issues, "outcome", "is not supported by the current runtime validator")
+
+
+static func _validate_intel_reports(
+		reports: Dictionary, cities: Dictionary, officers: Dictionary,
+		state: Dictionary, issues: Array[Dictionary]
+) -> void:
+	for city_id: String in _sorted_string_keys(reports):
+		var path: String = "intelReports.%s" % city_id
+		var raw: Variant = reports[city_id]
+		if typeof(raw) != TYPE_DICTIONARY:
+			_add(issues, path, "must be an object")
+			continue
+		var report: Dictionary = raw
+		if report.get("cityId") != city_id:
+			_add(issues, "%s.cityId" % path, "must match record key")
+		if not cities.has(city_id):
+			_add(issues, "%s.cityId" % path, "unknown city: %s" % city_id)
+		for field: String in [
+			"observedTurn", "observedYear", "observedMonth", "population", "money", "food",
+			"reserveTroops", "farming", "commerce", "defense", "officerCount", "totalTroops",
+		]:
+			_validate_non_negative_integer(report.get(field), "%s.%s" % [path, field], issues)
+		if _is_integer_number(report.get("observedTurn")):
+			if int(report["observedTurn"]) == 0:
+				_add(issues, "%s.observedTurn" % path, "must be a positive integer")
+			elif _is_integer_number(state.get("turn")) \
+					and int(report["observedTurn"]) > int(state["turn"]):
+				_add(issues, "%s.observedTurn" % path, "must not be later than the current turn")
+		if _is_integer_number(report.get("observedYear")) and int(report["observedYear"]) == 0:
+			_add(issues, "%s.observedYear" % path, "must be a positive integer")
+		if _is_integer_number(report.get("observedMonth")) \
+				and (int(report["observedMonth"]) < 1 or int(report["observedMonth"]) > 12):
+			_add(issues, "%s.observedMonth" % path, "must be from 1 to 12")
+		if _is_integer_number(report.get("observedYear")) and _is_integer_number(report.get("observedMonth")):
+			var raw_calendar: Variant = state.get("calendar", {})
+			var calendar: Dictionary = raw_calendar if raw_calendar is Dictionary else {}
+			if _is_integer_number(calendar.get("year")) and _is_integer_number(calendar.get("month")) \
+					and int(report["observedYear"]) * 12 + int(report["observedMonth"]) \
+					> int(calendar.get("year", 0)) * 12 + int(calendar.get("month", 0)):
+				_add(issues, "%s.observedYear" % path, "observation date must not be later than the current calendar")
+		if report.has("publicLoyalty"):
+			_validate_non_negative_integer(report["publicLoyalty"], "%s.publicLoyalty" % path, issues)
+		if report.has("satrapName") and typeof(report["satrapName"]) != TYPE_STRING:
+			_add(issues, "%s.satrapName" % path, "must be a string when present")
+		if report.has("officerIds"):
+			if typeof(report["officerIds"]) != TYPE_ARRAY:
+				_add(issues, "%s.officerIds" % path, "must be an array when present")
+			else:
+				var officer_ids: Array = report["officerIds"]
+				var seen: Dictionary = {}
+				for index: int in range(officer_ids.size()):
+					var raw_officer_id: Variant = officer_ids[index]
+					if typeof(raw_officer_id) != TYPE_STRING:
+						_add(issues, "%s.officerIds" % path, "must contain only strings")
+						continue
+					var officer_id: String = raw_officer_id
+					if seen.has(officer_id):
+						_add(issues, "%s.officerIds" % path, "contains duplicate officer ids")
+					seen[officer_id] = true
+					if not officers.has(officer_id):
+						_add(issues, "%s.officerIds" % path, "unknown officer: %s" % officer_id)
+				if _is_integer_number(report.get("officerCount")) \
+						and officer_ids.size() != int(report["officerCount"]):
+					_add(issues, "%s.officerIds" % path, "must agree with officerCount")
 
 
 static func _validate_calendar(

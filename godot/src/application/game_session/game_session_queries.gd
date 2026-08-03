@@ -6,6 +6,7 @@ const InternalAffairs = preload("res://src/domain/commands/internal_affairs_comm
 const OfficerManagement = preload("res://src/domain/commands/officer_management_commands.gd")
 const PersonnelLifecycle = preload("res://src/domain/commands/personnel_lifecycle_commands.gd")
 const StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
+const Reconnaissance = preload("res://src/domain/commands/reconnaissance_commands.gd")
 
 const INTERNAL_COMMANDS: Array[Dictionary] = [
 	{"kind": "develop_farming", "label": "开垦", "mode": "executor", "dangerous": false},
@@ -105,6 +106,14 @@ static func strategic_logistics_city(state: RefCounted, city_id: String) -> Dict
 	logistics["activeOrders"] = active_orders
 	return {"found": true, "city": (data["cities"][city_id] as Dictionary).duplicate(true),
 		"strategicLogistics": logistics}
+
+
+static func reconnaissance_city(state: RefCounted, source_city_id: String) -> Dictionary:
+	return Reconnaissance.query_city_context(state, source_city_id)
+
+
+static func city_visibility(state: RefCounted, city_id: String) -> Dictionary:
+	return Reconnaissance.visibility_for_city(state, city_id)
 
 
 static func find_default_executor(state: RefCounted, city_id: String) -> String:

@@ -198,6 +198,9 @@ func _test_transaction_fixture() -> void:
 	_test_strategic_logistics_boundary_cases(fixture, campaign)
 	_test_strategic_route_cases(fixture)
 	_test_strategic_lifecycle_cases(fixture)
+	_test_reconnaissance_sequence(fixture)
+	_test_reconnaissance_boundary_cases(fixture)
+	_test_reconnaissance_legacy_report_case(fixture)
 	_test_validation_cases(fixture, campaign)
 	_test_modern_ruleset_case(fixture, campaign)
 
@@ -542,6 +545,99 @@ func _test_strategic_lifecycle_cases(fixture: Dictionary) -> void:
 			_assert_equal(next_digest["value"], test_case["expectedStateSha256"], "%s lifecycle output must match TypeScript" % test_case["id"])
 		_assert_equal(next["logs"][-1]["message"], test_case["expectedLog"], "%s lifecycle log must match TypeScript" % test_case["id"])
 		_assert_true(input["strategicOrders"].has("strategic-order-1"), "%s lifecycle cancellation must not mutate input" % test_case["id"])
+
+
+func _test_reconnaissance_sequence(fixture: Dictionary) -> void:
+	var sequence: Dictionary = fixture.get("reconnaissanceSequence", {})
+	_assert_true(not sequence.is_empty(), "fixture must include MB09 reconnaissance sequence")
+	if sequence.is_empty(): return
+	var session: GameSession = GameSession.new()
+	var campaign: Dictionary = sequence["campaign"]
+	var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+	_assert_true(started["ok"], "MB09 reconnaissance campaign must start")
+	if not started["ok"]: return
+	_assert_equal(session.state_sha256(), sequence["initialStateSha256"], "MB09 initial state must match TypeScript")
+	var enemy_source_query: Dictionary = session.reconnaissance_query("city-0")
+	_assert_true(enemy_source_query["found"], "existing enemy source query must remain structurally discoverable")
+	var enemy_source_keys: Array = enemy_source_query["sourceCity"].keys()
+	enemy_source_keys.sort()
+	_assert_equal(enemy_source_keys, ["id", "name", "ownerId"], "enemy reconnaissance source must expose only public fields")
+	_assert_equal(enemy_source_query["visibility"]["knowledge"], "public", "enemy reconnaissance source must be public-only before scouting")
+	for index: int in range((sequence["steps"] as Array).size()):
+		var step: Dictionary = sequence["steps"][index]
+		if not (step["prePatches"] as Array).is_empty():
+			var patched: Dictionary = session.snapshot()
+			_apply_patches(patched, step["prePatches"])
+			var restored: Dictionary = session.restore_snapshot(patched)
+			_assert_true(restored["ok"], "%s MB09 patched state must restore" % step["id"])
+			if not restored["ok"]: continue
+		_assert_equal(session.state_sha256(), step["preStateSha256"], "%s MB09 pre-state must match TypeScript" % step["id"])
+		var before_digest: String = session.state_sha256()
+		var actual: Dictionary = session.execute_command(step["command"])
+		var actual_core: Dictionary = actual.duplicate(true)
+		actual_core.erase("state")
+		_assert_canonical_equal(actual_core, step["expectedCore"], "%s MB09 result core must match TypeScript" % step["id"])
+		_assert_equal(session.state_sha256(), step["expectedStateSha256"], "%s MB09 state must match TypeScript" % step["id"])
+		_assert_equal(session.snapshot()["rngSeed"], sequence["initialSeed"], "%s reconnaissance must not consume RNG" % step["id"])
+		if bool(step["expectedCore"]["stateChanged"]):
+			_assert_true(session.state_sha256() != before_digest, "%s successful reconnaissance must commit" % step["id"])
+		if index == 0:
+			var stale_input: Dictionary = session.snapshot()
+			_apply_patches(stale_input, sequence["steps"][1]["prePatches"])
+			var stale_restore: Dictionary = session.restore_snapshot(stale_input)
+			_assert_true(stale_restore["ok"], "MB09 stale-report rehearsal state must restore")
+			if stale_restore["ok"]:
+				var visibility: Dictionary = session.city_visibility_query("city-0")
+				_assert_equal(visibility["knowledge"], "report", "scouted enemy city must expose report knowledge")
+				_assert_canonical_equal(visibility["report"], step["expectedCore"]["receipt"]["report"], "stale report must not track live city changes")
+				_assert_true(visibility["report"]["money"] != stale_input["cities"]["city-0"]["money"], "visibility query must not leak current enemy money")
+	_assert_equal(session.state_sha256(), sequence["finalStateSha256"], "MB09 final state must match TypeScript")
+	var recovered: GameSession = GameSession.new()
+	var recovery: Dictionary = recovered.restore_snapshot(session.snapshot())
+	_assert_true(recovery["ok"], "MB09 reconnaissance snapshot must restore")
+	if recovery["ok"]:
+		_assert_equal(recovered.state_sha256(), sequence["finalStateSha256"], "restored MB09 report state must retain SHA")
+		_assert_canonical_equal(recovered.city_visibility_query("city-0"), session.city_visibility_query("city-0"), "restored MB09 visibility must be identical")
+
+
+func _test_reconnaissance_boundary_cases(fixture: Dictionary) -> void:
+	var cases: Array = fixture.get("reconnaissanceBoundaryCases", [])
+	_assert_true(not cases.is_empty(), "fixture must include MB09 reconnaissance boundary cases")
+	for raw_case: Variant in cases:
+		var test_case: Dictionary = raw_case
+		var session: GameSession = GameSession.new()
+		var started: Dictionary = session.start_campaign(1, 1)
+		_assert_true(started["ok"], "%s MB09 boundary campaign must start" % test_case["id"])
+		if not started["ok"]: continue
+		var input: Dictionary = session.snapshot()
+		_apply_patches(input, test_case["patches"])
+		var restored: Dictionary = session.restore_snapshot(input)
+		_assert_true(restored["ok"], "%s MB09 boundary input must restore" % test_case["id"])
+		if not restored["ok"]: continue
+		_assert_equal(session.state_sha256(), test_case["inputStateSha256"], "%s MB09 boundary input must match TypeScript" % test_case["id"])
+		var before_digest: String = session.state_sha256()
+		var actual: Dictionary = session.execute_command(test_case["command"])
+		var actual_core: Dictionary = actual.duplicate(true)
+		actual_core.erase("state")
+		_assert_canonical_equal(actual_core, test_case["expectedCore"], "%s MB09 boundary result must match TypeScript" % test_case["id"])
+		_assert_equal(session.state_sha256(), test_case["expectedStateSha256"], "%s MB09 boundary state must match TypeScript" % test_case["id"])
+		if not bool(test_case["expectedCore"]["stateChanged"]):
+			_assert_equal(session.state_sha256(), before_digest, "%s MB09 rejection must remain atomic" % test_case["id"])
+
+
+func _test_reconnaissance_legacy_report_case(fixture: Dictionary) -> void:
+	var test_case: Dictionary = fixture.get("reconnaissanceLegacyReportCase", {})
+	_assert_true(not test_case.is_empty(), "fixture must include MB09 legacy-report compatibility case")
+	if test_case.is_empty(): return
+	_assert_equal(Validator.validate_runtime(test_case["state"]), [], "legacy report without officerIds must remain valid")
+	var session: GameSession = GameSession.new()
+	var restored: Dictionary = session.restore_snapshot(test_case["state"])
+	_assert_true(restored["ok"], "legacy report state must restore")
+	if not restored["ok"]: return
+	_assert_equal(session.state_sha256(), test_case["stateSha256"], "legacy report state SHA must match TypeScript")
+	var visibility: Dictionary = session.city_visibility_query("city-0")
+	_assert_equal(visibility["knowledge"], "report", "legacy report must remain visible")
+	_assert_true(not visibility["report"].has("officerIds"), "legacy report query must not invent an officer list")
 
 
 func _test_validation_cases(fixture: Dictionary, campaign: Dictionary) -> void:

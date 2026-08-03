@@ -22,6 +22,7 @@ func _run() -> void:
 	var officer_panel = screen.get_node("%OfficerManagementPanel")
 	var personnel_panel = screen.get_node("%PersonnelLifecyclePanel")
 	var logistics_panel = screen.get_node("%StrategicLogisticsPanel")
+	var reconnaissance_panel = screen.get_node("%ReconnaissancePanel")
 	var physical_size := Vector2i(844, 390)
 	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
 	_assert_equal(map_world.get_ordered_city_ids().size(), 38, "main scene must render all 38 cities")
@@ -260,6 +261,92 @@ func _run() -> void:
 	_assert_equal(int(trade_after["rngSeed"]), trade_seed_before, "trade must not advance the deterministic seed")
 	_assert_equal(int(trade_after["cities"]["city-12"]["money"]), trade_money_before + 20, "trade sell must credit money")
 	_assert_equal(int(trade_after["cities"]["city-12"]["food"]), trade_food_before - 10, "trade sell must debit food")
+
+	# MB09: hostile cities expose only public ownership until a real reconnaissance
+	# command creates a frozen report. The presenter must never read live enemy stats.
+	var recon_query: Dictionary = screen.get("_session").reconnaissance_query("city-12")
+	var recon_catalog: Dictionary = recon_query["reconnaissance"]
+	_assert_equal(recon_catalog["targets"].size(), 37, "single-city period-1 start must expose 37 hostile reconnaissance targets")
+	_assert_equal(recon_catalog["targets"][0]["id"], "city-0", "recon targets must use explicit sourceIndex order")
+	_assert_equal(recon_catalog["cost"], {"stamina": 10, "money": 20}, "classic reconnaissance cost must come from the ruleset")
+	var recon_target_id: String = recon_catalog["defaultTargetCityId"]
+	var recon_officer_id: String = recon_catalog["defaultOfficerId"]
+	var live_target_before: Dictionary = screen.get("_snapshot")["cities"][recon_target_id]
+	screen.call("_select_city", recon_target_id)
+	_assert_true("未侦察" in city_card.get_node("%OwnershipLabel").text, "unscouted hostile card must label its public-only knowledge")
+	_assert_true("情报未知" in city_card.get_node("%StatsLabel").text, "unscouted hostile card must replace live statistics with unknown copy")
+	_assert_true(not "金：" in city_card.get_node("%StatsLabel").text, "unscouted hostile card must not leak live money")
+	_assert_true(not city_card.get_node("%CommandRow").visible and not city_card.get_node("%ExecutorRow").visible, "hostile card must not expose owned-city command controls")
+	city_card.show_city(screen.get("_snapshot"), recon_target_id, [], {})
+	_assert_true("情报未知" in city_card.get_node("%StatsLabel").text and not "金：" in city_card.get_node("%StatsLabel").text, "missing visibility must fail closed for hostile city data")
+	city_card.show_city(screen.get("_snapshot"), recon_target_id, [], {"found": true, "knowledge": "current"})
+	_assert_true("情报未知" in city_card.get_node("%StatsLabel").text and not "金：" in city_card.get_node("%StatsLabel").text, "forged current visibility must not expose hostile city data")
+	_assert_true(city_card.get("_compact_stats_by_kind").is_empty(), "hostile city card must not cache live compact statistics")
+	city_card.apply_responsive_layout(true, canvas_scale, physical_size)
+	_assert_true(city_card.get_node("%OwnershipLabel").visible, "compact hostile card must retain textual public ownership")
+	_assert_true("势力：" in city_card.get_node("%OwnershipLabel").text, "compact hostile card must identify the current public faction in text")
+	city_card.reset_size()
+	await process_frame
+	var hostile_compact_usable := Rect2(Vector2.ZERO, Vector2(1558.0, 278.0 / canvas_scale))
+	var hostile_compact_size := city_card.get_combined_minimum_size()
+	_assert_true(hostile_compact_size.y <= hostile_compact_usable.size.y + 1.0, "compact hostile card must fit above the 844x390 status region")
+	city_card.size = hostile_compact_size
+	city_card.place_near(map_world.get_city_screen_position(recon_target_id), hostile_compact_usable)
+	_assert_true(city_card.position.y + city_card.size.y <= hostile_compact_usable.end.y + 1.0, "placed compact hostile card must not overlap the status region")
+	city_card.apply_responsive_layout(false, 1.0, Vector2i(1280, 720))
+	screen.call("_select_city", "city-12")
+	screen.call("_open_reconnaissance", "city-12")
+	_assert_true(reconnaissance_panel.visible and not city_card.visible, "native reconnaissance panel must replace the city card")
+	var recon_target_option: OptionButton = reconnaissance_panel.get_node("%TargetOption")
+	var recon_executor_option: OptionButton = reconnaissance_panel.get_node("%ExecutorOption")
+	_assert_equal(recon_target_option.get_item_metadata(0), "city-0", "recon panel must preserve the query target order")
+	_assert_equal(recon_target_option.get_item_metadata(recon_target_option.selected), recon_target_id, "recon panel must select the declared default target")
+	_assert_equal(recon_executor_option.get_item_metadata(recon_executor_option.selected), recon_officer_id, "recon panel must select the declared default executor")
+	_assert_true("20 金、10 体力" in reconnaissance_panel.get_node("%CostLabel").text, "recon panel must disclose exact command costs")
+	_assert_true("未侦察" in reconnaissance_panel.get_node("%IntelLabel").text, "recon panel must disclose public-only target knowledge")
+	_assert_equal(map_world.get("_recon_target_id"), recon_target_id, "opening reconnaissance must preview the selected target in map space")
+	map_world.play_recon_scan("city-12", recon_target_id)
+	map_world.preview_recon_target("city-12", "city-1")
+	_assert_equal(map_world.get("_recon_target_id"), "city-1", "new reconnaissance preview must supersede an in-flight scan target")
+	_assert_true(map_world.get("_recon_tween") == null and is_equal_approx(float(map_world.get("_recon_progress")), 0.42), "new reconnaissance preview must terminate the old scan tween")
+	map_world.preview_recon_target("city-12", recon_target_id)
+	reconnaissance_panel.apply_responsive_layout(true, canvas_scale, physical_size)
+	for control_name: String in ["CloseButton", "TargetOption", "ExecutorOption", "ExecuteButton"]:
+		var control: Control = reconnaissance_panel.get_node("%%%s" % control_name)
+		_assert_true(control.custom_minimum_size.y * canvas_scale >= 47.5, "compact reconnaissance %s must retain a 48px-class physical target" % control_name)
+	for label_name: String in ["TargetLabel", "ExecutorLabel"]:
+		var field_label: Label = reconnaissance_panel.get_node("%%%s" % label_name)
+		_assert_true(field_label.get_theme_font_size("font_size") * canvas_scale >= 14.5, "compact reconnaissance %s must remain physically readable" % label_name)
+	var blocked_recon_catalog: Dictionary = recon_catalog.duplicate(true)
+	blocked_recon_catalog["allowed"] = false
+	blocked_recon_catalog["reason"] = "本城没有可执行侦察的武将"
+	blocked_recon_catalog["executors"] = []
+	reconnaissance_panel.refresh(blocked_recon_catalog)
+	_assert_true("不可执行：本城没有可执行侦察的武将" in reconnaissance_panel.get_node("%IntelLabel").text, "touch reconnaissance panel must render disabled reasons without relying on a tooltip")
+	reconnaissance_panel.refresh(recon_catalog)
+	var recon_seed_before: int = int(screen.get("_snapshot")["rngSeed"])
+	var recon_money_before: int = int(screen.get("_snapshot")["cities"]["city-12"]["money"])
+	var recon_stamina_before: int = int(screen.get("_snapshot")["officers"][recon_officer_id]["stamina"])
+	reconnaissance_panel.call("_emit_command")
+	var recon_after: Dictionary = screen.get("_snapshot")
+	_assert_equal(int(recon_after["rngSeed"]), recon_seed_before, "reconnaissance must not advance the deterministic seed")
+	_assert_equal(int(recon_after["cities"]["city-12"]["money"]), recon_money_before - 20, "reconnaissance must debit source money atomically")
+	_assert_equal(int(recon_after["officers"][recon_officer_id]["stamina"]), recon_stamina_before - 10, "reconnaissance must debit executor stamina atomically")
+	_assert_true(recon_officer_id in recon_after["actedOfficerIds"], "reconnaissance must consume the executor's monthly action")
+	_assert_true(recon_after["intelReports"].has(recon_target_id), "reconnaissance must persist a target report")
+	var frozen_report: Dictionary = recon_after["intelReports"][recon_target_id].duplicate(true)
+	_assert_equal(int(frozen_report["money"]), int(live_target_before["money"]), "fresh report must snapshot the target's observed money")
+	_assert_true("旧情报" in reconnaissance_panel.get_node("%IntelLabel").text, "successful reconnaissance must refresh the panel to report mode")
+	_assert_equal(map_world.get("_recon_target_id"), recon_target_id, "successful reconnaissance must play its native map scan on the target")
+	var stale_state: Dictionary = screen.get("_session").snapshot()
+	var stale_live_money: int = mini(9999, int(frozen_report["money"]) + 777)
+	stale_state["cities"][recon_target_id]["money"] = stale_live_money
+	_assert_true(screen.get("_session").restore_snapshot(stale_state)["ok"], "presentation harness must restore a valid changed enemy state")
+	screen.call("_refresh_snapshot", false)
+	screen.call("_select_city", recon_target_id)
+	_assert_true("旧情报" in city_card.get_node("%OwnershipLabel").text, "scouted hostile card must identify report-derived stale knowledge")
+	_assert_true("金：%d" % int(frozen_report["money"]) in city_card.get_node("%StatsLabel").text, "scouted hostile card must render the frozen report value")
+	_assert_true(not "金：%d" % stale_live_money in city_card.get_node("%StatsLabel").text, "scouted hostile card must not leak a newer live enemy value")
 
 	# MB08 uses a legitimate period-1 multi-city candidate so the device path can
 	# issue real road orders without mutating ownership in presentation code.

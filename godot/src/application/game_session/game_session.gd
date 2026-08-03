@@ -336,6 +336,17 @@ func strategic_logistics_query(city_id: String) -> Dictionary:
 	return GameSessionQueries.strategic_logistics_city(_state, city_id)
 
 
+func reconnaissance_query(source_city_id: String) -> Dictionary:
+	if _state == null:
+		return {"found": false, "sourceCity": {}, "reconnaissance": {}, "visibility": {"found": false}}
+	return GameSessionQueries.reconnaissance_city(_state, source_city_id)
+
+
+func city_visibility_query(city_id: String) -> Dictionary:
+	if _state == null: return {"found": false, "knowledge": "unknown"}
+	return GameSessionQueries.city_visibility(_state, city_id)
+
+
 func advance_strategic_orders() -> Dictionary:
 	var before: Dictionary = snapshot()
 	var before_digest: String = state_sha256()

@@ -5,6 +5,7 @@ import { canonicalJson, canonicalSha256 } from '../src/core/migration/canonicalJ
 import { governCity } from '../src/core/cityCommands';
 import { findOwnedCityRoute } from '../src/core/strategicOrders';
 import { cancelOfficerOrders } from '../src/core/officerLifecycle';
+import { validateGameState } from '../src/core/validation';
 import {
   createProductionSessionState,
   OracleApplicationSession,
@@ -35,7 +36,8 @@ function transactionCaseCount(value: ReturnType<typeof buildFixture>) {
     + value.officerManagementBoundaryCases.length + value.personnelLifecycleSequence.steps.length
     + value.personnelLifecycleBoundaryCases.length + value.strategicLogisticsSequences
       .reduce((total, sequence) => total + sequence.steps.length, 0)
-    + value.strategicLogisticsBoundaryCases.length + value.validationCases.length;
+    + value.strategicLogisticsBoundaryCases.length + value.reconnaissanceSequence.steps.length
+    + value.reconnaissanceBoundaryCases.length + value.validationCases.length;
 }
 
 export function buildFixture() {
@@ -138,9 +140,126 @@ export function buildFixture() {
     strategicLogisticsBoundaryCases: buildStrategicLogisticsBoundaryCases(),
     strategicRouteCases: buildStrategicRouteCases(),
     strategicLifecycleCases: buildStrategicLifecycleCases(),
+    reconnaissanceSequence: buildReconnaissanceSequence(),
+    reconnaissanceBoundaryCases: buildReconnaissanceBoundaryCases(),
+    reconnaissanceLegacyReportCase: buildReconnaissanceLegacyReportCase(),
     validationCases: buildValidationCases(),
     modernRulesetCase: buildModernRulesetCase(),
   };
+}
+
+function buildReconnaissanceSequence() {
+  const initialState = createProductionSessionState(1, 1);
+  const initialStateSha256 = canonicalSha256(initialState);
+  const initialSeed = initialState.rngSeed;
+  const session = new OracleApplicationSession(initialState);
+  const steps: Array<{
+    id: string; prePatches: StatePatch[]; preStateSha256: string;
+    command: ApplicationCommandEnvelope; expectedCore: unknown; expectedStateSha256: string;
+  }> = [];
+  let serial = 1;
+  const apply = (id: string, officerId: string, prePatches: StatePatch[] = []) => {
+    if (prePatches.length > 0) {
+      const patched = session.snapshot();
+      applyStatePatches(patched as unknown as Record<string, unknown>, prePatches);
+      session.restoreSnapshot(patched);
+    }
+    const preStateSha256 = canonicalSha256(session.snapshot());
+    const command: ApplicationCommandEnvelope = {
+      commandEnvelopeVersion: 1,
+      commandId: `mb09-recon-${String(serial).padStart(3, '0')}`,
+      expectedStateSha256: preStateSha256,
+      kind: 'reconnoitre_city',
+      parameters: { sourceCityId: 'city-12', targetCityId: 'city-0', officerId },
+    };
+    serial += 1;
+    const expected = session.execute(command);
+    const { state: _stateEvidence, ...expectedCore } = expected;
+    steps.push({
+      id, prePatches, preStateSha256, command, expectedCore,
+      expectedStateSha256: canonicalSha256(expected.state),
+    });
+  };
+  apply('classic-success', 'officer-1');
+  apply('overwrite-stale-report', 'officer-32', [
+    { path: ['cities', 'city-0', 'money'], value: 777 },
+    { path: ['officers', 'officer-57', 'cityId'], value: 'city-3' },
+  ]);
+  return {
+    campaign: { periodId: 1, rulerSourceIndex: 1 }, initialStateSha256, initialSeed,
+    steps, finalStateSha256: canonicalSha256(session.snapshot()),
+  };
+}
+
+function buildReconnaissanceBoundaryCases() {
+  const cases: unknown[] = [];
+  let serial = 1;
+  const add = (
+    id: string,
+    parameters: Record<string, unknown>,
+    patches: StatePatch[] = [],
+  ) => {
+    const input = createProductionSessionState(1, 1);
+    applyStatePatches(input as unknown as Record<string, unknown>, patches);
+    const session = new OracleApplicationSession(input);
+    const command: ApplicationCommandEnvelope = {
+      commandEnvelopeVersion: 1,
+      commandId: `mb09-boundary-${String(serial).padStart(3, '0')}`,
+      expectedStateSha256: canonicalSha256(input),
+      kind: 'reconnoitre_city',
+      parameters,
+    };
+    serial += 1;
+    const expected = session.execute(command);
+    const { state: _stateEvidence, ...expectedCore } = expected;
+    cases.push({
+      id, patches, inputStateSha256: canonicalSha256(input), command, expectedCore,
+      expectedStateSha256: canonicalSha256(expected.state),
+    });
+  };
+  const valid = { sourceCityId: 'city-12', targetCityId: 'city-0', officerId: 'officer-1' };
+  add('modern-success', valid, [{ path: ['rulesetId'], value: 'modern-balanced-v1' }]);
+  add('unknown-source-rejected', { ...valid, sourceCityId: 'city-999' });
+  add('friendly-target-rejected', { ...valid, targetCityId: 'city-12' });
+  add('officer-elsewhere-rejected', { ...valid, officerId: 'officer-56' });
+  add('acted-officer-rejected', valid, [{ path: ['actedOfficerIds'], value: ['officer-1'] }]);
+  add('stamina-insufficient', valid, [{ path: ['officers', 'officer-1', 'stamina'], value: 9 }]);
+  add('money-insufficient', valid, [{ path: ['cities', 'city-12', 'money'], value: 19 }]);
+  add('target-total-troops-safe-integer-overflow', valid, [
+    { path: ['officers', 'officer-56', 'troops'], value: 5_000_000_000_000_000 },
+    { path: ['officers', 'officer-57', 'troops'], value: 5_000_000_000_000_000 },
+  ]);
+  add('stable-officer-id-ordinal-order', valid, [
+    { path: ['officers', 'officer-99', 'factionId'], value: 'ruler-5' },
+    { path: ['officers', 'officer-99', 'cityId'], value: 'city-0' },
+    { path: ['officers', 'officer-100', 'factionId'], value: 'ruler-5' },
+    { path: ['officers', 'officer-100', 'cityId'], value: 'city-0' },
+  ]);
+  add('sorted-unknown-parameter', {
+    ...valid, ['\u{10000}']: true, ['\ue000']: true,
+  });
+  add('missing-target-parameter', {
+    sourceCityId: 'city-12', officerId: 'officer-1',
+  });
+  return cases;
+}
+
+function buildReconnaissanceLegacyReportCase() {
+  const state = createProductionSessionState(1, 1);
+  const session = new OracleApplicationSession(state);
+  const command: ApplicationCommandEnvelope = {
+    commandEnvelopeVersion: 1,
+    commandId: 'mb09-legacy-report-001',
+    expectedStateSha256: canonicalSha256(state),
+    kind: 'reconnoitre_city',
+    parameters: { sourceCityId: 'city-12', targetCityId: 'city-0', officerId: 'officer-1' },
+  };
+  const result = session.execute(command);
+  const legacy = structuredClone(result.state);
+  delete legacy.intelReports['city-0'].officerIds;
+  const issues = validateGameState(legacy);
+  if (issues.length > 0) throw new Error(`legacy intel report must remain valid: ${issues[0].path}`);
+  return { state: legacy, stateSha256: canonicalSha256(legacy) };
 }
 
 function buildStrategicLogisticsSequences() {
@@ -847,6 +966,18 @@ function buildInternalAffairsBoundaryCases() {
 }
 
 function buildValidationCases() {
+  const reconInput = createProductionSessionState(1, 1);
+  const reconSession = new OracleApplicationSession(reconInput);
+  const reconResult = reconSession.execute({
+    commandEnvelopeVersion: 1,
+    commandId: 'mb09-validation-report',
+    expectedStateSha256: canonicalSha256(reconInput),
+    kind: 'reconnoitre_city',
+    parameters: { sourceCityId: 'city-12', targetCityId: 'city-0', officerId: 'officer-1' },
+  });
+  const validReport = structuredClone(reconResult.state.intelReports['city-0']);
+  const missingRequiredReport = structuredClone(validReport) as Partial<typeof validReport>;
+  delete missingRequiredReport.population;
   const validOrder = {
     id: 'strategic-order-1', kind: 'transport', factionId: 'ruler-5', officerId: 'officer-56',
     sourceCityId: 'city-0', targetCityId: 'city-3', routeCityIds: ['city-0', 'city-3'],
@@ -972,6 +1103,91 @@ function buildValidationCases() {
       ],
       expectedPath: 'nextStrategicOrderSerial',
       expectedMessage: 'must exceed every active strategic order serial',
+    },
+    {
+      id: 'intel-report-malformed-record',
+      patches: [{ path: ['intelReports'], value: { 'city-0': 'malformed' } }],
+      expectedPath: 'intelReports.city-0',
+      expectedMessage: 'must be an object',
+    },
+    {
+      id: 'intel-report-unknown-field',
+      patches: [{ path: ['intelReports'], value: { 'city-0': { ...validReport, surprise: true } } }],
+      expectedPath: 'intelReports.city-0.surprise',
+      expectedMessage: 'is an unknown field',
+    },
+    {
+      id: 'intel-report-missing-required-field',
+      patches: [{ path: ['intelReports'], value: { 'city-0': missingRequiredReport } }],
+      expectedPath: 'intelReports.city-0.population',
+      expectedMessage: 'must be a non-negative safe integer',
+    },
+    {
+      id: 'intel-report-future-turn',
+      patches: [{ path: ['intelReports'], value: { 'city-0': { ...validReport, observedTurn: 2 } } }],
+      expectedPath: 'intelReports.city-0.observedTurn',
+      expectedMessage: 'must not be later than the current turn',
+    },
+    {
+      id: 'intel-report-future-calendar',
+      patches: [{ path: ['intelReports'], value: { 'city-0': { ...validReport, observedYear: 191 } } }],
+      expectedPath: 'intelReports.city-0.observedYear',
+      expectedMessage: 'observation date must not be later than the current calendar',
+    },
+    {
+      id: 'intel-report-duplicate-officer-id',
+      patches: [{ path: ['intelReports'], value: { 'city-0': {
+        ...validReport, officerIds: ['officer-56', 'officer-56'], officerCount: 2,
+      } } }],
+      expectedPath: 'intelReports.city-0.officerIds',
+      expectedMessage: 'contains duplicate officer ids',
+    },
+    {
+      id: 'intel-report-officer-count-mismatch',
+      patches: [{ path: ['intelReports'], value: { 'city-0': { ...validReport, officerCount: 1 } } }],
+      expectedPath: 'intelReports.city-0.officerIds',
+      expectedMessage: 'must agree with officerCount',
+    },
+    {
+      id: 'intel-report-unknown-officer',
+      patches: [{ path: ['intelReports'], value: { 'city-0': {
+        ...validReport, officerIds: ['officer-999'], officerCount: 1,
+      } } }],
+      expectedPath: 'intelReports.city-0.officerIds',
+      expectedMessage: 'unknown officer: officer-999',
+    },
+    {
+      id: 'intel-report-key-mismatch',
+      patches: [{ path: ['intelReports'], value: { 'city-1': validReport } }],
+      expectedPath: 'intelReports.city-1.cityId',
+      expectedMessage: 'must match record key',
+    },
+    {
+      id: 'intel-report-malformed-calendar-does-not-crash-validator',
+      patches: [
+        { path: ['intelReports'], value: { 'city-0': validReport } },
+        { path: ['calendar'], value: 'malformed' },
+      ],
+      expectedPath: 'calendar',
+      expectedMessage: 'must be an object',
+    },
+    {
+      id: 'intel-report-malformed-turn-does-not-crash-validator',
+      patches: [
+        { path: ['intelReports'], value: { 'city-0': validReport } },
+        { path: ['turn'], value: {} },
+      ],
+      expectedPath: 'turn',
+      expectedMessage: 'must be a positive integer',
+    },
+    {
+      id: 'intel-report-malformed-calendar-member-does-not-crash-validator',
+      patches: [
+        { path: ['intelReports'], value: { 'city-0': validReport } },
+        { path: ['calendar', 'year'], value: {} },
+      ],
+      expectedPath: 'calendar.year',
+      expectedMessage: 'must be a positive integer',
     },
   ];
 }

@@ -20,6 +20,10 @@ var _selected_city_id := ""
 var _city_hit_radius := CITY_HIT_RADIUS
 var _route_preview: Array[String] = []
 var _active_order_routes: Array[Array] = []
+var _recon_source_id := ""
+var _recon_target_id := ""
+var _recon_progress := 0.0
+var _recon_tween: Tween
 
 
 func rebuild(snapshot: Dictionary) -> void:
@@ -135,6 +139,45 @@ func show_touch_ripple(screen_position: Vector2) -> void:
 	ripple.play(46.0 / canvas_scale)
 
 
+func preview_recon_target(source_city_id: String, target_city_id: String) -> void:
+	# A newly selected preview supersedes an in-flight success scan. Killing the
+	# old tween prevents it from drawing the completed command toward a new target.
+	if _recon_tween and _recon_tween.is_valid(): _recon_tween.kill()
+	_recon_tween = null
+	_recon_source_id = source_city_id if _city_positions.has(source_city_id) else ""
+	_recon_target_id = target_city_id if _city_positions.has(target_city_id) else ""
+	_recon_progress = 0.42 if not _recon_source_id.is_empty() and not _recon_target_id.is_empty() else 0.0
+	queue_redraw()
+
+
+func clear_recon_preview() -> void:
+	if _recon_tween and _recon_tween.is_valid(): _recon_tween.kill()
+	_recon_tween = null
+	_recon_source_id = ""
+	_recon_target_id = ""
+	_recon_progress = 0.0
+	queue_redraw()
+
+
+func play_recon_scan(source_city_id: String, target_city_id: String) -> void:
+	clear_recon_preview()
+	if not _city_positions.has(source_city_id) or not _city_positions.has(target_city_id): return
+	_recon_source_id = source_city_id
+	_recon_target_id = target_city_id
+	_recon_tween = create_tween()
+	_recon_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_recon_tween.tween_method(_set_recon_progress, 0.0, 1.0, 0.42)
+	_recon_tween.tween_interval(0.18)
+	_recon_tween.set_ease(Tween.EASE_IN)
+	_recon_tween.tween_method(_set_recon_progress, 1.0, 0.0, 0.52)
+	_recon_tween.finished.connect(clear_recon_preview)
+
+
+func _set_recon_progress(value: float) -> void:
+	_recon_progress = clampf(value, 0.0, 1.0)
+	queue_redraw()
+
+
 func _draw() -> void:
 	# A procedural parchment-like field avoids raster and licensing dependencies.
 	draw_rect(_map_bounds, Color("#132226"), true)
@@ -156,8 +199,23 @@ func _draw() -> void:
 	for city_id: String in _route_preview:
 		draw_circle(Vector2(_city_positions[city_id]), 12.0, Color(1.0, 0.72, 0.18, 0.25))
 		draw_arc(Vector2(_city_positions[city_id]), 15.0, 0.0, TAU, 28, Color(1.0, 0.82, 0.38, 0.95), 2.0, true)
+	_draw_recon_scan()
 
 	draw_rect(_map_bounds, Color(0.55, 0.68, 0.56, 0.55), false, 2.0)
+
+
+func _draw_recon_scan() -> void:
+	if _recon_progress <= 0.0 or not _city_positions.has(_recon_source_id) \
+			or not _city_positions.has(_recon_target_id): return
+	var source: Vector2 = _city_positions[_recon_source_id]
+	var target: Vector2 = _city_positions[_recon_target_id]
+	var tip: Vector2 = source.lerp(target, _recon_progress)
+	var glow: Color = Color(0.42, 0.92, 1.0, 0.22 + _recon_progress * 0.35)
+	draw_line(source, tip, Color(0.03, 0.08, 0.11, 0.9), 10.0, true)
+	draw_line(source, tip, Color(0.35, 0.9, 1.0, 0.9), 3.0, true)
+	draw_circle(source, 11.0 + 8.0 * _recon_progress, glow)
+	draw_arc(target, 14.0 + 18.0 * _recon_progress, 0.0, TAU, 40, Color(0.48, 0.94, 1.0, 0.92), 3.0, true)
+	draw_arc(target, 24.0 + 30.0 * _recon_progress, 0.0, TAU, 40, glow, 4.0, true)
 
 
 func _draw_route(route: Array, color: Color, width: float) -> void:

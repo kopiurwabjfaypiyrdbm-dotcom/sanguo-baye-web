@@ -22,6 +22,7 @@ import {
   executeCaptive,
 } from '../officerLifecycle';
 import { advanceStrategicOrders, issueMoveOrder, issueTransportOrder } from '../strategicOrders';
+import { reconnoitreCity } from '../reconnaissance';
 import type { GameState } from '../types';
 import { selectPlayerFaction } from '../../data/legacyScenario';
 import { canonicalSha256, compareUnicodeScalar } from './canonicalJson';
@@ -261,6 +262,7 @@ export function validateEnvelope(raw: unknown):
     confiscate_equipment: ['cityId', 'officerId', 'itemId'],
     issue_move_order: ['sourceCityId', 'targetCityId', 'officerId'],
     issue_transport_order: ['sourceCityId', 'targetCityId', 'officerId', 'cargo'],
+    reconnoitre_city: ['sourceCityId', 'targetCityId', 'officerId'],
   };
   const parameterKeys = parameterKeysByKind[raw.kind];
   if (!parameterKeys) return rejected('unknown_command', `unsupported command kind: ${raw.kind}`);
@@ -374,6 +376,10 @@ function executeDomainCommand(before: GameState, envelope: ApplicationCommandEnv
       }
       return issueTransportOrder(before, input as unknown as Parameters<typeof issueTransportOrder>[1]);
     }
+    case 'reconnoitre_city':
+      return reconnoitreCity(before, parameters as {
+        sourceCityId: string; targetCityId: string; officerId: string;
+      });
     default:
       throw new Error(`unsupported command kind: ${envelope.kind}`);
   }
@@ -387,6 +393,9 @@ function projectReceipt(
 ): Record<string, unknown> {
   if (kind === 'issue_move_order' || kind === 'issue_transport_order') {
     return projectStrategicOrderReceipt(kind, before, after, command);
+  }
+  if (kind === 'reconnoitre_city') {
+    return projectReconnaissanceReceipt(before, after, command);
   }
   if ([
     'search_city', 'recruit_free_officer', 'recruit_captive', 'release_captive',
@@ -442,6 +451,38 @@ function projectReceipt(
     };
   }
   return receipt;
+}
+
+function projectReconnaissanceReceipt(
+  before: GameState,
+  after: GameState,
+  command: Record<string, unknown>,
+): Record<string, unknown> {
+  const sourceCityId = command.sourceCityId as string;
+  const targetCityId = command.targetCityId as string;
+  const officerId = command.officerId as string;
+  const appendedLog = after.logs.at(-1);
+  const report = after.intelReports[targetCityId];
+  if (!appendedLog || !report) {
+    throw new Error('Successful reconnoitre_city transaction is missing observable output');
+  }
+  return {
+    kind: 'reconnoitre_city',
+    state: projectStrategicState(after),
+    sourceCity: {
+      id: sourceCityId,
+      before: { money: before.cities[sourceCityId].money },
+      after: { money: after.cities[sourceCityId].money },
+    },
+    targetCity: { id: targetCityId },
+    officer: {
+      id: officerId,
+      before: { stamina: before.officers[officerId].stamina },
+      after: { stamina: after.officers[officerId].stamina },
+    },
+    report: structuredClone(report),
+    appendedLog: structuredClone(appendedLog),
+  };
 }
 
 function projectStrategicOrderReceipt(

@@ -7,6 +7,7 @@ signal command_requested(kind: String, parameters: Dictionary)
 signal officer_management_requested(city_id: String)
 signal personnel_lifecycle_requested(city_id: String)
 signal strategic_logistics_requested(city_id: String)
+signal reconnaissance_requested(city_id: String)
 signal close_requested
 
 @onready var title_label: Label = %TitleLabel
@@ -15,10 +16,12 @@ signal close_requested
 @onready var outer_margin: MarginContainer = $OuterMargin
 @onready var content: VBoxContainer = $OuterMargin/Content
 @onready var command_label: Label = %CommandLabel
+@onready var command_row: HBoxContainer = %CommandRow
 @onready var previous_command: Button = %PreviousCommand
 @onready var command_option: OptionButton = %CommandOption
 @onready var next_command: Button = %NextCommand
 @onready var executor_label: Label = %ExecutorLabel
+@onready var executor_row: HBoxContainer = %ExecutorRow
 @onready var executor_option: OptionButton = %ExecutorOption
 @onready var trade_row: HBoxContainer = %TradeRow
 @onready var trade_direction: OptionButton = %TradeDirection
@@ -27,6 +30,7 @@ signal close_requested
 @onready var officer_button: Button = %OfficerButton
 @onready var personnel_button: Button = %PersonnelButton
 @onready var logistics_button: Button = %LogisticsButton
+@onready var reconnaissance_button: Button = %ReconnaissanceButton
 @onready var close_button: Button = %CloseButton
 
 var _city_id := ""
@@ -38,7 +42,9 @@ var _confirm_dialog: ConfirmationDialog
 var _compact_mode := false
 var _last_canvas_scale := 1.0
 var _full_stats_text := ""
+var _compact_hostile_stats_text := ""
 var _compact_stats_by_kind: Dictionary = {}
+var _is_owned := false
 
 const DEFAULT_CARD_MINIMUM := Vector2(334.0, 254.0)
 const DEFAULT_CLOSE_MINIMUM := Vector2(52.0, 48.0)
@@ -51,6 +57,7 @@ func _ready() -> void:
 	officer_button.pressed.connect(func() -> void: officer_management_requested.emit(_city_id))
 	personnel_button.pressed.connect(func() -> void: personnel_lifecycle_requested.emit(_city_id))
 	logistics_button.pressed.connect(func() -> void: strategic_logistics_requested.emit(_city_id))
+	reconnaissance_button.pressed.connect(func() -> void: reconnaissance_requested.emit(_city_id))
 	develop_button.pressed.connect(_on_action_pressed)
 	command_option.item_selected.connect(_on_command_selected)
 	trade_direction.item_selected.connect(_on_trade_direction_selected)
@@ -67,12 +74,15 @@ func _ready() -> void:
 	officer_button.text = tr("人物")
 	personnel_button.text = tr("人才")
 	logistics_button.text = tr("后勤")
+	reconnaissance_button.text = tr("侦察")
 	command_label.text = tr("内政命令")
 	executor_label.text = tr("执行武将")
 	hide()
 
 
-func show_city(snapshot: Dictionary, city_id: String, command_queries: Array = []) -> void:
+func show_city(
+		snapshot: Dictionary, city_id: String, command_queries: Array = [], visibility: Dictionary = {}
+) -> void:
 	var cities := _as_dictionary(snapshot.get("cities", {}))
 	var city := _as_dictionary(cities.get(city_id, {}))
 	if city.is_empty():
@@ -84,29 +94,75 @@ func show_city(snapshot: Dictionary, city_id: String, command_queries: Array = [
 	var owner_id := str(city.get("ownerId", ""))
 	var factions := _as_dictionary(snapshot.get("factions", {}))
 	var owner := _as_dictionary(factions.get(owner_id, {}))
-	ownership_label.text = tr("势力：%s") % str(owner.get("name", tr("无主")))
+	var player_faction_id: String = str(snapshot.get("playerFactionId", ""))
+	_is_owned = not player_faction_id.is_empty() and owner_id == player_faction_id
+	var knowledge: String = "current" if _is_owned else "public"
+	if not _is_owned and bool(visibility.get("found", false)) \
+			and visibility.get("knowledge", "public") == "report" \
+			and visibility.get("report") is Dictionary:
+		knowledge = "report"
 	var owner_name: String = str(owner.get("name", tr("无主")))
-	_full_stats_text = "%s  %s\n%s  %s\n%s  %s" % [
-		tr("人口：%s") % _format_number(int(city.get("population", 0))),
-		tr("民忠：%d") % int(city.get("publicLoyalty", 0)),
-		tr("农业：%d / %d") % [int(city.get("farming", 0)), int(city.get("farmingLimit", 0))],
-		tr("商业：%d / %d") % [int(city.get("commerce", 0)), int(city.get("commerceLimit", 0))],
-		tr("金：%d") % int(city.get("money", 0)),
-		tr("粮：%d") % int(city.get("food", 0)),
-	]
-	var owner_short := owner_name
-	var money_short := tr("金 %d") % int(city.get("money", 0))
-	_compact_stats_by_kind = {
-		"develop_farming": "%s · %s · %s" % [owner_short, tr("农 %d/%d") % [int(city.get("farming", 0)), int(city.get("farmingLimit", 0))], money_short],
-		"develop_commerce": "%s · %s · %s" % [owner_short, tr("商 %d/%d") % [int(city.get("commerce", 0)), int(city.get("commerceLimit", 0))], money_short],
-		"govern_city": "%s · %s · %s" % [owner_short, tr("防灾 %d") % int(city.get("disasterPrevention", 0)), money_short],
-		"inspect_city": "%s · %s · %s · %s" % [owner_short, tr("人 %s") % _format_number(int(city.get("population", 0))), tr("忠 %d") % int(city.get("publicLoyalty", 0)), money_short],
-		"trade_food": "%s · %s · %s" % [owner_short, money_short, tr("粮 %d") % int(city.get("food", 0))],
-		"banquet_officer": "%s · %s" % [owner_short, money_short],
-		"plunder_city": "%s · %s · %s · %s" % [owner_short, tr("忠 %d") % int(city.get("publicLoyalty", 0)), tr("农 %d") % int(city.get("farming", 0)), tr("商 %d") % int(city.get("commerce", 0))],
-	}
+	if knowledge == "current":
+		ownership_label.text = tr("势力：%s · 己方实时") % owner_name
+		_full_stats_text = "%s  %s\n%s  %s\n%s  %s" % [
+			tr("人口：%s") % _format_number(int(city.get("population", 0))),
+			tr("民忠：%d") % int(city.get("publicLoyalty", 0)),
+			tr("农业：%d / %d") % [int(city.get("farming", 0)), int(city.get("farmingLimit", 0))],
+			tr("商业：%d / %d") % [int(city.get("commerce", 0)), int(city.get("commerceLimit", 0))],
+			tr("金：%d") % int(city.get("money", 0)),
+			tr("粮：%d") % int(city.get("food", 0)),
+		]
+		_compact_hostile_stats_text = ""
+	elif knowledge == "report":
+		var report: Dictionary = _as_dictionary(visibility.get("report", {}))
+		ownership_label.text = tr("势力：%s · %d 年 %d 月旧情报") % [
+			owner_name, int(report.get("observedYear", 0)), int(report.get("observedMonth", 0)),
+		]
+		_full_stats_text = "%s  %s\n%s  %s\n%s  %s" % [
+			tr("人口：%s") % _format_number(int(report.get("population", 0))),
+			tr("驻将：%d · 兵 %d") % [int(report.get("officerCount", 0)), int(report.get("totalTroops", 0))],
+			tr("农业：%d") % int(report.get("farming", 0)),
+			tr("商业：%d") % int(report.get("commerce", 0)),
+			tr("金：%d") % int(report.get("money", 0)),
+			tr("粮：%d · 后备 %d") % [int(report.get("food", 0)), int(report.get("reserveTroops", 0))],
+		]
+		_compact_hostile_stats_text = "%s · %s · %s · %s\n%s · %s · %s" % [
+			tr("人 %s") % _format_number(int(report.get("population", 0))),
+			tr("%d 将 / %d 兵") % [int(report.get("officerCount", 0)), int(report.get("totalTroops", 0))],
+			tr("金 %d") % int(report.get("money", 0)), tr("粮 %d") % int(report.get("food", 0)),
+			tr("农 %d") % int(report.get("farming", 0)), tr("商 %d") % int(report.get("commerce", 0)),
+			tr("后备 %d") % int(report.get("reserveTroops", 0)),
+		]
+	else:
+		ownership_label.text = tr("势力：%s · 未侦察") % owner_name
+		_full_stats_text = tr("情报未知\n仅公开城名与当前势力归属\n请从己方城池派武将侦察")
+		_compact_hostile_stats_text = tr("情报未知 · 仅公开城名与势力\n请从己方城池派武将侦察")
+	_compact_stats_by_kind = {}
+	if knowledge == "current":
+		var owner_short := owner_name
+		var money_short := tr("金 %d") % int(city.get("money", 0))
+		_compact_stats_by_kind = {
+			"develop_farming": "%s · %s · %s" % [owner_short, tr("农 %d/%d") % [int(city.get("farming", 0)), int(city.get("farmingLimit", 0))], money_short],
+			"develop_commerce": "%s · %s · %s" % [owner_short, tr("商 %d/%d") % [int(city.get("commerce", 0)), int(city.get("commerceLimit", 0))], money_short],
+			"govern_city": "%s · %s · %s" % [owner_short, tr("防灾 %d") % int(city.get("disasterPrevention", 0)), money_short],
+			"inspect_city": "%s · %s · %s · %s" % [owner_short, tr("人 %s") % _format_number(int(city.get("population", 0))), tr("忠 %d") % int(city.get("publicLoyalty", 0)), money_short],
+			"trade_food": "%s · %s · %s" % [owner_short, money_short, tr("粮 %d") % int(city.get("food", 0))],
+			"banquet_officer": "%s · %s" % [owner_short, money_short],
+			"plunder_city": "%s · %s · %s · %s" % [owner_short, tr("忠 %d") % int(city.get("publicLoyalty", 0)), tr("农 %d") % int(city.get("farming", 0)), tr("商 %d") % int(city.get("commerce", 0))],
+		}
 	stats_label.text = _full_stats_text
 	_populate_commands(command_queries)
+	command_row.visible = _is_owned
+	executor_row.visible = _is_owned
+	trade_row.visible = _is_owned and trade_row.visible
+	develop_button.visible = _is_owned
+	officer_button.visible = _is_owned
+	personnel_button.visible = _is_owned
+	logistics_button.visible = _is_owned
+	reconnaissance_button.visible = _is_owned
+	# This Control is not container-owned. Recompute its actual rect whenever a
+	# visibility mode hides rows or changes compact hostile text density.
+	reset_size()
 	show()
 
 
@@ -122,6 +178,7 @@ func set_busy(value: bool) -> void:
 	officer_button.disabled = value or _city_id.is_empty()
 	personnel_button.disabled = value or _city_id.is_empty()
 	logistics_button.disabled = value or _city_id.is_empty()
+	reconnaissance_button.disabled = value or _city_id.is_empty() or not _is_owned
 
 
 func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: Vector2i) -> void:
@@ -134,7 +191,7 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 		content.add_theme_constant_override("separation", 2)
 		var touch_size := ceilf(48.0 / scale)
 		var target_width_px := minf(360.0, maxf(320.0, float(physical_size.x) - 48.0))
-		custom_minimum_size = Vector2(ceilf(target_width_px / scale), DEFAULT_CARD_MINIMUM.y)
+		custom_minimum_size = Vector2(ceilf(target_width_px / scale), 0.0)
 		close_button.custom_minimum_size = Vector2(touch_size, touch_size)
 		previous_command.custom_minimum_size = Vector2(touch_size, touch_size)
 		command_option.custom_minimum_size = Vector2(0.0, touch_size)
@@ -142,17 +199,15 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 		executor_option.custom_minimum_size = Vector2(0.0, touch_size)
 		trade_direction.custom_minimum_size = Vector2(ceilf(92.0 / scale), touch_size)
 		trade_amount.custom_minimum_size = Vector2(0.0, touch_size)
-		officer_button.custom_minimum_size = Vector2(ceilf(80.0 / scale), touch_size)
-		personnel_button.custom_minimum_size = Vector2(ceilf(80.0 / scale), touch_size)
-		logistics_button.custom_minimum_size = Vector2(ceilf(72.0 / scale), touch_size)
-		develop_button.custom_minimum_size = Vector2(ceilf(80.0 / scale), touch_size)
+		for button: Button in [officer_button, personnel_button, logistics_button, reconnaissance_button, develop_button]:
+			button.custom_minimum_size = Vector2(ceilf(60.0 / scale), touch_size)
 		var body_font_size := ceili(16.0 / scale)
 		var action_font_size := ceili(17.0 / scale)
 		title_label.add_theme_font_size_override("font_size", ceili(20.0 / scale))
 		for label: Label in [ownership_label, stats_label, command_label, executor_label]:
 			label.add_theme_font_size_override("font_size", body_font_size)
 		stats_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-		for control: Control in [close_button, previous_command, command_option, next_command, executor_option, trade_direction, trade_amount, logistics_button, personnel_button, officer_button, develop_button]:
+		for control: Control in [close_button, previous_command, command_option, next_command, executor_option, trade_direction, trade_amount, logistics_button, reconnaissance_button, personnel_button, officer_button, develop_button]:
 			control.add_theme_font_size_override("font_size", action_font_size)
 		for popup: PopupMenu in [command_option.get_popup(), executor_option.get_popup(), trade_direction.get_popup()]:
 			popup.add_theme_font_size_override("font_size", action_font_size)
@@ -179,12 +234,13 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 		officer_button.custom_minimum_size = Vector2(112.0, 54.0)
 		personnel_button.custom_minimum_size = Vector2(112.0, 54.0)
 		logistics_button.custom_minimum_size = Vector2(96.0, 54.0)
+		reconnaissance_button.custom_minimum_size = Vector2(82.0, 54.0)
 		develop_button.custom_minimum_size = Vector2(112.0, 54.0)
 		title_label.add_theme_font_size_override("font_size", 24)
 		for label: Label in [ownership_label, stats_label, command_label, executor_label]:
 			label.add_theme_font_size_override("font_size", 18)
 		stats_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-		for control: Control in [close_button, previous_command, command_option, next_command, executor_option, trade_direction, trade_amount, logistics_button, personnel_button, officer_button, develop_button]:
+		for control: Control in [close_button, previous_command, command_option, next_command, executor_option, trade_direction, trade_amount, logistics_button, reconnaissance_button, personnel_button, officer_button, develop_button]:
 			control.add_theme_font_size_override("font_size", 18)
 		for popup: PopupMenu in [command_option.get_popup(), executor_option.get_popup(), trade_direction.get_popup()]:
 			popup.add_theme_font_size_override("font_size", 18)
@@ -316,7 +372,12 @@ func _apply_trade_amount_limit() -> void:
 
 
 func _apply_information_density() -> void:
-	ownership_label.visible = not _compact_mode
+	# Enemy ownership is public knowledge and must remain text-visible on compact
+	# phones; faction color alone is not an accessible information channel.
+	ownership_label.visible = not _compact_mode or not _is_owned
+	if not _is_owned:
+		stats_label.text = _compact_hostile_stats_text if _compact_mode else _full_stats_text
+		return
 	if _compact_mode:
 		stats_label.text = str(_compact_stats_by_kind.get(str(_selected_query.get("kind", "")), ""))
 	else:

@@ -6,6 +6,7 @@ const InternalAffairsAdapter = preload("res://src/application/commands/internal_
 const OfficerManagementAdapter = preload("res://src/application/commands/officer_management_adapter.gd")
 const PersonnelLifecycleAdapter = preload("res://src/application/commands/personnel_lifecycle_adapter.gd")
 const StrategicOrderAdapter = preload("res://src/application/commands/strategic_order_adapter.gd")
+const ReconnaissanceAdapter = preload("res://src/application/commands/reconnaissance_adapter.gd")
 const StringContract = preload("res://src/application/commands/application_string_contract.gd")
 
 const ENVELOPE_VERSION: int = 1
@@ -33,6 +34,7 @@ const ADAPTERS: Dictionary = {
 	"confiscate_equipment": {"module": PersonnelLifecycleAdapter, "generic": true},
 	"issue_move_order": {"module": StrategicOrderAdapter, "generic": true},
 	"issue_transport_order": {"module": StrategicOrderAdapter, "generic": true},
+	"reconnoitre_city": {"module": ReconnaissanceAdapter, "generic": true},
 }
 
 

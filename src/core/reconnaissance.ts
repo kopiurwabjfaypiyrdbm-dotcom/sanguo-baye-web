@@ -8,6 +8,7 @@ import { getCampaignCommandCost } from './rulesets';
 export const RECON_STAMINA_COST = 4;
 /** Provisional product cost until the original ConsumeMoney[RECONNOITRE] entry is verified. */
 export const RECON_MONEY_COST = 50;
+const RECON_TOTAL_TROOPS_OVERFLOW = '侦察目标总兵力超出安全整数范围';
 
 export type ReconOrder = {
   sourceCityId: string;
@@ -25,7 +26,7 @@ export function getReconTargets(state: GameState, sourceCityId: string) {
   return Object.values(state.cities)
     .filter((city) => city.id !== source.id && city.ownerId !== source.ownerId)
     .sort((a, b) => (a.sourceIndex ?? Number.MAX_SAFE_INTEGER) - (b.sourceIndex ?? Number.MAX_SAFE_INTEGER)
-      || a.id.localeCompare(b.id));
+      || compareStableId(a.id, b.id));
 }
 
 export function getReconAvailability(state: GameState, order: ReconOrder): ReconAvailability {
@@ -90,6 +91,14 @@ export function createCityIntelReport(state: GameState, cityId: string): CityInt
   if (!city) throw new Error(`未知城池：${cityId}`);
   const officers = getCityOfficers(state, city.id).filter((officer) => officer.status === 'serving');
   const satrap = city.satrapOfficerId ? state.officers[city.satrapOfficerId] : undefined;
+  let totalTroops = 0;
+  for (const candidate of officers) {
+    if (!Number.isSafeInteger(candidate.troops)
+      || totalTroops > Number.MAX_SAFE_INTEGER - candidate.troops) {
+      throw new Error(RECON_TOTAL_TROOPS_OVERFLOW);
+    }
+    totalTroops += candidate.troops;
+  }
   return {
     cityId: city.id,
     observedTurn: state.turn,
@@ -104,10 +113,14 @@ export function createCityIntelReport(state: GameState, cityId: string): CityInt
     defense: city.defense,
     publicLoyalty: city.publicLoyalty,
     satrapName: satrap?.name,
-    officerIds: officers.map((candidate) => candidate.id).sort((left, right) => left.localeCompare(right)),
+    officerIds: officers.map((candidate) => candidate.id).sort(compareStableId),
     officerCount: officers.length,
-    totalTroops: officers.reduce((sum, candidate) => sum + candidate.troops, 0),
+    totalTroops,
   };
+}
+
+function compareStableId(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 function isStationedPlayerOfficer(state: GameState, officer: Officer | undefined, cityId: string): officer is Officer {

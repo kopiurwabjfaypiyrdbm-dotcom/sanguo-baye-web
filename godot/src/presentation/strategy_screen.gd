@@ -32,6 +32,7 @@ const ZOOM_STEP := 1.14
 @onready var officer_panel = %OfficerManagementPanel
 @onready var personnel_panel = %PersonnelLifecyclePanel
 @onready var logistics_panel = %StrategicLogisticsPanel
+@onready var reconnaissance_panel: ReconnaissancePanel = %ReconnaissancePanel
 
 var _session: Object
 var _snapshot: Dictionary = {}
@@ -88,6 +89,8 @@ func _process(_delta: float) -> void:
 		personnel_panel.place_in(_get_card_usable_rect())
 	if logistics_panel.visible:
 		logistics_panel.place_in(_get_card_usable_rect())
+	if reconnaissance_panel.visible:
+		reconnaissance_panel.place_in(_get_card_usable_rect())
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -122,6 +125,7 @@ func _connect_ui() -> void:
 	city_card.officer_management_requested.connect(_open_officer_management)
 	city_card.personnel_lifecycle_requested.connect(_open_personnel_lifecycle)
 	city_card.strategic_logistics_requested.connect(_open_strategic_logistics)
+	city_card.reconnaissance_requested.connect(_open_reconnaissance)
 	city_card.close_requested.connect(_close_city_card)
 	officer_panel.command_requested.connect(_execute_internal_command)
 	officer_panel.close_requested.connect(_close_officer_management)
@@ -132,6 +136,9 @@ func _connect_ui() -> void:
 	logistics_panel.demo_campaign_requested.connect(_start_logistics_demo)
 	logistics_panel.route_preview_requested.connect(_preview_logistics_route)
 	logistics_panel.close_requested.connect(_close_strategic_logistics)
+	reconnaissance_panel.command_requested.connect(_execute_internal_command)
+	reconnaissance_panel.target_preview_requested.connect(_preview_reconnaissance)
+	reconnaissance_panel.close_requested.connect(_close_reconnaissance)
 
 
 func _refresh_snapshot(keep_card_open: bool = true) -> bool:
@@ -184,6 +191,7 @@ func _select_city(city_id: String) -> void:
 	_close_officer_management()
 	_close_personnel_lifecycle(false)
 	_close_strategic_logistics(false)
+	_close_reconnaissance(false)
 	map_world.set_selected_city(city_id)
 	_show_selected_city_card()
 	var city := _as_dictionary(_as_dictionary(_snapshot.get("cities", {})).get(city_id, {}))
@@ -200,7 +208,11 @@ func _show_selected_city_card() -> void:
 			var raw_commands: Variant = query.get("internalAffairs", [])
 			if raw_commands is Array:
 				command_queries = raw_commands
-	city_card.show_city(_snapshot, _selected_city_id, command_queries)
+	var visibility: Dictionary = {}
+	if is_instance_valid(_session) and _session.has_method("city_visibility_query"):
+		var visibility_value: Variant = _session.call("city_visibility_query", _selected_city_id)
+		if visibility_value is Dictionary: visibility = visibility_value
+	city_card.show_city(_snapshot, _selected_city_id, command_queries, visibility)
 	city_card.place_near(map_world.get_city_screen_position(_selected_city_id), _get_card_usable_rect())
 
 
@@ -209,7 +221,9 @@ func _close_city_card() -> void:
 	officer_panel.hide()
 	personnel_panel.hide()
 	logistics_panel.hide()
+	reconnaissance_panel.hide()
 	_preview_logistics_route([])
+	map_world.clear_recon_preview()
 	_selected_city_id = ""
 	map_world.set_selected_city("")
 
@@ -225,6 +239,7 @@ func _open_officer_management(city_id: String) -> void:
 	city_card.hide()
 	personnel_panel.hide()
 	logistics_panel.hide()
+	reconnaissance_panel.hide()
 	officer_panel.show_city(
 		city_id, str(city.get("name", city_id)),
 		_as_dictionary(query.get("officerManagement", {}))
@@ -251,6 +266,7 @@ func _open_personnel_lifecycle(city_id: String) -> void:
 	city_card.hide()
 	officer_panel.hide()
 	logistics_panel.hide()
+	reconnaissance_panel.hide()
 	personnel_panel.show_city(
 		city_id, str(city.get("name", city_id)),
 		_as_dictionary(query.get("personnelLifecycle", {}))
@@ -262,6 +278,7 @@ func _open_personnel_lifecycle(city_id: String) -> void:
 
 func _close_personnel_lifecycle(show_card: bool = true) -> void:
 	personnel_panel.hide()
+	reconnaissance_panel.hide()
 	if show_card and not _selected_city_id.is_empty():
 		_show_selected_city_card()
 
@@ -277,6 +294,7 @@ func _open_strategic_logistics(city_id: String) -> void:
 	city_card.hide()
 	officer_panel.hide()
 	personnel_panel.hide()
+	reconnaissance_panel.hide()
 	logistics_panel.show_city(city_id, str(city.get("name", city_id)), _as_dictionary(query.get("strategicLogistics", {})))
 	logistics_panel.apply_responsive_layout(_compact_layout, _current_canvas_scale(), DisplayServer.window_get_size())
 	logistics_panel.place_in(_get_card_usable_rect())
@@ -288,6 +306,44 @@ func _close_strategic_logistics(show_card: bool = true) -> void:
 	_preview_logistics_route([])
 	if show_card and not _selected_city_id.is_empty():
 		_show_selected_city_card()
+
+
+func _open_reconnaissance(city_id: String) -> void:
+	if city_id.is_empty() or not is_instance_valid(_session): return
+	var query: Variant = _session.call("reconnaissance_query", city_id)
+	if not query is Dictionary or not bool(query.get("found", false)):
+		_set_status(tr("侦察查询失败"), "error")
+		return
+	var source: Dictionary = query["sourceCity"]
+	city_card.hide()
+	officer_panel.hide()
+	personnel_panel.hide()
+	logistics_panel.hide()
+	reconnaissance_panel.show_city(
+		city_id, str(source.get("name", city_id)), _as_dictionary(query.get("reconnaissance", {}))
+	)
+	reconnaissance_panel.apply_responsive_layout(_compact_layout, _current_canvas_scale(), DisplayServer.window_get_size())
+	reconnaissance_panel.place_in(_get_card_usable_rect())
+	var catalog: Dictionary = _as_dictionary(query.get("reconnaissance", {}))
+	_preview_reconnaissance(city_id, str(catalog.get("defaultTargetCityId", "")))
+	_set_status(tr("正在从 %s 规划侦察；敌城数据仅来自已保存快照") % source.get("name", city_id), "ready")
+
+
+func _close_reconnaissance(show_card: bool = true) -> void:
+	reconnaissance_panel.hide()
+	map_world.clear_recon_preview()
+	if show_card and not _selected_city_id.is_empty(): _show_selected_city_card()
+
+
+func _refresh_reconnaissance() -> void:
+	if not reconnaissance_panel.visible or _selected_city_id.is_empty(): return
+	var query: Variant = _session.call("reconnaissance_query", _selected_city_id)
+	if query is Dictionary and bool(query.get("found", false)):
+		reconnaissance_panel.refresh(_as_dictionary(query.get("reconnaissance", {})))
+
+
+func _preview_reconnaissance(source_city_id: String, target_city_id: String) -> void:
+	map_world.preview_recon_target(source_city_id, target_city_id)
 
 
 func _refresh_strategic_logistics() -> void:
@@ -377,6 +433,16 @@ func _execute_internal_command(kind: String, parameters: Dictionary) -> void:
 	_refresh_officer_management()
 	_refresh_personnel_lifecycle()
 	_refresh_strategic_logistics()
+	_refresh_reconnaissance()
+	if kind == "reconnoitre_city":
+		map_world.play_recon_scan(str(parameters.get("sourceCityId", "")), str(parameters.get("targetCityId", "")))
+		var recon_receipt: Dictionary = _as_dictionary(result.get("receipt", {}))
+		var recon_log: Dictionary = _as_dictionary(recon_receipt.get("appendedLog", {}))
+		_set_status("%s · %s" % [
+			str(recon_log.get("message", tr("侦察完成"))),
+			tr("种子 %d") % int(_snapshot.get("rngSeed", 0)),
+		], "success")
+		return
 	var city_id: String = str(parameters.get("cityId", parameters.get("sourceCityId", "")))
 	var city := _as_dictionary(_as_dictionary(_snapshot.get("cities", {})).get(city_id, {}))
 	_set_status(
@@ -419,6 +485,7 @@ func _internal_command_label(kind: String) -> String:
 		"confiscate_equipment": tr("没收装备"),
 		"issue_move_order": tr("调动"),
 		"issue_transport_order": tr("输送"),
+		"reconnoitre_city": tr("侦察"),
 	}.get(kind, kind)
 
 
@@ -615,6 +682,9 @@ func _handle_tap(screen_position: Vector2, is_touch: bool) -> void:
 	if logistics_panel.visible:
 		_close_strategic_logistics()
 		return
+	if reconnaissance_panel.visible:
+		_close_reconnaissance()
+		return
 	if is_touch:
 		map_world.show_touch_ripple(screen_position)
 	var city_id := map_world.pick_city(screen_position)
@@ -746,6 +816,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	officer_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
 	personnel_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
 	logistics_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
+	reconnaissance_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
 	if not _snapshot.is_empty():
 		_update_hud_from_snapshot()
 
@@ -759,6 +830,7 @@ func _set_interaction_busy(busy: bool) -> void:
 	officer_panel.set_busy(busy)
 	personnel_panel.set_busy(busy)
 	logistics_panel.set_busy(busy)
+	reconnaissance_panel.set_busy(busy)
 
 
 func _set_status(message: String, tone: String) -> void:
