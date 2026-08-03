@@ -28,6 +28,8 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 - campaign setup presentation：62 assertions；38 城、54 道路和生产 GameSession 入口。
 - Web：47 个测试文件、378 tests，构建通过。
 - 聚合 `npm run check`：退出码 0，通过；本轮耗时约 547 秒。日志中的 migration replay 失败项属于预期的负向篡改演练，未改变聚合命令成功结果；根证书、弹窗位置和 Android build-tools 提示为环境警告。
+- 增量项目验证：`npm run godot:project:verify` 退出码 0（211 domain、212 presentation assertions）。当前源码的 Android preset 已将四个 launcher icon 槽位指向合法项目 `res://icon.svg`；这尚未改变下方已安装 APK。
+- 增量导出尝试：Godot 4.7.1 headless 在缺少 `C:/Users/HYMOD/AppData/Roaming/Godot/export_templates/4.7.1.stable/android_debug.apk` 时拒绝导出，未生成或覆盖新 APK。安装官方导出模板属于需要用户明确批准的环境变更。
 
 ## 尚未关闭的 P1 与人工交接
 
@@ -43,4 +45,4 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 
 ## 决策
 
-继续 Goal，下一步等待用户可见设备触控证据和最终聚合门禁结果；不推送、不创建 PR、不发布 APK/AAB。`mipmap/themed_icon`、DPI-aware 触控尺寸、真实 `_return_to_strategy()` 场景切换纵向覆盖仍作为 P2 后续加固项，若实机暴露为功能问题再升级处理。
+继续 Goal，下一步等待用户可见设备触控证据；不推送、不创建 PR、不发布 APK/AAB。真实 `_return_to_strategy()` 场景切换与 pause/marker 清理已由 125 assertions 覆盖，不再列为 P2。仍保留三项 P2：已安装 APK 的 `mipmap/themed_icon` 警告（当前 preset 修复尚未重新导出验证）、DPI-aware 触控尺寸/拖动阈值实机校准，以及非对称安全区的可注入测试。
