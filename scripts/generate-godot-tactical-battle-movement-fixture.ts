@@ -144,7 +144,7 @@ function projectBattle(battle: TacticalBattleState, state: any): JsonObject {
     units[unit.id] = {
       id: unit.id, name: unit.name, officerId: unit.officerId ?? '', factionId: unit.factionId, side: unit.side,
       force: unit.force, intelligence: unit.intelligence, leadership: officer?.leadership ?? 0,
-      level: unit.level, armsType: unit.armsType, mobility: unit.mobility, originalTroops: unit.originalTroops,
+      level: unit.level, armsType: unit.armsType, mobility: unit.mobility, skillPoints: unit.skillPoints, maxSkillPoints: unit.maxSkillPoints, originalTroops: unit.originalTroops,
       troops: unit.troops, status: unit.status, statusTurns: unit.statusTurns, moved: unit.moved, acted: unit.acted,
       deployed: true, slotX: unit.x, slotY: unit.y,
     };

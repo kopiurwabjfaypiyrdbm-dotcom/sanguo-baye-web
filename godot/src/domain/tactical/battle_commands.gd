@@ -8,6 +8,7 @@ const BattleState = preload("res://src/domain/tactical/battle_state.gd")
 const BattleValidator = preload("res://src/domain/tactical/battle_validator.gd")
 const Battlefield = preload("res://src/domain/tactical/battlefield.gd")
 const BattleAttack = preload("res://src/domain/tactical/battle_attack.gd")
+const BattleSkill = preload("res://src/domain/tactical/battle_skill.gd")
 
 const SIDE_LIMIT = 10
 const WIDTH = 12
@@ -72,7 +73,7 @@ static func create(state: GameState, order: Dictionary) -> Dictionary:
 			"id": "reserve:%s" % target["id"], "name": "%s守备军" % target["name"], "officerId": "",
 			"factionId": target["ownerId"], "side": "defender", "force": clampi(int(round(35.0 + float(target.get("defense", 0)) / 20.0)), 1, 255),
 			"intelligence": clampi(int(round(35.0 + float(target.get("defense", 0)) / 25.0)), 1, 255), "leadership": 0,
-			"level": 1, "armsType": 1, "mobility": 2, "originalTroops": int(target["reserveTroops"]),
+			"level": 1, "armsType": 1, "mobility": 2, "skillPoints": 0, "maxSkillPoints": 0, "originalTroops": int(target["reserveTroops"]),
 			"troops": int(target["reserveTroops"]), "status": "normal", "statusTurns": 0, "moved": false,
 			"acted": false, "deployed": true, "slotX": reserve_slot.x, "slotY": reserve_slot.y,
 		}
@@ -178,6 +179,49 @@ static func attack_unit(battle: BattleState, unit_id: String, target_unit_id: St
 	var message := "%s攻击%s，造成 %d 兵力损失%s。" % [attacker.get("name", unit_id), target.get("name", target_unit_id), damage, "，目标溃退" if target_troops_after == 0 else ""]
 	data["logs"].append(message)
 	return _finish(data, before_digest, "attack_unit", {"unitId": unit_id, "targetUnitId": target_unit_id, "preview": preview, "damage": damage, "targetTroopsAfter": target_troops_after, "experienceGained": experience_gained, "seedBefore": data["rngSeed"], "seedAfter": data["rngSeed"]})
+
+
+static func use_skill(battle: BattleState, unit_id: String, skill_id: String, target_unit_id: String) -> Dictionary:
+	var data = battle.snapshot()
+	var before_digest := _digest(data)
+	var preflight := _preflight(data, before_digest)
+	if not preflight.is_empty(): return preflight
+	if data.get("phase") != "battle": return _battle_failure(before_digest, "战斗尚未开始")
+	if data.get("status") != "ongoing": return _battle_failure(before_digest, "战斗已经结束")
+	var actor: Dictionary = data["units"].get(unit_id, {})
+	var target: Dictionary = data["units"].get(target_unit_id, {})
+	var seed_before := int(data["rngSeed"])
+	if actor.is_empty() or int(actor.get("troops", 0)) <= 0: return _battle_failure(before_digest, "单位不存在或已经退出战斗")
+	if not bool(actor.get("deployed", false)): return _battle_failure(before_digest, "计谋单位尚未部署")
+	if actor.get("side") != data.get("activeSide"): return _battle_failure(before_digest, "当前不是该单位所属阵营的行动阶段")
+	if not target.is_empty() and not bool(target.get("deployed", false)): return _battle_failure(before_digest, "计谋目标尚未部署")
+	if not BattleSkill.available(data, unit_id, skill_id): return _battle_failure(before_digest, "计谋不可用")
+	if not BattleSkill.target_ids(data, unit_id, skill_id).has(target_unit_id): return _battle_failure(before_digest, "目标不在计谋范围内")
+	var preview := BattleSkill.preview(data, unit_id, skill_id, target_unit_id)
+	if not preview.has("skill"): return _battle_failure(before_digest, String(preview.get("error", "计谋预览失败")))
+	var random := BattleSkill.next_seed(int(data["rngSeed"]))
+	var succeeded := int(preview.get("successChance", 0)) >= 100 or floori(float(random["value"]) * 100.0) < int(preview.get("successChance", 0))
+	data["rngSeed"] = int(random["seed"])
+	actor["moved"] = true; actor["acted"] = true; actor["skillPoints"] = int(actor.get("skillPoints", 0)) - BattleSkill.COST; data["units"][unit_id] = actor
+	if not data["actedUnitIds"].has(unit_id): data["actedUnitIds"].append(unit_id)
+	data["actedUnitIds"].sort()
+	var detail := "未能奏效"; var experience_gained := 0; var recovery := 0
+	if succeeded:
+		recovery = int(preview.get("expectedTroopChange", 0))
+		if target_unit_id == unit_id: target = data["units"][unit_id]
+		target["troops"] = mini(int(target.get("originalTroops", 0)), int(target.get("troops", 0)) + recovery)
+		var restores_skipped: bool = target_unit_id != unit_id and target.get("side") == data.get("activeSide") and ["confused", "stone-array"].has(String(target.get("status", "normal"))) and bool(target.get("acted", false))
+		target["status"] = "normal"; target["statusTurns"] = 0
+		if restores_skipped:
+			target["moved"] = false; target["acted"] = false; data["actedUnitIds"] = _without_id(data["actedUnitIds"], target_unit_id)
+		detail = "恢复 %d 兵力并解除异常状态%s" % [recovery, "，目标可以重新行动" if restores_skipped else ""]
+		experience_gained = 6
+	data["units"][target_unit_id] = target
+	if experience_gained > 0 and not String(actor.get("officerId", "")).is_empty():
+		if typeof(data.get("experienceGains")) != TYPE_DICTIONARY: data["experienceGains"] = {}
+		data["experienceGains"][String(actor["officerId"])] = int(data["experienceGains"].get(String(actor["officerId"]), 0)) + experience_gained
+	data["logs"].append("%s对%s施展%s，%s。" % [actor.get("name", unit_id), target.get("name", target_unit_id), preview["skill"]["name"], detail])
+	return _finish(data, before_digest, "use_skill", {"unitId": unit_id, "skillId": skill_id, "targetUnitId": target_unit_id, "preview": preview, "succeeded": succeeded, "recovery": recovery, "experienceGained": experience_gained, "seedBefore": seed_before, "seedAfter": data["rngSeed"]})
 
 
 static func remove_deployment(battle: BattleState, unit_id: String) -> Dictionary:
@@ -365,7 +409,15 @@ static func _unit_from_officer(state: Dictionary, officer: Dictionary, side: Str
 	var effective := _effective_officer_attributes(state, officer)
 	var arms: Dictionary = state.get("armsTypes", {}).get(officer.get("armsTypeId", ""), {})
 	var base_mobility := int(arms.get("mobility", ARMS_MOBILITY[arms_index]))
-	return {"id": "officer:%s" % officer["id"], "name": officer["name"], "officerId": officer["id"], "factionId": officer["factionId"], "side": side, "force": effective["force"], "intelligence": effective["intelligence"], "leadership": officer["leadership"], "level": officer.get("level", 1), "armsType": arms_index, "mobility": clampi(base_mobility + int(effective["moveBonus"]), 1, 8), "originalTroops": officer["troops"], "troops": officer["troops"], "status": "normal", "statusTurns": 0, "moved": false, "acted": false, "deployed": true, "slotX": slot.x, "slotY": slot.y}
+	var level := int(officer.get("level", 1)); var max_skill_points := _skill_points(int(effective["intelligence"]), int(effective["force"]), level, int(officer.get("stamina", 0)))
+	return {"id": "officer:%s" % officer["id"], "name": officer["name"], "officerId": officer["id"], "factionId": officer["factionId"], "side": side, "force": effective["force"], "intelligence": effective["intelligence"], "leadership": officer["leadership"], "level": level, "armsType": arms_index, "mobility": clampi(base_mobility + int(effective["moveBonus"]), 1, 8), "skillPoints": max_skill_points, "maxSkillPoints": max_skill_points, "originalTroops": officer["troops"], "troops": officer["troops"], "status": "normal", "statusTurns": 0, "moved": false, "acted": false, "deployed": true, "slotX": slot.x, "slotY": slot.y}
+
+
+static func _skill_points(intelligence: int, force: int, level: int, stamina: int) -> int:
+	var intelligence_term := floori(float(maxi(0, intelligence)) * 80.0 / 100.0)
+	var force_term := floori(sqrt(float(maxi(0, force)))) >> 1
+	var base := intelligence_term + force_term + maxi(0, level)
+	return clampi(floori(float(base) * float(maxi(0, stamina)) / 100.0), 0, 255)
 
 
 static func _effective_officer_attributes(state: Dictionary, officer: Dictionary) -> Dictionary:
@@ -419,6 +471,13 @@ static func _without_unit(entries: Array, unit_id: String) -> Array:
 	var result: Array = []
 	for entry in entries:
 		if String(entry.get("unitId", "")) != unit_id: result.append(entry)
+	return result
+
+
+static func _without_id(entries: Array, unit_id: String) -> Array:
+	var result: Array = []
+	for entry in entries:
+		if String(entry) != unit_id: result.append(entry)
 	return result
 
 

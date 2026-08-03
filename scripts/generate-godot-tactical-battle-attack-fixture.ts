@@ -139,7 +139,7 @@ function projectBattle(battle: TacticalBattleState): JsonObject {
   for (const unit of Object.values(battle.units).sort((left, right) => left.id.localeCompare(right.id))) {
     units[unit.id] = {
       id: unit.id, name: unit.name, officerId: unit.officerId ?? '', factionId: unit.factionId, side: unit.side,
-      force: unit.force, intelligence: unit.intelligence, level: unit.level, armsType: unit.armsType, mobility: unit.mobility,
+      force: unit.force, intelligence: unit.intelligence, level: unit.level, armsType: unit.armsType, mobility: unit.mobility, skillPoints: unit.skillPoints, maxSkillPoints: unit.maxSkillPoints,
       originalTroops: unit.originalTroops, troops: unit.troops, status: unit.status, statusTurns: unit.statusTurns,
       moved: unit.moved, acted: unit.acted, deployed: true, slotX: unit.x, slotY: unit.y,
       ...(unit.normalAttackPatternOverride ? { normalAttackPatternOverride: unit.normalAttackPatternOverride } : {}),

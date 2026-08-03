@@ -103,11 +103,18 @@ static func _validate_units(snapshot: Dictionary, issues: Array[Dictionary]) -> 
 		if _non_empty_string(unit.get("factionId")) and not expected_faction.is_empty() and String(unit.get("factionId")) != expected_faction:
 			_issue(issues, "units.%s.factionId" % unit_id, "does not match its side faction")
 		if not _is_integer(unit.get("troops")) or int(unit.get("troops")) < 0: _issue(issues, "units.%s.troops" % unit_id, "must be non-negative")
+		if not _is_integer(unit.get("originalTroops")) or int(unit.get("originalTroops")) < 0: _issue(issues, "units.%s.originalTroops" % unit_id, "must be a non-negative integer")
+		if not _is_exact_integer(unit.get("statusTurns")) or int(unit.get("statusTurns")) < 0: _issue(issues, "units.%s.statusTurns" % unit_id, "must be a non-negative integer")
 		if not _is_exact_integer(unit.get("armsType")) or int(unit.get("armsType")) < 0 or int(unit.get("armsType")) >= 6: _issue(issues, "units.%s.armsType" % unit_id, "must be an integer from 0 to 5")
 		if not _is_exact_integer(unit.get("mobility")) or int(unit.get("mobility")) < 0 or int(unit.get("mobility")) > 8: _issue(issues, "units.%s.mobility" % unit_id, "must be an integer from 0 to 8")
 		for attribute: String in ["force", "intelligence", "level"]:
 			if not _is_exact_integer(unit.get(attribute)) or int(unit.get(attribute)) < 0 or int(unit.get(attribute)) > 255:
 				_issue(issues, "units.%s.%s" % [unit_id, attribute], "must be an integer from 0 to 255")
+		for skill_field: String in ["skillPoints", "maxSkillPoints"]:
+			if unit.has(skill_field) and (not _is_exact_integer(unit.get(skill_field)) or int(unit.get(skill_field)) < 0 or int(unit.get(skill_field)) > 255):
+				_issue(issues, "units.%s.%s" % [unit_id, skill_field], "must be an integer from 0 to 255")
+		if unit.has("skillPoints") and unit.has("maxSkillPoints") and _is_exact_integer(unit.get("skillPoints")) and _is_exact_integer(unit.get("maxSkillPoints")) and int(unit.get("skillPoints")) > int(unit.get("maxSkillPoints")):
+			_issue(issues, "units.%s.skillPoints" % unit_id, "cannot exceed maxSkillPoints")
 		var status_value: Variant = unit.get("status", "")
 		if (typeof(status_value) != TYPE_STRING and typeof(status_value) != TYPE_STRING_NAME) or not ["normal", "confused", "silenced", "rooted", "qimen", "dunjia", "stone-array", "hidden"].has(String(status_value)):
 			_issue(issues, "units.%s.status" % unit_id, "must be a supported tactical status string")
