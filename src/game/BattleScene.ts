@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { BAYE_TERRAINS } from '../compat/baye/tacticalBattle';
 import { getTacticalPath, type TacticalBattleState, type TacticalPosition } from '../core/tacticalBattle';
+import { TACTICAL_UNIT_ART, getTacticalUnitArt } from './tacticalUnitArt';
 import type { GameBridge } from './events';
 
 const CELL_SIZE = 68;
@@ -43,6 +44,12 @@ export class BattleScene extends Phaser.Scene {
     this.selectedUnitId = selectedUnitId;
     this.reachable = reachable;
     this.attackableUnitIds = attackableUnitIds;
+  }
+
+  preload(): void {
+    for (const art of Object.values(TACTICAL_UNIT_ART)) {
+      this.load.image(art.key, art.source);
+    }
   }
 
   create(): void {
@@ -145,30 +152,22 @@ export class BattleScene extends Phaser.Scene {
       const selected = unit.id === this.selectedUnitId;
       const canAttack = attackable.has(unit.id);
       const color = unit.side === 'attacker' ? 0xb85f43 : 0x416fa4;
-      const marker = this.add.circle(centerX, centerY - 5, selected ? 23 : 20, color, unit.acted ? 0.48 : 0.96);
-      marker.setStrokeStyle(selected ? 4 : canAttack ? 4 : 2, selected ? 0xffdf80 : canAttack ? 0xff776d : 0xf4ead0, 1);
-      marker.setInteractive({ useHandCursor: true });
-      marker.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      const feedback = this.add.ellipse(centerX, centerY + 24, selected ? 52 : 46, selected ? 15 : 12, color, unit.acted ? 0.18 : 0.32);
+      feedback.setStrokeStyle(selected ? 4 : canAttack ? 4 : 2, selected ? 0xffdf80 : canAttack ? 0xff776d : 0xf4ead0, 1);
+
+      const art = getTacticalUnitArt(unit.armsType);
+      const sprite = this.textures.exists(art.key)
+        ? this.add.image(centerX, centerY + 27, art.key).setDisplaySize(54, 61).setOrigin(0.5, 1)
+        : this.add.circle(centerX, centerY - 2, 18, color, unit.acted ? 0.48 : 0.96);
+      sprite.setAlpha(unit.acted ? 0.52 : 1);
+
+      const hitTarget = this.add.zone(centerX, centerY, 58, 64).setInteractive({ useHandCursor: true });
+      hitTarget.on('pointerup', (pointer: Phaser.Input.Pointer) => {
         if (pointer.getDistance() > 10) return;
         pointer.event.stopPropagation();
         this.bridge.emit('tactical:unit-selected', { unitId: unit.id });
       });
-      const name = this.add.text(centerX, centerY - 10, unit.name.slice(0, 4), {
-        color: '#fff7df',
-        fontFamily: 'Microsoft YaHei, PingFang SC, sans-serif',
-        fontSize: '11px',
-        fontStyle: 'bold',
-        stroke: '#1b2824',
-        strokeThickness: 3,
-      }).setOrigin(0.5);
-      const troops = this.add.text(centerX, centerY + 13, String(unit.troops), {
-        color: '#fff2c8',
-        fontFamily: 'Consolas, monospace',
-        fontSize: '10px',
-        backgroundColor: '#17231fd9',
-        padding: { x: 3, y: 1 },
-      }).setOrigin(0.5);
-      layer.add([marker, name, troops]);
+      layer.add([feedback, sprite, hitTarget]);
     }
 
     const footer = this.add.text(WORLD_WIDTH / 2, WORLD_HEIGHT - 22, '青色：可移动格 · 拖动：查看战场 · 攻方占城后需结束本方阶段', {
