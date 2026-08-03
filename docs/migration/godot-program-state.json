@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB19",
-  "currentBriefPath": "docs/mission-briefs/MB19-battle-outcomes-retreat-settlement-campaign-reintegration.md",
-  "readyMissionIds": ["MB19"],
+  "currentMissionId": "MB20",
+  "currentBriefPath": "docs/mission-briefs/MB20-production-saves-migration-corruption-recovery.md",
+  "readyMissionIds": ["MB20"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -119,15 +119,21 @@
       "briefPath": "docs/mission-briefs/MB18-native-battlefield-presentation-camera-mobile-input.md",
       "reportPath": "docs/migration/mission-reports/MB18-native-battlefield-presentation-camera-mobile-input.md",
       "commit": "ccb1236"
+    },
+    {
+      "id": "MB19",
+      "briefPath": "docs/mission-briefs/MB19-battle-outcomes-retreat-settlement-campaign-reintegration.md",
+      "reportPath": "docs/migration/mission-reports/MB19-battle-outcomes-retreat-settlement-campaign-reintegration.md",
+      "commit": "b5600e6"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB18",
-    "commit": "ccb1236",
+    "missionId": "MB19",
+    "commit": "b5600e6",
     "date": "2026-08-03"
   },
-  "nextAction": "Implement MB19 deterministic battle outcomes, retreat, settlement, and campaign reintegration; defer full HUD and platform hardening.",
+  "nextAction": "Implement MB20 production saves, migration, and corruption recovery; preserve MB19 exact-once settlement.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
