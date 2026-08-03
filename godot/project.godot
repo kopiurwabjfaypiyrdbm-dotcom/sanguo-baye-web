@@ -1,11 +1,17 @@
 ; Engine configuration file.
-; Edit through the Godot editor where practical.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
 config_version=5
 
 [application]
 
 config/name="三国霸业 Godot 技术样片"
-run/main_scene="res://scenes/presentation/strategy_screen.tscn"
+run/main_scene="res://scenes/presentation/main_menu.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -22,12 +28,10 @@ window/handheld/orientation=4
 [input_devices]
 
 pointing/emulate_mouse_from_touch=false
-pointing/emulate_touch_from_mouse=false
 
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
-environment/defaults/default_clear_color=Color(0.025, 0.043, 0.055, 1)
-textures/default_filters/use_nearest_mipmap_filter=false
 textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.025, 0.043, 0.055, 1)

@@ -539,8 +539,8 @@ func _test_save_load_equivalence() -> void:
 		var rejected: Dictionary = SaveRepository.new(TEST_SAVE_PATH).load()
 		_assert_true(not rejected["ok"], "Godot repository must reject the Web save identifier")
 		_assert_true(
-			String(rejected["error"]).contains("无法识别"),
-			"format rejection must explain that the save format is unknown"
+			String(rejected["error"]).contains("生产存档") or String(rejected["error"]).contains("Web 存档"),
+			"Web identifier with an incomplete production contract must explain the rejected contract"
 		)
 
 	var v2_envelope: Dictionary = saved["envelope"].duplicate(true)

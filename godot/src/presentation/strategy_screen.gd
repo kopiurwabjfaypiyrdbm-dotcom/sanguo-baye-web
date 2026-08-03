@@ -3,6 +3,10 @@
 extends Node2D
 
 const GAME_SESSION_SCRIPT := preload("res://src/application/game_session/game_session.gd")
+const LAUNCH_CONTEXT := preload("res://src/application/campaign_launch_context.gd")
+const SESSION_CONTEXT := preload("res://src/application/campaign_session_context.gd")
+
+@export var allow_demo_samples := false
 
 const EXPECTED_CITY_COUNT := 38
 const EXPECTED_ROAD_COUNT := 54
@@ -31,6 +35,7 @@ const ZOOM_STEP := 1.14
 @onready var load_button: Button = %LoadButton
 @onready var chronicle_button: Button = %ChronicleButton
 @onready var end_turn_button: Button = %EndTurnButton
+@onready var menu_button: Button = %MenuButton
 @onready var city_card: CityCard = %CityCard
 @onready var officer_panel = %OfficerManagementPanel
 @onready var personnel_panel = %PersonnelLifecyclePanel
@@ -39,13 +44,14 @@ const ZOOM_STEP := 1.14
 @onready var diplomacy_panel = %DiplomaticOrderPanel
 @onready var chronicle_panel = %CampaignChroniclePanel
 
-var _session: Object
+var _session: GameSession
 var _snapshot: Dictionary = {}
 var _selected_city_id := ""
 var _camera_tween: Tween
 var _compact_layout := false
 var _command_serial := 0
-var _spike_persistence_enabled := false
+var _persistence_enabled := false
+var _return_confirmation: ConfirmationDialog
 
 var _mouse_pressed := false
 var _mouse_dragging := false
@@ -65,20 +71,46 @@ var _pinch_last_center := Vector2.ZERO
 func _ready() -> void:
 	_configure_localized_ui()
 	_connect_ui()
+	_return_confirmation = ConfirmationDialog.new()
+	_return_confirmation.title = tr("返回主菜单")
+	_return_confirmation.dialog_text = tr("尚未保存的战役进度将被放弃。确定返回主菜单吗？")
+	_return_confirmation.get_ok_button().text = tr("返回")
+	_return_confirmation.get_cancel_button().text = tr("继续战役")
+	_return_confirmation.confirmed.connect(_leave_to_menu)
+	add_child(_return_confirmation)
+	_apply_responsive_labels()
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
-	_session = GAME_SESSION_SCRIPT.new()
-	var result := _call_session("start_period_1")
+	var result: Dictionary
+	var carried_session: GameSession = SESSION_CONTEXT.take()
+	if is_instance_valid(carried_session):
+		_session = carried_session
+		result = {
+			"ok": true,
+			"error": "",
+			"campaign": _session.campaign_descriptor(),
+			"state": _session.snapshot(),
+		}
+	else:
+		_session = GAME_SESSION_SCRIPT.new()
+		var launch := LAUNCH_CONTEXT.take()
+		match str(launch.get("mode", "")):
+			"campaign":
+				result = _call_session("start_campaign", [int(launch.get("periodId", -1)), int(launch.get("rulerSourceIndex", -1))])
+			"load":
+				result = _call_session("load_game")
+			_:
+				_set_status(tr("请从主菜单选择时期和君主后进入战役"), "error")
+				return
 	if not bool(result.get("ok", false)):
-		_set_status(tr("时期 1 载入失败：%s") % _result_error(result), "error")
+		_set_status(tr("战役载入失败：%s") % _result_error(result), "error")
 		return
 	_refresh_snapshot(false)
-	_spike_persistence_enabled = bool(_as_dictionary(result.get("campaign", {})).get("legacySpike", false))
-	save_button.disabled = not _spike_persistence_enabled
-	load_button.disabled = not _spike_persistence_enabled
-	if not _spike_persistence_enabled:
-		save_button.tooltip_text = tr("生产存档将在 MB20 实现")
-		load_button.tooltip_text = tr("生产存档将在 MB20 实现")
-	_set_status(tr("已载入时期 1 · 拖动地图，点击城池下令"), "ready")
+	# MB20 production persistence is now the normal path. Keep this flag for the
+	# legacy direct-scene spike harness, but enable save/load for every valid session.
+	_persistence_enabled = true
+	save_button.disabled = false
+	load_button.disabled = false
+	_set_status(tr("已载入 %s · 拖动地图，点击城池下令") % str(_snapshot.get("scenario", {}).get("period", "")), "ready")
 	call_deferred("_focus_world")
 
 
@@ -125,6 +157,7 @@ func _configure_localized_ui() -> void:
 	load_button.tooltip_text = tr("重建 GameSession 并载入存档")
 	chronicle_button.tooltip_text = tr("查看年月、事件、继承与战役结局")
 	end_turn_button.tooltip_text = tr("结束玩家阶段，执行确定性 AI 与月度结算")
+	menu_button.tooltip_text = tr("返回主菜单；离开前会确认未保存进度")
 	_apply_responsive_labels()
 
 
@@ -162,6 +195,7 @@ func _connect_ui() -> void:
 	chronicle_panel.close_requested.connect(_close_chronicle)
 	chronicle_panel.succession_requested.connect(_resolve_succession)
 	chronicle_panel.demo_requested.connect(_run_mb11_demo)
+	menu_button.pressed.connect(_return_to_menu)
 
 
 func _refresh_snapshot(keep_card_open: bool = true) -> bool:
@@ -195,6 +229,11 @@ func _refresh_snapshot(keep_card_open: bool = true) -> bool:
 
 
 func _update_hud_from_snapshot() -> void:
+	var campaign := _call_session("campaign_descriptor")
+	if not campaign.is_empty():
+		title_label.text = tr("三国霸业 · %s · %s") % [
+			str(campaign.get("title", "")), str(campaign.get("rulerName", ""))
+		]
 	var calendar := _as_dictionary(_snapshot.get("calendar", {}))
 	if _compact_layout:
 		year_label.text = tr("%d 年 %d 月") % [
@@ -459,6 +498,9 @@ func _close_chronicle() -> void:
 
 
 func _run_mb11_demo(kind: String) -> void:
+	if not allow_demo_samples:
+		_set_status(tr("技术演示入口仅用于自动验收，不会覆盖当前战役"), "warning")
+		return
 	_set_interaction_busy(true)
 	_set_status(tr("正在载入确定性验收场景……"), "busy")
 	var result: Dictionary = _call_session("start_mb11_acceptance_demo", [kind])
@@ -506,6 +548,9 @@ func _refresh_strategic_logistics() -> void:
 
 
 func _start_logistics_demo() -> void:
+	if not allow_demo_samples:
+		_set_status(tr("技术演示入口仅用于自动验收，不会覆盖当前战役"), "warning")
+		return
 	_set_interaction_busy(true)
 	var result := _call_session("start_campaign", [1, 5])
 	_set_interaction_busy(false)
@@ -702,8 +747,8 @@ func _internal_command_label(kind: String) -> String:
 
 
 func _save_game() -> void:
-	if not _spike_persistence_enabled:
-		_set_status(tr("生产存档将在 MB20 实现"), "warning")
+	if not _persistence_enabled:
+		_set_status(tr("生产存档尚未启用"), "warning")
 		return
 	_set_interaction_busy(true)
 	var result := _call_session("save_game")
@@ -715,16 +760,17 @@ func _save_game() -> void:
 
 
 func _load_game() -> void:
-	if not _spike_persistence_enabled:
-		_set_status(tr("生产存档将在 MB20 实现"), "warning")
+	if not _persistence_enabled:
+		_set_status(tr("生产存档尚未启用"), "warning")
 		return
 	_set_interaction_busy(true)
 	# Recreating the facade verifies the save is not relying on scene-memory state.
-	var replacement: Object = GAME_SESSION_SCRIPT.new()
+	var replacement: GameSession = GAME_SESSION_SCRIPT.new()
 	var result := _call_on(replacement, "load_game")
 	if bool(result.get("ok", false)):
 		_session = replacement
 		_refresh_snapshot(true)
+		_set_interaction_busy(false)
 		_set_status(tr("已从存档重建 GameSession"), "success")
 	else:
 		_set_status(tr("载入失败：%s") % _result_error(result), "error")
@@ -732,7 +778,27 @@ func _load_game() -> void:
 
 
 func _open_tactical_demo() -> void:
-	get_tree().change_scene_to_file("res://scenes/presentation/tactical_battle_screen.tscn")
+	if is_instance_valid(_session):
+		SESSION_CONTEXT.store(_session)
+	var error := get_tree().change_scene_to_file("res://scenes/presentation/tactical_battle_screen.tscn")
+	if error != OK:
+		SESSION_CONTEXT.clear()
+		_set_status(tr("无法打开战术样片：错误 %d") % error, "error")
+
+
+func _return_to_menu() -> void:
+	if is_instance_valid(_return_confirmation):
+		_return_confirmation.popup_centered()
+		return
+	_leave_to_menu()
+
+
+func _leave_to_menu() -> void:
+	LAUNCH_CONTEXT.clear()
+	SESSION_CONTEXT.clear()
+	var error := get_tree().change_scene_to_file("res://scenes/presentation/main_menu.tscn")
+	if error != OK:
+		_set_status(tr("无法返回主菜单：错误 %d") % error, "error")
 
 
 func _focus_world() -> void:
@@ -994,12 +1060,17 @@ func _apply_responsive_labels() -> void:
 
 
 func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
-	var compact := physical_size.x <= 900 or physical_size.y <= 440
+	# The full desktop labels do not fit beside eight actions and the status
+	# badge at the smallest supported landscape target (1280x720). Treat that
+	# target as compact so the menu remains reachable; larger desktop windows
+	# retain the expanded labels.
+	var compact := physical_size.x <= 1280 or physical_size.y <= 720
 	var viewport_size := get_viewport_rect().size
 	var canvas_scale := minf(
 		float(physical_size.x) / maxf(viewport_size.x, 1.0),
 		float(physical_size.y) / maxf(viewport_size.y, 1.0)
 	)
+	_apply_return_confirmation_layout(compact, canvas_scale)
 	_compact_layout = compact
 	title_label.visible = not compact
 	world_button.text = tr("全图" if compact else "世界全图")
@@ -1009,13 +1080,14 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	load_button.text = tr("读" if compact else "读取")
 	chronicle_button.text = tr("纪" if compact else "纪事")
 	end_turn_button.text = tr("结束" if compact else "结束本月")
+	menu_button.text = tr("菜单" if compact else "主菜单")
 
 	if compact:
 		var touch_size := ceilf(48.0 / maxf(canvas_scale, 0.01))
 		var label_font_size := ceili(15.0 / maxf(canvas_scale, 0.01))
 		var action_font_size := ceili(17.0 / maxf(canvas_scale, 0.01))
 		top_panel.custom_minimum_size = Vector2(0.0, touch_size + 14.0)
-		for button: Button in [world_button, player_button, tactical_demo_button, save_button, load_button, chronicle_button, end_turn_button]:
+		for button: Button in [world_button, player_button, tactical_demo_button, save_button, load_button, chronicle_button, end_turn_button, menu_button]:
 			button.custom_minimum_size = Vector2(touch_size, touch_size)
 			button.add_theme_font_size_override("font_size", action_font_size)
 		status_badge_panel.custom_minimum_size = Vector2(touch_size, touch_size)
@@ -1032,7 +1104,8 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		load_button.custom_minimum_size = Vector2(68.0, 52.0)
 		chronicle_button.custom_minimum_size = Vector2(76.0, 52.0)
 		end_turn_button.custom_minimum_size = Vector2(92.0, 52.0)
-		for button: Button in [world_button, player_button, tactical_demo_button, save_button, load_button, chronicle_button, end_turn_button]:
+		menu_button.custom_minimum_size = Vector2(76.0, 52.0)
+		for button: Button in [world_button, player_button, tactical_demo_button, save_button, load_button, chronicle_button, end_turn_button, menu_button]:
 			button.add_theme_font_size_override("font_size", 18)
 		status_badge_panel.custom_minimum_size = Vector2(82.0, 48.0)
 		year_label.add_theme_font_size_override("font_size", 18)
@@ -1051,9 +1124,28 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		_update_hud_from_snapshot()
 
 
+func _apply_return_confirmation_layout(compact: bool, canvas_scale: float) -> void:
+	if not is_instance_valid(_return_confirmation):
+		return
+	var scale := maxf(canvas_scale, 0.01)
+	if compact:
+		_return_confirmation.min_size = Vector2i(ceilf(360.0 / scale), ceilf(190.0 / scale))
+		_return_confirmation.get_label().add_theme_font_size_override("font_size", ceili(15.0 / scale))
+		for button: Button in [_return_confirmation.get_ok_button(), _return_confirmation.get_cancel_button()]:
+			button.custom_minimum_size = Vector2(ceilf(96.0 / scale), ceilf(48.0 / scale))
+			button.add_theme_font_size_override("font_size", ceili(17.0 / scale))
+	else:
+		_return_confirmation.min_size = Vector2i(420, 190)
+		_return_confirmation.get_label().add_theme_font_size_override("font_size", 18)
+		_return_confirmation.get_ok_button().custom_minimum_size = Vector2(112, 52)
+		_return_confirmation.get_cancel_button().custom_minimum_size = Vector2(96, 52)
+		for button: Button in [_return_confirmation.get_ok_button(), _return_confirmation.get_cancel_button()]:
+			button.add_theme_font_size_override("font_size", 18)
+
+
 func _set_interaction_busy(busy: bool) -> void:
-	save_button.disabled = busy or not _spike_persistence_enabled
-	load_button.disabled = busy or not _spike_persistence_enabled
+	save_button.disabled = busy or not _persistence_enabled
+	load_button.disabled = busy or not _persistence_enabled
 	end_turn_button.disabled = busy or str(_snapshot.get("phase", "")) != "player"
 	world_button.disabled = busy
 	player_button.disabled = busy

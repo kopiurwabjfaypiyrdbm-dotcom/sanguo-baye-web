@@ -1,0 +1,94 @@
+{
+  "fixtureVersion": 1,
+  "source": {
+    "sessionFactory": "src/core/migration/applicationSessionContract.ts:createProductionSessionState",
+    "commandOracle": "src/core/migration/applicationSessionContract.ts:OracleApplicationSession",
+    "godotSession": "godot/src/application/game_session/game_session.gd:GameSession"
+  },
+  "selection": {
+    "periodId": 1,
+    "rulerSourceIndex": 1,
+    "title": "董卓弄权",
+    "rulerName": "曹操",
+    "playerFactionId": "ruler-1",
+    "rulerOfficerId": "officer-1"
+  },
+  "campaign": {
+    "productionDataContractVersion": 2,
+    "periodId": 1,
+    "title": "董卓弄权",
+    "rulerSourceIndex": 1,
+    "playerFactionId": "ruler-1",
+    "rulerOfficerId": "officer-1",
+    "rulerName": "曹操"
+  },
+  "before": {
+    "stateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+    "rngSeed": 48641,
+    "cityCount": 38,
+    "roadCount": 54
+  },
+  "command": {
+    "commandEnvelopeVersion": 1,
+    "commandId": "mb21-entry-develop-0001",
+    "expectedStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+    "kind": "develop_farming",
+    "parameters": {
+      "cityId": "city-12",
+      "officerId": "officer-1"
+    }
+  },
+  "expectedResult": {
+    "resultEnvelopeVersion": 1,
+    "commandEnvelopeVersion": 1,
+    "commandId": "mb21-entry-develop-0001",
+    "kind": "develop_farming",
+    "ok": true,
+    "code": "ok",
+    "error": "",
+    "stateChanged": true,
+    "beforeStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+    "afterStateSha256": "259de2e83cf84d5c46e5127e520a15d148d567ffda86604e1a26cd8b4a5087a3",
+    "receipt": {
+      "gain": 63,
+      "costs": {
+        "money": 50,
+        "stamina": 8
+      },
+      "state": {
+        "turn": 1,
+        "rngSeed": 373686124,
+        "campaignStarted": true,
+        "actedOfficerIds": [
+          "officer-1"
+        ],
+        "logCount": 2
+      },
+      "city": {
+        "id": "city-12",
+        "resources": {
+          "farming": 1301,
+          "money": 85
+        }
+      },
+      "officer": {
+        "id": "officer-1",
+        "stamina": 92
+      },
+      "appendedLog": {
+        "id": "log-1-002",
+        "kind": "map",
+        "message": "曹操在濮阳主持开垦，农业提高 63，消耗金钱 50、体力 8。",
+        "turn": 1
+      }
+    }
+  },
+  "after": {
+    "stateSha256": "259de2e83cf84d5c46e5127e520a15d148d567ffda86604e1a26cd8b4a5087a3",
+    "rngSeed": 373686124,
+    "cityId": "city-12",
+    "farming": 1301,
+    "money": 85,
+    "officerStamina": 92
+  }
+}

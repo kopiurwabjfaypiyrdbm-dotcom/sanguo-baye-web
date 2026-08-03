@@ -351,7 +351,9 @@ func _on_viewport_size_changed() -> void:
 
 
 func _return_to_strategy() -> void:
-	get_tree().change_scene_to_file("res://scenes/presentation/strategy_screen.tscn")
+	var error := get_tree().change_scene_to_file("res://scenes/presentation/strategy_screen.tscn")
+	if error != OK:
+		_set_status("无法返回战略地图：错误 %d" % error, Color("f38c78"))
 
 
 func _sorted_unit_ids() -> Array[String]:

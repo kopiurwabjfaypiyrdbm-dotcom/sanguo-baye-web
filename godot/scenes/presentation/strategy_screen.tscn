@@ -161,6 +161,13 @@ layout_mode = 2
 focus_mode = 2
 text = "结束本月"
 
+[node name="MenuButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(76, 52)
+layout_mode = 2
+focus_mode = 2
+text = "主菜单"
+
 [node name="StatusBadgePanel" type="PanelContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(82, 48)

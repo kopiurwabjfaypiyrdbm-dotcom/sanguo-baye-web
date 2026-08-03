@@ -1,0 +1,130 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/campaign_setup.gd" id="1_setup"]
+[ext_resource type="Theme" path="res://scenes/theme/strategy_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_card"]
+bg_color = Color(0.035, 0.059, 0.068, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.39, 0.57, 0.51, 0.72)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[node name="CampaignSetup" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_setup")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.018, 0.033, 0.043, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Card" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(760, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_card")
+
+[node name="Margin" type="MarginContainer" parent="Center/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 38
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 38
+theme_override_constants/margin_bottom = 28
+
+[node name="Stack" type="VBoxContainer" parent="Center/Card/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="Center/Card/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.81, 0.41, 1)
+theme_override_font_sizes/font_size = 30
+text = "战役设置"
+horizontal_alignment = 1
+
+[node name="DescriptionLabel" type="Label" parent="Center/Card/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.83, 0.87, 0.81, 1)
+text = ""
+horizontal_alignment = 1
+
+[node name="FactsLabel" type="Label" parent="Center/Card/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.63, 0.77, 0.71, 1)
+text = ""
+horizontal_alignment = 1
+
+[node name="PeriodLabel" type="Label" parent="Center/Card/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "选择时期"
+
+[node name="PeriodOption" type="OptionButton" parent="Center/Card/Margin/Stack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+
+[node name="RulerLabel" type="Label" parent="Center/Card/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "选择君主"
+
+[node name="RulerOption" type="OptionButton" parent="Center/Card/Margin/Stack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+
+[node name="SelectionLabel" type="Label" parent="Center/Card/Margin/Stack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.82, 0.42, 1)
+text = "请选择一个时期和一位君主；不会替你静默选定"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="Actions" type="HBoxContainer" parent="Center/Card/Margin/Stack"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BackButton" type="Button" parent="Center/Card/Margin/Stack/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+size_flags_horizontal = 3
+layout_mode = 2
+text = "返回主菜单"
+
+[node name="StartButton" type="Button" parent="Center/Card/Margin/Stack/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+size_flags_horizontal = 3
+layout_mode = 2
+text = "进入战略地图"

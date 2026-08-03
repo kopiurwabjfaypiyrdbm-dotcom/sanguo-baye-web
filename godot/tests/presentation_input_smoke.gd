@@ -1,6 +1,7 @@
 extends SceneTree
 
 const MAIN_SCENE := preload("res://scenes/presentation/strategy_screen.tscn")
+const LAUNCH_CONTEXT := preload("res://src/application/campaign_launch_context.gd")
 
 var _assertions := 0
 var _failures := 0
@@ -12,6 +13,8 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var screen := MAIN_SCENE.instantiate()
+	screen.allow_demo_samples = true
+	LAUNCH_CONTEXT.request_campaign(1, 1)
 	root.add_child(screen)
 	await process_frame
 	await create_timer(0.65).timeout
