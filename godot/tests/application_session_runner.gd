@@ -8,6 +8,7 @@ const GameState = preload("res://src/domain/game_state/game_state.gd")
 const InternalAffairs = preload("res://src/domain/commands/internal_affairs_commands.gd")
 const StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
 const CalendarEvents = preload("res://src/domain/progression/calendar_events.gd")
+const AnnualProgression = preload("res://src/domain/progression/annual_progression.gd")
 
 const FIXTURE_PATH: String = "res://data/fixtures/application-session-suite-v1.json"
 
@@ -243,6 +244,7 @@ func _test_transaction_fixture() -> void:
 	_test_diplomatic_order_boundary_cases(fixture)
 	_test_diplomatic_order_settlement_sequences(fixture)
 	_test_calendar_event_cases(fixture)
+	_test_annual_progression_cases(fixture)
 	_test_validation_cases(fixture, campaign)
 	_test_modern_ruleset_case(fixture, campaign)
 
@@ -818,6 +820,26 @@ func _test_calendar_event_cases(fixture: Dictionary) -> void:
 		if not result["ok"]: continue
 		_assert_canonical_equal(result["receipt"], test_case["expectedReceipt"], "%s MB11 event receipt must match TypeScript" % test_case["id"])
 		_assert_equal(CanonicalJson.try_sha256(result["next_state"].snapshot())["value"], test_case["finalStateSha256"], "%s MB11 event state SHA must match TypeScript" % test_case["id"])
+
+
+func _test_annual_progression_cases(fixture: Dictionary) -> void:
+	var cases: Array = fixture.get("annualProgressionCases", [])
+	_assert_equal(cases.size(), 4, "fixture must include four MB11 annual-progression cases")
+	for raw_case: Variant in cases:
+		var test_case: Dictionary = raw_case
+		var session: GameSession = GameSession.new()
+		var campaign: Dictionary = test_case["campaign"]
+		var started: Dictionary = session.start_campaign(campaign["periodId"], campaign["rulerSourceIndex"])
+		_assert_true(started["ok"], "%s MB11 annual campaign must start" % test_case["id"])
+		if not started["ok"]: continue
+		var input: Dictionary = session.snapshot()
+		_apply_patches(input, test_case["patches"])
+		_assert_equal(CanonicalJson.try_sha256(input)["value"], test_case["initialStateSha256"], "%s MB11 annual input must match TypeScript" % test_case["id"])
+		var result: Dictionary = AnnualProgression.settle(GameState.new(input), test_case["previousCalendar"])
+		_assert_true(result["ok"], "%s MB11 annual settlement must succeed: %s" % [test_case["id"], result.get("error", "")])
+		if not result["ok"]: continue
+		_assert_canonical_equal(result["receipt"], test_case["expectedReceipt"], "%s MB11 annual receipt must match TypeScript" % test_case["id"])
+		_assert_equal(CanonicalJson.try_sha256(result["next_state"].snapshot())["value"], test_case["finalStateSha256"], "%s MB11 annual state SHA must match TypeScript" % test_case["id"])
 
 
 func _test_validation_cases(fixture: Dictionary, campaign: Dictionary) -> void:

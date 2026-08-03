@@ -8,6 +8,7 @@ import { cancelOfficerOrders } from '../src/core/officerLifecycle';
 import { validateGameState } from '../src/core/validation';
 import { nextRandom } from '../src/core/random';
 import { settleCityEvents } from '../src/core/cityEvents';
+import { settleAnnualProgression } from '../src/core/annualProgression';
 import {
   createProductionSessionState,
   OracleApplicationSession,
@@ -45,6 +46,7 @@ function transactionCaseCount(value: ReturnType<typeof buildFixture>) {
     + value.diplomaticOrderSettlementSequences
       .reduce((total, sequence) => total + sequence.steps.length, 0)
     + value.calendarEventCases.length
+    + value.annualProgressionCases.length
     + value.validationCases.length;
 }
 
@@ -155,6 +157,7 @@ export function buildFixture() {
     diplomaticOrderBoundaryCases: buildDiplomaticOrderBoundaryCases(),
     diplomaticOrderSettlementSequences: buildDiplomaticOrderSettlementSequences(),
     calendarEventCases: buildCalendarEventCases(),
+    annualProgressionCases: buildAnnualProgressionCases(),
     validationCases: buildValidationCases(),
     modernRulesetCase: buildModernRulesetCase(),
   };
@@ -233,6 +236,70 @@ function buildCalendarEventCases() {
       { path: ['cities', 'city-12', 'disasterPrevention'], value: 0 },
       { path: ['cities', 'city-12', 'publicLoyalty'], value: 0 },
     )),
+  ];
+}
+
+function buildAnnualProgressionCases() {
+  const placedItems = (state: ReturnType<typeof createProductionSessionState>) => new Set([
+    ...Object.values(state.cities).flatMap((city) => [...(city.itemIds ?? []), ...(city.hiddenItemIds ?? [])]),
+    ...Object.values(state.officers).flatMap((officer) => officer.equipmentItemIds ?? []),
+  ]);
+  const build = (id: string, patches: StatePatch[], previousCalendar: { year: number; month: number }) => {
+    const input = createProductionSessionState(1, 1);
+    applyStatePatches(input as unknown as Record<string, unknown>, patches);
+    const beforePlaced = placedItems(input);
+    const beforeLogs = input.logs.length;
+    const output = settleAnnualProgression(structuredClone(input), previousCalendar);
+    const appearedOfficerIds = Object.values(output.officers)
+      .filter((officer) => input.officers[officer.id].status === 'hidden' && officer.status === 'free')
+      .sort((left, right) => (left.sourceId ?? Number.MAX_SAFE_INTEGER) - (right.sourceId ?? Number.MAX_SAFE_INTEGER)
+        || compareUnicodeScalar(left.id, right.id))
+      .map((officer) => officer.id);
+    const afterPlaced = placedItems(output);
+    const appearedItemIds = Object.values(output.items)
+      .filter((item) => !beforePlaced.has(item.id) && afterPlaced.has(item.id))
+      .sort((left, right) => (left.sourceId ?? Number.MAX_SAFE_INTEGER) - (right.sourceId ?? Number.MAX_SAFE_INTEGER)
+        || compareUnicodeScalar(left.id, right.id))
+      .map((item) => item.id);
+    const applied = input.calendar.month === 1 && input.calendar.year === previousCalendar.year + 1;
+    return {
+      id, campaign: { periodId: 1, rulerSourceIndex: 1 }, patches, previousCalendar,
+      initialStateSha256: canonicalSha256(input), finalStateSha256: canonicalSha256(output),
+      expectedReceipt: {
+        kind: 'settle_annual_progression', applied, beforeSeed: input.rngSeed, afterSeed: output.rngSeed,
+        appearedOfficerIds, appearedItemIds, appendedLogs: structuredClone(output.logs.slice(beforeLogs)),
+      },
+    };
+  };
+  const base = createProductionSessionState(1, 1);
+  const itemId = base.itemOrder[0];
+  const itemRemovalPatches: StatePatch[] = [];
+  for (const cityId of base.cityOrder) {
+    itemRemovalPatches.push(
+      { path: ['cities', cityId, 'itemIds'], value: (base.cities[cityId].itemIds ?? []).filter((id) => id !== itemId) },
+      { path: ['cities', cityId, 'hiddenItemIds'], value: (base.cities[cityId].hiddenItemIds ?? []).filter((id) => id !== itemId) },
+    );
+  }
+  for (const officerId of base.officerOrder) {
+    if (!(base.officers[officerId].equipmentItemIds ?? []).includes(itemId)) continue;
+    itemRemovalPatches.push({
+      path: ['officers', officerId, 'equipmentItemIds'],
+      value: (base.officers[officerId].equipmentItemIds ?? []).filter((id) => id !== itemId),
+    });
+  }
+  return [
+    build('period-1-year-rollover', [{ path: ['calendar'], value: { year: 191, month: 1 } }], { year: 190, month: 12 }),
+    build('age-growth-disabled', [
+      { path: ['calendar'], value: { year: 191, month: 1 } },
+      { path: ['lifecyclePolicy', 'ageGrowth'], value: 'disabled' },
+    ], { year: 190, month: 12 }),
+    build('scheduled-item-appears-once', [
+      { path: ['calendar'], value: { year: 191, month: 1 } },
+      ...itemRemovalPatches,
+      { path: ['items', itemId, 'appearanceYear'], value: 191 },
+      { path: ['items', itemId, 'appearanceCityId'], value: 'city-12' },
+    ], { year: 190, month: 12 }),
+    build('non-rollover-no-op', [], { year: 190, month: 1 }),
   ];
 }
 

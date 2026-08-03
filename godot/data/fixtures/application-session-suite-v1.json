@@ -112833,6 +112833,845 @@
       }
     }
   ],
+  "annualProgressionCases": [
+    {
+      "id": "period-1-year-rollover",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "calendar"
+          ],
+          "value": {
+            "year": 191,
+            "month": 1
+          }
+        }
+      ],
+      "previousCalendar": {
+        "year": 190,
+        "month": 12
+      },
+      "initialStateSha256": "72e3096a523c2a650eb1f400483355444d590701e0ef50ea1e1423460378416d",
+      "finalStateSha256": "78dec1c2aeadaec45ed4cccab4ba7eb962b8e730e08b9f6312ea535c60fdab27",
+      "expectedReceipt": {
+        "kind": "settle_annual_progression",
+        "applied": true,
+        "beforeSeed": 48641,
+        "afterSeed": 860746715,
+        "appearedOfficerIds": [
+          "officer-54",
+          "officer-111",
+          "officer-145",
+          "officer-169"
+        ],
+        "appearedItemIds": [],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "年度更新：人物年龄增长 1 岁；各地传来新人才出仕前的活动消息。",
+            "turn": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "age-growth-disabled",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "calendar"
+          ],
+          "value": {
+            "year": 191,
+            "month": 1
+          }
+        },
+        {
+          "path": [
+            "lifecyclePolicy",
+            "ageGrowth"
+          ],
+          "value": "disabled"
+        }
+      ],
+      "previousCalendar": {
+        "year": 190,
+        "month": 12
+      },
+      "initialStateSha256": "2f61df10a4ebd86cb55ef0a752b76b36d476b700bb41dc2783c66a38f6fd05d2",
+      "finalStateSha256": "36414f110cdca059617a2aab8b65ab2bf9e52a7072f94ae531b1e8f066f1b812",
+      "expectedReceipt": {
+        "kind": "settle_annual_progression",
+        "applied": true,
+        "beforeSeed": 48641,
+        "afterSeed": 860746715,
+        "appearedOfficerIds": [
+          "officer-54",
+          "officer-111",
+          "officer-145",
+          "officer-169"
+        ],
+        "appearedItemIds": [],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "年度更新：人物年龄按战役规则保持不变；各地传来新人才出仕前的活动消息。",
+            "turn": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "scheduled-item-appears-once",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "calendar"
+          ],
+          "value": {
+            "year": 191,
+            "month": 1
+          }
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-31"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-32"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-17"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-30"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-16",
+            "item-20"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-19"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-7",
+            "item-8",
+            "item-12"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-11",
+            "item-15"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-19",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-19",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-22",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-22",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-28"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-23",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-23",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-25",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-25",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-23",
+            "item-29"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-28",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-28",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-21",
+            "item-27"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-29",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-29",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-24"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-30",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-30",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-31",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-31",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-32",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-32",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-34",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-34",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-35",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-35",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-14",
+            "item-18"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-36",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-36",
+            "hiddenItemIds"
+          ],
+          "value": [
+            "item-25",
+            "item-26"
+          ]
+        },
+        {
+          "path": [
+            "cities",
+            "city-37",
+            "itemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "cities",
+            "city-37",
+            "hiddenItemIds"
+          ],
+          "value": []
+        },
+        {
+          "path": [
+            "officers",
+            "officer-20",
+            "equipmentItemIds"
+          ],
+          "value": [
+            "item-22"
+          ]
+        },
+        {
+          "path": [
+            "items",
+            "item-0",
+            "appearanceYear"
+          ],
+          "value": 191
+        },
+        {
+          "path": [
+            "items",
+            "item-0",
+            "appearanceCityId"
+          ],
+          "value": "city-12"
+        }
+      ],
+      "previousCalendar": {
+        "year": 190,
+        "month": 12
+      },
+      "initialStateSha256": "2164549a93861a36ee2d158f888b1efcf744b280800c6e21a61f787fc0cd5899",
+      "finalStateSha256": "cea3b716f0c1d344398ddaa9647948144d39a6192fe6fc3bd4ebe5f9017d2203",
+      "expectedReceipt": {
+        "kind": "settle_annual_progression",
+        "applied": true,
+        "beforeSeed": 48641,
+        "afterSeed": 860746715,
+        "appearedOfficerIds": [
+          "officer-54",
+          "officer-111",
+          "officer-145",
+          "officer-169"
+        ],
+        "appearedItemIds": [
+          "item-0"
+        ],
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "年度更新：人物年龄增长 1 岁；各地传来新人才出仕前的活动消息；有新道具进入各地隐藏库存。",
+            "turn": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "non-rollover-no-op",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [],
+      "previousCalendar": {
+        "year": 190,
+        "month": 1
+      },
+      "initialStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+      "finalStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+      "expectedReceipt": {
+        "kind": "settle_annual_progression",
+        "applied": false,
+        "beforeSeed": 48641,
+        "afterSeed": 48641,
+        "appearedOfficerIds": [],
+        "appearedItemIds": [],
+        "appendedLogs": []
+      }
+    }
+  ],
   "validationCases": [
     {
       "id": "unsafe-city-money",
