@@ -37,6 +37,10 @@ var _pinch_distance := 0.0
 var _multi_touch_gesture := false
 
 var _status_label: Label
+var _round_label: Label
+var _phase_label: Label
+var _unit_count_label: Label
+var _hint_label: Label
 var _selection_panel: PanelContainer
 var _selection_label: Label
 var _move_button: Button
@@ -44,6 +48,22 @@ var _attack_button: Button
 var _skill_button: Button
 var _wait_button: Button
 var _back_button: Button
+var _settings_button: Button
+var _turn_button: Button
+var _settle_button: Button
+var _settings_panel: PanelContainer
+var _text_scale_option: OptionButton
+var _high_contrast_toggle: CheckButton
+var _reduced_motion_toggle: CheckButton
+var _hints_toggle: CheckButton
+var _settings_close_button: Button
+var _top_bar: PanelContainer
+var _turn_bar: PanelContainer
+var _text_scale := 1.0
+var _high_contrast := false
+var _reduced_motion := false
+var _show_hints := true
+var _compact_layout := false
 
 
 func _ready() -> void:
@@ -57,6 +77,7 @@ func _ready() -> void:
 	battle_camera.zoom = Vector2.ONE
 	_refresh_view()
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
+	_apply_responsive_layout()
 	call_deferred("_focus_battlefield")
 
 
@@ -74,7 +95,7 @@ func _draw() -> void:
 			var terrain := String(tile.get("terrainName", "plain"))
 			var rect := Rect2(Vector2(x, y) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
 			draw_rect(rect, _terrain_color(terrain))
-			draw_rect(rect, Color(0.68, 0.78, 0.78, 0.26), false, 1.0)
+			draw_rect(rect, Color(0.95, 0.98, 1.0, 0.5) if _high_contrast else Color(0.68, 0.78, 0.78, 0.26), false, 1.0)
 			if tile.get("objective", "") == "city":
 				draw_circle(rect.get_center(), CELL_SIZE * 0.26, Color("d8a84e"))
 				draw_circle(rect.get_center(), CELL_SIZE * 0.19, Color("5d3f29"))
@@ -87,7 +108,7 @@ func _draw() -> void:
 		if int(unit.get("troops", 0)) <= 0: continue
 		var rect := Rect2(Vector2(int(unit.get("slotX", 0)), int(unit.get("slotY", 0))) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
 		var center := rect.get_center()
-		var side_color := Color("4f9fc1") if unit.get("side") == "attacker" else Color("ba5d67")
+		var side_color := Color("2b8fd1") if unit.get("side") == "attacker" else Color("d63e57") if _high_contrast else (Color("4f9fc1") if unit.get("side") == "attacker" else Color("ba5d67"))
 		draw_circle(center, 25.0, side_color)
 		draw_circle(center, 25.0, Color("f6edcf"), false, 2.0)
 		if String(raw_id) == _selected_unit_id:
@@ -98,7 +119,13 @@ func _draw() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
+	if event.is_action_pressed("ui_cancel"):
+		if is_instance_valid(_settings_panel) and _settings_panel.visible:
+			_close_settings()
+		else:
+			_return_to_strategy()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton:
 		_handle_mouse_button(event)
 	elif event is InputEventMouseMotion and _pressed:
 		_handle_drag(event.position)
@@ -183,15 +210,19 @@ func _select_at_screen(screen_position: Vector2) -> void:
 
 
 func _build_interface() -> void:
-	var top := PanelContainer.new(); top.name = "TopBar"; top.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	top.set_anchors_preset(Control.PRESET_TOP_WIDE); top.offset_bottom = 70.0
-	var top_margin := MarginContainer.new(); top_margin.add_theme_constant_override("margin_left", 18); top_margin.add_theme_constant_override("margin_right", 18); top_margin.add_theme_constant_override("margin_top", 10); top_margin.add_theme_constant_override("margin_bottom", 10); top.add_child(top_margin)
+	_top_bar = PanelContainer.new(); _top_bar.name = "TopBar"; _top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE); _top_bar.offset_bottom = 78.0
+	var top_margin := MarginContainer.new(); top_margin.add_theme_constant_override("margin_left", 18); top_margin.add_theme_constant_override("margin_right", 18); top_margin.add_theme_constant_override("margin_top", 10); top_margin.add_theme_constant_override("margin_bottom", 10); _top_bar.add_child(top_margin)
 	var top_row := HBoxContainer.new(); top_row.add_theme_constant_override("separation", 14); top_margin.add_child(top_row)
-	var title := Label.new(); title.text = "战术战场 · 原生样片"; title.add_theme_color_override("font_color", Color("f7d36b")); title.add_theme_font_size_override("font_size", 21); top_row.add_child(title)
-	var hint := Label.new(); hint.text = "拖动平移 · 滚轮/双指缩放 · 点击选中"; hint.add_theme_color_override("font_color", Color("b7c9c6")); hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL; hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; top_row.add_child(hint)
+	var title := Label.new(); title.name = "TitleLabel"; title.text = "战术战场 · 原生战术 HUD"; title.add_theme_color_override("font_color", Color("f7d36b")); title.add_theme_font_size_override("font_size", 21); top_row.add_child(title)
+	_round_label = Label.new(); _round_label.name = "RoundLabel"; top_row.add_child(_round_label)
+	_phase_label = Label.new(); _phase_label.name = "PhaseLabel"; top_row.add_child(_phase_label)
+	_unit_count_label = Label.new(); _unit_count_label.name = "UnitCountLabel"; top_row.add_child(_unit_count_label)
+	_hint_label = Label.new(); _hint_label.name = "HintLabel"; _hint_label.text = "拖动平移 · 滚轮/双指缩放 · 点击选中"; _hint_label.add_theme_color_override("font_color", Color("b7c9c6")); _hint_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; top_row.add_child(_hint_label)
+	_settings_button = Button.new(); _settings_button.text = "设置"; _settings_button.custom_minimum_size = Vector2(78, 48); _settings_button.pressed.connect(_open_settings); top_row.add_child(_settings_button)
 	_back_button = Button.new(); _back_button.text = "返回战略地图"; _back_button.custom_minimum_size = Vector2(150, 48); _back_button.pressed.connect(_return_to_strategy); top_row.add_child(_back_button)
-	overlay.add_child(top)
-	_status_label = Label.new(); _status_label.position = Vector2(20, 78); _status_label.add_theme_font_size_override("font_size", 18); _status_label.add_theme_color_override("font_color", Color("eaf4ef")); _status_label.mouse_filter = Control.MOUSE_FILTER_IGNORE; overlay.add_child(_status_label)
+	overlay.add_child(_top_bar)
+	_status_label = Label.new(); _status_label.position = Vector2(20, 84); _status_label.add_theme_font_size_override("font_size", 18); _status_label.add_theme_color_override("font_color", Color("eaf4ef")); _status_label.mouse_filter = Control.MOUSE_FILTER_IGNORE; overlay.add_child(_status_label)
 	_selection_panel = PanelContainer.new(); _selection_panel.custom_minimum_size = Vector2(260, 190); _selection_panel.mouse_filter = Control.MOUSE_FILTER_STOP; overlay.add_child(_selection_panel)
 	var margin := MarginContainer.new(); margin.add_theme_constant_override("margin_left", 14); margin.add_theme_constant_override("margin_top", 12); margin.add_theme_constant_override("margin_right", 14); margin.add_theme_constant_override("margin_bottom", 12); _selection_panel.add_child(margin)
 	var column := VBoxContainer.new(); column.add_theme_constant_override("separation", 7); margin.add_child(column)
@@ -201,6 +232,14 @@ func _build_interface() -> void:
 	_attack_button = _action_button("攻击", _on_attack_pressed, actions)
 	_skill_button = _action_button("计谋", _on_skill_pressed, actions)
 	_wait_button = _action_button("休整", _on_wait_pressed, actions)
+	_turn_bar = PanelContainer.new(); _turn_bar.name = "TurnBar"; _turn_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE); _turn_bar.offset_top = -68.0; _turn_bar.mouse_filter = Control.MOUSE_FILTER_STOP
+	var turn_margin := MarginContainer.new(); turn_margin.add_theme_constant_override("margin_left", 18); turn_margin.add_theme_constant_override("margin_right", 18); turn_margin.add_theme_constant_override("margin_top", 8); turn_margin.add_theme_constant_override("margin_bottom", 8); _turn_bar.add_child(turn_margin)
+	var turn_row := HBoxContainer.new(); turn_row.add_theme_constant_override("separation", 8); turn_margin.add_child(turn_row)
+	var turn_hint := Label.new(); turn_hint.text = "行动完成后结束本方回合"; turn_hint.add_theme_color_override("font_color", Color("b7c9c6")); turn_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL; turn_row.add_child(turn_hint)
+	_turn_button = Button.new(); _turn_button.text = "结束本方回合"; _turn_button.custom_minimum_size = Vector2(148, 48); _turn_button.pressed.connect(_on_end_side_turn); turn_row.add_child(_turn_button)
+	_settle_button = Button.new(); _settle_button.text = "查看战果"; _settle_button.custom_minimum_size = Vector2(112, 48); _settle_button.pressed.connect(_on_settle_pressed); turn_row.add_child(_settle_button)
+	overlay.add_child(_turn_bar)
+	_build_settings_panel()
 	_update_touch_targets()
 
 
@@ -208,10 +247,129 @@ func _action_button(text: String, callback: Callable, parent: Node) -> Button:
 	var button := Button.new(); button.text = text; button.custom_minimum_size = Vector2(52, 46); button.pressed.connect(callback); parent.add_child(button); return button
 
 
+func _build_settings_panel() -> void:
+	_settings_panel = PanelContainer.new()
+	_settings_panel.name = "SettingsPanel"
+	_settings_panel.custom_minimum_size = Vector2(360, 280)
+	_settings_panel.visible = false
+	_settings_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_child(_settings_panel)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_bottom", 16)
+	_settings_panel.add_child(margin)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 10)
+	margin.add_child(column)
+	var title := Label.new()
+	title.text = "战术显示与辅助功能"
+	title.add_theme_color_override("font_color", Color("f7d36b"))
+	column.add_child(title)
+	var scale_label := Label.new()
+	scale_label.text = "文字大小"
+	column.add_child(scale_label)
+	_text_scale_option = OptionButton.new()
+	_text_scale_option.add_item("标准")
+	_text_scale_option.set_item_metadata(0, 1.0)
+	_text_scale_option.add_item("大字")
+	_text_scale_option.set_item_metadata(1, 1.2)
+	_text_scale_option.select(0)
+	_text_scale_option.item_selected.connect(_on_text_scale_selected)
+	column.add_child(_text_scale_option)
+	_high_contrast_toggle = CheckButton.new()
+	_high_contrast_toggle.text = "高对比度地图与反馈"
+	_high_contrast_toggle.toggled.connect(_on_high_contrast_toggled)
+	column.add_child(_high_contrast_toggle)
+	_reduced_motion_toggle = CheckButton.new()
+	_reduced_motion_toggle.text = "减少镜头动画"
+	_reduced_motion_toggle.toggled.connect(_on_reduced_motion_toggled)
+	column.add_child(_reduced_motion_toggle)
+	_hints_toggle = CheckButton.new()
+	_hints_toggle.text = "显示操作提示"
+	_hints_toggle.button_pressed = true
+	_hints_toggle.toggled.connect(_on_hints_toggled)
+	column.add_child(_hints_toggle)
+	_settings_close_button = Button.new()
+	_settings_close_button.text = "完成"
+	_settings_close_button.pressed.connect(_close_settings)
+	column.add_child(_settings_close_button)
+
+
+func _open_settings() -> void:
+	_settings_panel.visible = true
+	_apply_responsive_layout()
+	_settings_close_button.grab_focus()
+
+
+func _close_settings() -> void:
+	_settings_panel.visible = false
+	_settings_button.grab_focus()
+
+
+func _on_text_scale_selected(index: int) -> void:
+	_text_scale = float(_text_scale_option.get_item_metadata(index))
+	_apply_responsive_layout()
+
+
+func _on_high_contrast_toggled(enabled: bool) -> void:
+	_high_contrast = enabled
+	queue_redraw()
+	_apply_feedback_style()
+
+
+func _on_reduced_motion_toggled(enabled: bool) -> void:
+	_reduced_motion = enabled
+
+
+func _on_hints_toggled(enabled: bool) -> void:
+	_show_hints = enabled
+	_hint_label.visible = enabled
+
+
+func _on_end_side_turn() -> void:
+	_execute_command("end_side_turn", {})
+
+
+func _on_settle_pressed() -> void:
+	if str(_snapshot.get("status", "ongoing")) == "ongoing":
+		_set_status("战斗尚未结束，暂不能查看战果", Color("f0c674"))
+		return
+	_execute_command("settle_battle", {})
+
+
 func _refresh_view() -> void:
 	_refresh_selection()
+	_refresh_hud()
 	_set_status("%s行动 · 选择单位或地图格开始" % ("攻方" if _snapshot.get("activeSide") == "attacker" else "守方"), Color("d8e9df"))
 	queue_redraw()
+
+
+func _refresh_hud() -> void:
+	if not is_instance_valid(_round_label):
+		return
+	var day := int(_snapshot.get("day", 0))
+	var max_days := int(_snapshot.get("maxDays", 0))
+	_round_label.text = "第 %d/%d 天" % [day, max_days]
+	_phase_label.text = "%s" % _phase_label_text()
+	var alive := 0
+	var total: int = (_snapshot.get("units", {}) as Dictionary).size()
+	for raw_id: Variant in _sorted_unit_ids():
+		if int(_snapshot.get("units", {}).get(String(raw_id), {}).get("troops", 0)) > 0:
+			alive += 1
+	_unit_count_label.text = "存活 %d/%d" % [alive, total]
+	_turn_button.disabled = str(_snapshot.get("status", "ongoing")) != "ongoing"
+	_settle_button.visible = str(_snapshot.get("status", "ongoing")) != "ongoing"
+	_settle_button.disabled = false
+	_hint_label.visible = _show_hints
+
+
+func _phase_label_text() -> String:
+	var status := str(_snapshot.get("status", "ongoing"))
+	if status != "ongoing":
+		return "战斗%s" % str(_snapshot.get("outcome", status))
+	return "%s回合" % ("攻方" if str(_snapshot.get("activeSide", "attacker")) == "attacker" else "守方")
 
 
 func _refresh_selection() -> void:
@@ -219,12 +377,14 @@ func _refresh_selection() -> void:
 		_selection_panel.visible = false; return
 	var unit: Dictionary = _snapshot.get("units", {}).get(_selected_unit_id, {})
 	_selection_panel.visible = true
-	_selection_label.text = "%s\n%s · %d 兵 · %s" % [unit.get("name", _selected_unit_id), "攻方" if unit.get("side") == "attacker" else "守方", int(unit.get("troops", 0)), "可行动" if not unit.get("acted", false) else "已行动"]
+	_selection_label.text = "%s\n%s · %d/%d 兵 · %s · 力%d 智%d" % [unit.get("name", _selected_unit_id), "攻方" if unit.get("side") == "attacker" else "守方", int(unit.get("troops", 0)), int(unit.get("originalTroops", unit.get("troops", 0))), "可行动" if not unit.get("acted", false) else "已行动", int(unit.get("force", 0)), int(unit.get("intelligence", 0))]
 	var active: bool = unit.get("side") == _snapshot.get("activeSide") and int(unit.get("troops", 0)) > 0 and not bool(unit.get("acted", false)) and _snapshot.get("status") == "ongoing"
 	_move_button.disabled = not active or Battlefield.reachable(_snapshot, _selected_unit_id).is_empty()
 	_attack_button.disabled = not active or BattleAttack.attackable_ids(_snapshot, _selected_unit_id).is_empty()
 	_skill_button.disabled = not active or not BattleSkill.available(_snapshot, _selected_unit_id, BattleSkill.SKILL_ID)
 	_wait_button.disabled = not active
+	if is_instance_valid(_settings_panel) and _settings_panel.visible:
+		_settings_panel.move_to_front()
 	_place_selection_panel()
 
 
@@ -270,15 +430,62 @@ func _execute_command(kind: String, parameters: Dictionary) -> void:
 	if not result.get("ok", false): _set_status("命令未执行：%s" % String(result.get("error", "未知错误")), Color("f38c78")); return
 	_snapshot = _session.snapshot()
 	_set_status("%s 已执行 · 状态摘要 %s" % [_command_label(kind), String(result.get("afterBattleStateSha256", "")).left(10)], Color("9de0bd"))
-	_refresh_selection(); queue_redraw()
+	_refresh_selection(); _refresh_hud(); queue_redraw()
 
 
 func _command_label(kind: String) -> String:
-	return {"move_unit": "移动", "attack_unit": "攻击", "use_skill": "计谋", "wait_unit": "休整"}.get(kind, kind)
+	return {"move_unit": "移动", "attack_unit": "攻击", "use_skill": "计谋", "wait_unit": "休整", "end_side_turn": "结束回合", "settle_battle": "结算"}.get(kind, kind)
 
 
 func _set_status(text: String, color: Color) -> void:
-	if is_instance_valid(_status_label): _status_label.text = text; _status_label.add_theme_color_override("font_color", color)
+	if is_instance_valid(_status_label):
+		_status_label.text = text
+		_status_label.add_theme_color_override("font_color", color)
+		_status_label.tooltip_text = text
+
+
+func _apply_feedback_style() -> void:
+	if not is_instance_valid(_status_label):
+		return
+	_status_label.add_theme_color_override("font_color", Color("ffffff") if _high_contrast else Color("eaf4ef"))
+	if is_instance_valid(_selection_panel):
+		_selection_panel.modulate = Color("ffffff") if _high_contrast else Color("e7f1ec")
+
+
+func _apply_responsive_layout() -> void:
+	var physical_size := DisplayServer.window_get_size()
+	if physical_size.x <= 1 or physical_size.y <= 1:
+		physical_size = Vector2i(get_viewport_rect().size.round())
+	_apply_responsive_layout_for_size(physical_size)
+
+
+func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
+	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
+	var compact := physical_size.x <= 900 or physical_size.y <= 440
+	_compact_layout = compact
+	var scale := maxf(canvas_scale, 0.01)
+	var touch_size := ceilf(48.0 / scale)
+	var body_size := ceili((15.0 if compact else 18.0) * _text_scale / scale)
+	var action_size := ceili(17.0 * _text_scale / scale)
+	for button: Button in [_move_button, _attack_button, _skill_button, _wait_button, _settings_button, _back_button, _turn_button, _settle_button, _settings_close_button]:
+		if is_instance_valid(button):
+			button.custom_minimum_size.y = touch_size
+			button.add_theme_font_size_override("font_size", action_size)
+	for label: Label in [_status_label, _round_label, _phase_label, _unit_count_label, _hint_label, _selection_label]:
+		if is_instance_valid(label):
+			label.add_theme_font_size_override("font_size", body_size)
+	if is_instance_valid(_top_bar):
+		_top_bar.offset_bottom = touch_size + 22.0
+	if is_instance_valid(_turn_bar):
+		_turn_bar.offset_top = -(touch_size + 18.0)
+	if is_instance_valid(_settings_panel):
+		_settings_panel.custom_minimum_size = Vector2(ceilf(360.0 / scale), ceilf(290.0 / scale))
+		_settings_panel.position = Vector2((get_viewport_rect().size.x - _settings_panel.custom_minimum_size.x) * 0.5, (get_viewport_rect().size.y - _settings_panel.custom_minimum_size.y) * 0.5)
+	if is_instance_valid(_selection_panel):
+		_selection_panel.custom_minimum_size = Vector2(ceilf((300.0 if compact else 330.0) / scale), ceilf((188.0 if compact else 190.0) / scale))
+	_apply_feedback_style()
+	_update_touch_targets()
+	_place_selection_panel()
 
 
 func _focus_battlefield() -> void:
@@ -301,6 +508,11 @@ func _set_zoom(value: float, screen_position: Vector2) -> void:
 
 
 func _animate_camera(target: Vector2, zoom_value: float) -> void:
+	if _reduced_motion:
+		_cancel_camera_tween()
+		battle_camera.position = _clamp_camera_position_for_zoom(target, clampf(zoom_value, MIN_ZOOM, MAX_ZOOM))
+		battle_camera.zoom = Vector2.ONE * clampf(zoom_value, MIN_ZOOM, MAX_ZOOM)
+		return
 	if is_instance_valid(_camera_tween): _camera_tween.kill()
 	var target_zoom := clampf(zoom_value, MIN_ZOOM, MAX_ZOOM)
 	var target_position := _clamp_camera_position_for_zoom(target, target_zoom)
@@ -345,6 +557,7 @@ func _touch_center() -> Vector2:
 
 func _on_viewport_size_changed() -> void:
 	_cancel_camera_tween()
+	_apply_responsive_layout()
 	_update_touch_targets()
 	battle_camera.position = _clamp_camera_position(battle_camera.position)
 	_place_selection_panel()
@@ -373,8 +586,8 @@ func _cancel_camera_tween() -> void:
 func _safe_viewport_rect() -> Rect2:
 	var viewport_size := get_viewport_rect().size
 	var margin := 12.0
-	var top := 84.0
-	var bottom := 12.0
+	var top := 104.0
+	var bottom := 72.0
 	var physical_size := Vector2(get_tree().root.size)
 	# Keep a conservative logical inset for status bars/notches.  The Android
 	# platform adapter can provide larger insets later without changing camera
@@ -382,8 +595,8 @@ func _safe_viewport_rect() -> Rect2:
 	if physical_size.x > 0 and physical_size.y > 0:
 		var canvas_scale := Vector2(viewport_size.x / physical_size.x, viewport_size.y / physical_size.y)
 		margin = maxf(margin, 12.0 * canvas_scale.x)
-		top = maxf(top, 84.0 * canvas_scale.y)
-		bottom = maxf(bottom, 12.0 * canvas_scale.y)
+		top = maxf(top, 104.0 * canvas_scale.y)
+		bottom = maxf(bottom, 72.0 * canvas_scale.y)
 	return Rect2(Vector2(margin, top), Vector2(maxf(1.0, viewport_size.x - margin * 2.0), maxf(1.0, viewport_size.y - top - bottom)))
 
 
@@ -393,5 +606,8 @@ func _update_touch_targets() -> void:
 	var physical_size := Vector2(get_tree().root.size)
 	var canvas_to_physical := minf(physical_size.x / maxf(1.0, viewport_size.x), physical_size.y / maxf(1.0, viewport_size.y))
 	var scale := clampf(48.0 / (46.0 * maxf(0.01, canvas_to_physical)), 1.0, 2.2)
-	for button: Button in [_move_button, _attack_button, _skill_button, _wait_button]: button.custom_minimum_size = Vector2(52, 46) * scale
-	_back_button.custom_minimum_size = Vector2(150, 48) * scale
+	for button: Button in [_move_button, _attack_button, _skill_button, _wait_button]: button.custom_minimum_size = Vector2(maxf(52.0, 72.0 * scale), 48.0 * scale)
+	_back_button.custom_minimum_size = Vector2(maxf(150.0, 150.0 * scale), 48.0 * scale)
+	if is_instance_valid(_settings_button): _settings_button.custom_minimum_size = Vector2(maxf(78.0, 88.0 * scale), 48.0 * scale)
+	if is_instance_valid(_turn_button): _turn_button.custom_minimum_size = Vector2(maxf(148.0, 148.0 * scale), 48.0 * scale)
+	if is_instance_valid(_settle_button): _settle_button.custom_minimum_size = Vector2(maxf(112.0, 112.0 * scale), 48.0 * scale)

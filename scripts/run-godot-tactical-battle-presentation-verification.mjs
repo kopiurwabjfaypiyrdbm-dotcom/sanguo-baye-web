@@ -18,4 +18,6 @@ process.stdout.write(`[Godot tactical presentation] engine=${versionText}\n`);
 const result = spawnSync(engine, ['--headless', '--path', project, '--script', 'res://tests/tactical_battle_presentation_runner.gd'], { cwd: root, env, encoding: 'utf8', timeout: 180_000 });
 if (result.stdout) process.stdout.write(result.stdout);
 if (result.stderr) process.stderr.write(result.stderr);
+const combined = `${result.stdout ?? ''}\n${result.stderr ?? ''}`;
+if (/SCRIPT ERROR|Node not found|Parse Error/u.test(combined)) throw new Error('Godot tactical presentation emitted a script/node/parse error');
 if (result.error || result.signal || result.status !== 0) throw new Error(`Godot tactical presentation verification failed: ${result.error?.message ?? result.signal ?? result.status}`);
