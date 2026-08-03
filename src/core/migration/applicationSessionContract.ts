@@ -20,6 +20,7 @@ import {
   banishOfficer,
   confiscateOfficerEquipment,
   executeCaptive,
+  resolveSuccession,
 } from '../officerLifecycle';
 import { advanceStrategicOrders, issueMoveOrder, issueTransportOrder } from '../strategicOrders';
 import { reconnoitreCity } from '../reconnaissance';
@@ -320,6 +321,7 @@ export function validateEnvelope(raw: unknown):
     issue_canvass_order: ['sourceCityId', 'officerId', 'targetOfficerId'],
     issue_counterespionage_order: ['sourceCityId', 'officerId', 'targetOfficerId'],
     issue_induce_order: ['sourceCityId', 'officerId', 'targetOfficerId'],
+    resolve_succession: ['successorOfficerId'],
   };
   const parameterKeys = parameterKeysByKind[raw.kind];
   if (!parameterKeys) return rejected('unknown_command', `unsupported command kind: ${raw.kind}`);
@@ -349,6 +351,7 @@ export function validateEnvelope(raw: unknown):
     for (const key of [
       'cityId', 'sourceCityId', 'targetCityId', 'officerId', 'executorOfficerId',
       'targetOfficerId', 'captiveOfficerId', 'itemId',
+      'successorOfficerId',
     ]) {
       if (!parameterKeys.includes(key)) continue;
       if (!isNonBlank(raw.parameters[key])) return rejected('invalid_parameters', `${key} must be a non-blank string`);
@@ -448,6 +451,8 @@ function executeDomainCommand(before: GameState, envelope: ApplicationCommandEnv
         officerId: parameters.officerId as string,
         targetOfficerId: parameters.targetOfficerId as string,
       });
+    case 'resolve_succession':
+      return resolveSuccession(before, parameters.successorOfficerId as string);
     default:
       throw new Error(`unsupported command kind: ${envelope.kind}`);
   }
@@ -470,6 +475,18 @@ function projectReceipt(
     'issue_counterespionage_order', 'issue_induce_order',
   ].includes(kind)) {
     return projectDiplomaticOrderReceipt(kind, before, after, command);
+  }
+  if (kind === 'resolve_succession') {
+    const successorOfficerId = command.successorOfficerId as string;
+    return {
+      kind,
+      successorOfficerId,
+      beforeSeed: before.rngSeed,
+      afterSeed: after.rngSeed,
+      phase: after.phase,
+      outcome: after.outcome ?? null,
+      appendedLogs: structuredClone(after.logs.slice(before.logs.length)),
+    };
   }
   if ([
     'search_city', 'recruit_free_officer', 'recruit_captive', 'release_captive',

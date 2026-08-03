@@ -12,6 +12,9 @@ const OFFICER_STATUSES: Array[String] = ["serving", "free", "hidden", "captive",
 const DEATH_CAUSES: Array[String] = ["battle-death", "natural-death", "execution"]
 const LOG_KINDS: Array[String] = ["system", "map", "turn", "battle", "ai"]
 const CITY_CONDITIONS: Array[String] = ["normal", "famine", "drought", "flood", "rebellion"]
+const RUNTIME_PHASES: Array[String] = ["player", "ai", "succession", "ended"]
+const OUTCOMES: Array[String] = ["victory", "defeat"]
+const SUCCESSION_REASONS: Array[String] = ["battle-death", "natural-death", "execution", "capture"]
 
 
 static func validate(state: Dictionary) -> Array[Dictionary]:
@@ -60,15 +63,12 @@ static func _validate(state: Dictionary, initial_contract: bool) -> Array[Dictio
 		phase = state["phase"]
 	if initial_contract and phase != INITIAL_PHASE:
 		_add(issues, "phase", "must remain player in the initial-state contract")
-	elif not initial_contract and phase != "player":
-		_add(issues, "phase", "is not supported by the current runtime validator")
+	elif not initial_contract and not RUNTIME_PHASES.has(phase):
+		_add(issues, "phase", "must be player, ai, succession, or ended")
 	if initial_contract and state.has("pendingSuccession") and state["pendingSuccession"] != null:
 		_add(issues, "pendingSuccession", "is outside the initial-state contract")
 	if initial_contract and state.has("outcome") and state["outcome"] != null:
 		_add(issues, "outcome", "is outside the initial-state contract")
-	if not initial_contract:
-		_validate_runtime_phase_fields(state, phase, issues)
-
 	_validate_calendar(state.get("calendar"), data_contract_version, initial_contract, issues)
 	_validate_lifecycle_policy(state.get("lifecyclePolicy"), initial_contract, issues)
 
@@ -86,6 +86,8 @@ static func _validate(state: Dictionary, initial_contract: bool) -> Array[Dictio
 	var intel_reports: Dictionary = _record_or_issue(
 		state.get("intelReports"), "intelReports", issues
 	)
+	if not initial_contract:
+		_validate_runtime_phase_fields(state, phase, factions, cities, officers, issues)
 	if initial_contract:
 		_validate_empty_spike_record(strategic_orders, "strategicOrders", issues)
 		_validate_empty_spike_record(diplomatic_orders, "diplomaticOrders", issues)
@@ -112,7 +114,7 @@ static func _validate(state: Dictionary, initial_contract: bool) -> Array[Dictio
 			and active_faction_id != player_faction_id:
 		_add(issues, "activeFactionId", "must be the player faction during the player phase")
 
-	_validate_factions(factions, cities, officers, player_faction_id, issues)
+	_validate_factions(factions, cities, officers, player_faction_id, state.get("pendingSuccession"), issues)
 	var active_order_officers: Dictionary = _validate_active_orders(
 		strategic_orders, diplomatic_orders, factions, cities, officers, issues
 	)
@@ -156,14 +158,109 @@ static func first_error(issues: Array[Dictionary]) -> String:
 
 
 static func _validate_runtime_phase_fields(
-		state: Dictionary, phase: String, issues: Array[Dictionary]
+		state: Dictionary, phase: String, factions: Dictionary, cities: Dictionary,
+		officers: Dictionary, issues: Array[Dictionary]
 ) -> void:
 	var pending: Variant = state.get("pendingSuccession")
+	if phase == "succession" and pending == null:
+		_add(issues, "pendingSuccession", "is required during the succession phase")
+	elif phase != "succession" and pending != null:
+		_add(issues, "pendingSuccession", "is only allowed during the succession phase")
 	if pending != null:
-		_add(issues, "pendingSuccession", "is not supported by the current runtime validator")
+		_validate_pending_succession(pending, state, factions, cities, officers, issues)
 	var outcome: Variant = state.get("outcome")
-	if outcome != null:
-		_add(issues, "outcome", "is not supported by the current runtime validator")
+	if phase == "ended" and outcome == null:
+		_add(issues, "outcome", "is required when the game has ended")
+	elif phase != "ended" and outcome != null:
+		_add(issues, "outcome", "is only allowed when the game has ended")
+	elif outcome != null and (typeof(outcome) != TYPE_STRING or not OUTCOMES.has(str(outcome))):
+		_add(issues, "outcome", "must be victory or defeat")
+
+
+static func _validate_pending_succession(
+		raw: Variant, state: Dictionary, factions: Dictionary, cities: Dictionary,
+		officers: Dictionary, issues: Array[Dictionary]
+) -> void:
+	const PATH := "pendingSuccession"
+	if typeof(raw) != TYPE_DICTIONARY:
+		_add(issues, PATH, "must be an object")
+		return
+	var pending: Dictionary = raw
+	if not _is_integer_number(pending.get("version")) or int(pending.get("version", 0)) != 1:
+		_add(issues, "%s.version" % PATH, "must be 1")
+	var faction_id: String = str(pending.get("factionId", ""))
+	if not factions.has(faction_id) or typeof(factions[faction_id]) != TYPE_DICTIONARY \
+			or bool((factions[faction_id] as Dictionary).get("isNeutral", false)):
+		_add(issues, "%s.factionId" % PATH, "unknown playable faction: %s" % faction_id)
+	if faction_id != str(state.get("playerFactionId", "")):
+		_add(issues, "%s.factionId" % PATH, "only player succession may remain pending")
+	var owns_city := false
+	for city_id: String in _sorted_string_keys(cities):
+		if typeof(cities[city_id]) == TYPE_DICTIONARY \
+				and (cities[city_id] as Dictionary).get("ownerId") == faction_id:
+			owns_city = true
+			break
+	if not owns_city:
+		_add(issues, "%s.factionId" % PATH, "pending succession faction must still own a city")
+	var former_id: String = str(pending.get("formerRulerOfficerId", ""))
+	var reason: String = str(pending.get("reason", ""))
+	var expected_status: String = "captive" if reason == "capture" else "dead"
+	if not officers.has(former_id) or typeof(officers[former_id]) != TYPE_DICTIONARY \
+			or (officers[former_id] as Dictionary).get("status") != expected_status:
+		_add(issues, "%s.formerRulerOfficerId" % PATH, "former ruler must be %s" % expected_status)
+	if factions.has(faction_id) and typeof(factions[faction_id]) == TYPE_DICTIONARY \
+			and (factions[faction_id] as Dictionary).get("rulerOfficerId") != former_id:
+		_add(issues, "%s.formerRulerOfficerId" % PATH, "must match the faction ruler awaiting replacement")
+	if not SUCCESSION_REASONS.has(reason):
+		_add(issues, "%s.reason" % PATH, "must be a supported succession reason")
+	var raw_candidates: Variant = pending.get("candidateOfficerIds")
+	if typeof(raw_candidates) != TYPE_ARRAY or (raw_candidates as Array).is_empty():
+		_add(issues, "%s.candidateOfficerIds" % PATH, "must contain at least one candidate")
+	else:
+		var seen: Dictionary = {}
+		for raw_candidate_id: Variant in raw_candidates:
+			var candidate_id: String = str(raw_candidate_id)
+			if seen.has(candidate_id):
+				_add(issues, "%s.candidateOfficerIds" % PATH, "contains duplicate officer ids")
+			seen[candidate_id] = true
+			if typeof(raw_candidate_id) != TYPE_STRING or not officers.has(candidate_id) \
+					or typeof(officers[candidate_id]) != TYPE_DICTIONARY \
+					or (officers[candidate_id] as Dictionary).get("status") != "serving" \
+					or (officers[candidate_id] as Dictionary).get("factionId") != faction_id:
+				_add(issues, "%s.candidateOfficerIds" % PATH, "invalid successor candidate: %s" % candidate_id)
+	var resume_phase: String = str(pending.get("resumePhase", ""))
+	if not ["player", "ai"].has(resume_phase):
+		_add(issues, "%s.resumePhase" % PATH, "must be player or ai")
+	var resume_active_id: String = str(pending.get("resumeActiveFactionId", ""))
+	if not factions.has(resume_active_id):
+		_add(issues, "%s.resumeActiveFactionId" % PATH, "unknown faction: %s" % resume_active_id)
+	if resume_phase == "player":
+		if resume_active_id != str(state.get("playerFactionId", "")):
+			_add(issues, "%s.resumeActiveFactionId" % PATH, "must be the player faction for player-phase recovery")
+		if pending.has("resumeAiFactionIndex"):
+			_add(issues, "%s.resumeAiFactionIndex" % PATH, "must be absent for player-phase recovery")
+	elif resume_phase == "ai":
+		var order: Array = state.get("factionOrder", []) if state.get("factionOrder") is Array else []
+		var expected_cursor: int = order.find(resume_active_id) + 1
+		if resume_active_id == str(state.get("playerFactionId", "")):
+			_add(issues, "%s.resumeActiveFactionId" % PATH, "must identify the active AI faction")
+		if not _is_integer_number(pending.get("resumeAiFactionIndex")) \
+				or int(pending.get("resumeAiFactionIndex", -1)) != expected_cursor \
+				or expected_cursor <= 0 or expected_cursor > order.size():
+			_add(issues, "%s.resumeAiFactionIndex" % PATH, "must resume after the active AI faction")
+	if not _is_positive_integer(pending.get("createdTurn")) \
+			or (_is_positive_integer(state.get("turn")) and int(pending.get("createdTurn", 0)) > int(state["turn"])):
+		_add(issues, "%s.createdTurn" % PATH, "must be within the current campaign")
+	if not _is_integer_number(pending.get("createdMonth")) \
+			or int(pending.get("createdMonth", 0)) < 1 or int(pending.get("createdMonth", 0)) > 12:
+		_add(issues, "%s.createdMonth" % PATH, "must be from 1 to 12")
+	var calendar: Dictionary = state.get("calendar", {}) if state.get("calendar") is Dictionary else {}
+	if not _is_positive_integer(pending.get("createdYear")) \
+			or (_is_positive_integer(pending.get("createdYear")) and _is_integer_number(pending.get("createdMonth")) \
+			and _is_positive_integer(calendar.get("year")) and _is_integer_number(calendar.get("month")) \
+			and int(pending["createdYear"]) * 12 + int(pending["createdMonth"]) \
+			> int(calendar["year"]) * 12 + int(calendar["month"])):
+		_add(issues, "%s.createdYear" % PATH, "must not be later than the current calendar")
 
 
 static func _validate_intel_reports(
@@ -278,6 +375,7 @@ static func _validate_factions(
 		cities: Dictionary,
 		officers: Dictionary,
 		player_faction_id: String,
+		pending_succession: Variant,
 		issues: Array[Dictionary],
 ) -> void:
 	var player_flags: int = 0
@@ -312,10 +410,13 @@ static func _validate_factions(
 							and (cities[city_id] as Dictionary).get("ownerId") == key:
 						faction_owns_city = true
 						break
-				if not bool(faction.get("isNeutral", false)) and faction_owns_city \
+				var awaiting_succession: bool = pending_succession is Dictionary \
+						and (pending_succession as Dictionary).get("factionId") == key \
+						and (pending_succession as Dictionary).get("formerRulerOfficerId") == ruler_id
+				if not awaiting_succession and not bool(faction.get("isNeutral", false)) and faction_owns_city \
 						and ruler.get("factionId") != key:
 					_add(issues, "%s.rulerOfficerId" % path, "ruler must belong to the faction")
-				elif not bool(faction.get("isNeutral", false)) and faction_owns_city \
+				elif not awaiting_succession and not bool(faction.get("isNeutral", false)) and faction_owns_city \
 						and ruler.get("status") != "serving":
 					_add(issues, "%s.rulerOfficerId" % path, "non-neutral ruler must be serving")
 	if not player_faction_id.is_empty() and player_flags != 1:

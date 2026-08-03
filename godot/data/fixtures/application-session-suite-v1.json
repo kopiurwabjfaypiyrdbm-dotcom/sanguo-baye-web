@@ -113672,6 +113672,1618 @@
       }
     }
   ],
+  "lifecycleOutcomeCases": [
+    {
+      "id": "captive-escape-success",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "lifecyclePolicy",
+            "captiveEscape"
+          ],
+          "value": "modern-monthly"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-86",
+            "captorFactionId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-86",
+            "cityId"
+          ],
+          "value": "city-12"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-86",
+            "formerFactionId"
+          ],
+          "value": "ruler-13"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-86",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-86",
+            "status"
+          ],
+          "value": "captive"
+        },
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1972
+        }
+      ],
+      "operation": "settle_captive_escapes",
+      "parameters": {},
+      "initialStateSha256": "74fd531c5de671309ca359611502e8e21d3e04aad62298be3c99136c893fb4fa",
+      "finalStateSha256": "d5fed6f18ab1e5183ac2a65d057632ead68c1231d5c7ba6d1aa7a893da4a7be8",
+      "expectedReceipt": {
+        "kind": "settle_captive_escapes",
+        "beforeSeed": 1972,
+        "afterSeed": 628748038,
+        "affectedOfficerIds": [
+          "officer-86"
+        ],
+        "phase": "player",
+        "outcome": null,
+        "pendingSuccession": null,
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "陈宫逃离囚禁，返回平原。",
+            "turn": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "captive-escape-disabled-no-rng",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1972
+        }
+      ],
+      "operation": "settle_captive_escapes",
+      "parameters": {},
+      "initialStateSha256": "125f16a9b52a0da3d5b530a709b3915bafcdf4cc2e125f71ced18f0ac63e31ec",
+      "finalStateSha256": "125f16a9b52a0da3d5b530a709b3915bafcdf4cc2e125f71ced18f0ac63e31ec",
+      "expectedReceipt": {
+        "kind": "settle_captive_escapes",
+        "beforeSeed": 1972,
+        "afterSeed": 1972,
+        "affectedOfficerIds": [],
+        "phase": "player",
+        "outcome": null,
+        "pendingSuccession": null,
+        "appendedLogs": []
+      }
+    },
+    {
+      "id": "natural-death-non-ruler",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "lifecyclePolicy",
+            "naturalDeath"
+          ],
+          "value": "age-90-coinflip"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "age"
+          ],
+          "value": 90
+        },
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1972
+        }
+      ],
+      "operation": "settle_natural_deaths",
+      "parameters": {},
+      "initialStateSha256": "702ca80c87dbeef2d673d23e7a76f821a98a2027c6904c8dfe6382b37262b519",
+      "finalStateSha256": "ddeb52249781f61d6c8af455dbd067b2c35c39cfe670e34db7fc5e2b61a410a8",
+      "expectedReceipt": {
+        "kind": "settle_natural_deaths",
+        "beforeSeed": 1972,
+        "afterSeed": 1380227,
+        "affectedOfficerIds": [
+          "officer-32"
+        ],
+        "phase": "player",
+        "outcome": null,
+        "pendingSuccession": null,
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "夏侯惇年迈病逝。",
+            "turn": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "natural-death-non-january-no-op",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "calendar",
+            "month"
+          ],
+          "value": 2
+        },
+        {
+          "path": [
+            "lifecyclePolicy",
+            "naturalDeath"
+          ],
+          "value": "age-90-coinflip"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "age"
+          ],
+          "value": 90
+        },
+        {
+          "path": [
+            "rngSeed"
+          ],
+          "value": 1972
+        }
+      ],
+      "operation": "settle_natural_deaths",
+      "parameters": {},
+      "initialStateSha256": "0328fdf149d731a066a3812a3d869772359e50147af349c1b204019f3270f399",
+      "finalStateSha256": "0328fdf149d731a066a3812a3d869772359e50147af349c1b204019f3270f399",
+      "expectedReceipt": {
+        "kind": "settle_natural_deaths",
+        "beforeSeed": 1972,
+        "afterSeed": 1972,
+        "affectedOfficerIds": [],
+        "phase": "player",
+        "outcome": null,
+        "pendingSuccession": null,
+        "appendedLogs": []
+      }
+    },
+    {
+      "id": "player-ruler-death-pauses-for-succession",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [],
+      "operation": "kill_officer",
+      "parameters": {
+        "officerId": "officer-1",
+        "cause": "natural-death",
+        "cityId": "city-12"
+      },
+      "initialStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+      "finalStateSha256": "5c113204ee0a9be4dac6cdcdf15d86f88d4a24389101a9a4f558de71626d25cb",
+      "expectedReceipt": {
+        "kind": "kill_officer",
+        "officerId": "officer-1",
+        "beforeSeed": 48641,
+        "afterSeed": 48641,
+        "phase": "succession",
+        "outcome": null,
+        "pendingSuccession": {
+          "version": 1,
+          "factionId": "ruler-1",
+          "formerRulerOfficerId": "officer-1",
+          "candidateOfficerIds": [
+            "officer-34",
+            "officer-37",
+            "officer-36",
+            "officer-32",
+            "officer-33",
+            "officer-35"
+          ],
+          "reason": "natural-death",
+          "createdTurn": 1,
+          "createdYear": 190,
+          "createdMonth": 1,
+          "resumePhase": "player",
+          "resumeActiveFactionId": "ruler-1"
+        },
+        "appendedLogs": []
+      }
+    },
+    {
+      "id": "resolve-player-succession",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "campaignStarted"
+          ],
+          "value": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "satrapOfficerId"
+          ],
+          "value": "officer-34"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "death"
+          ],
+          "value": {
+            "cause": "natural-death",
+            "turn": 1,
+            "year": 190,
+            "month": 1,
+            "cityId": "city-12"
+          }
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "status"
+          ],
+          "value": "dead"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "pendingSuccession"
+          ],
+          "value": {
+            "version": 1,
+            "factionId": "ruler-1",
+            "formerRulerOfficerId": "officer-1",
+            "candidateOfficerIds": [
+              "officer-34",
+              "officer-37",
+              "officer-36",
+              "officer-32",
+              "officer-33",
+              "officer-35"
+            ],
+            "reason": "natural-death",
+            "createdTurn": 1,
+            "createdYear": 190,
+            "createdMonth": 1,
+            "resumePhase": "player",
+            "resumeActiveFactionId": "ruler-1"
+          }
+        },
+        {
+          "path": [
+            "phase"
+          ],
+          "value": "succession"
+        }
+      ],
+      "operation": "resolve_succession",
+      "parameters": {
+        "successorOfficerId": "officer-34",
+        "command": {
+          "commandEnvelopeVersion": 1,
+          "commandId": "mb11-resolve-succession-001",
+          "expectedStateSha256": "5c113204ee0a9be4dac6cdcdf15d86f88d4a24389101a9a4f558de71626d25cb",
+          "kind": "resolve_succession",
+          "parameters": {
+            "successorOfficerId": "officer-34"
+          }
+        }
+      },
+      "initialStateSha256": "5c113204ee0a9be4dac6cdcdf15d86f88d4a24389101a9a4f558de71626d25cb",
+      "finalStateSha256": "f48c6a262cfdfa8b2cde224956bb2beeec3379a6e250be203de4c84f5c11b185",
+      "expectedReceipt": {
+        "kind": "resolve_succession",
+        "successorOfficerId": "officer-34",
+        "beforeSeed": 48641,
+        "afterSeed": 48641,
+        "phase": "player",
+        "outcome": null,
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "system",
+            "message": "李典被拥立为曹操军新君。",
+            "turn": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ai-ruler-deterministic-successor",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [],
+      "operation": "kill_officer",
+      "parameters": {
+        "officerId": "officer-13",
+        "cause": "natural-death",
+        "cityId": "city-5"
+      },
+      "initialStateSha256": "74bd11a4ad3bc131979749534878570cca20c4b2d2f7b494c31ae48b6576ee38",
+      "finalStateSha256": "ede30de9cdda488a5329e3b46db075853e63b832bd2ae521d5c996d27ef2fd17",
+      "expectedReceipt": {
+        "kind": "kill_officer",
+        "officerId": "officer-13",
+        "beforeSeed": 48641,
+        "afterSeed": 48641,
+        "phase": "player",
+        "outcome": null,
+        "pendingSuccession": null,
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "turn",
+            "message": "关羽继任刘备军君主。",
+            "turn": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "player-faction-dissolves-without-successor",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "death"
+          ],
+          "value": {
+            "cause": "natural-death",
+            "turn": 1,
+            "year": 190,
+            "month": 1,
+            "cityId": "city-12"
+          }
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "status"
+          ],
+          "value": "dead"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-32",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-33",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "officers",
+            "officer-33",
+            "death"
+          ],
+          "value": {
+            "cause": "natural-death",
+            "turn": 1,
+            "year": 190,
+            "month": 1,
+            "cityId": "city-12"
+          }
+        },
+        {
+          "path": [
+            "officers",
+            "officer-33",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-33",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-33",
+            "status"
+          ],
+          "value": "dead"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-33",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-34",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "officers",
+            "officer-34",
+            "death"
+          ],
+          "value": {
+            "cause": "natural-death",
+            "turn": 1,
+            "year": 190,
+            "month": 1,
+            "cityId": "city-12"
+          }
+        },
+        {
+          "path": [
+            "officers",
+            "officer-34",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-34",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-34",
+            "status"
+          ],
+          "value": "dead"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-34",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-35",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "officers",
+            "officer-35",
+            "death"
+          ],
+          "value": {
+            "cause": "natural-death",
+            "turn": 1,
+            "year": 190,
+            "month": 1,
+            "cityId": "city-12"
+          }
+        },
+        {
+          "path": [
+            "officers",
+            "officer-35",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-35",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-35",
+            "status"
+          ],
+          "value": "dead"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-35",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-36",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "officers",
+            "officer-36",
+            "death"
+          ],
+          "value": {
+            "cause": "natural-death",
+            "turn": 1,
+            "year": 190,
+            "month": 1,
+            "cityId": "city-12"
+          }
+        },
+        {
+          "path": [
+            "officers",
+            "officer-36",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-36",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-36",
+            "status"
+          ],
+          "value": "dead"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-36",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-37",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "officers",
+            "officer-37",
+            "death"
+          ],
+          "value": {
+            "cause": "natural-death",
+            "turn": 1,
+            "year": 190,
+            "month": 1,
+            "cityId": "city-12"
+          }
+        },
+        {
+          "path": [
+            "officers",
+            "officer-37",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-37",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-37",
+            "status"
+          ],
+          "value": "dead"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-37",
+            "troops"
+          ],
+          "value": 0
+        }
+      ],
+      "operation": "kill_officer",
+      "parameters": {
+        "officerId": "officer-1",
+        "cause": "natural-death",
+        "cityId": "city-12"
+      },
+      "initialStateSha256": "ec259e518c59ef369b2e582e5b38605aaf4f4b8500b0a8a8ec7c661caa34dda7",
+      "finalStateSha256": "2de2e3a3379b17df61d0424b3754a4287c2550fd66f65fd5bba42b9c322333bf",
+      "expectedReceipt": {
+        "kind": "kill_officer",
+        "officerId": "officer-1",
+        "beforeSeed": 48641,
+        "afterSeed": 48641,
+        "phase": "ended",
+        "outcome": "defeat",
+        "pendingSuccession": null,
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "system",
+            "message": "曹操军在曹操失效后无人可继，势力瓦解。",
+            "turn": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "campaign-victory",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-19",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-22",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-23",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-25",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-28",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-29",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-30",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-31",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-32",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-34",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-35",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-36",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-37",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "ownerId"
+          ],
+          "value": "ruler-1"
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        }
+      ],
+      "operation": "evaluate_outcome",
+      "parameters": {},
+      "initialStateSha256": "03bd8b16b7d1472a1b74a445ab0d16cece697ee99292710bf38743fe77cab0be",
+      "finalStateSha256": "41d79c9a9e6634eabbe2c53a05ede4d38517bdd3794f2852ee5d45ee17448f59",
+      "expectedReceipt": {
+        "kind": "evaluate_outcome",
+        "phase": "ended",
+        "outcome": "victory",
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "system",
+            "message": "天下再无敌对诸侯，战役胜利。",
+            "turn": 1
+          }
+        ],
+        "outcomeMessages": [
+          "天下再无敌对诸侯，战役胜利。"
+        ]
+      }
+    },
+    {
+      "id": "campaign-defeat",
+      "campaign": {
+        "periodId": 1,
+        "rulerSourceIndex": 1
+      },
+      "patches": [
+        {
+          "path": [
+            "cities",
+            "city-0",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-1",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-10",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-11",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "ownerId"
+          ],
+          "value": "ruler-13"
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-13",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-14",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-15",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-16",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-17",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-18",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-2",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-20",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-21",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-24",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-26",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-27",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-3",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-33",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-4",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-5",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-6",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-7",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-8",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-9",
+            "satrapOfficerId"
+          ],
+          "value": null,
+          "remove": true
+        }
+      ],
+      "operation": "evaluate_outcome",
+      "parameters": {},
+      "initialStateSha256": "74a9b41d9d2afe62e881796c4b5664c2a44fc4f5072ab7a8898334f7d4f08f39",
+      "finalStateSha256": "2dbaeab8542af8e57d095b70cb679a3bd8e91ccc11e5284cb443d6a6315cfaeb",
+      "expectedReceipt": {
+        "kind": "evaluate_outcome",
+        "phase": "ended",
+        "outcome": "defeat",
+        "appendedLogs": [
+          {
+            "id": "log-1-002",
+            "kind": "system",
+            "message": "我方已失去全部城池，战役失败。",
+            "turn": 1
+          }
+        ],
+        "outcomeMessages": [
+          "我方已失去全部城池，战役失败。"
+        ]
+      }
+    }
+  ],
   "validationCases": [
     {
       "id": "unsafe-city-money",
@@ -113835,6 +115447,304 @@
       ],
       "expectedPath": "officers.officer-30.death",
       "expectedMessage": "dead officer must retain a death record"
+    },
+    {
+      "id": "succession-phase-requires-pending-decision",
+      "patches": [
+        {
+          "path": [
+            "phase"
+          ],
+          "value": "succession"
+        }
+      ],
+      "expectedPath": "pendingSuccession",
+      "expectedMessage": "is required during the succession phase"
+    },
+    {
+      "id": "malformed-pending-succession-does-not-crash-validator",
+      "patches": [
+        {
+          "path": [
+            "phase"
+          ],
+          "value": "succession"
+        },
+        {
+          "path": [
+            "pendingSuccession"
+          ],
+          "value": []
+        }
+      ],
+      "expectedPath": "pendingSuccession",
+      "expectedMessage": "must be an object"
+    },
+    {
+      "id": "pending-succession-rejects-empty-candidates",
+      "patches": [
+        {
+          "path": [
+            "campaignStarted"
+          ],
+          "value": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "satrapOfficerId"
+          ],
+          "value": "officer-34"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "death"
+          ],
+          "value": {
+            "cause": "natural-death",
+            "turn": 1,
+            "year": 190,
+            "month": 1,
+            "cityId": "city-12"
+          }
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "status"
+          ],
+          "value": "dead"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "pendingSuccession"
+          ],
+          "value": {
+            "version": 1,
+            "factionId": "ruler-1",
+            "formerRulerOfficerId": "officer-1",
+            "candidateOfficerIds": [
+              "officer-34",
+              "officer-37",
+              "officer-36",
+              "officer-32",
+              "officer-33",
+              "officer-35"
+            ],
+            "reason": "natural-death",
+            "createdTurn": 1,
+            "createdYear": 190,
+            "createdMonth": 1,
+            "resumePhase": "player",
+            "resumeActiveFactionId": "ruler-1"
+          }
+        },
+        {
+          "path": [
+            "phase"
+          ],
+          "value": "succession"
+        },
+        {
+          "path": [
+            "pendingSuccession",
+            "candidateOfficerIds"
+          ],
+          "value": []
+        }
+      ],
+      "expectedPath": "pendingSuccession.candidateOfficerIds",
+      "expectedMessage": "must contain at least one candidate"
+    },
+    {
+      "id": "pending-succession-rejects-invalid-ai-cursor",
+      "patches": [
+        {
+          "path": [
+            "campaignStarted"
+          ],
+          "value": true
+        },
+        {
+          "path": [
+            "cities",
+            "city-12",
+            "satrapOfficerId"
+          ],
+          "value": "officer-34"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "cityId"
+          ],
+          "value": null,
+          "remove": true
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "death"
+          ],
+          "value": {
+            "cause": "natural-death",
+            "turn": 1,
+            "year": 190,
+            "month": 1,
+            "cityId": "city-12"
+          }
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "factionId"
+          ],
+          "value": "neutral"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "stamina"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "status"
+          ],
+          "value": "dead"
+        },
+        {
+          "path": [
+            "officers",
+            "officer-1",
+            "troops"
+          ],
+          "value": 0
+        },
+        {
+          "path": [
+            "pendingSuccession"
+          ],
+          "value": {
+            "version": 1,
+            "factionId": "ruler-1",
+            "formerRulerOfficerId": "officer-1",
+            "candidateOfficerIds": [
+              "officer-34",
+              "officer-37",
+              "officer-36",
+              "officer-32",
+              "officer-33",
+              "officer-35"
+            ],
+            "reason": "natural-death",
+            "createdTurn": 1,
+            "createdYear": 190,
+            "createdMonth": 1,
+            "resumePhase": "player",
+            "resumeActiveFactionId": "ruler-1"
+          }
+        },
+        {
+          "path": [
+            "phase"
+          ],
+          "value": "succession"
+        },
+        {
+          "path": [
+            "pendingSuccession",
+            "resumePhase"
+          ],
+          "value": "ai"
+        },
+        {
+          "path": [
+            "pendingSuccession",
+            "resumeActiveFactionId"
+          ],
+          "value": "ruler-13"
+        },
+        {
+          "path": [
+            "pendingSuccession",
+            "resumeAiFactionIndex"
+          ],
+          "value": 999
+        }
+      ],
+      "expectedPath": "pendingSuccession.resumeAiFactionIndex",
+      "expectedMessage": "must resume after the active AI faction"
+    },
+    {
+      "id": "ended-phase-requires-outcome",
+      "patches": [
+        {
+          "path": [
+            "phase"
+          ],
+          "value": "ended"
+        }
+      ],
+      "expectedPath": "outcome",
+      "expectedMessage": "is required when the game has ended"
+    },
+    {
+      "id": "active-phase-rejects-outcome",
+      "patches": [
+        {
+          "path": [
+            "outcome"
+          ],
+          "value": "victory"
+        }
+      ],
+      "expectedPath": "outcome",
+      "expectedMessage": "is only allowed when the game has ended"
     },
     {
       "id": "strategic-order-unknown-field",

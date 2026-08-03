@@ -7,6 +7,8 @@ const DevelopFarming = preload("res://src/domain/commands/develop_farming_comman
 const StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
 const DiplomaticOrders = preload("res://src/domain/commands/diplomatic_order_commands.gd")
 const CalendarEvents = preload("res://src/domain/progression/calendar_events.gd")
+const OfficerLifecycle = preload("res://src/domain/progression/officer_lifecycle.gd")
+const CampaignOutcome = preload("res://src/domain/progression/campaign_outcome.gd")
 const BayeDiplomacy = preload("res://src/domain/compat/baye/baye_diplomacy.gd")
 const GameSession = preload("res://src/application/game_session/game_session.gd")
 const SaveRepository = preload("res://src/application/persistence/json_save_repository.gd")
@@ -34,6 +36,7 @@ func _initialize() -> void:
 	_test_diplomatic_order_application_bridge()
 	_test_diplomatic_order_termination_and_invalid_executor()
 	_test_calendar_and_city_event_contract()
+	_test_lifecycle_succession_and_outcome_contract()
 	_test_spike_contract_rejects_unmigrated_web_states()
 	_test_save_load_equivalence()
 
@@ -45,6 +48,50 @@ func _initialize() -> void:
 		return
 	print("[Godot domain tests] PASSED: %d assertion(s)" % _assertions)
 	quit(0)
+
+
+func _test_lifecycle_succession_and_outcome_contract() -> void:
+	var session := GameSession.new()
+	var started: Dictionary = session.start_campaign(1, 1)
+	_assert_true(started["ok"], "lifecycle domain campaign must start")
+	if not started["ok"]: return
+	var initial: Dictionary = session.snapshot()
+	var killed: Dictionary = OfficerLifecycle.kill_officer(GameState.new(initial), {
+		"officerId": "officer-1", "cause": "natural-death", "cityId": "city-12",
+	})
+	_assert_true(killed["ok"], "player ruler death must settle")
+	if not killed["ok"]: return
+	var pending: Dictionary = killed["next_state"].snapshot()
+	_assert_equal(pending["phase"], "succession", "player ruler death must pause at succession")
+	_assert_true(pending.get("pendingSuccession") is Dictionary, "succession must persist a decision record")
+	_assert_equal(Validator.validate_runtime(pending), [], "pending succession must validate")
+	var malformed: Dictionary = pending.duplicate(true)
+	malformed["pendingSuccession"] = []
+	var malformed_issues: Array[Dictionary] = Validator.validate_runtime(malformed)
+	_assert_true(not malformed_issues.is_empty(), "malformed pending succession must be rejected without a crash")
+	var successor_id: String = str(pending["pendingSuccession"]["candidateOfficerIds"][0])
+	var resolved: Dictionary = OfficerLifecycle.resolve_succession(GameState.new(pending), successor_id)
+	_assert_true(resolved["ok"], "valid succession candidate must resolve")
+	if resolved["ok"]:
+		var resolved_state: Dictionary = resolved["next_state"].snapshot()
+		_assert_equal(resolved_state["factions"][resolved_state["playerFactionId"]]["rulerOfficerId"], successor_id, "successor must become ruler")
+		_assert_equal(Validator.validate_runtime(resolved_state), [], "resolved succession must validate")
+
+	var victory_input: Dictionary = initial.duplicate(true)
+	for city_id: Variant in victory_input["cityOrder"]:
+		victory_input["cities"][city_id]["ownerId"] = victory_input["playerFactionId"]
+		victory_input["cities"][city_id].erase("satrapOfficerId")
+	var victory: Dictionary = CampaignOutcome.evaluate(GameState.new(victory_input))
+	_assert_true(victory["ok"], "victory closure must normalize landless factions")
+	if victory["ok"]:
+		var ended: Dictionary = victory["next_state"].snapshot()
+		_assert_equal(ended["phase"], "ended", "victory must enter ended phase")
+		_assert_equal(ended["outcome"], "victory", "victory must record its outcome")
+		_assert_equal(Validator.validate_runtime(ended), [], "ended victory must validate")
+		var repeated: Dictionary = CampaignOutcome.evaluate(GameState.new(ended))
+		_assert_true(repeated["ok"], "ended outcome evaluation must remain safe")
+		if repeated["ok"]:
+			_assert_equal(repeated["next_state"].snapshot(), ended, "ended outcome evaluation must be idempotent")
 
 
 func _test_baye_diplomacy_rng_contract() -> void:

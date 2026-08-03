@@ -220,6 +220,11 @@ static func terminate_all(state: GameState) -> Dictionary:
 	}}
 
 
+## Shared ownership-normalization boundary for lifecycle and outcome closure.
+static func release_landless_faction_officers(data: Dictionary) -> Dictionary:
+	return _release_landless_faction_officers(data)
+
+
 static func get_availability(state: GameState, command_kind: String, parameters: Dictionary) -> Dictionary:
 	var data: Dictionary = state.snapshot()
 	var issues: Array[Dictionary] = Validator.validate_runtime(data)

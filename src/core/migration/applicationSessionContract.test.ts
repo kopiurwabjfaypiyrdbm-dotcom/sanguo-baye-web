@@ -6,6 +6,7 @@ import {
   validateEnvelope,
 } from './applicationSessionContract';
 import { buildProductionDataBundle } from './productionDataContract';
+import { killOfficer } from '../officerLifecycle';
 
 describe('Godot production application session oracle', () => {
   it('starts every declared candidate without consuming the period seed', () => {
@@ -91,6 +92,31 @@ describe('Godot production application session oracle', () => {
       code: 'invalid_command_id',
       error: 'commandId must be a non-blank string',
     });
+  });
+
+  it('resolves a durable player succession through the idempotent application envelope', () => {
+    const initial = createProductionSessionState(1, 1);
+    const pending = JSON.parse(JSON.stringify(killOfficer(initial, {
+      officerId: 'officer-1', cause: 'natural-death', cityId: 'city-12',
+    }))) as typeof initial;
+    const successorOfficerId = pending.pendingSuccession!.candidateOfficerIds[0];
+    const session = new OracleApplicationSession(pending);
+    const command = {
+      commandEnvelopeVersion: 1,
+      commandId: 'test-succession-0001',
+      expectedStateSha256: canonicalSha256(pending),
+      kind: 'resolve_succession',
+      parameters: { successorOfficerId },
+    };
+    const first = session.execute(command);
+    const duplicate = session.execute(command);
+
+    expect(first).toMatchObject({ ok: true, stateChanged: true, code: 'ok' });
+    expect(first.state.phase).toBe('player');
+    expect(first.state.pendingSuccession).toBeUndefined();
+    expect(first.state.factions[first.state.playerFactionId].rulerOfficerId).toBe(successorOfficerId);
+    expect(first.receipt).toMatchObject({ kind: 'resolve_succession', successorOfficerId });
+    expect(duplicate).toEqual(first);
   });
 
   it('rejects malformed Unicode without throwing from canonical hashing', () => {

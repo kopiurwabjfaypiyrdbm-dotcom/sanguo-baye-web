@@ -8,7 +8,7 @@ const ALLOWED: Dictionary = {
 		"phase", "playerFactionId", "activeFactionId", "factionOrder", "factions", "cities",
 		"officers", "items", "armsTypes", "actedOfficerIds", "discoveredOfficerIds",
 		"strategicOrders", "diplomaticOrders", "intelReports", "nextStrategicOrderSerial",
-		"nextDiplomaticOrderSerial", "lifecyclePolicy", "logs",
+		"nextDiplomaticOrderSerial", "lifecyclePolicy", "pendingSuccession", "outcome", "logs",
 	],
 	"scenario": ["id", "period", "source"],
 	"usage": ["scope", "redistributionReview", "notice"],
@@ -30,6 +30,11 @@ const ALLOWED: Dictionary = {
 		"captorFactionId", "formerFactionId", "death",
 	],
 	"death": ["cause", "turn", "year", "month", "cityId", "responsibleFactionId"],
+	"pendingSuccession": [
+		"version", "factionId", "formerRulerOfficerId", "candidateOfficerIds", "reason",
+		"createdTurn", "createdYear", "createdMonth", "resumePhase",
+		"resumeActiveFactionId", "resumeAiFactionIndex",
+	],
 	"item": [
 		"id", "sourceId", "name", "forceBonus", "intelligenceBonus", "moveBonus",
 		"armsTypeOverride", "appearanceYear", "appearanceCityId",
@@ -63,6 +68,7 @@ static func validate(state: Dictionary) -> Array[Dictionary]:
 	_validate_object(state.get("scenario"), ALLOWED["scenario"], "scenario", issues, true)
 	_validate_object(state.get("calendar"), ALLOWED["calendar"], "calendar", issues)
 	_validate_object(state.get("lifecyclePolicy"), ALLOWED["lifecyclePolicy"], "lifecyclePolicy", issues)
+	_validate_object(state.get("pendingSuccession"), ALLOWED["pendingSuccession"], "pendingSuccession", issues, true)
 	_validate_object(state.get("graph"), ALLOWED["graph"], "graph", issues, true)
 	_validate_record(state.get("factions"), ALLOWED["faction"], "factions", issues)
 	_validate_record(state.get("cities"), ALLOWED["city"], "cities", issues)

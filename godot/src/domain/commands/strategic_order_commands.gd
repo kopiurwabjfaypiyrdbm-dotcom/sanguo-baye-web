@@ -230,6 +230,84 @@ static func cancel_officer_orders(data: Dictionary, officer_id: String, reason: 
 	return {"ok": true, "error": "", "next": next}
 
 
+## Ends every strategic order without advancing turn or RNG. Transport escrow is
+## returned before executors are stationed or released, matching the Web oracle's
+## campaign-outcome closure.
+static func terminate_all(state: GameState, validate_result: bool = true) -> Dictionary:
+	var before: Dictionary = state.snapshot()
+	if (before.get("strategicOrders", {}) as Dictionary).is_empty():
+		return {"ok": true, "error": "", "next_state": GameState.new(before), "receipt": {
+			"kind": "terminate_strategic_orders", "terminatedOrderIds": [],
+		}}
+	var next: Dictionary = before.duplicate(true)
+	var order_ids: Array[String] = _sorted_keys(before["strategicOrders"])
+	var neutral_id: String = ""
+	for faction_id: String in _sorted_keys(before["factions"]):
+		if bool(before["factions"][faction_id].get("isNeutral", false)):
+			neutral_id = faction_id
+			break
+	for order_id: String in order_ids:
+		var order: Dictionary = before["strategicOrders"][order_id]
+		var preferred_ids: Array[String] = [str(order["sourceCityId"]), str(order["targetCityId"])] \
+				if order["kind"] == "transport" else [str(order["targetCityId"]), str(order["sourceCityId"])]
+		var destination: Dictionary = {}
+		for city_id: String in preferred_ids:
+			if before["cities"].has(city_id) and before["cities"][city_id]["ownerId"] == order["factionId"]:
+				destination = before["cities"][city_id]
+				break
+		if destination.is_empty():
+			for city_id: String in _sorted_keys(before["cities"]):
+				if before["cities"][city_id]["ownerId"] == order["factionId"]:
+					destination = before["cities"][city_id]
+					break
+		if order["kind"] == "transport":
+			var can_credit_destination: bool = not destination.is_empty()
+			if can_credit_destination:
+				for field: String in CARGO_FIELDS:
+					can_credit_destination = can_credit_destination and int(next["cities"][destination["id"]][field]) \
+							<= JS_MAX_SAFE_INTEGER - int(order["cargo"][field])
+			if can_credit_destination:
+				_credit(next["cities"], destination["id"], order["cargo"])
+			else:
+				var candidates: Array[String] = []
+				for city_id: String in [str(order["sourceCityId"]), str(order["targetCityId"])]:
+					if before["cities"].has(city_id) and not candidates.has(city_id): candidates.append(city_id)
+				for city_id: String in _sorted_keys(before["cities"]):
+					if before["cities"][city_id]["ownerId"] == order["factionId"] and not candidates.has(city_id):
+						candidates.append(city_id)
+				for city_id: String in _sorted_keys(before["cities"]):
+					if not candidates.has(city_id): candidates.append(city_id)
+				var settlement: Dictionary = _credit_across(next["cities"], candidates, order["cargo"])
+				if not settlement["ok"]: return _failure(settlement["error"])
+		var officer: Dictionary = next["officers"].get(order["officerId"], {})
+		if officer.is_empty() or officer.get("status", "") != "serving" or officer.has("cityId"):
+			continue
+		var changed: Dictionary = officer.duplicate(true)
+		if not destination.is_empty():
+			changed["cityId"] = destination["id"]
+		else:
+			var settlement_city: Dictionary = before["cities"].get(order["targetCityId"], {})
+			if settlement_city.is_empty(): settlement_city = before["cities"].get(order["sourceCityId"], {})
+			if settlement_city.is_empty() and not _sorted_keys(before["cities"]).is_empty():
+				settlement_city = before["cities"][_sorted_keys(before["cities"])[0]]
+			if neutral_id.is_empty() or settlement_city.is_empty():
+				return _failure("Cannot terminate strategic orders without a settlement")
+			changed["status"] = "free"
+			changed["factionId"] = neutral_id
+			changed["cityId"] = settlement_city["id"]
+			changed["troops"] = 0
+			changed["stamina"] = 0
+		next["officers"][changed["id"]] = changed
+	next["strategicOrders"] = {}
+	next = _update_city_satraps(next)
+	if validate_result:
+		var issues: Array[Dictionary] = Validator.validate_runtime(next)
+		if not issues.is_empty(): return _failure(Validator.first_error(issues))
+	return {"ok": true, "error": "", "next_state": GameState.new(next), "receipt": {
+		"kind": "terminate_strategic_orders", "terminatedOrderIds": order_ids,
+	}}
+
+
 static func find_owned_city_route(
 		data: Dictionary, faction_id: String, source_city_id: String, target_city_id: String
 ) -> Array[String]:

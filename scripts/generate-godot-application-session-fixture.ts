@@ -4,7 +4,13 @@ import { fileURLToPath } from 'node:url';
 import { canonicalJson, canonicalSha256, compareUnicodeScalar } from '../src/core/migration/canonicalJson';
 import { governCity } from '../src/core/cityCommands';
 import { findOwnedCityRoute } from '../src/core/strategicOrders';
-import { cancelOfficerOrders } from '../src/core/officerLifecycle';
+import {
+  cancelOfficerOrders,
+  killOfficer,
+  settleCaptiveEscapes,
+  settleNaturalDeaths,
+} from '../src/core/officerLifecycle';
+import { evaluateOutcome } from '../src/core/outcome';
 import { validateGameState } from '../src/core/validation';
 import { nextRandom } from '../src/core/random';
 import { settleCityEvents } from '../src/core/cityEvents';
@@ -47,6 +53,7 @@ function transactionCaseCount(value: ReturnType<typeof buildFixture>) {
       .reduce((total, sequence) => total + sequence.steps.length, 0)
     + value.calendarEventCases.length
     + value.annualProgressionCases.length
+    + value.lifecycleOutcomeCases.length
     + value.validationCases.length;
 }
 
@@ -158,6 +165,7 @@ export function buildFixture() {
     diplomaticOrderSettlementSequences: buildDiplomaticOrderSettlementSequences(),
     calendarEventCases: buildCalendarEventCases(),
     annualProgressionCases: buildAnnualProgressionCases(),
+    lifecycleOutcomeCases: buildLifecycleOutcomeCases(),
     validationCases: buildValidationCases(),
     modernRulesetCase: buildModernRulesetCase(),
   };
@@ -301,6 +309,195 @@ function buildAnnualProgressionCases() {
     ], { year: 190, month: 12 }),
     build('non-rollover-no-op', [], { year: 190, month: 1 }),
   ];
+}
+
+function buildLifecycleOutcomeCases() {
+  type ProductionState = ReturnType<typeof createProductionSessionState>;
+  type Operation = 'settle_captive_escapes' | 'settle_natural_deaths'
+    | 'kill_officer' | 'resolve_succession' | 'evaluate_outcome';
+  const cases: unknown[] = [];
+  const add = (
+    id: string,
+    operation: Operation,
+    input: ProductionState,
+    parameters: Record<string, unknown>,
+    output: ProductionState,
+    expectedReceipt: Record<string, unknown>,
+  ) => {
+    const base = createProductionSessionState(1, 1);
+    const cleanInput = jsonClean(input) as ProductionState;
+    const cleanOutput = jsonClean(output) as ProductionState;
+    cases.push({
+      id,
+      campaign: { periodId: 1, rulerSourceIndex: 1 },
+      patches: collectStatePatches(base as unknown as Record<string, unknown>, cleanInput as unknown as Record<string, unknown>),
+      operation,
+      parameters: jsonClean(parameters),
+      initialStateSha256: canonicalSha256(cleanInput),
+      finalStateSha256: canonicalSha256(cleanOutput),
+      expectedReceipt: jsonClean(expectedReceipt),
+    });
+  };
+  const lifecycleReceipt = (
+    kind: 'settle_captive_escapes' | 'settle_natural_deaths',
+    before: ProductionState,
+    after: ProductionState,
+    affectedOfficerIds: string[],
+  ) => ({
+    kind,
+    beforeSeed: before.rngSeed,
+    afterSeed: after.rngSeed,
+    affectedOfficerIds,
+    phase: after.phase,
+    outcome: after.outcome ?? null,
+    pendingSuccession: after.pendingSuccession ?? null,
+    appendedLogs: structuredClone(after.logs.slice(before.logs.length)),
+  });
+  const killReceipt = (before: ProductionState, after: ProductionState, officerId: string) => ({
+    kind: 'kill_officer', officerId,
+    beforeSeed: before.rngSeed, afterSeed: after.rngSeed,
+    phase: after.phase, outcome: after.outcome ?? null,
+    pendingSuccession: after.pendingSuccession ?? null,
+    appendedLogs: structuredClone(after.logs.slice(before.logs.length)),
+  });
+
+  {
+    const input = createProductionSessionState(1, 1);
+    input.lifecyclePolicy.captiveEscape = 'modern-monthly';
+    input.rngSeed = 1972;
+    input.officers['officer-86'] = {
+      ...input.officers['officer-86'], status: 'captive', factionId: 'neutral',
+      captorFactionId: 'ruler-1', formerFactionId: 'ruler-13', cityId: 'city-12',
+      troops: 0, stamina: 0,
+    };
+    const output = settleCaptiveEscapes(structuredClone(input));
+    add('captive-escape-success', 'settle_captive_escapes', input, {}, output,
+      lifecycleReceipt('settle_captive_escapes', input, output, ['officer-86']));
+  }
+  {
+    const input = createProductionSessionState(1, 1);
+    input.rngSeed = 1972;
+    const output = settleCaptiveEscapes(structuredClone(input));
+    add('captive-escape-disabled-no-rng', 'settle_captive_escapes', input, {}, output,
+      lifecycleReceipt('settle_captive_escapes', input, output, []));
+  }
+  {
+    const input = createProductionSessionState(1, 1);
+    input.lifecyclePolicy.naturalDeath = 'age-90-coinflip';
+    input.rngSeed = 1972;
+    input.officers['officer-32'].age = 90;
+    const output = settleNaturalDeaths(structuredClone(input));
+    add('natural-death-non-ruler', 'settle_natural_deaths', input, {}, output,
+      lifecycleReceipt('settle_natural_deaths', input, output, ['officer-32']));
+  }
+  {
+    const input = createProductionSessionState(1, 1);
+    input.calendar.month = 2;
+    input.lifecyclePolicy.naturalDeath = 'age-90-coinflip';
+    input.rngSeed = 1972;
+    input.officers['officer-32'].age = 90;
+    const output = settleNaturalDeaths(structuredClone(input));
+    add('natural-death-non-january-no-op', 'settle_natural_deaths', input, {}, output,
+      lifecycleReceipt('settle_natural_deaths', input, output, []));
+  }
+  let pendingPlayerSuccession: ProductionState;
+  {
+    const input = createProductionSessionState(1, 1);
+    const parameters = { officerId: 'officer-1', cause: 'natural-death', cityId: 'city-12' } as const;
+    const output = killOfficer(structuredClone(input), parameters);
+    pendingPlayerSuccession = output;
+    add('player-ruler-death-pauses-for-succession', 'kill_officer', input, parameters, output,
+      killReceipt(input, output, parameters.officerId));
+  }
+  {
+    const input = jsonClean(pendingPlayerSuccession);
+    const successorOfficerId = input.pendingSuccession!.candidateOfficerIds[0];
+    const session = new OracleApplicationSession(input);
+    const command: ApplicationCommandEnvelope = {
+      commandEnvelopeVersion: 1,
+      commandId: 'mb11-resolve-succession-001',
+      expectedStateSha256: canonicalSha256(jsonClean(input)),
+      kind: 'resolve_succession',
+      parameters: { successorOfficerId },
+    };
+    const result = session.execute(command);
+    if (!result.ok) throw new Error(`resolve succession command failed: ${result.error}`);
+    add('resolve-player-succession', 'resolve_succession', input, {
+      successorOfficerId, command,
+    }, result.state, result.receipt);
+  }
+  {
+    const input = createProductionSessionState(1, 1);
+    const parameters = { officerId: 'officer-13', cause: 'natural-death', cityId: 'city-5' } as const;
+    const output = killOfficer(structuredClone(input), parameters);
+    add('ai-ruler-deterministic-successor', 'kill_officer', input, parameters, output,
+      killReceipt(input, output, parameters.officerId));
+  }
+  {
+    const input = createProductionSessionState(1, 1);
+    for (const officerId of ['officer-32', 'officer-33', 'officer-34', 'officer-35', 'officer-36', 'officer-37']) {
+      const officer = input.officers[officerId];
+      input.officers[officerId] = {
+        ...officer, status: 'dead', factionId: 'neutral', cityId: undefined,
+        troops: 0, stamina: 0, equipmentItemIds: [],
+        death: { cause: 'natural-death', turn: 1, year: 190, month: 1, cityId: 'city-12' },
+      };
+    }
+    const parameters = { officerId: 'officer-1', cause: 'natural-death', cityId: 'city-12' } as const;
+    const output = killOfficer(structuredClone(input), parameters);
+    add('player-faction-dissolves-without-successor', 'kill_officer', input, parameters, output,
+      killReceipt(input, output, parameters.officerId));
+  }
+  for (const outcome of ['victory', 'defeat'] as const) {
+    const input = createProductionSessionState(1, 1);
+    for (const city of Object.values(input.cities)) {
+      if (outcome === 'victory') city.ownerId = input.playerFactionId;
+      else if (city.ownerId === input.playerFactionId) city.ownerId = 'ruler-13';
+      city.satrapOfficerId = undefined;
+    }
+    const output = evaluateOutcome(structuredClone(input));
+    const message = outcome === 'victory' ? '天下再无敌对诸侯，战役胜利。' : '我方已失去全部城池，战役失败。';
+    add(`campaign-${outcome}`, 'evaluate_outcome', input, {}, output, {
+      kind: 'evaluate_outcome', phase: output.phase, outcome: output.outcome ?? null,
+      appendedLogs: structuredClone(output.logs.slice(input.logs.length)),
+      outcomeMessages: [message],
+    });
+  }
+  return cases;
+}
+
+function collectStatePatches(
+  before: Record<string, unknown>, after: Record<string, unknown>, path: string[] = [],
+): StatePatch[] {
+  const patches: StatePatch[] = [];
+  const keys = [...new Set([...Object.keys(before), ...Object.keys(after)])].sort(compareUnicodeScalar);
+  for (const key of keys) {
+    const nextPath = [...path, key];
+    if (!(key in after)) {
+      patches.push({ path: nextPath, value: null, remove: true });
+      continue;
+    }
+    if (!(key in before)) {
+      patches.push({ path: nextPath, value: structuredClone(after[key]) });
+      continue;
+    }
+    const left = before[key];
+    const right = after[key];
+    if (isPlainRecord(left) && isPlainRecord(right)) {
+      patches.push(...collectStatePatches(left, right, nextPath));
+    } else if (canonicalJson(left) !== canonicalJson(right)) {
+      patches.push({ path: nextPath, value: structuredClone(right) });
+    }
+  }
+  return patches;
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function jsonClean<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
 }
 
 function buildDiplomaticOrderSequences() {
@@ -1605,6 +1802,14 @@ function buildValidationCases() {
     targetCityId: 'city-0', createdTurn: 1, createdYear: 190, createdMonth: 1,
     durationMonths: 1, remainingMonths: 1, moneyCost: 50,
   };
+  const successionBase = createProductionSessionState(1, 1);
+  const validSuccession = jsonClean(killOfficer(structuredClone(successionBase), {
+    officerId: 'officer-1', cause: 'natural-death', cityId: 'city-12',
+  }));
+  const validSuccessionPatches = collectStatePatches(
+    successionBase as unknown as Record<string, unknown>,
+    validSuccession as unknown as Record<string, unknown>,
+  );
   return [
     {
       id: 'unsafe-city-money',
@@ -1639,6 +1844,53 @@ function buildValidationCases() {
       ],
       expectedPath: 'officers.officer-30.death',
       expectedMessage: 'dead officer must retain a death record',
+    },
+    {
+      id: 'succession-phase-requires-pending-decision',
+      patches: [{ path: ['phase'], value: 'succession' }],
+      expectedPath: 'pendingSuccession',
+      expectedMessage: 'is required during the succession phase',
+    },
+    {
+      id: 'malformed-pending-succession-does-not-crash-validator',
+      patches: [
+        { path: ['phase'], value: 'succession' },
+        { path: ['pendingSuccession'], value: [] },
+      ],
+      expectedPath: 'pendingSuccession',
+      expectedMessage: 'must be an object',
+    },
+    {
+      id: 'pending-succession-rejects-empty-candidates',
+      patches: [
+        ...validSuccessionPatches,
+        { path: ['pendingSuccession', 'candidateOfficerIds'], value: [] },
+      ],
+      expectedPath: 'pendingSuccession.candidateOfficerIds',
+      expectedMessage: 'must contain at least one candidate',
+    },
+    {
+      id: 'pending-succession-rejects-invalid-ai-cursor',
+      patches: [
+        ...validSuccessionPatches,
+        { path: ['pendingSuccession', 'resumePhase'], value: 'ai' },
+        { path: ['pendingSuccession', 'resumeActiveFactionId'], value: 'ruler-13' },
+        { path: ['pendingSuccession', 'resumeAiFactionIndex'], value: 999 },
+      ],
+      expectedPath: 'pendingSuccession.resumeAiFactionIndex',
+      expectedMessage: 'must resume after the active AI faction',
+    },
+    {
+      id: 'ended-phase-requires-outcome',
+      patches: [{ path: ['phase'], value: 'ended' }],
+      expectedPath: 'outcome',
+      expectedMessage: 'is required when the game has ended',
+    },
+    {
+      id: 'active-phase-rejects-outcome',
+      patches: [{ path: ['outcome'], value: 'victory' }],
+      expectedPath: 'outcome',
+      expectedMessage: 'is only allowed when the game has ended',
     },
     {
       id: 'strategic-order-unknown-field',

@@ -8,6 +8,10 @@ const CommandDispatcher = preload("res://src/application/commands/command_dispat
 const ProductionDataRepository = preload("res://src/application/game_session/production_data_repository.gd")
 const GameSessionQueries = preload("res://src/application/game_session/game_session_queries.gd")
 const SaveRepository = preload("res://src/application/persistence/json_save_repository.gd")
+const CalendarEvents = preload("res://src/domain/progression/calendar_events.gd")
+const AnnualProgression = preload("res://src/domain/progression/annual_progression.gd")
+const OfficerLifecycle = preload("res://src/domain/progression/officer_lifecycle.gd")
+const CampaignOutcome = preload("res://src/domain/progression/campaign_outcome.gd")
 
 const DEFAULT_PERIOD_PATH: String = "res://data/period-1.json"
 const DEFAULT_SAVE_PATH: String = "user://godot-spike-save.json"
@@ -177,22 +181,23 @@ func restore_snapshot(raw_snapshot: Variant) -> Dictionary:
 	var catalog_state_scenario: Dictionary = (loaded["state"] as GameState).snapshot()["scenario"]
 	if state_scenario != catalog_state_scenario:
 		return _failure("snapshot scenario identity does not match the production catalog")
+	# The candidate identifies the immutable campaign origin. A legal succession
+	# changes the current ruler, so restore must bind by player faction instead of
+	# requiring the current ruler to still be the period's initial candidate.
 	var matched_candidate: Dictionary = {}
 	for raw_candidate: Variant in production_scenario["playerCandidates"]:
 		var candidate: Dictionary = raw_candidate
-		if candidate["factionId"] == player_faction_id \
-				and candidate["rulerOfficerId"] == ruler_officer_id \
-				and int(candidate["sourceIndex"]) == int(ruler_officer["sourceId"]):
+		if candidate["factionId"] == player_faction_id:
 			matched_candidate = candidate
 			break
 	if matched_candidate.is_empty():
-		return _failure("snapshot player ruler is not a production campaign candidate")
+		return _failure("snapshot player faction is not a production campaign candidate")
 	var next_state: GameState = GameState.new(candidate_data)
 	var next_campaign: Dictionary = {
 		"productionDataContractVersion": int(candidate_data["dataContractVersion"]),
 		"periodId": period_id,
 		"title": production_scenario["title"],
-		"rulerSourceIndex": int(ruler_officer["sourceId"]),
+		"rulerSourceIndex": int(matched_candidate["sourceIndex"]),
 		"playerFactionId": player_faction_id,
 		"rulerOfficerId": ruler_officer_id,
 		"rulerName": ruler_officer["name"],
@@ -359,6 +364,81 @@ func advance_strategic_orders() -> Dictionary:
 
 func advance_diplomatic_orders() -> Dictionary:
 	return _advance_campaign_orders("advance_diplomatic_orders")
+
+
+func settle_city_events() -> Dictionary:
+	if _state == null: return _progression_not_started("settle_city_events")
+	return _apply_progression_result(CalendarEvents.settle_city_events(_state), "settle_city_events")
+
+
+func settle_annual_progression(previous_calendar: Dictionary) -> Dictionary:
+	if _state == null: return _progression_not_started("settle_annual_progression")
+	return _apply_progression_result(
+		AnnualProgression.settle(_state, previous_calendar), "settle_annual_progression"
+	)
+
+
+func settle_captive_escapes() -> Dictionary:
+	if _state == null: return _progression_not_started("settle_captive_escapes")
+	return _apply_progression_result(
+		OfficerLifecycle.settle_captive_escapes(_state), "settle_captive_escapes"
+	)
+
+
+func settle_natural_deaths() -> Dictionary:
+	if _state == null: return _progression_not_started("settle_natural_deaths")
+	return _apply_progression_result(
+		OfficerLifecycle.settle_natural_deaths(_state), "settle_natural_deaths"
+	)
+
+
+func evaluate_campaign_outcome() -> Dictionary:
+	if _state == null: return _progression_not_started("evaluate_outcome")
+	return _apply_progression_result(CampaignOutcome.evaluate(_state), "evaluate_outcome", true)
+
+
+func _progression_not_started(kind: String) -> Dictionary:
+	return {"ok": false, "error": "campaign session has not started", "stateChanged": false,
+		"beforeStateSha256": "", "afterStateSha256": "", "receipt": {"kind": kind}, "state": {}}
+
+
+func _apply_progression_result(
+		domain_result: Dictionary, kind: String, allow_succession: bool = false
+) -> Dictionary:
+	var before: Dictionary = snapshot()
+	var before_digest: String = state_sha256()
+	if _state == null:
+		return {"ok": false, "error": "campaign session has not started", "stateChanged": false,
+			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
+			"receipt": {}, "state": before}
+	if before.get("phase", "") == "ended":
+		return {"ok": true, "error": "", "stateChanged": false,
+			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
+			"receipt": {"kind": kind, "skipped": "campaign-ended"}, "state": before}
+	if before.get("phase", "") == "succession" and not allow_succession:
+		return {"ok": false, "error": "必须先拥立新君", "stateChanged": false,
+			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
+			"receipt": {}, "state": before}
+	if not domain_result.get("ok", false):
+		return {"ok": false, "error": domain_result.get("error", "progression failed"), "stateChanged": false,
+			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
+			"receipt": {}, "state": before}
+	var next_state: GameState = domain_result["next_state"]
+	var next_snapshot: Dictionary = next_state.snapshot()
+	var issues: Array[Dictionary] = Validator.validate_runtime(next_snapshot)
+	if not issues.is_empty():
+		return {"ok": false, "error": Validator.first_error(issues), "stateChanged": false,
+			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
+			"receipt": {}, "state": before}
+	var digest: Dictionary = CanonicalJson.try_sha256(next_snapshot)
+	if not digest["ok"]:
+		return {"ok": false, "error": digest["error"], "stateChanged": false,
+			"beforeStateSha256": before_digest, "afterStateSha256": before_digest,
+			"receipt": {}, "state": before}
+	_state = next_state
+	return {"ok": true, "error": "", "stateChanged": digest["value"] != before_digest,
+		"beforeStateSha256": before_digest, "afterStateSha256": digest["value"],
+		"receipt": (domain_result["receipt"] as Dictionary).duplicate(true), "state": next_snapshot}
 
 
 func _advance_campaign_orders(receipt_kind: String) -> Dictionary:
