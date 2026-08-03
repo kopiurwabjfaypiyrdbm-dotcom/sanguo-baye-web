@@ -233,7 +233,10 @@ function projectBattle(battle: TacticalBattleState, state: any): JsonObject {
     attackerFood: battle.attackerFood, defenderFood: battle.defenderFood, width: battle.width, height: battle.height, day: battle.day, maxDays: battle.maxDays,
     weather: battle.weather, phase: battle.status === 'ongoing' ? 'deployment' : 'ended', activeSide: battle.activeSide, status: battle.status, outcome: battle.status === 'ongoing' ? '' : (battle.victoryReason ?? 'annihilation'), approach: battle.approach,
     battlefieldVersion: battle.battlefieldVersion, battlefieldKey: battle.battlefieldKey, battlefieldTemplate: battle.battlefieldTemplate,
-    deployment, units, actedUnitIds: [], logs: [...battle.logs], guard,
+    deployment, units, actedUnitIds: [], logs: [...battle.logs],
+    commanderUnitIds: { attacker: battle.commanderUnitIds.attacker ?? '', defender: battle.commanderUnitIds.defender ?? '' },
+    experienceGains: { ...battle.experienceGains },
+    guard,
     terrainContractVersion: 1,
     tiles: battle.tiles.map((tile) => {
       const costs = [...MODERN_TERRAIN_MOVE_COSTS].map((row) => row[tile.terrain] ?? Number.POSITIVE_INFINITY);

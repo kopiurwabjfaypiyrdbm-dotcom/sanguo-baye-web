@@ -7,6 +7,7 @@ const Canonical = preload("res://src/domain/validation/canonical_json.gd")
 const BattleState = preload("res://src/domain/tactical/battle_state.gd")
 const BattleValidator = preload("res://src/domain/tactical/battle_validator.gd")
 const Battlefield = preload("res://src/domain/tactical/battlefield.gd")
+const BattleAttack = preload("res://src/domain/tactical/battle_attack.gd")
 
 const SIDE_LIMIT = 10
 const WIDTH = 12
@@ -48,6 +49,8 @@ static func create(state: GameState, order: Dictionary) -> Dictionary:
 		"battlefieldKey": "%d:%d:%s" % [int(before["scenario"].get("period", 0)), int(target.get("sourceIndex", 0)), approach],
 		"battlefieldTemplate": TEMPLATES[posmod(int(target.get("sourceIndex", 0)), TEMPLATES.size())],
 		"deployment": {"attacker": [], "defender": []}, "units": {}, "actedUnitIds": [],
+		"commanderUnitIds": {"attacker": "officer:%s" % attackers[0]["id"] if not attackers.is_empty() else "", "defender": "officer:%s" % defenders[0]["id"] if not defenders.is_empty() else ""},
+		"experienceGains": {},
 		"logs": [String(source["name"]) + "军进入" + String(target["name"]) + "战场。"],
 		"guard": _create_guard(before, source, target),
 	}
@@ -142,6 +145,39 @@ static func move_unit(battle: BattleState, unit_id: String, slot_x: int, slot_y:
 	_sort_deployment(data["deployment"][side])
 	data["logs"].append("%s移动至 %d,%d。" % [unit.get("name", unit_id), slot_x, slot_y])
 	return _finish(data, before_digest, "move_unit", {"unitId": unit_id, "path": path, "cost": cost, "remainingMobility": mobility - cost, "seedBefore": data["rngSeed"], "seedAfter": data["rngSeed"]})
+
+
+static func attack_unit(battle: BattleState, unit_id: String, target_unit_id: String) -> Dictionary:
+	var data = battle.snapshot()
+	var before_digest := _digest(data)
+	var preflight := _preflight(data, before_digest)
+	if not preflight.is_empty(): return preflight
+	if data.get("phase") != "battle": return _battle_failure(before_digest, "战斗尚未开始")
+	if data.get("status") != "ongoing": return _battle_failure(before_digest, "战斗已经结束")
+	var attacker: Dictionary = data["units"].get(unit_id, {})
+	if attacker.is_empty() or int(attacker.get("troops", 0)) <= 0: return _battle_failure(before_digest, "单位不存在或已经退出战斗")
+	if not bool(attacker.get("deployed", false)): return _battle_failure(before_digest, "攻击单位尚未部署")
+	if attacker.get("side") != data.get("activeSide"): return _battle_failure(before_digest, "当前不是该单位所属阵营的行动阶段")
+	var target: Dictionary = data["units"].get(target_unit_id, {})
+	if target.is_empty() or int(target.get("troops", 0)) <= 0 or target.get("side") == attacker.get("side"): return _battle_failure(before_digest, "攻击目标无效")
+	if not bool(target.get("deployed", false)): return _battle_failure(before_digest, "攻击目标尚未部署")
+	if not BattleAttack.attackable_ids(data, unit_id).has(target_unit_id): return _battle_failure(before_digest, "目标不在攻击范围内")
+	var preview := BattleAttack.preview(data, unit_id, target_unit_id)
+	if not preview.has("damage"): return _battle_failure(before_digest, String(preview.get("error", "攻击预览失败")))
+	var damage := int(preview["damage"])
+	var target_troops_after := int(preview["targetTroopsAfter"])
+	attacker["moved"] = true; attacker["acted"] = true; data["units"][unit_id] = attacker
+	if typeof(data.get("actedUnitIds")) != TYPE_ARRAY: data["actedUnitIds"] = []
+	if not data["actedUnitIds"].has(unit_id): data["actedUnitIds"].append(unit_id)
+	data["actedUnitIds"].sort()
+	target["troops"] = target_troops_after; data["units"][target_unit_id] = target
+	var experience_gained := _battle_experience(damage, int(attacker.get("level", 0)), int(target.get("level", 0))) if damage > 0 and not String(attacker.get("officerId", "")).is_empty() else 0
+	if experience_gained > 0 and not String(attacker.get("officerId", "")).is_empty():
+		if typeof(data.get("experienceGains")) != TYPE_DICTIONARY: data["experienceGains"] = {}
+		data["experienceGains"][String(attacker.get("officerId", ""))] = int(data["experienceGains"].get(String(attacker.get("officerId", "")), 0)) + experience_gained
+	var message := "%s攻击%s，造成 %d 兵力损失%s。" % [attacker.get("name", unit_id), target.get("name", target_unit_id), damage, "，目标溃退" if target_troops_after == 0 else ""]
+	data["logs"].append(message)
+	return _finish(data, before_digest, "attack_unit", {"unitId": unit_id, "targetUnitId": target_unit_id, "preview": preview, "damage": damage, "targetTroopsAfter": target_troops_after, "experienceGained": experience_gained, "seedBefore": data["rngSeed"], "seedAfter": data["rngSeed"]})
 
 
 static func remove_deployment(battle: BattleState, unit_id: String) -> Dictionary:
@@ -250,6 +286,13 @@ static func _finish(data: Dictionary, before_digest: String, kind: String, detai
 	if not after_digest_result.get("ok", false): return _battle_failure(before_digest, "战斗状态无法生成摘要：%s" % String(after_digest_result.get("error", "canonical digest failed")))
 	var after_digest := String(after_digest_result["value"])
 	return {"ok": true, "error": "", "stateChanged": after_digest != before_digest, "beforeBattleStateSha256": before_digest, "afterBattleStateSha256": after_digest, "receipt": {"kind": kind, "details": details, "battleStateSha256": after_digest}, "battle": BattleState.new(data)}
+
+
+static func _battle_experience(damage: int, attacker_level: int, defender_level: int) -> int:
+	var base := floori(sqrt(float(maxi(0, damage))) / 4.0)
+	var level_difference := attacker_level - defender_level
+	var adjusted := base + absi(level_difference) if level_difference < 0 else maxi(0, base - level_difference)
+	return adjusted + 2
 
 
 static func _validate_attack_order(state: Dictionary, order: Dictionary) -> Dictionary:

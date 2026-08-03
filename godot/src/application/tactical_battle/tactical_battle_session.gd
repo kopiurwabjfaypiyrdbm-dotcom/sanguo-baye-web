@@ -74,6 +74,7 @@ func execute(command: Dictionary) -> Dictionary:
 		"deploy_unit": result = Commands.deploy_unit(_battle, String(parameters.get("unitId", "")), int(parameters.get("slotX", -1)), int(parameters.get("slotY", -1)))
 		"move_deployment": result = Commands.move_deployment(_battle, String(parameters.get("unitId", "")), int(parameters.get("slotX", -1)), int(parameters.get("slotY", -1)))
 		"move_unit": result = Commands.move_unit(_battle, String(parameters.get("unitId", "")), int(parameters.get("slotX", -1)), int(parameters.get("slotY", -1)))
+		"attack_unit": result = Commands.attack_unit(_battle, String(parameters.get("unitId", "")), String(parameters.get("targetUnitId", "")))
 		"remove_deployment": result = Commands.remove_deployment(_battle, String(parameters.get("unitId", "")))
 		"end_unit_turn": result = Commands.end_unit_turn(_battle, String(parameters.get("unitId", "")))
 		"end_side_turn": result = Commands.end_side_turn(_battle)
@@ -126,6 +127,10 @@ func _validate_command(command: Dictionary) -> Dictionary:
 	elif ["remove_deployment", "end_unit_turn"].has(kind):
 		if typeof(parameters.get("unitId")) != TYPE_STRING or String(parameters.get("unitId")).is_empty():
 			return {"ok": false, "error": "战斗命令缺少 unitId"}
+	elif kind == "attack_unit":
+		for key: String in ["unitId", "targetUnitId"]:
+			if typeof(parameters.get(key)) != TYPE_STRING or String(parameters.get(key)).is_empty():
+				return {"ok": false, "error": "战斗命令缺少 %s" % key}
 	return {"ok": true, "commandId": String(command["commandId"]), "expectedBattleStateSha256": String(command["expectedBattleStateSha256"]), "kind": kind, "parameters": parameters}
 
 

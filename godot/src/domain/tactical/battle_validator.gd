@@ -36,7 +36,10 @@ static func validate(snapshot: Dictionary) -> Array[Dictionary]:
 		_issue(issues, "phase", "must be deployment, battle or ended")
 	if typeof(snapshot.get("activeSide")) != TYPE_STRING or not ["attacker", "defender"].has(String(snapshot.get("activeSide"))):
 		_issue(issues, "activeSide", "must be attacker or defender")
-	if typeof(snapshot.get("status")) != TYPE_STRING or not ["ongoing", "attacker-won", "defender-won"].has(String(snapshot.get("status"))):
+	var raw_status: Variant = snapshot.get("status")
+	if typeof(raw_status) != TYPE_STRING and typeof(raw_status) != TYPE_STRING_NAME:
+		_issue(issues, "status", "must be a string")
+	elif not ["ongoing", "attacker-won", "defender-won"].has(String(raw_status)):
 		_issue(issues, "status", "has an unsupported value")
 	if typeof(snapshot.get("outcome")) != TYPE_STRING: _issue(issues, "outcome", "must be a string")
 	for key: String in ["sourceCityId", "targetCityId", "attackerFactionId", "defenderFactionId", "approach"]:
@@ -64,6 +67,7 @@ static func validate(snapshot: Dictionary) -> Array[Dictionary]:
 		_validate_acted(snapshot, issues)
 		_validate_terminal_invariants(snapshot, issues)
 	Battlefield.validate_grid(snapshot, issues)
+	_validate_optional_attack_fields(snapshot, issues)
 	if typeof(snapshot.get("guard")) != TYPE_DICTIONARY: _issue(issues, "guard", "must be an object")
 	else: _validate_guard(snapshot, snapshot["guard"], issues)
 	return issues
@@ -101,6 +105,12 @@ static func _validate_units(snapshot: Dictionary, issues: Array[Dictionary]) -> 
 		if not _is_integer(unit.get("troops")) or int(unit.get("troops")) < 0: _issue(issues, "units.%s.troops" % unit_id, "must be non-negative")
 		if not _is_exact_integer(unit.get("armsType")) or int(unit.get("armsType")) < 0 or int(unit.get("armsType")) >= 6: _issue(issues, "units.%s.armsType" % unit_id, "must be an integer from 0 to 5")
 		if not _is_exact_integer(unit.get("mobility")) or int(unit.get("mobility")) < 0 or int(unit.get("mobility")) > 8: _issue(issues, "units.%s.mobility" % unit_id, "must be an integer from 0 to 8")
+		for attribute: String in ["force", "intelligence", "level"]:
+			if not _is_exact_integer(unit.get(attribute)) or int(unit.get(attribute)) < 0 or int(unit.get(attribute)) > 255:
+				_issue(issues, "units.%s.%s" % [unit_id, attribute], "must be an integer from 0 to 255")
+		var status_value: Variant = unit.get("status", "")
+		if (typeof(status_value) != TYPE_STRING and typeof(status_value) != TYPE_STRING_NAME) or not ["normal", "confused", "silenced", "rooted", "qimen", "dunjia", "stone-array", "hidden"].has(String(status_value)):
+			_issue(issues, "units.%s.status" % unit_id, "must be a supported tactical status string")
 		if not _is_integer(unit.get("slotX")) or not _is_integer(unit.get("slotY")): _issue(issues, "units.%s.slot" % unit_id, "must have integer slot coordinates")
 		if not typeof(unit.get("deployed")) == TYPE_BOOL: _issue(issues, "units.%s.deployed" % unit_id, "must be boolean")
 		if not typeof(unit.get("acted")) == TYPE_BOOL: _issue(issues, "units.%s.acted" % unit_id, "must be boolean")
@@ -157,7 +167,7 @@ static func _validate_deployment(snapshot: Dictionary, issues: Array[Dictionary]
 					_issue(issues, "deployment.%s[%d]" % [side, index], "slot does not match the unit")
 				if slot_x < 0 or slot_x >= 12 or slot_y < 0 or slot_y >= 8:
 					_issue(issues, "deployment.%s[%d]" % [side, index], "slot is outside the battlefield")
-				if _non_empty_string(snapshot.get("approach")) and not _slot_allowed(String(snapshot.get("approach")), side, slot_x, slot_y):
+				if snapshot.get("phase") == "deployment" and _non_empty_string(snapshot.get("approach")) and not _slot_allowed(String(snapshot.get("approach")), side, slot_x, slot_y):
 					_issue(issues, "deployment.%s[%d]" % [side, index], "slot is outside the side deployment zone")
 				var slot_key := "%d,%d" % [slot_x, slot_y]
 				if seen_slots.has(slot_key): _issue(issues, "deployment", "must not contain duplicate slots")
@@ -268,6 +278,38 @@ static func _validate_terminal_invariants(snapshot: Dictionary, issues: Array[Di
 		_issue(issues, "day", "ongoing battle cannot exceed maxDays")
 
 
+static func _validate_optional_attack_fields(snapshot: Dictionary, issues: Array[Dictionary]) -> void:
+	var units_value: Variant = snapshot.get("units", {})
+	if typeof(units_value) != TYPE_DICTIONARY:
+		return
+	var units: Dictionary = units_value
+	if snapshot.has("commanderUnitIds"):
+		if typeof(snapshot.get("commanderUnitIds")) != TYPE_DICTIONARY:
+			_issue(issues, "commanderUnitIds", "must be an object")
+		else:
+			var commanders: Dictionary = snapshot["commanderUnitIds"]
+			for side: String in ["attacker", "defender"]:
+				var commander: Variant = commanders.get(side, "")
+				var commander_is_string := typeof(commander) == TYPE_STRING or typeof(commander) == TYPE_STRING_NAME
+				var commander_unit: Variant = units.get(String(commander), null) if commander_is_string else null
+				if not commander_is_string or (not String(commander).is_empty() and (typeof(commander_unit) != TYPE_DICTIONARY or commander_unit.get("side") != side)):
+					_issue(issues, "commanderUnitIds.%s" % side, "must be an empty string or same-side unit id")
+	if snapshot.has("experienceGains"):
+		if typeof(snapshot.get("experienceGains")) != TYPE_DICTIONARY:
+			_issue(issues, "experienceGains", "must be an object")
+		else:
+			for raw_id: Variant in snapshot["experienceGains"].keys():
+				if (typeof(raw_id) != TYPE_STRING and typeof(raw_id) != TYPE_STRING_NAME) or String(raw_id).is_empty() or not _is_exact_integer(snapshot["experienceGains"][raw_id]) or int(snapshot["experienceGains"][raw_id]) < 0:
+					_issue(issues, "experienceGains", "keys must be non-empty strings with non-negative integer values")
+	for raw_key: Variant in units.keys():
+		var raw_id := str(raw_key)
+		var unit: Variant = units[raw_key]
+		if typeof(unit) != TYPE_DICTIONARY or not unit.has("normalAttackPatternOverride"): continue
+		var override: Variant = unit.get("normalAttackPatternOverride")
+		if (typeof(override) != TYPE_STRING and typeof(override) != TYPE_STRING_NAME) or not ["orthogonal-adjacent", "adjacent-eight", "manhattan-ring-two"].has(String(override)):
+			_issue(issues, "units.%s.normalAttackPatternOverride" % raw_id, "must be a supported attack pattern")
+
+
 static func _slot_allowed(approach: String, side: String, x: int, y: int) -> bool:
 	if approach == "east": return x <= 3 if side == "attacker" else x >= 8
 	if approach == "west": return x >= 8 if side == "attacker" else x <= 3
@@ -277,7 +319,7 @@ static func _slot_allowed(approach: String, side: String, x: int, y: int) -> boo
 
 static func _sorted_keys(value: Dictionary) -> Array:
 	var result: Array = []
-	for raw_key in value.keys(): result.append(String(raw_key))
+	for raw_key in value.keys(): result.append(str(raw_key))
 	result.sort()
 	return result
 

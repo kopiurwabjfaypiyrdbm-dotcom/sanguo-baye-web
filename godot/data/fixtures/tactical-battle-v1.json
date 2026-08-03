@@ -230,6 +230,11 @@
       "logs": [
         "濮阳军进入邺战场。"
       ],
+      "commanderUnitIds": {
+        "attacker": "officer:officer-1",
+        "defender": "officer:officer-84"
+      },
+      "experienceGains": {},
       "guard": {
         "version": 2,
         "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -2623,7 +2628,7 @@
         }
       ]
     },
-    "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+    "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
     "expectedRngSeed": 48641
   },
   "equipmentCase": {
@@ -2848,6 +2853,11 @@
       "logs": [
         "濮阳军进入邺战场。"
       ],
+      "commanderUnitIds": {
+        "attacker": "officer:officer-1",
+        "defender": "officer:officer-84"
+      },
+      "experienceGains": {},
       "guard": {
         "version": 2,
         "strategicFingerprint": "50027fa833efc4d31adceeb2f8ec1184dd417744c3ac3c195200caa65b2362e6",
@@ -5241,7 +5251,7 @@
         }
       ]
     },
-    "expectedBattleStateSha256": "ead4e90ee52a9850725c4f2cfb88f66dd1720c68782a9b8417e739a1ce6effac"
+    "expectedBattleStateSha256": "154c5fdcab7e3c7e8ea0867f2df91d60b1401bbbe4ec645f03e79a87612fb582"
   },
   "reserveCase": {
     "statePatch": {
@@ -5485,6 +5495,11 @@
       "logs": [
         "濮阳军进入邺战场。"
       ],
+      "commanderUnitIds": {
+        "attacker": "officer:officer-1",
+        "defender": "officer:officer-84"
+      },
+      "experienceGains": {},
       "guard": {
         "version": 2,
         "strategicFingerprint": "055f8add275aacf37165ec37ef7d75fc802e4e922a8bfb819e065acfd3f0a35d",
@@ -7878,7 +7893,7 @@
         }
       ]
     },
-    "expectedBattleStateSha256": "3b782351085e61ae4dbd4603df03b9ef98bf987b095e418b1b503770584eee88"
+    "expectedBattleStateSha256": "ae1c122d5f88c32ee50f8393044d624c7ced276a3f97b45d00846ca4f9d8ba4f"
   },
   "initialBattle": {
     "contractVersion": 1,
@@ -8090,6 +8105,11 @@
     "logs": [
       "濮阳军进入邺战场。"
     ],
+    "commanderUnitIds": {
+      "attacker": "officer:officer-1",
+      "defender": "officer:officer-84"
+    },
+    "experienceGains": {},
     "guard": {
       "version": 2,
       "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -10489,7 +10509,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-move-deploy-0001",
-        "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "kind": "move_deployment",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -10501,8 +10521,8 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
-        "afterBattleStateSha256": "0d2a8ad97221710e77ad0a0ee19ec3e80a4a0074bfb662b99af38e332a5c3a07",
+        "beforeBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
+        "afterBattleStateSha256": "976b27470d3a56b2ef52840c7b51fae167eb1878a19aed21e3a9db63fba1ed5e",
         "receipt": {
           "kind": "move_deployment",
           "details": {
@@ -10510,7 +10530,7 @@
             "slotX": 9,
             "slotY": 4
           },
-          "battleStateSha256": "0d2a8ad97221710e77ad0a0ee19ec3e80a4a0074bfb662b99af38e332a5c3a07"
+          "battleStateSha256": "976b27470d3a56b2ef52840c7b51fae167eb1878a19aed21e3a9db63fba1ed5e"
         },
         "commandId": "battle-move-deploy-0001",
         "kind": "move_deployment",
@@ -10724,6 +10744,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -13124,7 +13149,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-remove-deploy-0002",
-        "expectedBattleStateSha256": "0d2a8ad97221710e77ad0a0ee19ec3e80a4a0074bfb662b99af38e332a5c3a07",
+        "expectedBattleStateSha256": "976b27470d3a56b2ef52840c7b51fae167eb1878a19aed21e3a9db63fba1ed5e",
         "kind": "remove_deployment",
         "parameters": {
           "unitId": "officer:officer-1"
@@ -13134,15 +13159,15 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "0d2a8ad97221710e77ad0a0ee19ec3e80a4a0074bfb662b99af38e332a5c3a07",
-        "afterBattleStateSha256": "7dd8b4f65a654863fa184084be699d1cddebe961152df3ecb396fa4dfef94404",
+        "beforeBattleStateSha256": "976b27470d3a56b2ef52840c7b51fae167eb1878a19aed21e3a9db63fba1ed5e",
+        "afterBattleStateSha256": "5eb374c05ed924c6329e109e729a6cf18a02881afbeb64f35773768504cac97f",
         "receipt": {
           "kind": "remove_deployment",
           "details": {
             "unitId": "officer:officer-1",
             "side": "attacker"
           },
-          "battleStateSha256": "7dd8b4f65a654863fa184084be699d1cddebe961152df3ecb396fa4dfef94404"
+          "battleStateSha256": "5eb374c05ed924c6329e109e729a6cf18a02881afbeb64f35773768504cac97f"
         },
         "commandId": "battle-remove-deploy-0002",
         "kind": "remove_deployment",
@@ -13350,6 +13375,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -15750,7 +15780,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-deploy-unit-0003",
-        "expectedBattleStateSha256": "7dd8b4f65a654863fa184084be699d1cddebe961152df3ecb396fa4dfef94404",
+        "expectedBattleStateSha256": "5eb374c05ed924c6329e109e729a6cf18a02881afbeb64f35773768504cac97f",
         "kind": "deploy_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -15762,8 +15792,8 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "7dd8b4f65a654863fa184084be699d1cddebe961152df3ecb396fa4dfef94404",
-        "afterBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "beforeBattleStateSha256": "5eb374c05ed924c6329e109e729a6cf18a02881afbeb64f35773768504cac97f",
+        "afterBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "receipt": {
           "kind": "deploy_unit",
           "details": {
@@ -15771,7 +15801,7 @@
             "slotX": 10,
             "slotY": 4
           },
-          "battleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd"
+          "battleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0"
         },
         "commandId": "battle-deploy-unit-0003",
         "kind": "deploy_unit",
@@ -15985,6 +16015,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -18385,7 +18420,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-confirm-0004",
-        "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "kind": "confirm_deployment",
         "parameters": {}
       },
@@ -18393,14 +18428,14 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
-        "afterBattleStateSha256": "f7abd15aeaf9998d41628302b568fa724d4654a0906d26bb5732cb710e0b1022",
+        "beforeBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
+        "afterBattleStateSha256": "2836536b78a81df67428aa11a37cab3d5076de717308811d3b44dca6ae378e9f",
         "receipt": {
           "kind": "confirm_deployment",
           "details": {
             "phase": "battle"
           },
-          "battleStateSha256": "f7abd15aeaf9998d41628302b568fa724d4654a0906d26bb5732cb710e0b1022"
+          "battleStateSha256": "2836536b78a81df67428aa11a37cab3d5076de717308811d3b44dca6ae378e9f"
         },
         "commandId": "battle-confirm-0004",
         "kind": "confirm_deployment",
@@ -18615,6 +18650,11 @@
             "濮阳军进入邺战场。",
             "双方部署确认，战斗回合开始。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -21015,7 +21055,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-attacker-unit-0005",
-        "expectedBattleStateSha256": "f7abd15aeaf9998d41628302b568fa724d4654a0906d26bb5732cb710e0b1022",
+        "expectedBattleStateSha256": "2836536b78a81df67428aa11a37cab3d5076de717308811d3b44dca6ae378e9f",
         "kind": "end_unit_turn",
         "parameters": {
           "unitId": "officer:officer-1"
@@ -21025,15 +21065,15 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "f7abd15aeaf9998d41628302b568fa724d4654a0906d26bb5732cb710e0b1022",
-        "afterBattleStateSha256": "49b60f3c401909058cfebc1dd7170aefea3981c2bda71809fc0a0bca8f2fcf1e",
+        "beforeBattleStateSha256": "2836536b78a81df67428aa11a37cab3d5076de717308811d3b44dca6ae378e9f",
+        "afterBattleStateSha256": "216c136b95c0b52074e6fcada2d5af14880555282468701c2f8dc9c2554e4083",
         "receipt": {
           "kind": "end_unit_turn",
           "details": {
             "unitId": "officer:officer-1",
             "activeSide": "attacker"
           },
-          "battleStateSha256": "49b60f3c401909058cfebc1dd7170aefea3981c2bda71809fc0a0bca8f2fcf1e"
+          "battleStateSha256": "216c136b95c0b52074e6fcada2d5af14880555282468701c2f8dc9c2554e4083"
         },
         "commandId": "battle-attacker-unit-0005",
         "kind": "end_unit_turn",
@@ -21251,6 +21291,11 @@
             "双方部署确认，战斗回合开始。",
             "曹操结束本回合行动。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -23651,7 +23696,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-attacker-side-0006",
-        "expectedBattleStateSha256": "49b60f3c401909058cfebc1dd7170aefea3981c2bda71809fc0a0bca8f2fcf1e",
+        "expectedBattleStateSha256": "216c136b95c0b52074e6fcada2d5af14880555282468701c2f8dc9c2554e4083",
         "kind": "end_side_turn",
         "parameters": {}
       },
@@ -23659,8 +23704,8 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "49b60f3c401909058cfebc1dd7170aefea3981c2bda71809fc0a0bca8f2fcf1e",
-        "afterBattleStateSha256": "dad2d70855130e81e15ca65a811281bcda5f332f704bc5e8352be31a477a7ae2",
+        "beforeBattleStateSha256": "216c136b95c0b52074e6fcada2d5af14880555282468701c2f8dc9c2554e4083",
+        "afterBattleStateSha256": "7aaaaca0b729f8ee2943fe175ba50a0e2897878596251a632f0cce9ad9fb3e27",
         "receipt": {
           "kind": "end_side_turn",
           "details": {
@@ -23669,7 +23714,7 @@
             "day": 1,
             "turn": 1
           },
-          "battleStateSha256": "dad2d70855130e81e15ca65a811281bcda5f332f704bc5e8352be31a477a7ae2"
+          "battleStateSha256": "7aaaaca0b729f8ee2943fe175ba50a0e2897878596251a632f0cce9ad9fb3e27"
         },
         "commandId": "battle-attacker-side-0006",
         "kind": "end_side_turn",
@@ -23886,6 +23931,11 @@
             "曹操结束本回合行动。",
             "守方行动开始。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -26286,7 +26336,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-defender-unit-7",
-        "expectedBattleStateSha256": "dad2d70855130e81e15ca65a811281bcda5f332f704bc5e8352be31a477a7ae2",
+        "expectedBattleStateSha256": "7aaaaca0b729f8ee2943fe175ba50a0e2897878596251a632f0cce9ad9fb3e27",
         "kind": "end_unit_turn",
         "parameters": {
           "unitId": "officer:officer-84"
@@ -26296,15 +26346,15 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "dad2d70855130e81e15ca65a811281bcda5f332f704bc5e8352be31a477a7ae2",
-        "afterBattleStateSha256": "295e84f17b5f30cea3a5117e192d21e05db13408cd49d1082b7d247b608a9fe0",
+        "beforeBattleStateSha256": "7aaaaca0b729f8ee2943fe175ba50a0e2897878596251a632f0cce9ad9fb3e27",
+        "afterBattleStateSha256": "ddf85122255e6c16774640273e707ef32201103f1fff6a11f5f0ef0feb55d3c6",
         "receipt": {
           "kind": "end_unit_turn",
           "details": {
             "unitId": "officer:officer-84",
             "activeSide": "defender"
           },
-          "battleStateSha256": "295e84f17b5f30cea3a5117e192d21e05db13408cd49d1082b7d247b608a9fe0"
+          "battleStateSha256": "ddf85122255e6c16774640273e707ef32201103f1fff6a11f5f0ef0feb55d3c6"
         },
         "commandId": "battle-defender-unit-7",
         "kind": "end_unit_turn",
@@ -26524,6 +26574,11 @@
             "守方行动开始。",
             "耿武结束本回合行动。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -28924,7 +28979,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-defender-unit-8",
-        "expectedBattleStateSha256": "295e84f17b5f30cea3a5117e192d21e05db13408cd49d1082b7d247b608a9fe0",
+        "expectedBattleStateSha256": "ddf85122255e6c16774640273e707ef32201103f1fff6a11f5f0ef0feb55d3c6",
         "kind": "end_unit_turn",
         "parameters": {
           "unitId": "officer:officer-81"
@@ -28934,15 +28989,15 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "295e84f17b5f30cea3a5117e192d21e05db13408cd49d1082b7d247b608a9fe0",
-        "afterBattleStateSha256": "5b099542ab4bbd1d21660a846a58df924d6a07adc7c9e5d959d5859f790a5b90",
+        "beforeBattleStateSha256": "ddf85122255e6c16774640273e707ef32201103f1fff6a11f5f0ef0feb55d3c6",
+        "afterBattleStateSha256": "a0d184c38e0391a8f8a318826a8c0f0f4a2fa1593cd24209ab498a040ce22490",
         "receipt": {
           "kind": "end_unit_turn",
           "details": {
             "unitId": "officer:officer-81",
             "activeSide": "defender"
           },
-          "battleStateSha256": "5b099542ab4bbd1d21660a846a58df924d6a07adc7c9e5d959d5859f790a5b90"
+          "battleStateSha256": "a0d184c38e0391a8f8a318826a8c0f0f4a2fa1593cd24209ab498a040ce22490"
         },
         "commandId": "battle-defender-unit-8",
         "kind": "end_unit_turn",
@@ -29164,6 +29219,11 @@
             "耿武结束本回合行动。",
             "荀谌结束本回合行动。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -31564,7 +31624,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-defender-unit-9",
-        "expectedBattleStateSha256": "5b099542ab4bbd1d21660a846a58df924d6a07adc7c9e5d959d5859f790a5b90",
+        "expectedBattleStateSha256": "a0d184c38e0391a8f8a318826a8c0f0f4a2fa1593cd24209ab498a040ce22490",
         "kind": "end_unit_turn",
         "parameters": {
           "unitId": "officer:officer-82"
@@ -31574,15 +31634,15 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "5b099542ab4bbd1d21660a846a58df924d6a07adc7c9e5d959d5859f790a5b90",
-        "afterBattleStateSha256": "704f8b2f27f454a4eab64d005f3ca7a88a66c60bb2a9bd115776fd3cc6093019",
+        "beforeBattleStateSha256": "a0d184c38e0391a8f8a318826a8c0f0f4a2fa1593cd24209ab498a040ce22490",
+        "afterBattleStateSha256": "75645d17c96c8e186f1b97ef0f3147630987a9ff80c0b857d45c6afd16f5eeea",
         "receipt": {
           "kind": "end_unit_turn",
           "details": {
             "unitId": "officer:officer-82",
             "activeSide": "defender"
           },
-          "battleStateSha256": "704f8b2f27f454a4eab64d005f3ca7a88a66c60bb2a9bd115776fd3cc6093019"
+          "battleStateSha256": "75645d17c96c8e186f1b97ef0f3147630987a9ff80c0b857d45c6afd16f5eeea"
         },
         "commandId": "battle-defender-unit-9",
         "kind": "end_unit_turn",
@@ -31806,6 +31866,11 @@
             "荀谌结束本回合行动。",
             "辛评结束本回合行动。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -34206,7 +34271,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-defender-unit-10",
-        "expectedBattleStateSha256": "704f8b2f27f454a4eab64d005f3ca7a88a66c60bb2a9bd115776fd3cc6093019",
+        "expectedBattleStateSha256": "75645d17c96c8e186f1b97ef0f3147630987a9ff80c0b857d45c6afd16f5eeea",
         "kind": "end_unit_turn",
         "parameters": {
           "unitId": "officer:officer-83"
@@ -34216,15 +34281,15 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "704f8b2f27f454a4eab64d005f3ca7a88a66c60bb2a9bd115776fd3cc6093019",
-        "afterBattleStateSha256": "45d07995811f8051590e32f40543faea504445736584da00797b8c516c245e3e",
+        "beforeBattleStateSha256": "75645d17c96c8e186f1b97ef0f3147630987a9ff80c0b857d45c6afd16f5eeea",
+        "afterBattleStateSha256": "c2aa6063b6d64d56ddce1f3f56239e4f8910b51563d645c9932d35df59dc611c",
         "receipt": {
           "kind": "end_unit_turn",
           "details": {
             "unitId": "officer:officer-83",
             "activeSide": "defender"
           },
-          "battleStateSha256": "45d07995811f8051590e32f40543faea504445736584da00797b8c516c245e3e"
+          "battleStateSha256": "c2aa6063b6d64d56ddce1f3f56239e4f8910b51563d645c9932d35df59dc611c"
         },
         "commandId": "battle-defender-unit-10",
         "kind": "end_unit_turn",
@@ -34450,6 +34515,11 @@
             "辛评结束本回合行动。",
             "关纯结束本回合行动。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -36850,7 +36920,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-defender-unit-11",
-        "expectedBattleStateSha256": "45d07995811f8051590e32f40543faea504445736584da00797b8c516c245e3e",
+        "expectedBattleStateSha256": "c2aa6063b6d64d56ddce1f3f56239e4f8910b51563d645c9932d35df59dc611c",
         "kind": "end_unit_turn",
         "parameters": {
           "unitId": "officer:officer-10"
@@ -36860,15 +36930,15 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "45d07995811f8051590e32f40543faea504445736584da00797b8c516c245e3e",
-        "afterBattleStateSha256": "ea4097fd0e81655106cbd388aa87e40d9e129f225783fdbdf07b60abb8ec3daf",
+        "beforeBattleStateSha256": "c2aa6063b6d64d56ddce1f3f56239e4f8910b51563d645c9932d35df59dc611c",
+        "afterBattleStateSha256": "f7febaa19c79cafbf6df2ec9ce22e10a44d03fae4eed138336e1f4d430674652",
         "receipt": {
           "kind": "end_unit_turn",
           "details": {
             "unitId": "officer:officer-10",
             "activeSide": "defender"
           },
-          "battleStateSha256": "ea4097fd0e81655106cbd388aa87e40d9e129f225783fdbdf07b60abb8ec3daf"
+          "battleStateSha256": "f7febaa19c79cafbf6df2ec9ce22e10a44d03fae4eed138336e1f4d430674652"
         },
         "commandId": "battle-defender-unit-11",
         "kind": "end_unit_turn",
@@ -37096,6 +37166,11 @@
             "关纯结束本回合行动。",
             "韩馥结束本回合行动。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -39496,7 +39571,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-defender-side-0012",
-        "expectedBattleStateSha256": "ea4097fd0e81655106cbd388aa87e40d9e129f225783fdbdf07b60abb8ec3daf",
+        "expectedBattleStateSha256": "f7febaa19c79cafbf6df2ec9ce22e10a44d03fae4eed138336e1f4d430674652",
         "kind": "end_side_turn",
         "parameters": {}
       },
@@ -39504,8 +39579,8 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "ea4097fd0e81655106cbd388aa87e40d9e129f225783fdbdf07b60abb8ec3daf",
-        "afterBattleStateSha256": "0c285c176beb0011761fd2f30947b7ba98ee110a7d55968ed1b4e6f12ec27300",
+        "beforeBattleStateSha256": "f7febaa19c79cafbf6df2ec9ce22e10a44d03fae4eed138336e1f4d430674652",
+        "afterBattleStateSha256": "ab6772ee7949c9e8039ef35c04c2fbdd2783f04394eace527b8d6e1f3beededd",
         "receipt": {
           "kind": "end_side_turn",
           "details": {
@@ -39514,7 +39589,7 @@
             "day": 2,
             "turn": 1
           },
-          "battleStateSha256": "0c285c176beb0011761fd2f30947b7ba98ee110a7d55968ed1b4e6f12ec27300"
+          "battleStateSha256": "ab6772ee7949c9e8039ef35c04c2fbdd2783f04394eace527b8d6e1f3beededd"
         },
         "commandId": "battle-defender-side-0012",
         "kind": "end_side_turn",
@@ -39737,6 +39812,11 @@
             "韩馥结束本回合行动。",
             "第2日战斗开始。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -42137,7 +42217,7 @@
     "command": {
       "commandEnvelopeVersion": 1,
       "commandId": "battle-restored-0013",
-      "expectedBattleStateSha256": "0c285c176beb0011761fd2f30947b7ba98ee110a7d55968ed1b4e6f12ec27300",
+      "expectedBattleStateSha256": "ab6772ee7949c9e8039ef35c04c2fbdd2783f04394eace527b8d6e1f3beededd",
       "kind": "end_unit_turn",
       "parameters": {
         "unitId": "officer:officer-1"
@@ -42147,15 +42227,15 @@
       "ok": true,
       "error": "",
       "stateChanged": true,
-      "beforeBattleStateSha256": "0c285c176beb0011761fd2f30947b7ba98ee110a7d55968ed1b4e6f12ec27300",
-      "afterBattleStateSha256": "c3568179e73e8ed0344318b5df5e44fbe7a7fb5d0b0ca0029b1fd0c3fdd5e26d",
+      "beforeBattleStateSha256": "ab6772ee7949c9e8039ef35c04c2fbdd2783f04394eace527b8d6e1f3beededd",
+      "afterBattleStateSha256": "fcba2c7472da71e9d1d4f4ab97ef57537241c6f42166ba7f3a5a5ab7983e0f22",
       "receipt": {
         "kind": "end_unit_turn",
         "details": {
           "unitId": "officer:officer-1",
           "activeSide": "attacker"
         },
-        "battleStateSha256": "c3568179e73e8ed0344318b5df5e44fbe7a7fb5d0b0ca0029b1fd0c3fdd5e26d"
+        "battleStateSha256": "fcba2c7472da71e9d1d4f4ab97ef57537241c6f42166ba7f3a5a5ab7983e0f22"
       },
       "commandId": "battle-restored-0013",
       "kind": "end_unit_turn",
@@ -42381,6 +42461,11 @@
           "第2日战斗开始。",
           "曹操结束本回合行动。"
         ],
+        "commanderUnitIds": {
+          "attacker": "officer:officer-1",
+          "defender": "officer:officer-84"
+        },
+        "experienceGains": {},
         "guard": {
           "version": 2,
           "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -44782,7 +44867,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-boundary-oob-0010",
-        "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "kind": "move_deployment",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -44794,8 +44879,8 @@
         "ok": false,
         "error": "部署位置越界",
         "stateChanged": false,
-        "beforeBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
-        "afterBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "beforeBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
+        "afterBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "receipt": {},
         "commandId": "battle-boundary-oob-0010",
         "kind": "move_deployment",
@@ -45009,6 +45094,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -47409,7 +47499,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-boundary-enemy-slot-0011",
-        "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "kind": "move_deployment",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -47421,8 +47511,8 @@
         "ok": false,
         "error": "部署位置不属于本方阵地",
         "stateChanged": false,
-        "beforeBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
-        "afterBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "beforeBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
+        "afterBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "receipt": {},
         "commandId": "battle-boundary-enemy-slot-0011",
         "kind": "move_deployment",
@@ -47636,6 +47726,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -50044,8 +50139,8 @@
         "ok": false,
         "error": "战斗状态摘要已过期",
         "stateChanged": false,
-        "beforeBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
-        "afterBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "beforeBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
+        "afterBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "receipt": {},
         "commandId": "battle-boundary-stale-0012",
         "kind": "confirm_deployment",
@@ -50259,6 +50354,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -52659,7 +52759,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-boundary-duplicate-0013",
-        "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "kind": "confirm_deployment",
         "parameters": {}
       },
@@ -52667,14 +52767,14 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
-        "afterBattleStateSha256": "f7abd15aeaf9998d41628302b568fa724d4654a0906d26bb5732cb710e0b1022",
+        "beforeBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
+        "afterBattleStateSha256": "2836536b78a81df67428aa11a37cab3d5076de717308811d3b44dca6ae378e9f",
         "receipt": {
           "kind": "confirm_deployment",
           "details": {
             "phase": "battle"
           },
-          "battleStateSha256": "f7abd15aeaf9998d41628302b568fa724d4654a0906d26bb5732cb710e0b1022"
+          "battleStateSha256": "2836536b78a81df67428aa11a37cab3d5076de717308811d3b44dca6ae378e9f"
         },
         "commandId": "battle-boundary-duplicate-0013",
         "kind": "confirm_deployment",
@@ -52889,6 +52989,11 @@
             "濮阳军进入邺战场。",
             "双方部署确认，战斗回合开始。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -55287,14 +55392,14 @@
         "ok": true,
         "error": "",
         "stateChanged": false,
-        "beforeBattleStateSha256": "f7abd15aeaf9998d41628302b568fa724d4654a0906d26bb5732cb710e0b1022",
-        "afterBattleStateSha256": "f7abd15aeaf9998d41628302b568fa724d4654a0906d26bb5732cb710e0b1022",
+        "beforeBattleStateSha256": "2836536b78a81df67428aa11a37cab3d5076de717308811d3b44dca6ae378e9f",
+        "afterBattleStateSha256": "2836536b78a81df67428aa11a37cab3d5076de717308811d3b44dca6ae378e9f",
         "receipt": {
           "kind": "confirm_deployment",
           "details": {
             "phase": "battle"
           },
-          "battleStateSha256": "f7abd15aeaf9998d41628302b568fa724d4654a0906d26bb5732cb710e0b1022"
+          "battleStateSha256": "2836536b78a81df67428aa11a37cab3d5076de717308811d3b44dca6ae378e9f"
         },
         "commandId": "battle-boundary-duplicate-0013",
         "kind": "confirm_deployment",
@@ -55509,6 +55614,11 @@
             "濮阳军进入邺战场。",
             "双方部署确认，战斗回合开始。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -57910,7 +58020,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-boundary-ended-0014",
-        "expectedBattleStateSha256": "ff01896e76f7c5ff397b347c564c40b77dae432e765739e30bb9e787eb9aa564",
+        "expectedBattleStateSha256": "f9aa0c78c22cc784ceb4b0e1dcd0448b89c8777bd831e79cccbc722a7e3051e1",
         "kind": "end_side_turn",
         "parameters": {}
       },
@@ -57918,8 +58028,8 @@
         "ok": false,
         "error": "战斗回合尚未开始",
         "stateChanged": false,
-        "beforeBattleStateSha256": "ff01896e76f7c5ff397b347c564c40b77dae432e765739e30bb9e787eb9aa564",
-        "afterBattleStateSha256": "ff01896e76f7c5ff397b347c564c40b77dae432e765739e30bb9e787eb9aa564",
+        "beforeBattleStateSha256": "f9aa0c78c22cc784ceb4b0e1dcd0448b89c8777bd831e79cccbc722a7e3051e1",
+        "afterBattleStateSha256": "f9aa0c78c22cc784ceb4b0e1dcd0448b89c8777bd831e79cccbc722a7e3051e1",
         "receipt": {},
         "commandId": "battle-boundary-ended-0014",
         "kind": "end_side_turn",
@@ -58134,6 +58244,11 @@
             "濮阳军进入邺战场。",
             "双方部署确认，战斗回合开始。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -60747,6 +60862,11 @@
         "logs": [
           "濮阳军进入邺战场。"
         ],
+        "commanderUnitIds": {
+          "attacker": "officer:officer-1",
+          "defender": "officer:officer-84"
+        },
+        "experienceGains": {},
         "guard": {
           "version": 2,
           "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -63143,7 +63263,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-boundary-day-limit-0015",
-        "expectedBattleStateSha256": "f3896cc6f944d47429e0521e18f342c052ac622d9c556b481ebb6261dbe1b72b",
+        "expectedBattleStateSha256": "afcba5c4654dfe776cff0be827ba2151aa82c959ab665db0844f72b3ed958e5c",
         "kind": "end_side_turn",
         "parameters": {}
       },
@@ -63151,8 +63271,8 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "f3896cc6f944d47429e0521e18f342c052ac622d9c556b481ebb6261dbe1b72b",
-        "afterBattleStateSha256": "6529371803567b3e8ba279f0d682ed93c8e53209c43fdd0f6557a18a1e5cb3b3",
+        "beforeBattleStateSha256": "afcba5c4654dfe776cff0be827ba2151aa82c959ab665db0844f72b3ed958e5c",
+        "afterBattleStateSha256": "afb0d21bf27c4d36d0963ea5b7f3a5761b533395ba8064d6e7ed862a7ca4ec9e",
         "receipt": {
           "kind": "end_side_turn",
           "details": {
@@ -63161,7 +63281,7 @@
             "day": 31,
             "turn": 1
           },
-          "battleStateSha256": "6529371803567b3e8ba279f0d682ed93c8e53209c43fdd0f6557a18a1e5cb3b3"
+          "battleStateSha256": "afb0d21bf27c4d36d0963ea5b7f3a5761b533395ba8064d6e7ed862a7ca4ec9e"
         },
         "commandId": "battle-boundary-day-limit-0015",
         "kind": "end_side_turn",
@@ -63376,6 +63496,11 @@
             "濮阳军进入邺战场。",
             "达到战斗日数上限，守方获胜。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -65983,6 +66108,11 @@
         "logs": [
           "濮阳军进入邺战场。"
         ],
+        "commanderUnitIds": {
+          "attacker": "officer:officer-1",
+          "defender": "officer:officer-84"
+        },
+        "experienceGains": {},
         "guard": {
           "version": 2,
           "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -68379,7 +68509,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-boundary-no-units-0016",
-        "expectedBattleStateSha256": "248de105e5d87fb68771afe0dde578d8c34b2a7e764858e1c237fc79aa00d0fb",
+        "expectedBattleStateSha256": "91475e7a28345fcf4e29bff80bbde1ad1dfa277aa6c23122d9d02a3f401aafbe",
         "kind": "end_side_turn",
         "parameters": {}
       },
@@ -68387,8 +68517,8 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "248de105e5d87fb68771afe0dde578d8c34b2a7e764858e1c237fc79aa00d0fb",
-        "afterBattleStateSha256": "4bfed6dc862a8a86436c30e40406dc628930b049882e72a4b38b24d52aee2fa2",
+        "beforeBattleStateSha256": "91475e7a28345fcf4e29bff80bbde1ad1dfa277aa6c23122d9d02a3f401aafbe",
+        "afterBattleStateSha256": "aa24fd06531d25fe6d9697b904de31a9265af3907e8237460cb8233b31b8af01",
         "receipt": {
           "kind": "end_side_turn",
           "details": {
@@ -68397,7 +68527,7 @@
             "day": 1,
             "turn": 1
           },
-          "battleStateSha256": "4bfed6dc862a8a86436c30e40406dc628930b049882e72a4b38b24d52aee2fa2"
+          "battleStateSha256": "aa24fd06531d25fe6d9697b904de31a9265af3907e8237460cb8233b31b8af01"
         },
         "commandId": "battle-boundary-no-units-0016",
         "kind": "end_side_turn",
@@ -68612,6 +68742,11 @@
             "濮阳军进入邺战场。",
             "attacker方已无可行动部队，defender方获胜。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -71012,7 +71147,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-boundary-enemy-unit-0017",
-        "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "kind": "move_deployment",
         "parameters": {
           "unitId": "officer:officer-84",
@@ -71024,8 +71159,8 @@
         "ok": false,
         "error": "只能调整当前阵营的部署",
         "stateChanged": false,
-        "beforeBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
-        "afterBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "beforeBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
+        "afterBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "receipt": {},
         "commandId": "battle-boundary-enemy-unit-0017",
         "kind": "move_deployment",
@@ -71239,6 +71374,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -73639,7 +73779,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-boundary-enemy-remove-0018",
-        "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "kind": "remove_deployment",
         "parameters": {
           "unitId": "officer:officer-84"
@@ -73649,8 +73789,8 @@
         "ok": false,
         "error": "只能调整当前阵营的部署",
         "stateChanged": false,
-        "beforeBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
-        "afterBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "beforeBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
+        "afterBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "receipt": {},
         "commandId": "battle-boundary-enemy-remove-0018",
         "kind": "remove_deployment",
@@ -73864,6 +74004,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -76264,7 +76409,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-boundary-already-deployed-0019",
-        "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "kind": "deploy_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -76276,8 +76421,8 @@
         "ok": false,
         "error": "部队已经部署：officer:officer-1",
         "stateChanged": false,
-        "beforeBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
-        "afterBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "beforeBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
+        "afterBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "receipt": {},
         "commandId": "battle-boundary-already-deployed-0019",
         "kind": "deploy_unit",
@@ -76491,6 +76636,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -79098,6 +79248,11 @@
         "logs": [
           "濮阳军进入邺战场。"
         ],
+        "commanderUnitIds": {
+          "attacker": "officer:officer-1",
+          "defender": "officer:officer-84"
+        },
+        "experienceGains": {},
         "guard": {
           "version": 2,
           "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -81494,7 +81649,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-boundary-occupied-0020",
-        "expectedBattleStateSha256": "bfc6eecb5ba88fc256650efd5b94c89407280e6a52a4541d323ab279a861b87c",
+        "expectedBattleStateSha256": "d897bf2328ebf399be7d50d48e27cf56a9f54e34d02f774eb921fd28a0eb7549",
         "kind": "move_deployment",
         "parameters": {
           "unitId": "officer:officer-81",
@@ -81506,8 +81661,8 @@
         "ok": false,
         "error": "部署位置已经被占用",
         "stateChanged": false,
-        "beforeBattleStateSha256": "bfc6eecb5ba88fc256650efd5b94c89407280e6a52a4541d323ab279a861b87c",
-        "afterBattleStateSha256": "bfc6eecb5ba88fc256650efd5b94c89407280e6a52a4541d323ab279a861b87c",
+        "beforeBattleStateSha256": "d897bf2328ebf399be7d50d48e27cf56a9f54e34d02f774eb921fd28a0eb7549",
+        "afterBattleStateSha256": "d897bf2328ebf399be7d50d48e27cf56a9f54e34d02f774eb921fd28a0eb7549",
         "receipt": {},
         "commandId": "battle-boundary-occupied-0020",
         "kind": "move_deployment",
@@ -81721,6 +81876,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -84121,7 +84281,7 @@
       "command": {
         "commandEnvelopeVersion": 2,
         "commandId": "battle-boundary-envelope-0021",
-        "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "kind": "confirm_deployment",
         "parameters": {}
       },
@@ -84129,8 +84289,8 @@
         "ok": false,
         "error": "不支持的战斗命令版本",
         "stateChanged": false,
-        "beforeBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
-        "afterBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "beforeBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
+        "afterBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "receipt": {},
         "commandId": "battle-boundary-envelope-0021",
         "kind": "confirm_deployment",
@@ -84344,6 +84504,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -86743,7 +86908,7 @@
       "id": "missing-command-id",
       "command": {
         "commandEnvelopeVersion": 1,
-        "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "kind": "confirm_deployment",
         "parameters": {}
       },
@@ -86751,8 +86916,8 @@
         "ok": false,
         "error": "战斗命令缺少 commandId",
         "stateChanged": false,
-        "beforeBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
-        "afterBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "beforeBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
+        "afterBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "receipt": {},
         "commandId": "",
         "kind": "confirm_deployment",
@@ -86966,6 +87131,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -89374,8 +89544,8 @@
         "ok": false,
         "error": "战斗命令缺少 expectedBattleStateSha256",
         "stateChanged": false,
-        "beforeBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
-        "afterBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "beforeBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
+        "afterBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "receipt": {},
         "commandId": "battle-boundary-bad-sha-0023",
         "kind": "confirm_deployment",
@@ -89589,6 +89759,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -91989,7 +92164,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-boundary-bad-params-0024",
-        "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "kind": "confirm_deployment",
         "parameters": []
       },
@@ -91997,8 +92172,8 @@
         "ok": false,
         "error": "战斗命令 parameters 必须是对象",
         "stateChanged": false,
-        "beforeBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
-        "afterBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "beforeBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
+        "afterBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "receipt": {},
         "commandId": "battle-boundary-bad-params-0024",
         "kind": "confirm_deployment",
@@ -92212,6 +92387,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -94819,6 +94999,11 @@
         "logs": [
           "濮阳军进入邺战场。"
         ],
+        "commanderUnitIds": {
+          "attacker": "officer:officer-1",
+          "defender": "officer:officer-84"
+        },
+        "experienceGains": {},
         "guard": {
           "version": 2,
           "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -97216,7 +97401,7 @@
         {
           "commandEnvelopeVersion": 1,
           "commandId": "battle-boundary-conflict-0025",
-          "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+          "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
           "kind": "confirm_deployment",
           "parameters": {}
         }
@@ -97224,7 +97409,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-boundary-conflict-0025",
-        "expectedBattleStateSha256": "f7abd15aeaf9998d41628302b568fa724d4654a0906d26bb5732cb710e0b1022",
+        "expectedBattleStateSha256": "2836536b78a81df67428aa11a37cab3d5076de717308811d3b44dca6ae378e9f",
         "kind": "end_side_turn",
         "parameters": {}
       },
@@ -97232,8 +97417,8 @@
         "ok": false,
         "error": "commandId 已经用于另一条战斗命令",
         "stateChanged": false,
-        "beforeBattleStateSha256": "f7abd15aeaf9998d41628302b568fa724d4654a0906d26bb5732cb710e0b1022",
-        "afterBattleStateSha256": "f7abd15aeaf9998d41628302b568fa724d4654a0906d26bb5732cb710e0b1022",
+        "beforeBattleStateSha256": "2836536b78a81df67428aa11a37cab3d5076de717308811d3b44dca6ae378e9f",
+        "afterBattleStateSha256": "2836536b78a81df67428aa11a37cab3d5076de717308811d3b44dca6ae378e9f",
         "receipt": {},
         "commandId": "battle-boundary-conflict-0025",
         "kind": "end_side_turn",
@@ -97448,6 +97633,11 @@
             "濮阳军进入邺战场。",
             "双方部署确认，战斗回合开始。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -100055,6 +100245,11 @@
         "logs": [
           "濮阳军进入邺战场。"
         ],
+        "commanderUnitIds": {
+          "attacker": "officer:officer-1",
+          "defender": "officer:officer-84"
+        },
+        "experienceGains": {},
         "guard": {
           "version": 2,
           "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -102452,14 +102647,14 @@
         {
           "commandEnvelopeVersion": 1,
           "commandId": "battle-boundary-replay-0026",
-          "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+          "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
           "kind": "confirm_deployment",
           "parameters": {}
         },
         {
           "commandEnvelopeVersion": 1,
           "commandId": "battle-boundary-replay-advance-0027",
-          "expectedBattleStateSha256": "f7abd15aeaf9998d41628302b568fa724d4654a0906d26bb5732cb710e0b1022",
+          "expectedBattleStateSha256": "2836536b78a81df67428aa11a37cab3d5076de717308811d3b44dca6ae378e9f",
           "kind": "end_unit_turn",
           "parameters": {
             "unitId": "officer:officer-1"
@@ -102469,7 +102664,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-boundary-replay-0026",
-        "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "kind": "confirm_deployment",
         "parameters": {}
       },
@@ -102477,14 +102672,14 @@
         "ok": true,
         "error": "",
         "stateChanged": false,
-        "beforeBattleStateSha256": "49b60f3c401909058cfebc1dd7170aefea3981c2bda71809fc0a0bca8f2fcf1e",
-        "afterBattleStateSha256": "49b60f3c401909058cfebc1dd7170aefea3981c2bda71809fc0a0bca8f2fcf1e",
+        "beforeBattleStateSha256": "216c136b95c0b52074e6fcada2d5af14880555282468701c2f8dc9c2554e4083",
+        "afterBattleStateSha256": "216c136b95c0b52074e6fcada2d5af14880555282468701c2f8dc9c2554e4083",
         "receipt": {
           "kind": "confirm_deployment",
           "details": {
             "phase": "battle"
           },
-          "battleStateSha256": "f7abd15aeaf9998d41628302b568fa724d4654a0906d26bb5732cb710e0b1022"
+          "battleStateSha256": "2836536b78a81df67428aa11a37cab3d5076de717308811d3b44dca6ae378e9f"
         },
         "commandId": "battle-boundary-replay-0026",
         "kind": "confirm_deployment",
@@ -102702,6 +102897,11 @@
             "双方部署确认，战斗回合开始。",
             "曹操结束本回合行动。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -105103,7 +105303,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "battle-boundary-decimal-slot-0028",
-        "expectedBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "expectedBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "kind": "move_deployment",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -105115,8 +105315,8 @@
         "ok": false,
         "error": "部署坐标必须是整数",
         "stateChanged": false,
-        "beforeBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
-        "afterBattleStateSha256": "10cbc232588eb85ba5e591daf330b18d704f142df5a31b20abcc5a5036e7a1dd",
+        "beforeBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
+        "afterBattleStateSha256": "f37798d866b34b443d5f6cd2fcaa00ba2d260b94af9793373b1b236ec4679aa0",
         "receipt": {},
         "commandId": "battle-boundary-decimal-slot-0028",
         "kind": "move_deployment",
@@ -105330,6 +105530,11 @@
           "logs": [
             "濮阳军进入邺战场。"
           ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {},
           "guard": {
             "version": 2,
             "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -107937,6 +108142,11 @@
         "logs": [
           "濮阳军进入邺战场。"
         ],
+        "commanderUnitIds": {
+          "attacker": "officer:officer-1",
+          "defender": "officer:officer-84"
+        },
+        "experienceGains": {},
         "guard": {
           "version": 2,
           "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
@@ -110438,6 +110648,11 @@
           "濮阳军进入邺战场。",
           "守军全部溃退，攻方获胜。"
         ],
+        "commanderUnitIds": {
+          "attacker": "officer:officer-1",
+          "defender": ""
+        },
+        "experienceGains": {},
         "guard": {
           "version": 2,
           "strategicFingerprint": "997e3448af426798e91310ea75c032efe25fbae0a82677b263a7ec5868d79f7e",
@@ -112831,7 +113046,7 @@
           }
         ]
       },
-      "expectedBattleStateSha256": "ce932c26e2a52d847636329bf0f877b495e55ee63ca6edf989f08db8a452e40c"
+      "expectedBattleStateSha256": "bde686c79240bb53d358043e454973493b5a2e06d08dffe00959096cdc440298"
     }
   ],
   "deferredRules": [

@@ -185,7 +185,9 @@ function battleBase(battle: TacticalBattleState, deployment: Record<TacticalSide
     weather: battle.weather, phase: battle.status === 'ongoing' ? 'deployment' : 'ended', activeSide: battle.activeSide, status: battle.status,
     outcome: battle.status === 'ongoing' ? '' : (battle.victoryReason ?? 'annihilation'), approach: battle.approach,
     battlefieldVersion: battle.battlefieldVersion, battlefieldKey: battle.battlefieldKey, battlefieldTemplate: battle.battlefieldTemplate,
-    deployment, units, actedUnitIds: [], logs: [...battle.logs], guard,
+    deployment, units, actedUnitIds: [], logs: [...battle.logs],
+    commanderUnitIds: { attacker: battle.commanderUnitIds.attacker ?? '', defender: battle.commanderUnitIds.defender ?? '' },
+    experienceGains: { ...battle.experienceGains }, guard,
   };
 }
 
