@@ -80,6 +80,7 @@ func execute(command: Dictionary) -> Dictionary:
 		"remove_deployment": result = Commands.remove_deployment(_battle, String(parameters.get("unitId", "")))
 		"end_unit_turn": result = Commands.end_unit_turn(_battle, String(parameters.get("unitId", "")))
 		"end_side_turn": result = Commands.end_side_turn(_battle)
+		"end_ai_side_turn": result = Commands.end_ai_side_turn(_battle)
 		_: result = _failure(before_digest, "不支持的战斗命令：%s" % kind)
 	if result.get("ok", false):
 		_battle = result["battle"]

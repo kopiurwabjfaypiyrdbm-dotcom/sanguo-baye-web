@@ -1,0 +1,99 @@
+extends SceneTree
+
+const TacticalScene = preload("res://scenes/presentation/tactical_battle_screen.tscn")
+const Session = preload("res://src/application/tactical_battle/tactical_battle_session.gd")
+const Canonical = preload("res://src/domain/validation/canonical_json.gd")
+var _failures := 0
+var _assertions := 0
+
+func _init() -> void: call_deferred("_run")
+
+func _run() -> void:
+	for viewport_size: Vector2i in [Vector2i(1280, 720), Vector2i(844, 390)]:
+		root.size = viewport_size
+		var screen := TacticalScene.instantiate()
+		root.add_child(screen)
+		await process_frame
+		await process_frame
+		_assert_true(screen.get("_session") != null, "tactical presentation must restore its demo session at %s" % viewport_size)
+		var snapshot: Dictionary = screen.get("_snapshot")
+		_assert_equal(snapshot.get("width"), 12, "native battlefield must expose 12 columns at %s" % viewport_size)
+		_assert_equal(snapshot.get("height"), 8, "native battlefield must expose 8 rows at %s" % viewport_size)
+		_assert_equal(snapshot.get("units", {}).size(), 2, "native battlefield must render both factions at %s" % viewport_size)
+		var world: Vector2 = Vector2(8.5, 4.5) * screen.CELL_SIZE
+		var screen_position: Vector2 = screen.get_viewport().get_canvas_transform() * world
+		screen._select_at_screen(screen_position)
+		_assert_equal(screen.get("_selected_unit_id"), "officer:demo-attacker", "tap must select the attacker unit at %s" % viewport_size)
+		var canceled_press := InputEventScreenTouch.new(); canceled_press.index = 0; canceled_press.pressed = true; canceled_press.position = screen_position; screen._unhandled_input(canceled_press)
+		var canceled_release := InputEventScreenTouch.new(); canceled_release.index = 0; canceled_release.pressed = false; canceled_release.canceled = true; canceled_release.position = screen_position; screen._unhandled_input(canceled_release)
+		_assert_equal(screen.get("_selected_unit_id"), "officer:demo-attacker", "canceled touch must not change selection at %s" % viewport_size)
+		var zoom_before: float = screen.get("battle_camera").zoom.x if screen.get("battle_camera") else 1.0
+		screen._set_zoom(zoom_before * 1.2, screen.get_viewport_rect().size * 0.5)
+		_assert_true(screen.get("battle_camera").zoom.x > zoom_before, "zoom gesture must change bounded camera zoom at %s" % viewport_size)
+		var position_before: Vector2 = screen.get("battle_camera").position
+		var press := InputEventMouseButton.new(); press.button_index = MOUSE_BUTTON_LEFT; press.pressed = true; press.position = Vector2(100, 150); screen._unhandled_input(press)
+		var drag := InputEventMouseMotion.new(); drag.position = Vector2(140, 180); screen._unhandled_input(drag)
+		var release := InputEventMouseButton.new(); release.button_index = MOUSE_BUTTON_LEFT; release.pressed = false; release.position = Vector2(140, 180); screen._unhandled_input(release)
+		_assert_true(screen.get("battle_camera").position != position_before, "mouse drag must pan the camera at %s" % viewport_size)
+		var touch_position_before: Vector2 = screen.get("battle_camera").position
+		var touch_press := InputEventScreenTouch.new(); touch_press.index = 0; touch_press.pressed = true; touch_press.position = Vector2(220, 190); screen._unhandled_input(touch_press)
+		var touch_drag := InputEventScreenDrag.new(); touch_drag.index = 0; touch_drag.position = Vector2(190, 160); screen._unhandled_input(touch_drag)
+		var touch_release := InputEventScreenTouch.new(); touch_release.index = 0; touch_release.pressed = false; touch_release.position = Vector2(190, 160); screen._unhandled_input(touch_release)
+		_assert_true(screen.get("battle_camera").position != touch_position_before, "touch drag must pan the camera at %s" % viewport_size)
+		var selected_before_pinch := String(screen.get("_selected_unit_id"))
+		var pinch_zoom_before: float = screen.get("battle_camera").zoom.x
+		var pinch_a := InputEventScreenTouch.new(); pinch_a.index = 0; pinch_a.pressed = true; pinch_a.position = Vector2(300, 200); screen._unhandled_input(pinch_a)
+		var pinch_b := InputEventScreenTouch.new(); pinch_b.index = 1; pinch_b.pressed = true; pinch_b.position = Vector2(400, 200); screen._unhandled_input(pinch_b)
+		var pinch_drag := InputEventScreenDrag.new(); pinch_drag.index = 1; pinch_drag.position = Vector2(460, 200); screen._unhandled_input(pinch_drag)
+		var pinch_release_a := InputEventScreenTouch.new(); pinch_release_a.index = 0; pinch_release_a.pressed = false; pinch_release_a.position = Vector2(300, 200); screen._unhandled_input(pinch_release_a)
+		var post_pinch_position: Vector2 = screen.get("battle_camera").position
+		var post_pinch_drag := InputEventScreenDrag.new(); post_pinch_drag.index = 1; post_pinch_drag.position = Vector2(500, 220); screen._unhandled_input(post_pinch_drag)
+		_assert_true(screen.get("battle_camera").position != post_pinch_position, "remaining finger must continue dragging from a fresh anchor at %s" % viewport_size)
+		var pinch_release_b := InputEventScreenTouch.new(); pinch_release_b.index = 1; pinch_release_b.pressed = false; pinch_release_b.position = Vector2(500, 220); screen._unhandled_input(pinch_release_b)
+		_assert_true(screen.get("battle_camera").zoom.x > pinch_zoom_before, "two-finger pinch must change bounded camera zoom at %s" % viewport_size)
+		_assert_equal(screen.get("_selected_unit_id"), selected_before_pinch, "two-finger pinch must not trigger a tap selection at %s" % viewport_size)
+		var invalid_before: Dictionary = screen.get("_snapshot").duplicate(true)
+		screen._execute_command("attack_unit", {"unitId": "officer:demo-attacker", "targetUnitId": "officer:unknown"})
+		_assert_equal(screen.get("_snapshot"), invalid_before, "invalid command must not mutate the presentation snapshot at %s" % viewport_size)
+		_assert_true(String(screen.get("_status_label").text).contains("命令未执行"), "invalid command must surface domain feedback at %s" % viewport_size)
+		var move_before: Dictionary = screen.get("_snapshot").duplicate(true)
+		var move_before_digest := _digest(move_before)
+		screen._on_move_pressed()
+		_assert_true(bool(screen.get("_snapshot").get("units", {}).get("officer:demo-attacker", {}).get("moved", false)), "move action must dispatch through session at %s" % viewport_size)
+		_assert_equal(screen.get("_last_command_result").get("beforeBattleStateSha256", ""), move_before_digest, "move command must expose its before digest at %s" % viewport_size)
+		_assert_equal(screen.get("_last_command_result").get("afterBattleStateSha256", ""), _digest(screen.get("_snapshot")), "move command must expose its after digest at %s" % viewport_size)
+		screen._on_wait_pressed()
+		_assert_true(bool(screen.get("_snapshot").get("units", {}).get("officer:demo-attacker", {}).get("acted", false)), "wait action must dispatch through session at %s" % viewport_size)
+		for zoom_value: float in [screen.MIN_ZOOM, screen.MAX_ZOOM]:
+			screen._set_zoom(zoom_value, screen.get_viewport_rect().size * 0.5)
+			_assert_equal(screen.get("battle_camera").position, screen._clamp_camera_position(screen.get("battle_camera").position), "camera must remain inside safe bounds at zoom %s/%s" % [zoom_value, viewport_size])
+		var final_snapshot: Dictionary = screen.get("_snapshot").duplicate(true)
+		var restored := Session.from_snapshot(final_snapshot)
+		_assert_true(restored != null, "post-command snapshot must restore at %s" % viewport_size)
+		if restored != null: _assert_equal(restored.snapshot(), final_snapshot, "restored snapshot must equal presentation state at %s" % viewport_size)
+		var terminal_snapshot := invalid_before.duplicate(true); terminal_snapshot["status"] = "attacker-won"; terminal_snapshot["outcome"] = "objective-held"
+		var terminal_session := Session.from_snapshot(terminal_snapshot)
+		_assert_true(terminal_session != null, "terminal snapshot must restore for feedback test at %s" % viewport_size)
+		if terminal_session != null:
+			var terminal_digest := _digest(terminal_snapshot)
+			var terminal_result: Dictionary = terminal_session.execute({"commandEnvelopeVersion": 1, "commandId": "presentation-terminal", "expectedBattleStateSha256": terminal_digest, "kind": "wait_unit", "parameters": {"unitId": "officer:demo-attacker"}})
+			_assert_true(not bool(terminal_result.get("ok", false)), "terminal command must be rejected at %s" % viewport_size)
+			_assert_equal(terminal_session.snapshot(), terminal_snapshot, "terminal rejection must preserve state at %s" % viewport_size)
+		screen.queue_free()
+	if _failures > 0: push_error("[Godot tactical presentation] FAILED: %d failure(s), %d assertion(s)" % [_failures, _assertions]); quit(1); return
+	print("[Godot tactical presentation] PASSED: %d assertion(s)" % _assertions); quit(0)
+
+func _assert_equal(actual: Variant, expected: Variant, message: String) -> void:
+	_assertions += 1
+	if actual != expected: _fail(message + " actual=" + str(actual) + " expected=" + str(expected))
+
+func _assert_true(value: bool, message: String) -> void:
+	_assertions += 1
+	if not value: _fail(message)
+
+func _fail(message: String) -> void:
+	_failures += 1; push_error("[Godot tactical presentation] " + message)
+
+func _digest(value: Variant) -> String:
+	var result: Dictionary = Canonical.try_sha256(value)
+	return String(result.get("value", "")) if result.get("ok", false) else ""

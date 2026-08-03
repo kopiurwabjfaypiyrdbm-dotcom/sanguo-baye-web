@@ -26,6 +26,7 @@ const ZOOM_STEP := 1.14
 @onready var status_line: Label = %StatusLine
 @onready var world_button: Button = %WorldButton
 @onready var player_button: Button = %PlayerButton
+@onready var tactical_demo_button: Button = %TacticalDemoButton
 @onready var save_button: Button = %SaveButton
 @onready var load_button: Button = %LoadButton
 @onready var chronicle_button: Button = %ChronicleButton
@@ -119,6 +120,7 @@ func _configure_localized_ui() -> void:
 	title_label.text = tr("三国霸业 · 原生样片")
 	world_button.tooltip_text = tr("平滑缩放至完整战略地图")
 	player_button.tooltip_text = tr("定位并选择玩家城池")
+	tactical_demo_button.tooltip_text = tr("打开原生 12×8 战术战场样片")
 	save_button.tooltip_text = tr("保存当前最小 GameState")
 	load_button.tooltip_text = tr("重建 GameSession 并载入存档")
 	chronicle_button.tooltip_text = tr("查看年月、事件、继承与战役结局")
@@ -129,6 +131,7 @@ func _configure_localized_ui() -> void:
 func _connect_ui() -> void:
 	world_button.pressed.connect(_focus_world)
 	player_button.pressed.connect(_focus_player_city)
+	tactical_demo_button.pressed.connect(_open_tactical_demo)
 	save_button.pressed.connect(_save_game)
 	load_button.pressed.connect(_load_game)
 	chronicle_button.pressed.connect(_open_chronicle)
@@ -728,6 +731,10 @@ func _load_game() -> void:
 	_set_interaction_busy(false)
 
 
+func _open_tactical_demo() -> void:
+	get_tree().change_scene_to_file("res://scenes/presentation/tactical_battle_screen.tscn")
+
+
 func _focus_world() -> void:
 	if _snapshot.is_empty():
 		return
@@ -997,6 +1004,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	title_label.visible = not compact
 	world_button.text = tr("全图" if compact else "世界全图")
 	player_button.text = tr("我方" if compact else "我方城池")
+	tactical_demo_button.text = tr("战术" if compact else "战术样片")
 	save_button.text = tr("存" if compact else "保存")
 	load_button.text = tr("读" if compact else "读取")
 	chronicle_button.text = tr("纪" if compact else "纪事")
@@ -1007,7 +1015,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		var label_font_size := ceili(15.0 / maxf(canvas_scale, 0.01))
 		var action_font_size := ceili(17.0 / maxf(canvas_scale, 0.01))
 		top_panel.custom_minimum_size = Vector2(0.0, touch_size + 14.0)
-		for button: Button in [world_button, player_button, save_button, load_button, chronicle_button, end_turn_button]:
+		for button: Button in [world_button, player_button, tactical_demo_button, save_button, load_button, chronicle_button, end_turn_button]:
 			button.custom_minimum_size = Vector2(touch_size, touch_size)
 			button.add_theme_font_size_override("font_size", action_font_size)
 		status_badge_panel.custom_minimum_size = Vector2(touch_size, touch_size)
@@ -1019,11 +1027,12 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		top_panel.custom_minimum_size = Vector2(0.0, 68.0)
 		world_button.custom_minimum_size = Vector2(76.0, 52.0)
 		player_button.custom_minimum_size = Vector2(76.0, 52.0)
+		tactical_demo_button.custom_minimum_size = Vector2(92.0, 52.0)
 		save_button.custom_minimum_size = Vector2(68.0, 52.0)
 		load_button.custom_minimum_size = Vector2(68.0, 52.0)
 		chronicle_button.custom_minimum_size = Vector2(76.0, 52.0)
 		end_turn_button.custom_minimum_size = Vector2(92.0, 52.0)
-		for button: Button in [world_button, player_button, save_button, load_button, chronicle_button, end_turn_button]:
+		for button: Button in [world_button, player_button, tactical_demo_button, save_button, load_button, chronicle_button, end_turn_button]:
 			button.add_theme_font_size_override("font_size", 18)
 		status_badge_panel.custom_minimum_size = Vector2(82.0, 48.0)
 		year_label.add_theme_font_size_override("font_size", 18)

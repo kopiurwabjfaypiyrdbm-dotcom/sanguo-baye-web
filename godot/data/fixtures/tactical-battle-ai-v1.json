@@ -10619,8 +10619,8 @@
             },
             {
               "unitId": "officer:officer-84",
-              "slotX": 3,
-              "slotY": 4
+              "slotX": 0,
+              "slotY": 7
             }
           ]
         },
@@ -10632,7 +10632,7 @@
             "factionId": "ruler-1",
             "side": "attacker",
             "force": 84,
-            "intelligence": 90,
+            "intelligence": 70,
             "level": 1,
             "armsType": 0,
             "mobility": 5,
@@ -10760,8 +10760,8 @@
             "moved": false,
             "acted": false,
             "deployed": true,
-            "slotX": 3,
-            "slotY": 4
+            "slotX": 0,
+            "slotY": 7
           }
         },
         "actedUnitIds": [],
@@ -13172,7 +13172,11 @@
             "kind": "use_skill",
             "unitId": "officer:officer-1",
             "skillId": "rally",
-            "targetUnitId": "officer:officer-1"
+            "targetUnitId": "officer:officer-1",
+            "beforeBattleStateSha256": "85a4ed25357925670652677b463de23bdadaba7ce187e16bbcc5acc492eb2a6f",
+            "afterBattleStateSha256": "9d82f1c813a1abea281ae730ba2925829a455134685f238f42cc429c5d7991ea",
+            "seedBefore": 48641,
+            "seedAfter": 373686124
           }
         ],
         "finalBattle": {
@@ -13242,8 +13246,8 @@
               },
               {
                 "unitId": "officer:officer-84",
-                "slotX": 3,
-                "slotY": 4
+                "slotX": 0,
+                "slotY": 7
               }
             ]
           },
@@ -13255,7 +13259,7 @@
               "factionId": "ruler-1",
               "side": "attacker",
               "force": 84,
-              "intelligence": 90,
+              "intelligence": 70,
               "level": 1,
               "armsType": 0,
               "mobility": 5,
@@ -13383,8 +13387,8 @@
               "moved": false,
               "acted": false,
               "deployed": true,
-              "slotX": 3,
-              "slotY": 4
+              "slotX": 0,
+              "slotY": 7
             }
           },
           "actedUnitIds": [
@@ -18419,12 +18423,38 @@
             "kind": "move_unit",
             "unitId": "officer:officer-1",
             "slotX": 3,
-            "slotY": 6
+            "slotY": 6,
+            "beforeBattleStateSha256": "b82fcfc03dfe01a35f240480b2b8ed7fac9669b4f75d8189339e280874f5c6d3",
+            "afterBattleStateSha256": "72c5c5aaeaf7f00af3d3207406aaa053e3da489542584368a74bc0375748cb63",
+            "seedBefore": 48641,
+            "seedAfter": 48641,
+            "path": [
+              {
+                "x": 3,
+                "y": 3
+              },
+              {
+                "x": 3,
+                "y": 4
+              },
+              {
+                "x": 3,
+                "y": 5
+              },
+              {
+                "x": 3,
+                "y": 6
+              }
+            ]
           },
           {
             "kind": "attack_unit",
             "unitId": "officer:officer-1",
-            "targetUnitId": "officer:officer-84"
+            "targetUnitId": "officer:officer-84",
+            "beforeBattleStateSha256": "72c5c5aaeaf7f00af3d3207406aaa053e3da489542584368a74bc0375748cb63",
+            "afterBattleStateSha256": "fda3519a19922179dbdd833b41e1ecf235f1463a16fa9df00964128f3892633a",
+            "seedBefore": 48641,
+            "seedAfter": 48641
           }
         ],
         "finalBattle": {
@@ -23672,11 +23702,37 @@
             "kind": "move_unit",
             "unitId": "officer:officer-1",
             "slotX": 1,
-            "slotY": 4
+            "slotY": 4,
+            "beforeBattleStateSha256": "3e31c958e87514cf23aec28749343431fa305621a3876dae102daf392ac6a70e",
+            "afterBattleStateSha256": "646afd62d2109fb4b372888c166df824f79dd8e977d8caabcea0806d796800f9",
+            "seedBefore": 48641,
+            "seedAfter": 48641,
+            "path": [
+              {
+                "x": 3,
+                "y": 3
+              },
+              {
+                "x": 2,
+                "y": 3
+              },
+              {
+                "x": 1,
+                "y": 3
+              },
+              {
+                "x": 1,
+                "y": 4
+              }
+            ]
           },
           {
             "kind": "wait_unit",
-            "unitId": "officer:officer-1"
+            "unitId": "officer:officer-1",
+            "beforeBattleStateSha256": "646afd62d2109fb4b372888c166df824f79dd8e977d8caabcea0806d796800f9",
+            "afterBattleStateSha256": "806c500ff43390ed4f2046df7952aa77a882915966dd1f6632077e6f55be5829",
+            "seedBefore": 48641,
+            "seedAfter": 48641
           }
         ],
         "finalBattle": {
@@ -23904,6 +23960,5324 @@
             "曹操移动至 1,4。",
             "曹操原地休整。",
             "攻方占领城池并坚持到本方阶段结束。"
+          ],
+          "guard": {
+            "version": 2,
+            "strategicFingerprint": "8bacc25b",
+            "sourceCityId": "city-12",
+            "targetCityId": "city-11",
+            "sourceFood": 309,
+            "targetFood": 660,
+            "targetDefense": 0,
+            "targetReserveTroops": 0,
+            "participants": [
+              {
+                "officerId": "officer-1",
+                "cityId": "city-12",
+                "factionId": "ruler-1",
+                "status": "serving",
+                "troops": 100,
+                "stamina": 100,
+                "force": 84,
+                "intelligence": 90,
+                "leadership": 87,
+                "level": 1,
+                "experience": 0,
+                "armsTypeId": "cavalry",
+                "equipmentKey": "",
+                "armsAttackModifier": 1.08,
+                "armsDefenseModifier": 0.96,
+                "armsMobility": 5,
+                "itemForceBonus": 0,
+                "itemIntelligenceBonus": 0,
+                "itemMoveBonus": 0,
+                "equipmentKeyEncoding": "pipe-v1"
+              },
+              {
+                "officerId": "officer-10",
+                "cityId": "city-11",
+                "factionId": "ruler-10",
+                "status": "serving",
+                "troops": 100,
+                "stamina": 100,
+                "force": 30,
+                "intelligence": 25,
+                "leadership": 28,
+                "level": 1,
+                "experience": 0,
+                "armsTypeId": "infantry",
+                "equipmentKey": "",
+                "armsAttackModifier": 1,
+                "armsDefenseModifier": 1.08,
+                "armsMobility": 4,
+                "itemForceBonus": 0,
+                "itemIntelligenceBonus": 0,
+                "itemMoveBonus": 0,
+                "equipmentKeyEncoding": "pipe-v1"
+              },
+              {
+                "officerId": "officer-32",
+                "cityId": "city-12",
+                "factionId": "ruler-1",
+                "status": "serving",
+                "troops": 100,
+                "stamina": 100,
+                "force": 92,
+                "intelligence": 60,
+                "leadership": 76,
+                "level": 1,
+                "experience": 0,
+                "armsTypeId": "cavalry",
+                "equipmentKey": "",
+                "armsAttackModifier": 1.08,
+                "armsDefenseModifier": 0.96,
+                "armsMobility": 5,
+                "itemForceBonus": 0,
+                "itemIntelligenceBonus": 0,
+                "itemMoveBonus": 0,
+                "equipmentKeyEncoding": "pipe-v1"
+              },
+              {
+                "officerId": "officer-33",
+                "cityId": "city-12",
+                "factionId": "ruler-1",
+                "status": "serving",
+                "troops": 100,
+                "stamina": 100,
+                "force": 93,
+                "intelligence": 48,
+                "leadership": 71,
+                "level": 1,
+                "experience": 0,
+                "armsTypeId": "cavalry",
+                "equipmentKey": "",
+                "armsAttackModifier": 1.08,
+                "armsDefenseModifier": 0.96,
+                "armsMobility": 5,
+                "itemForceBonus": 0,
+                "itemIntelligenceBonus": 0,
+                "itemMoveBonus": 0,
+                "equipmentKeyEncoding": "pipe-v1"
+              },
+              {
+                "officerId": "officer-34",
+                "cityId": "city-12",
+                "factionId": "ruler-1",
+                "status": "serving",
+                "troops": 100,
+                "stamina": 100,
+                "force": 74,
+                "intelligence": 83,
+                "leadership": 79,
+                "level": 1,
+                "experience": 0,
+                "armsTypeId": "infantry",
+                "equipmentKey": "",
+                "armsAttackModifier": 1,
+                "armsDefenseModifier": 1.08,
+                "armsMobility": 4,
+                "itemForceBonus": 0,
+                "itemIntelligenceBonus": 0,
+                "itemMoveBonus": 0,
+                "equipmentKeyEncoding": "pipe-v1"
+              },
+              {
+                "officerId": "officer-35",
+                "cityId": "city-12",
+                "factionId": "ruler-1",
+                "status": "serving",
+                "troops": 100,
+                "stamina": 100,
+                "force": 82,
+                "intelligence": 42,
+                "leadership": 62,
+                "level": 1,
+                "experience": 0,
+                "armsTypeId": "infantry",
+                "equipmentKey": "",
+                "armsAttackModifier": 1,
+                "armsDefenseModifier": 1.08,
+                "armsMobility": 4,
+                "itemForceBonus": 0,
+                "itemIntelligenceBonus": 0,
+                "itemMoveBonus": 0,
+                "equipmentKeyEncoding": "pipe-v1"
+              },
+              {
+                "officerId": "officer-36",
+                "cityId": "city-12",
+                "factionId": "ruler-1",
+                "status": "serving",
+                "troops": 100,
+                "stamina": 100,
+                "force": 80,
+                "intelligence": 63,
+                "leadership": 72,
+                "level": 1,
+                "experience": 0,
+                "armsTypeId": "archer",
+                "equipmentKey": "",
+                "armsAttackModifier": 1.04,
+                "armsDefenseModifier": 0.92,
+                "armsMobility": 4,
+                "itemForceBonus": 0,
+                "itemIntelligenceBonus": 0,
+                "itemMoveBonus": 0,
+                "equipmentKeyEncoding": "pipe-v1"
+              },
+              {
+                "officerId": "officer-37",
+                "cityId": "city-12",
+                "factionId": "ruler-1",
+                "status": "serving",
+                "troops": 100,
+                "stamina": 100,
+                "force": 73,
+                "intelligence": 74,
+                "leadership": 74,
+                "level": 1,
+                "experience": 0,
+                "armsTypeId": "navy",
+                "equipmentKey": "",
+                "armsAttackModifier": 0.98,
+                "armsDefenseModifier": 1,
+                "armsMobility": 5,
+                "itemForceBonus": 0,
+                "itemIntelligenceBonus": 0,
+                "itemMoveBonus": 0,
+                "equipmentKeyEncoding": "pipe-v1"
+              },
+              {
+                "officerId": "officer-81",
+                "cityId": "city-11",
+                "factionId": "ruler-10",
+                "status": "serving",
+                "troops": 100,
+                "stamina": 100,
+                "force": 51,
+                "intelligence": 80,
+                "leadership": 66,
+                "level": 1,
+                "experience": 0,
+                "armsTypeId": "archer",
+                "equipmentKey": "",
+                "armsAttackModifier": 1.04,
+                "armsDefenseModifier": 0.92,
+                "armsMobility": 4,
+                "itemForceBonus": 0,
+                "itemIntelligenceBonus": 0,
+                "itemMoveBonus": 0,
+                "equipmentKeyEncoding": "pipe-v1"
+              },
+              {
+                "officerId": "officer-82",
+                "cityId": "city-11",
+                "factionId": "ruler-10",
+                "status": "serving",
+                "troops": 100,
+                "stamina": 100,
+                "force": 28,
+                "intelligence": 74,
+                "leadership": 51,
+                "level": 1,
+                "experience": 0,
+                "armsTypeId": "infantry",
+                "equipmentKey": "",
+                "armsAttackModifier": 1,
+                "armsDefenseModifier": 1.08,
+                "armsMobility": 4,
+                "itemForceBonus": 0,
+                "itemIntelligenceBonus": 0,
+                "itemMoveBonus": 0,
+                "equipmentKeyEncoding": "pipe-v1"
+              },
+              {
+                "officerId": "officer-83",
+                "cityId": "city-11",
+                "factionId": "ruler-10",
+                "status": "serving",
+                "troops": 100,
+                "stamina": 100,
+                "force": 56,
+                "intelligence": 41,
+                "leadership": 49,
+                "level": 1,
+                "experience": 0,
+                "armsTypeId": "cavalry",
+                "equipmentKey": "",
+                "armsAttackModifier": 1.08,
+                "armsDefenseModifier": 0.96,
+                "armsMobility": 5,
+                "itemForceBonus": 0,
+                "itemIntelligenceBonus": 0,
+                "itemMoveBonus": 0,
+                "equipmentKeyEncoding": "pipe-v1"
+              },
+              {
+                "officerId": "officer-84",
+                "cityId": "city-11",
+                "factionId": "ruler-10",
+                "status": "serving",
+                "troops": 100,
+                "stamina": 100,
+                "force": 54,
+                "intelligence": 80,
+                "leadership": 67,
+                "level": 1,
+                "experience": 0,
+                "armsTypeId": "archer",
+                "equipmentKey": "",
+                "armsAttackModifier": 1.04,
+                "armsDefenseModifier": 0.92,
+                "armsMobility": 4,
+                "itemForceBonus": 0,
+                "itemIntelligenceBonus": 0,
+                "itemMoveBonus": 0,
+                "equipmentKeyEncoding": "pipe-v1"
+              }
+            ]
+          },
+          "terrainContractVersion": 1,
+          "tiles": [
+            {
+              "x": 0,
+              "y": 0,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 1,
+              "y": 0,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 2,
+              "y": 0,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 3,
+              "y": 0,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 4,
+              "y": 0,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 5,
+              "y": 0,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 6,
+              "y": 0,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 7,
+              "y": 0,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 8,
+              "y": 0,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 9,
+              "y": 0,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 10,
+              "y": 0,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 11,
+              "y": 0,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 0,
+              "y": 1,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 1,
+              "y": 1,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 2,
+              "y": 1,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 3,
+              "y": 1,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 4,
+              "y": 1,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 5,
+              "y": 1,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 6,
+              "y": 1,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 7,
+              "y": 1,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 8,
+              "y": 1,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 9,
+              "y": 1,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 10,
+              "y": 1,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 11,
+              "y": 1,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 0,
+              "y": 2,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 1,
+              "y": 2,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 2,
+              "y": 2,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 3,
+              "y": 2,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 4,
+              "y": 2,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 5,
+              "y": 2,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 6,
+              "y": 2,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 7,
+              "y": 2,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 8,
+              "y": 2,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 9,
+              "y": 2,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 10,
+              "y": 2,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 11,
+              "y": 2,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 0,
+              "y": 3,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 1,
+              "y": 3,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 2,
+              "y": 3,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 3,
+              "y": 3,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 4,
+              "y": 3,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 5,
+              "y": 3,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 6,
+              "y": 3,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 7,
+              "y": 3,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 8,
+              "y": 3,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 9,
+              "y": 3,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 10,
+              "y": 3,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 11,
+              "y": 3,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 0,
+              "y": 4,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 1,
+              "y": 4,
+              "terrainId": 5,
+              "terrainName": "city",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ],
+              "objective": "city"
+            },
+            {
+              "x": 2,
+              "y": 4,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 3,
+              "y": 4,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 4,
+              "y": 4,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 5,
+              "y": 4,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 6,
+              "y": 4,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 7,
+              "y": 4,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 8,
+              "y": 4,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 9,
+              "y": 4,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 10,
+              "y": 4,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 11,
+              "y": 4,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 0,
+              "y": 5,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 1,
+              "y": 5,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 2,
+              "y": 5,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 3,
+              "y": 5,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 4,
+              "y": 5,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 5,
+              "y": 5,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 6,
+              "y": 5,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 7,
+              "y": 5,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 8,
+              "y": 5,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 9,
+              "y": 5,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 10,
+              "y": 5,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 11,
+              "y": 5,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 0,
+              "y": 6,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 1,
+              "y": 6,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 2,
+              "y": 6,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 3,
+              "y": 6,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 4,
+              "y": 6,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 5,
+              "y": 6,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 6,
+              "y": 6,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 7,
+              "y": 6,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 8,
+              "y": 6,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 9,
+              "y": 6,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 10,
+              "y": 6,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 11,
+              "y": 6,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 0,
+              "y": 7,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 1,
+              "y": 7,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 2,
+              "y": 7,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 3,
+              "y": 7,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 4,
+              "y": 7,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 5,
+              "y": 7,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 6,
+              "y": 7,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 7,
+              "y": 7,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 8,
+              "y": 7,
+              "terrainId": 1,
+              "terrainName": "road",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 9,
+              "y": 7,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 10,
+              "y": 7,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "x": 11,
+              "y": 7,
+              "terrainId": 0,
+              "terrainName": "plain",
+              "movementCosts": [
+                1,
+                1,
+                1,
+                2,
+                1,
+                1
+              ],
+              "passableArms": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "defender-continuation",
+      "restoredContinuation": true,
+      "initialBattle": {
+        "contractVersion": 1,
+        "id": "1:48641:city-12:city-11:officer-1:20",
+        "strategicTurn": 1,
+        "seedBefore": 48641,
+        "rngSeed": 48641,
+        "sourceCityId": "city-12",
+        "targetCityId": "city-11",
+        "attackerFactionId": "ruler-1",
+        "defenderFactionId": "ruler-10",
+        "attackerOfficerIds": [
+          "officer-1"
+        ],
+        "defenderOfficerIds": [
+          "officer-84",
+          "officer-81",
+          "officer-82",
+          "officer-83",
+          "officer-10"
+        ],
+        "provisionsCommitted": 20,
+        "attackerFood": 20,
+        "defenderFood": 660,
+        "width": 12,
+        "height": 8,
+        "day": 1,
+        "maxDays": 30,
+        "weather": "wind",
+        "phase": "battle",
+        "activeSide": "defender",
+        "status": "ongoing",
+        "outcome": "",
+        "approach": "west",
+        "battlefieldVersion": 1,
+        "battlefieldKey": "1:11:west",
+        "battlefieldTemplate": "open-plain",
+        "deployment": {
+          "attacker": [
+            {
+              "unitId": "officer:officer-1",
+              "slotX": 3,
+              "slotY": 3
+            }
+          ],
+          "defender": [
+            {
+              "unitId": "officer:officer-10",
+              "slotX": 2,
+              "slotY": 6
+            },
+            {
+              "unitId": "officer:officer-81",
+              "slotX": 2,
+              "slotY": 3
+            },
+            {
+              "unitId": "officer:officer-82",
+              "slotX": 2,
+              "slotY": 5
+            },
+            {
+              "unitId": "officer:officer-83",
+              "slotX": 1,
+              "slotY": 4
+            },
+            {
+              "unitId": "officer:officer-84",
+              "slotX": 3,
+              "slotY": 4
+            }
+          ]
+        },
+        "units": {
+          "officer:officer-1": {
+            "id": "officer:officer-1",
+            "name": "曹操",
+            "officerId": "officer-1",
+            "factionId": "ruler-1",
+            "side": "attacker",
+            "force": 84,
+            "intelligence": 90,
+            "level": 1,
+            "armsType": 0,
+            "mobility": 5,
+            "skillPoints": 0,
+            "maxSkillPoints": 0,
+            "originalTroops": 100,
+            "troops": 100,
+            "status": "normal",
+            "statusTurns": 0,
+            "moved": false,
+            "acted": false,
+            "deployed": true,
+            "slotX": 3,
+            "slotY": 3
+          },
+          "officer:officer-10": {
+            "id": "officer:officer-10",
+            "name": "韩馥",
+            "officerId": "officer-10",
+            "factionId": "ruler-10",
+            "side": "defender",
+            "force": 30,
+            "intelligence": 25,
+            "level": 1,
+            "armsType": 1,
+            "mobility": 4,
+            "skillPoints": 23,
+            "maxSkillPoints": 23,
+            "originalTroops": 100,
+            "troops": 0,
+            "status": "normal",
+            "statusTurns": 0,
+            "moved": false,
+            "acted": false,
+            "deployed": true,
+            "slotX": 2,
+            "slotY": 6
+          },
+          "officer:officer-81": {
+            "id": "officer:officer-81",
+            "name": "荀谌",
+            "officerId": "officer-81",
+            "factionId": "ruler-10",
+            "side": "defender",
+            "force": 51,
+            "intelligence": 80,
+            "level": 1,
+            "armsType": 2,
+            "mobility": 4,
+            "skillPoints": 68,
+            "maxSkillPoints": 68,
+            "originalTroops": 100,
+            "troops": 0,
+            "status": "normal",
+            "statusTurns": 0,
+            "moved": false,
+            "acted": false,
+            "deployed": true,
+            "slotX": 2,
+            "slotY": 3
+          },
+          "officer:officer-82": {
+            "id": "officer:officer-82",
+            "name": "辛评",
+            "officerId": "officer-82",
+            "factionId": "ruler-10",
+            "side": "defender",
+            "force": 28,
+            "intelligence": 74,
+            "level": 1,
+            "armsType": 1,
+            "mobility": 4,
+            "skillPoints": 62,
+            "maxSkillPoints": 62,
+            "originalTroops": 100,
+            "troops": 0,
+            "status": "normal",
+            "statusTurns": 0,
+            "moved": false,
+            "acted": false,
+            "deployed": true,
+            "slotX": 2,
+            "slotY": 5
+          },
+          "officer:officer-83": {
+            "id": "officer:officer-83",
+            "name": "关纯",
+            "officerId": "officer-83",
+            "factionId": "ruler-10",
+            "side": "defender",
+            "force": 56,
+            "intelligence": 41,
+            "level": 1,
+            "armsType": 0,
+            "mobility": 5,
+            "skillPoints": 0,
+            "maxSkillPoints": 0,
+            "originalTroops": 100,
+            "troops": 100,
+            "status": "normal",
+            "statusTurns": 0,
+            "moved": false,
+            "acted": false,
+            "deployed": true,
+            "slotX": 1,
+            "slotY": 4
+          },
+          "officer:officer-84": {
+            "id": "officer:officer-84",
+            "name": "耿武",
+            "officerId": "officer-84",
+            "factionId": "ruler-10",
+            "side": "defender",
+            "force": 54,
+            "intelligence": 80,
+            "level": 1,
+            "armsType": 2,
+            "mobility": 4,
+            "skillPoints": 0,
+            "maxSkillPoints": 0,
+            "originalTroops": 100,
+            "troops": 100,
+            "status": "normal",
+            "statusTurns": 0,
+            "moved": false,
+            "acted": false,
+            "deployed": true,
+            "slotX": 3,
+            "slotY": 4
+          }
+        },
+        "actedUnitIds": [],
+        "commanderUnitIds": {
+          "attacker": "officer:officer-1",
+          "defender": "officer:officer-84"
+        },
+        "experienceGains": {},
+        "logs": [
+          "濮阳军进入邺战场。"
+        ],
+        "guard": {
+          "version": 2,
+          "strategicFingerprint": "8bacc25b",
+          "sourceCityId": "city-12",
+          "targetCityId": "city-11",
+          "sourceFood": 309,
+          "targetFood": 660,
+          "targetDefense": 0,
+          "targetReserveTroops": 0,
+          "participants": [
+            {
+              "officerId": "officer-1",
+              "cityId": "city-12",
+              "factionId": "ruler-1",
+              "status": "serving",
+              "troops": 100,
+              "stamina": 100,
+              "force": 84,
+              "intelligence": 90,
+              "leadership": 87,
+              "level": 1,
+              "experience": 0,
+              "armsTypeId": "cavalry",
+              "equipmentKey": "",
+              "armsAttackModifier": 1.08,
+              "armsDefenseModifier": 0.96,
+              "armsMobility": 5,
+              "itemForceBonus": 0,
+              "itemIntelligenceBonus": 0,
+              "itemMoveBonus": 0,
+              "equipmentKeyEncoding": "pipe-v1"
+            },
+            {
+              "officerId": "officer-10",
+              "cityId": "city-11",
+              "factionId": "ruler-10",
+              "status": "serving",
+              "troops": 100,
+              "stamina": 100,
+              "force": 30,
+              "intelligence": 25,
+              "leadership": 28,
+              "level": 1,
+              "experience": 0,
+              "armsTypeId": "infantry",
+              "equipmentKey": "",
+              "armsAttackModifier": 1,
+              "armsDefenseModifier": 1.08,
+              "armsMobility": 4,
+              "itemForceBonus": 0,
+              "itemIntelligenceBonus": 0,
+              "itemMoveBonus": 0,
+              "equipmentKeyEncoding": "pipe-v1"
+            },
+            {
+              "officerId": "officer-32",
+              "cityId": "city-12",
+              "factionId": "ruler-1",
+              "status": "serving",
+              "troops": 100,
+              "stamina": 100,
+              "force": 92,
+              "intelligence": 60,
+              "leadership": 76,
+              "level": 1,
+              "experience": 0,
+              "armsTypeId": "cavalry",
+              "equipmentKey": "",
+              "armsAttackModifier": 1.08,
+              "armsDefenseModifier": 0.96,
+              "armsMobility": 5,
+              "itemForceBonus": 0,
+              "itemIntelligenceBonus": 0,
+              "itemMoveBonus": 0,
+              "equipmentKeyEncoding": "pipe-v1"
+            },
+            {
+              "officerId": "officer-33",
+              "cityId": "city-12",
+              "factionId": "ruler-1",
+              "status": "serving",
+              "troops": 100,
+              "stamina": 100,
+              "force": 93,
+              "intelligence": 48,
+              "leadership": 71,
+              "level": 1,
+              "experience": 0,
+              "armsTypeId": "cavalry",
+              "equipmentKey": "",
+              "armsAttackModifier": 1.08,
+              "armsDefenseModifier": 0.96,
+              "armsMobility": 5,
+              "itemForceBonus": 0,
+              "itemIntelligenceBonus": 0,
+              "itemMoveBonus": 0,
+              "equipmentKeyEncoding": "pipe-v1"
+            },
+            {
+              "officerId": "officer-34",
+              "cityId": "city-12",
+              "factionId": "ruler-1",
+              "status": "serving",
+              "troops": 100,
+              "stamina": 100,
+              "force": 74,
+              "intelligence": 83,
+              "leadership": 79,
+              "level": 1,
+              "experience": 0,
+              "armsTypeId": "infantry",
+              "equipmentKey": "",
+              "armsAttackModifier": 1,
+              "armsDefenseModifier": 1.08,
+              "armsMobility": 4,
+              "itemForceBonus": 0,
+              "itemIntelligenceBonus": 0,
+              "itemMoveBonus": 0,
+              "equipmentKeyEncoding": "pipe-v1"
+            },
+            {
+              "officerId": "officer-35",
+              "cityId": "city-12",
+              "factionId": "ruler-1",
+              "status": "serving",
+              "troops": 100,
+              "stamina": 100,
+              "force": 82,
+              "intelligence": 42,
+              "leadership": 62,
+              "level": 1,
+              "experience": 0,
+              "armsTypeId": "infantry",
+              "equipmentKey": "",
+              "armsAttackModifier": 1,
+              "armsDefenseModifier": 1.08,
+              "armsMobility": 4,
+              "itemForceBonus": 0,
+              "itemIntelligenceBonus": 0,
+              "itemMoveBonus": 0,
+              "equipmentKeyEncoding": "pipe-v1"
+            },
+            {
+              "officerId": "officer-36",
+              "cityId": "city-12",
+              "factionId": "ruler-1",
+              "status": "serving",
+              "troops": 100,
+              "stamina": 100,
+              "force": 80,
+              "intelligence": 63,
+              "leadership": 72,
+              "level": 1,
+              "experience": 0,
+              "armsTypeId": "archer",
+              "equipmentKey": "",
+              "armsAttackModifier": 1.04,
+              "armsDefenseModifier": 0.92,
+              "armsMobility": 4,
+              "itemForceBonus": 0,
+              "itemIntelligenceBonus": 0,
+              "itemMoveBonus": 0,
+              "equipmentKeyEncoding": "pipe-v1"
+            },
+            {
+              "officerId": "officer-37",
+              "cityId": "city-12",
+              "factionId": "ruler-1",
+              "status": "serving",
+              "troops": 100,
+              "stamina": 100,
+              "force": 73,
+              "intelligence": 74,
+              "leadership": 74,
+              "level": 1,
+              "experience": 0,
+              "armsTypeId": "navy",
+              "equipmentKey": "",
+              "armsAttackModifier": 0.98,
+              "armsDefenseModifier": 1,
+              "armsMobility": 5,
+              "itemForceBonus": 0,
+              "itemIntelligenceBonus": 0,
+              "itemMoveBonus": 0,
+              "equipmentKeyEncoding": "pipe-v1"
+            },
+            {
+              "officerId": "officer-81",
+              "cityId": "city-11",
+              "factionId": "ruler-10",
+              "status": "serving",
+              "troops": 100,
+              "stamina": 100,
+              "force": 51,
+              "intelligence": 80,
+              "leadership": 66,
+              "level": 1,
+              "experience": 0,
+              "armsTypeId": "archer",
+              "equipmentKey": "",
+              "armsAttackModifier": 1.04,
+              "armsDefenseModifier": 0.92,
+              "armsMobility": 4,
+              "itemForceBonus": 0,
+              "itemIntelligenceBonus": 0,
+              "itemMoveBonus": 0,
+              "equipmentKeyEncoding": "pipe-v1"
+            },
+            {
+              "officerId": "officer-82",
+              "cityId": "city-11",
+              "factionId": "ruler-10",
+              "status": "serving",
+              "troops": 100,
+              "stamina": 100,
+              "force": 28,
+              "intelligence": 74,
+              "leadership": 51,
+              "level": 1,
+              "experience": 0,
+              "armsTypeId": "infantry",
+              "equipmentKey": "",
+              "armsAttackModifier": 1,
+              "armsDefenseModifier": 1.08,
+              "armsMobility": 4,
+              "itemForceBonus": 0,
+              "itemIntelligenceBonus": 0,
+              "itemMoveBonus": 0,
+              "equipmentKeyEncoding": "pipe-v1"
+            },
+            {
+              "officerId": "officer-83",
+              "cityId": "city-11",
+              "factionId": "ruler-10",
+              "status": "serving",
+              "troops": 100,
+              "stamina": 100,
+              "force": 56,
+              "intelligence": 41,
+              "leadership": 49,
+              "level": 1,
+              "experience": 0,
+              "armsTypeId": "cavalry",
+              "equipmentKey": "",
+              "armsAttackModifier": 1.08,
+              "armsDefenseModifier": 0.96,
+              "armsMobility": 5,
+              "itemForceBonus": 0,
+              "itemIntelligenceBonus": 0,
+              "itemMoveBonus": 0,
+              "equipmentKeyEncoding": "pipe-v1"
+            },
+            {
+              "officerId": "officer-84",
+              "cityId": "city-11",
+              "factionId": "ruler-10",
+              "status": "serving",
+              "troops": 100,
+              "stamina": 100,
+              "force": 54,
+              "intelligence": 80,
+              "leadership": 67,
+              "level": 1,
+              "experience": 0,
+              "armsTypeId": "archer",
+              "equipmentKey": "",
+              "armsAttackModifier": 1.04,
+              "armsDefenseModifier": 0.92,
+              "armsMobility": 4,
+              "itemForceBonus": 0,
+              "itemIntelligenceBonus": 0,
+              "itemMoveBonus": 0,
+              "equipmentKeyEncoding": "pipe-v1"
+            }
+          ]
+        },
+        "terrainContractVersion": 1,
+        "tiles": [
+          {
+            "x": 0,
+            "y": 0,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 1,
+            "y": 0,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 2,
+            "y": 0,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 3,
+            "y": 0,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 4,
+            "y": 0,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 5,
+            "y": 0,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 6,
+            "y": 0,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 7,
+            "y": 0,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 8,
+            "y": 0,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 9,
+            "y": 0,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 10,
+            "y": 0,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 11,
+            "y": 0,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 1,
+            "y": 1,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 2,
+            "y": 1,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 3,
+            "y": 1,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 4,
+            "y": 1,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 5,
+            "y": 1,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 6,
+            "y": 1,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 7,
+            "y": 1,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 8,
+            "y": 1,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 9,
+            "y": 1,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 10,
+            "y": 1,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 11,
+            "y": 1,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 1,
+            "y": 2,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 2,
+            "y": 2,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 3,
+            "y": 2,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 4,
+            "y": 2,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 5,
+            "y": 2,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 6,
+            "y": 2,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 7,
+            "y": 2,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 8,
+            "y": 2,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 9,
+            "y": 2,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 10,
+            "y": 2,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 11,
+            "y": 2,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 0,
+            "y": 3,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 1,
+            "y": 3,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 2,
+            "y": 3,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 3,
+            "y": 3,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 4,
+            "y": 3,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 5,
+            "y": 3,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 6,
+            "y": 3,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 7,
+            "y": 3,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 8,
+            "y": 3,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 9,
+            "y": 3,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 10,
+            "y": 3,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 11,
+            "y": 3,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 0,
+            "y": 4,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 1,
+            "y": 4,
+            "terrainId": 5,
+            "terrainName": "city",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "objective": "city"
+          },
+          {
+            "x": 2,
+            "y": 4,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 3,
+            "y": 4,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 4,
+            "y": 4,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 5,
+            "y": 4,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 6,
+            "y": 4,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 7,
+            "y": 4,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 8,
+            "y": 4,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 9,
+            "y": 4,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 10,
+            "y": 4,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 11,
+            "y": 4,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 0,
+            "y": 5,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 1,
+            "y": 5,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 2,
+            "y": 5,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 3,
+            "y": 5,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 4,
+            "y": 5,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 5,
+            "y": 5,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 6,
+            "y": 5,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 7,
+            "y": 5,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 8,
+            "y": 5,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 9,
+            "y": 5,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 10,
+            "y": 5,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 11,
+            "y": 5,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 0,
+            "y": 6,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 1,
+            "y": 6,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 2,
+            "y": 6,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 3,
+            "y": 6,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 4,
+            "y": 6,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 5,
+            "y": 6,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 6,
+            "y": 6,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 7,
+            "y": 6,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 8,
+            "y": 6,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 9,
+            "y": 6,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 10,
+            "y": 6,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 11,
+            "y": 6,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 0,
+            "y": 7,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 1,
+            "y": 7,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 2,
+            "y": 7,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 3,
+            "y": 7,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 4,
+            "y": 7,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 5,
+            "y": 7,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 6,
+            "y": 7,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 7,
+            "y": 7,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 8,
+            "y": 7,
+            "terrainId": 1,
+            "terrainName": "road",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 9,
+            "y": 7,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 10,
+            "y": 7,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "x": 11,
+            "y": 7,
+            "terrainId": 0,
+            "terrainName": "plain",
+            "movementCosts": [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1
+            ],
+            "passableArms": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          }
+        ]
+      },
+      "webOracle": {
+        "actions": [
+          {
+            "kind": "move_unit",
+            "unitId": "officer:officer-84",
+            "slotX": 1,
+            "slotY": 3,
+            "beforeBattleStateSha256": "40dbb81ebf88213bf8a7f6489fed6bd8108cdde16398fbab8a662b344468dfc3",
+            "afterBattleStateSha256": "9287d130d2068e1d9c109169582994f591169dc0b1d2c009f65faad527898593",
+            "seedBefore": 48641,
+            "seedAfter": 48641,
+            "path": [
+              {
+                "x": 3,
+                "y": 4
+              },
+              {
+                "x": 2,
+                "y": 4
+              },
+              {
+                "x": 1,
+                "y": 4
+              },
+              {
+                "x": 1,
+                "y": 3
+              }
+            ]
+          },
+          {
+            "kind": "attack_unit",
+            "unitId": "officer:officer-84",
+            "targetUnitId": "officer:officer-1",
+            "beforeBattleStateSha256": "9287d130d2068e1d9c109169582994f591169dc0b1d2c009f65faad527898593",
+            "afterBattleStateSha256": "8b4734ab1232749a5ebb1cf4c81af3fa799e74f719cb6ee5a7660a4acdad8dbe",
+            "seedBefore": 48641,
+            "seedAfter": 48641
+          },
+          {
+            "kind": "move_unit",
+            "unitId": "officer:officer-83",
+            "slotX": 3,
+            "slotY": 4,
+            "beforeBattleStateSha256": "8b4734ab1232749a5ebb1cf4c81af3fa799e74f719cb6ee5a7660a4acdad8dbe",
+            "afterBattleStateSha256": "c051abaeb1287ead05211bea836c7dc2e3b0cfc0b6996514c693673d2237b2ab",
+            "seedBefore": 48641,
+            "seedAfter": 48641,
+            "path": [
+              {
+                "x": 1,
+                "y": 4
+              },
+              {
+                "x": 2,
+                "y": 4
+              },
+              {
+                "x": 3,
+                "y": 4
+              }
+            ]
+          },
+          {
+            "kind": "attack_unit",
+            "unitId": "officer:officer-83",
+            "targetUnitId": "officer:officer-1",
+            "beforeBattleStateSha256": "c051abaeb1287ead05211bea836c7dc2e3b0cfc0b6996514c693673d2237b2ab",
+            "afterBattleStateSha256": "27b3408a07230ed0e8cbbcb2d2da06dd9e5a476a7689bd760360f18189cf2c41",
+            "seedBefore": 48641,
+            "seedAfter": 48641
+          }
+        ],
+        "finalBattle": {
+          "contractVersion": 1,
+          "id": "1:48641:city-12:city-11:officer-1:20",
+          "strategicTurn": 1,
+          "seedBefore": 48641,
+          "rngSeed": 777050309,
+          "sourceCityId": "city-12",
+          "targetCityId": "city-11",
+          "attackerFactionId": "ruler-1",
+          "defenderFactionId": "ruler-10",
+          "attackerOfficerIds": [
+            "officer-1"
+          ],
+          "defenderOfficerIds": [
+            "officer-84",
+            "officer-81",
+            "officer-82",
+            "officer-83",
+            "officer-10"
+          ],
+          "provisionsCommitted": 20,
+          "attackerFood": 19,
+          "defenderFood": 659,
+          "width": 12,
+          "height": 8,
+          "day": 2,
+          "maxDays": 30,
+          "weather": "fine",
+          "phase": "battle",
+          "activeSide": "attacker",
+          "status": "ongoing",
+          "outcome": "",
+          "approach": "west",
+          "battlefieldVersion": 1,
+          "battlefieldKey": "1:11:west",
+          "battlefieldTemplate": "open-plain",
+          "deployment": {
+            "attacker": [
+              {
+                "unitId": "officer:officer-1",
+                "slotX": 3,
+                "slotY": 3
+              }
+            ],
+            "defender": [
+              {
+                "unitId": "officer:officer-10",
+                "slotX": 2,
+                "slotY": 6
+              },
+              {
+                "unitId": "officer:officer-81",
+                "slotX": 2,
+                "slotY": 3
+              },
+              {
+                "unitId": "officer:officer-82",
+                "slotX": 2,
+                "slotY": 5
+              },
+              {
+                "unitId": "officer:officer-83",
+                "slotX": 3,
+                "slotY": 4
+              },
+              {
+                "unitId": "officer:officer-84",
+                "slotX": 1,
+                "slotY": 3
+              }
+            ]
+          },
+          "units": {
+            "officer:officer-1": {
+              "id": "officer:officer-1",
+              "name": "曹操",
+              "officerId": "officer-1",
+              "factionId": "ruler-1",
+              "side": "attacker",
+              "force": 84,
+              "intelligence": 90,
+              "level": 1,
+              "armsType": 0,
+              "mobility": 5,
+              "skillPoints": 0,
+              "maxSkillPoints": 0,
+              "originalTroops": 100,
+              "troops": 49,
+              "status": "normal",
+              "statusTurns": 0,
+              "moved": false,
+              "acted": false,
+              "deployed": true,
+              "slotX": 3,
+              "slotY": 3
+            },
+            "officer:officer-10": {
+              "id": "officer:officer-10",
+              "name": "韩馥",
+              "officerId": "officer-10",
+              "factionId": "ruler-10",
+              "side": "defender",
+              "force": 30,
+              "intelligence": 25,
+              "level": 1,
+              "armsType": 1,
+              "mobility": 4,
+              "skillPoints": 23,
+              "maxSkillPoints": 23,
+              "originalTroops": 100,
+              "troops": 0,
+              "status": "normal",
+              "statusTurns": 0,
+              "moved": false,
+              "acted": false,
+              "deployed": true,
+              "slotX": 2,
+              "slotY": 6
+            },
+            "officer:officer-81": {
+              "id": "officer:officer-81",
+              "name": "荀谌",
+              "officerId": "officer-81",
+              "factionId": "ruler-10",
+              "side": "defender",
+              "force": 51,
+              "intelligence": 80,
+              "level": 1,
+              "armsType": 2,
+              "mobility": 4,
+              "skillPoints": 68,
+              "maxSkillPoints": 68,
+              "originalTroops": 100,
+              "troops": 0,
+              "status": "normal",
+              "statusTurns": 0,
+              "moved": false,
+              "acted": false,
+              "deployed": true,
+              "slotX": 2,
+              "slotY": 3
+            },
+            "officer:officer-82": {
+              "id": "officer:officer-82",
+              "name": "辛评",
+              "officerId": "officer-82",
+              "factionId": "ruler-10",
+              "side": "defender",
+              "force": 28,
+              "intelligence": 74,
+              "level": 1,
+              "armsType": 1,
+              "mobility": 4,
+              "skillPoints": 62,
+              "maxSkillPoints": 62,
+              "originalTroops": 100,
+              "troops": 0,
+              "status": "normal",
+              "statusTurns": 0,
+              "moved": false,
+              "acted": false,
+              "deployed": true,
+              "slotX": 2,
+              "slotY": 5
+            },
+            "officer:officer-83": {
+              "id": "officer:officer-83",
+              "name": "关纯",
+              "officerId": "officer-83",
+              "factionId": "ruler-10",
+              "side": "defender",
+              "force": 56,
+              "intelligence": 41,
+              "level": 1,
+              "armsType": 0,
+              "mobility": 5,
+              "skillPoints": 0,
+              "maxSkillPoints": 0,
+              "originalTroops": 100,
+              "troops": 100,
+              "status": "normal",
+              "statusTurns": 0,
+              "moved": true,
+              "acted": true,
+              "deployed": true,
+              "slotX": 3,
+              "slotY": 4
+            },
+            "officer:officer-84": {
+              "id": "officer:officer-84",
+              "name": "耿武",
+              "officerId": "officer-84",
+              "factionId": "ruler-10",
+              "side": "defender",
+              "force": 54,
+              "intelligence": 80,
+              "level": 1,
+              "armsType": 2,
+              "mobility": 4,
+              "skillPoints": 0,
+              "maxSkillPoints": 0,
+              "originalTroops": 100,
+              "troops": 100,
+              "status": "normal",
+              "statusTurns": 0,
+              "moved": true,
+              "acted": true,
+              "deployed": true,
+              "slotX": 1,
+              "slotY": 3
+            }
+          },
+          "actedUnitIds": [
+            "officer:officer-83",
+            "officer:officer-84"
+          ],
+          "commanderUnitIds": {
+            "attacker": "officer:officer-1",
+            "defender": "officer:officer-84"
+          },
+          "experienceGains": {
+            "officer-84": 3,
+            "officer-83": 3
+          },
+          "logs": [
+            "濮阳军进入邺战场。",
+            "耿武移动至 1,3。",
+            "耿武攻击曹操，造成 31 兵力损失。",
+            "关纯移动至 3,4。",
+            "关纯攻击曹操，造成 20 兵力损失。",
+            "第 2 日开始，攻方耗粮 1，守方耗粮 1。",
+            "天气转为晴。"
           ],
           "guard": {
             "version": 2,

@@ -126,6 +126,13 @@ layout_mode = 2
 focus_mode = 2
 text = "我方城池"
 
+[node name="TacticalDemoButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(92, 52)
+layout_mode = 2
+focus_mode = 2
+text = "战术样片"
+
 [node name="SaveButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(68, 52)

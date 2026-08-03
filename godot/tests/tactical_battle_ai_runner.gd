@@ -58,6 +58,8 @@ func _test_policy_cases(fixture: Dictionary) -> void:
 		var initial_case: Dictionary = policy_case["initialBattle"]
 		var session := Session.from_snapshot(initial_case)
 		_assert_true(session != null, "policy %s snapshot must restore" % policy_case["id"])
+		if bool(policy_case.get("restoredContinuation", false)):
+			_assert_true(session != null, "policy %s must execute from a restored continuation snapshot" % policy_case["id"])
 		if session == null: continue
 		var result: Dictionary = Ai.run_active_side(initial_case)
 		_assert_true(bool(result.get("ok", false)), "policy %s AI run must succeed" % policy_case["id"])
@@ -67,6 +69,15 @@ func _test_policy_cases(fixture: Dictionary) -> void:
 		for index in range(mini(trace.size(), expected_actions.size())):
 			var actual_action := _action_shape(trace[index]["command"]); var expected_action := _action_shape(expected_actions[index])
 			_assert_equal(actual_action, expected_action, "policy %s action %d must match Web" % [policy_case["id"], index])
+			var actual_result: Dictionary = trace[index].get("result", {}); var expected_step: Dictionary = expected_actions[index]
+			_assert_equal(actual_result.get("beforeBattleStateSha256", ""), expected_step.get("beforeBattleStateSha256", ""), "policy %s action %d before SHA must match Web" % [policy_case["id"], index])
+			_assert_equal(actual_result.get("afterBattleStateSha256", ""), expected_step.get("afterBattleStateSha256", ""), "policy %s action %d after SHA must match Web" % [policy_case["id"], index])
+			var actual_receipt: Dictionary = actual_result.get("receipt", {})
+			var actual_details: Dictionary = actual_receipt.get("details", {})
+			_assert_equal(actual_receipt.get("battleStateSha256", ""), actual_result.get("afterBattleStateSha256", ""), "policy %s action %d receipt SHA must match after SHA" % [policy_case["id"], index])
+			_assert_equal(actual_details.get("seedBefore", null), expected_step.get("seedBefore", null), "policy %s action %d receipt seedBefore must match Web" % [policy_case["id"], index])
+			_assert_equal(actual_details.get("seedAfter", null), expected_step.get("seedAfter", null), "policy %s action %d receipt seedAfter must match Web" % [policy_case["id"], index])
+			if expected_step.has("path"): _assert_equal(actual_result.get("receipt", {}).get("details", {}).get("path", []), expected_step["path"], "policy %s action %d movement path must match Web" % [policy_case["id"], index])
 		_assert_equal(result.get("battle", {}), policy_case["webOracle"].get("finalBattle", {}), "policy %s final battle must match Web" % policy_case["id"])
 		var repeat: Dictionary = Ai.run_active_side(initial_case)
 		_assert_equal(repeat, result, "policy %s repeated run must be deterministic" % policy_case["id"])

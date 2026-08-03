@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createProductionSessionState } from '../src/core/migration/applicationSessionContract';
 import { canonicalSha256 } from '../src/core/migration/canonicalJson';
-import { attackTacticalUnit, createTacticalBattle, endTacticalSide, getAttackableUnitIds, getAvailableTacticalSkills, getReachableTiles, getTacticalSkillTargetIds, moveTacticalUnit, previewTacticalAttack, previewTacticalSkill, runBasicTacticalAi, useTacticalSkill, waitTacticalUnit, type TacticalBattleState, type TacticalSide } from '../src/core/tacticalBattle';
+import { attackTacticalUnit, createTacticalBattle, endTacticalSide, getAttackableUnitIds, getAvailableTacticalSkills, getReachableTiles, getTacticalPath, getTacticalSkillTargetIds, moveTacticalUnit, previewTacticalAttack, previewTacticalSkill, runBasicTacticalAi, useTacticalSkill, waitTacticalUnit, type TacticalBattleState, type TacticalSide } from '../src/core/tacticalBattle';
 import { MODERN_TERRAIN_MOVE_COSTS } from '../src/compat/baye/tacticalState';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -24,12 +24,15 @@ export function buildAiFixture() {
   const actionCommand = command('ai-attack-0001', canonicalSha256(initialBattle), actorId, targetId);
   const actionExpected = resultFor(initialBattle, projectBattle(actionAfter), preview, actorId, targetId, actionCommand);
   const webFinal = runBasicTacticalAi(prepareAiBattle(created, actorId, targetId));
-  const skillWebBattle = prepareAiBattle(created, actorId, targetId); skillWebBattle.units[actorId].troops = 70; skillWebBattle.units[actorId].skillPoints = 30; skillWebBattle.units[actorId].maxSkillPoints = 30;
-  const skillTrace = traceWebAi(skillWebBattle);
+  const skillWebBattle = prepareAiBattle(created, actorId, targetId); skillWebBattle.units[actorId].troops = 70; skillWebBattle.units[actorId].intelligence = 70; skillWebBattle.units[actorId].skillPoints = 30; skillWebBattle.units[actorId].maxSkillPoints = 30; skillWebBattle.units[targetId].x = 0; skillWebBattle.units[targetId].y = 7;
+  const skillTrace = traceWebAi(skillWebBattle); const skillActual = runBasicTacticalAi(skillWebBattle); assertTraceMatchesOracle('rally-self', skillTrace.final, skillActual);
   const moveAttackWebBattle = prepareAiBattle(created, actorId, targetId); moveAttackWebBattle.units[targetId].x = 3; moveAttackWebBattle.units[targetId].y = 7; moveAttackWebBattle.units[targetId].troops = 100;
-  const moveAttackTrace = traceWebAi(moveAttackWebBattle);
+  const moveAttackTrace = traceWebAi(moveAttackWebBattle); const moveAttackActual = runBasicTacticalAi(moveAttackWebBattle); assertTraceMatchesOracle('move-and-attack', moveAttackTrace.final, moveAttackActual);
   const moveWaitWebBattle = prepareAiBattle(created, actorId, targetId); moveWaitWebBattle.units[targetId].x = 0; moveWaitWebBattle.units[targetId].y = 7; moveWaitWebBattle.units[targetId].troops = 100;
-  const moveWaitTrace = traceWebAi(moveWaitWebBattle);
+  const moveWaitTrace = traceWebAi(moveWaitWebBattle); const moveWaitActual = runBasicTacticalAi(moveWaitWebBattle); assertTraceMatchesOracle('move-and-wait', moveWaitTrace.final, moveWaitActual);
+  const defenderWebBattle = prepareAiBattle(created, actorId, targetId); defenderWebBattle.activeSide = 'defender'; defenderWebBattle.units[targetId].skillPoints = 0; defenderWebBattle.units[targetId].maxSkillPoints = 0;
+  const defenderSupportId = 'officer:officer-83'; defenderWebBattle.units[defenderSupportId].troops = 100; defenderWebBattle.units[defenderSupportId].x = 1; defenderWebBattle.units[defenderSupportId].y = 4; defenderWebBattle.units[defenderSupportId].moved = false; defenderWebBattle.units[defenderSupportId].acted = false; defenderWebBattle.units[defenderSupportId].skillPoints = 0; defenderWebBattle.units[defenderSupportId].maxSkillPoints = 0;
+  const defenderTrace = traceWebAi(defenderWebBattle); const defenderActual = runBasicTacticalAi(defenderWebBattle); assertTraceMatchesOracle('defender-continuation', defenderTrace.final, defenderActual);
   const boundaryCases = createBoundaryCases(initialBattle, actionExpected, actorId, targetId, actionCommand);
   return {
     tacticalBattleAiFixtureVersion: 1,
@@ -40,9 +43,10 @@ export function buildAiFixture() {
     action: { command: actionCommand, expected: actionExpected },
     finalBattle: projectBattle(webFinal),
     policyCases: [
-      { id: 'rally-self', initialBattle: projectBattle(skillWebBattle), webOracle: { actions: skillTrace.actions, finalBattle: projectBattle(skillTrace.final) } },
-      { id: 'move-and-attack', initialBattle: projectBattle(moveAttackWebBattle), webOracle: { actions: moveAttackTrace.actions, finalBattle: projectBattle(moveAttackTrace.final) } },
-      { id: 'move-and-wait', initialBattle: projectBattle(moveWaitWebBattle), webOracle: { actions: moveWaitTrace.actions, finalBattle: projectBattle(moveWaitTrace.final) } },
+      { id: 'rally-self', initialBattle: projectBattle(skillWebBattle), webOracle: { actions: skillTrace.actions, finalBattle: projectBattle(skillActual) } },
+      { id: 'move-and-attack', initialBattle: projectBattle(moveAttackWebBattle), webOracle: { actions: moveAttackTrace.actions, finalBattle: projectBattle(moveAttackActual) } },
+      { id: 'move-and-wait', initialBattle: projectBattle(moveWaitWebBattle), webOracle: { actions: moveWaitTrace.actions, finalBattle: projectBattle(moveWaitActual) } },
+      { id: 'defender-continuation', restoredContinuation: true, initialBattle: projectBattle(defenderWebBattle), webOracle: { actions: defenderTrace.actions, finalBattle: projectBattle(defenderActual) } },
     ],
     boundaryCases,
     expected: { actorId, targetId, actionKind: 'attack_unit', seedBefore: initialBattle.rngSeed, seedAfter: projectBattle(actionAfter).rngSeed, finalActiveSide: projectBattle(webFinal).activeSide },
@@ -52,27 +56,35 @@ export function buildAiFixture() {
 function traceWebAi(state: TacticalBattleState): { final: TacticalBattleState; actions: JsonObject[] } {
   let next = structuredClone(state); const actions: JsonObject[] = []; const side = next.activeSide;
   const objective = next.tiles.find((tile) => tile.objective === 'city'); const enemyCommander = next.units[next.commanderUnitIds[side === 'attacker' ? 'defender' : 'attacker']];
-  const unitIds = Object.values(next.units).filter((unit) => unit.side === side && unit.troops > 0).sort((a, b) => (objective ? distance(a, objective) - distance(b, objective) : enemyCommander ? distance(a, enemyCommander) - distance(b, enemyCommander) : 0) || a.id.localeCompare(b.id)).map((unit) => unit.id);
+  const orderTarget = side === 'attacker' ? objective : enemyCommander;
+  const unitIds = Object.values(next.units).filter((unit) => unit.side === side && unit.troops > 0).sort((a, b) => (orderTarget ? distance(a, orderTarget) - distance(b, orderTarget) : 0) || a.id.localeCompare(b.id)).map((unit) => unit.id);
   while (next.status === 'ongoing') {
     const unitId = unitIds.find((id) => next.units[id] && next.units[id].troops > 0 && !next.units[id].acted); if (!unitId) break;
-    const skill = chooseWebSkill(next, unitId);
-    if (skill) { actions.push({ kind: 'use_skill', unitId, skillId: skill.skillId, targetUnitId: skill.targetUnitId }); next = useTacticalSkill(next, unitId, skill.skillId, skill.targetUnitId); continue; }
-    const immediate = chooseWebTarget(next, unitId);
-    if (immediate) { actions.push({ kind: 'attack_unit', unitId, targetUnitId: immediate }); next = attackTacticalUnit(next, unitId, immediate); continue; }
-    const current = next.units[unitId]; const destination = chooseWebDestination(next, current, getReachableTiles(next, unitId));
-    if (destination) { actions.push({ kind: 'move_unit', unitId, slotX: destination.x, slotY: destination.y }); next = moveTacticalUnit(next, unitId, destination); }
+    const current = next.units[unitId];
+    if (!current.moved) {
+      const skill = chooseWebSkill(next, unitId);
+      if (skill) { const before = structuredClone(next); next = useTacticalSkill(next, unitId, skill.skillId, skill.targetUnitId); actions.push(traceAction({ kind: 'use_skill', unitId, skillId: skill.skillId, targetUnitId: skill.targetUnitId }, before, next)); continue; }
+      const immediate = chooseWebTarget(next, unitId);
+      if (immediate) { const before = structuredClone(next); next = attackTacticalUnit(next, unitId, immediate); actions.push(traceAction({ kind: 'attack_unit', unitId, targetUnitId: immediate }, before, next)); continue; }
+      const destination = chooseWebDestination(next, current, getReachableTiles(next, unitId));
+      if (destination) { const before = structuredClone(next); const path = getTacticalPath(next, unitId, destination); next = moveTacticalUnit(next, unitId, destination); actions.push(traceAction({ kind: 'move_unit', unitId, slotX: destination.x, slotY: destination.y }, before, next, { path })); }
+    }
     if (next.status !== 'ongoing') break;
     const afterMove = chooseWebTarget(next, unitId);
-    if (afterMove) { actions.push({ kind: 'attack_unit', unitId, targetUnitId: afterMove }); next = attackTacticalUnit(next, unitId, afterMove); }
-    else { actions.push({ kind: 'wait_unit', unitId }); next = waitTacticalUnit(next, unitId); }
+    if (afterMove) { const before = structuredClone(next); next = attackTacticalUnit(next, unitId, afterMove); actions.push(traceAction({ kind: 'attack_unit', unitId, targetUnitId: afterMove }, before, next)); }
+    else { const before = structuredClone(next); next = waitTacticalUnit(next, unitId); actions.push(traceAction({ kind: 'wait_unit', unitId }, before, next)); }
   }
   return { final: next.status === 'ongoing' ? endTacticalSide(next) : next, actions };
 }
 
+function traceAction(action: JsonObject, before: TacticalBattleState, after: TacticalBattleState, extra: JsonObject = {}): JsonObject { return { ...action, beforeBattleStateSha256: canonicalSha256(projectBattle(before)), afterBattleStateSha256: canonicalSha256(projectBattle(after)), seedBefore: before.rngSeed, seedAfter: after.rngSeed, ...extra }; }
+
 function chooseWebSkill(state: TacticalBattleState, unitId: string): JsonObject | undefined {
-  const unit = state.units[unitId]; if (!unit) return undefined; const commander = state.commanderUnitIds[unit.side];
-  return getAvailableTacticalSkills(unit).flatMap((skill) => getTacticalSkillTargetIds(state, unitId, skill.id).map((targetUnitId) => { const target = state.units[targetUnitId]; const preview = previewTacticalSkill(state, unitId, skill.id, targetUnitId); const chance = preview.successChance / 100; let score = 0; if (skill.effect === 'troop-recovery') score = preview.expectedTroopChange + (target.status !== 'normal' ? 12000 : 0); if (targetUnitId === commander && skill.target === 'enemy') score += 2000; if (skill.target === 'ally' && targetUnitId === commander) score += 300; return { skillId: skill.id, targetUnitId, score, chance }; })).filter((candidate) => candidate.score >= 6).sort((a, b) => b.score - a.score || a.skillId.localeCompare(b.skillId) || a.targetUnitId.localeCompare(b.targetUnitId))[0];
+  const unit = state.units[unitId]; if (!unit) return undefined; const enemyCommanderId = unit.side === 'attacker' ? state.commanderUnitIds.defender : state.commanderUnitIds.attacker; const ownCommanderId = state.commanderUnitIds[unit.side];
+  return getAvailableTacticalSkills(unit).flatMap((skill) => getTacticalSkillTargetIds(state, unitId, skill.id).map((targetUnitId) => { const target = state.units[targetUnitId]; const preview = previewTacticalSkill(state, unitId, skill.id, targetUnitId); const chance = preview.successChance / 100; let score = 0; if (skill.effect === 'troop-damage') { score = Math.abs(preview.expectedTroopChange) * chance; if (Math.abs(preview.expectedTroopChange) >= target.troops) score += 5000; } else if (skill.effect === 'troop-recovery') score = preview.expectedTroopChange + (target.status !== 'normal' ? 12000 : 0); else if (skill.effect === 'food-damage') { const remaining = target.side === 'attacker' ? state.attackerFood : state.defenderFood; score = Math.abs(preview.expectedFoodChange) * chance + (Math.abs(preview.expectedFoodChange) >= remaining ? 4000 : 0); } else if (skill.effect === 'status') score = skill.target === 'ally' ? 150 : target.troops * chance * (skill.appliesStatus === 'confused' || skill.appliesStatus === 'stone-array' ? 0.8 : 0.35); if (targetUnitId === enemyCommanderId && skill.target === 'enemy') score += 2000; if (skill.target === 'ally' && targetUnitId === ownCommanderId) score += 300; return { skillId: skill.id, targetUnitId, score, chance }; })).filter((candidate) => candidate.score >= 6).sort((a, b) => b.score - a.score || a.skillId.localeCompare(b.skillId) || a.targetUnitId.localeCompare(b.targetUnitId))[0];
 }
+
+function assertTraceMatchesOracle(id: string, traced: TacticalBattleState, actual: TacticalBattleState): void { if (canonicalSha256(projectBattle(traced)) !== canonicalSha256(projectBattle(actual))) throw new Error(`${id} trace diverged from runBasicTacticalAi`); }
 
 function chooseWebTarget(state: TacticalBattleState, unitId: string): string | undefined { const unit = state.units[unitId]; const commander = unit.side === 'attacker' ? state.commanderUnitIds.defender : state.commanderUnitIds.attacker; return getAttackableUnitIds(state, unitId).map((targetId) => ({ targetId, preview: previewTacticalAttack(state, unitId, targetId) })).sort((a, b) => Number(b.targetId === commander) - Number(a.targetId === commander) || Number(b.preview.damage >= state.units[b.targetId].troops) - Number(a.preview.damage >= state.units[a.targetId].troops) || b.preview.damage - a.preview.damage || a.targetId.localeCompare(b.targetId))[0]?.targetId; }
 

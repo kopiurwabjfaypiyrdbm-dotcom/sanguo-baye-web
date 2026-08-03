@@ -272,7 +272,7 @@ static func wait_unit(battle: BattleState, unit_id: String) -> Dictionary:
 	unit["moved"] = true; unit["acted"] = true; unit["skillPoints"] = after_points; data["units"][unit_id] = unit
 	data["actedUnitIds"].append(unit_id); data["actedUnitIds"].sort()
 	data["logs"].append("%s原地休整%s。" % [unit.get("name", unit_id), "，恢复 1 点计谋点" if after_points > before_points else ""])
-	return _finish(data, before_digest, "wait_unit", {"unitId": unit_id, "skillPointsBefore": before_points, "skillPointsAfter": after_points})
+	return _finish(data, before_digest, "wait_unit", {"unitId": unit_id, "skillPointsBefore": before_points, "skillPointsAfter": after_points, "seedBefore": data["rngSeed"], "seedAfter": data["rngSeed"]})
 
 
 static func end_side_turn(battle: BattleState) -> Dictionary:
@@ -318,6 +318,134 @@ static func end_side_turn(battle: BattleState) -> Dictionary:
 		else: data["logs"].append("第%d日战斗开始。" % int(data["day"]))
 	else: data["logs"].append("守方行动开始。")
 	return _finish(data, before_digest, "end_side_turn", {"fromSide": side, "toSide": next_side, "day": data["day"], "turn": data["strategicTurn"]})
+
+
+## Web-compatible AI handoff.  This keeps the complete phase boundary inside
+## the domain command so the application session owns one atomic receipt.
+static func end_ai_side_turn(battle: BattleState) -> Dictionary:
+	var data := battle.snapshot(); var before_digest := _digest(data)
+	var preflight := _preflight(data, before_digest)
+	if not preflight.is_empty(): return preflight
+	if data.get("phase") != "battle": return _battle_failure(before_digest, "战斗回合尚未开始")
+	if data.get("status") != "ongoing": return _battle_failure(before_digest, "战斗已经结束")
+	var side := String(data.get("activeSide", ""))
+	for raw_id: Variant in _sorted_keys(data.get("units", {})):
+		var unit: Dictionary = data["units"][raw_id]
+		if unit.get("side") == side and int(unit.get("troops", 0)) > 0 and not bool(unit.get("acted", false)):
+			return _battle_failure(before_digest, "%s方仍有部队未结束行动" % side)
+	data = _ai_mark_side_completed(data, side)
+	if side == "attacker":
+		data = _ai_evaluate_outcome(data, true, false)
+		if data.get("status") != "ongoing": return _finish(data, before_digest, "end_ai_side_turn", {"fromSide": side, "toSide": side, "day": data["day"], "turn": data["strategicTurn"]})
+		data = _ai_begin_side(data, "defender")
+		data["activeSide"] = "defender"; data["logs"].append("守方开始行动。")
+		return _finish(data, before_digest, "end_ai_side_turn", {"fromSide": side, "toSide": "defender", "day": data["day"], "turn": data["strategicTurn"]})
+	var attacker_use := maxi(1, ceili(float(_ai_side_troops(data, "attacker")) / 1000.0))
+	var defender_use := maxi(1, ceili(float(_ai_side_troops(data, "defender")) / 1000.0))
+	data["day"] = int(data.get("day", 1)) + 1
+	data["attackerFood"] = maxi(0, int(data.get("attackerFood", 0)) - attacker_use)
+	data["defenderFood"] = maxi(0, int(data.get("defenderFood", 0)) - defender_use)
+	data["logs"].append("第 %d 日开始，攻方耗粮 %d，守方耗粮 %d。" % [int(data["day"]), attacker_use, defender_use])
+	data = _ai_evaluate_outcome(data, false, true)
+	if data.get("status") != "ongoing": return _finish(data, before_digest, "end_ai_side_turn", {"fromSide": side, "toSide": side, "day": data["day"], "turn": data["strategicTurn"]})
+	var random := BattleSkill.next_seed(int(data.get("rngSeed", 0))); data["rngSeed"] = int(random["seed"])
+	var weathers := ["fine", "cloudy", "wind", "rain", "hail"]
+	var labels := {"fine": "晴", "cloudy": "阴", "wind": "风", "rain": "雨", "hail": "冰雹"}
+	data["weather"] = weathers[mini(weathers.size() - 1, floori(float(random["value"]) * weathers.size()))]
+	data["logs"].append("天气转为%s。" % labels[data["weather"]])
+	data = _ai_drive_statuses(data)
+	data["activeSide"] = "attacker"; data = _ai_begin_side(data, "attacker")
+	data = _ai_evaluate_outcome(data, false, false)
+	return _finish(data, before_digest, "end_ai_side_turn", {"fromSide": side, "toSide": "attacker", "day": data["day"], "turn": data["strategicTurn"]})
+
+
+static func _ai_mark_side_completed(data: Dictionary, side: String) -> Dictionary:
+	for raw_id: Variant in _sorted_keys(data.get("units", {})):
+		var unit: Dictionary = data["units"][raw_id]
+		if unit.get("side") == side and int(unit.get("troops", 0)) > 0:
+			unit["moved"] = true; unit["acted"] = true; data["units"][raw_id] = unit
+	data["actedUnitIds"] = _acted_ids(data); return data
+
+
+static func _ai_begin_side(data: Dictionary, side: String) -> Dictionary:
+	var skipped: Array[String] = []
+	for raw_id: Variant in _sorted_keys(data.get("units", {})):
+		var unit: Dictionary = data["units"][raw_id]
+		if unit.get("side") != side or int(unit.get("troops", 0)) <= 0: continue
+		unit["moved"] = false; unit["acted"] = false
+		if ["confused", "stone-array"].has(String(unit.get("status", "normal"))):
+			unit["moved"] = true; unit["acted"] = true; unit["statusTurns"] = maxi(0, int(unit.get("statusTurns", 0)) - 1); skipped.append(String(unit.get("name", raw_id)))
+		data["units"][raw_id] = unit
+	data["actedUnitIds"] = _acted_ids(data)
+	if not skipped.is_empty(): data["logs"].append("、".join(skipped) + "受异常状态影响，跳过本阶段行动。")
+	return data
+
+
+static func _ai_drive_statuses(data: Dictionary) -> Dictionary:
+	var status_logs: Array[String] = []
+	var labels := {"normal": "正常", "confused": "混乱", "silenced": "禁咒", "rooted": "定身", "qimen": "奇门", "dunjia": "遁甲", "stone-array": "石阵", "hidden": "潜踪"}
+	for raw_id: Variant in _sorted_keys(data.get("units", {})):
+		var unit: Dictionary = data["units"][raw_id]
+		if int(unit.get("troops", 0)) <= 0: continue
+		var random := BattleSkill.next_seed(int(data.get("rngSeed", 0))); data["rngSeed"] = int(random["seed"])
+		var troops := int(unit.get("troops", 0)); var status := String(unit.get("status", "normal"))
+		if status == "stone-array":
+			var loss := mini(troops, floori(float(troops) / 8.0)); troops -= loss
+			if loss > 0: status_logs.append("%s受石阵侵蚀，损失 %d 兵力。" % [unit.get("name", raw_id), loss])
+		var recovered := false
+		if not ["normal", "dunjia"].has(status):
+			var roll := floori(float(random["value"]) * 60.0); var by_intelligence := roll < (int(unit.get("intelligence", 0)) >> 1)
+			recovered = (status == "qimen" or status == "hidden") and not by_intelligence or status != "qimen" and status != "hidden" and by_intelligence
+		unit["troops"] = troops
+		if recovered: unit["status"] = "normal"; unit["statusTurns"] = 0; status_logs.append("%s从%s状态恢复。" % [unit.get("name", raw_id), labels.get(status, status)])
+		data["units"][raw_id] = unit
+	if not status_logs.is_empty(): data["logs"].append_array(status_logs)
+	return data
+
+
+static func _ai_evaluate_outcome(data: Dictionary, allow_objective: bool, allow_food: bool) -> Dictionary:
+	if data.get("status") != "ongoing": return data
+	var attacker_alive := _ai_side_troops(data, "attacker") > 0; var defender_alive := _ai_side_troops(data, "defender") > 0
+	var commanders: Dictionary = data.get("commanderUnitIds", {})
+	var attacker_commander: Dictionary = data.get("units", {}).get(String(commanders.get("attacker", "")), {})
+	var defender_commander: Dictionary = data.get("units", {}).get(String(commanders.get("defender", "")), {})
+	var status := ""; var reason := ""
+	if not attacker_commander.is_empty() and int(attacker_commander.get("troops", 0)) <= 0: status = "defender-won"; reason = "attacker-commander-defeated"
+	elif not defender_commander.is_empty() and int(defender_commander.get("troops", 0)) <= 0: status = "attacker-won"; reason = "defender-commander-defeated"
+	elif not attacker_alive: status = "defender-won"; reason = "annihilation"
+	elif allow_food and int(data.get("attackerFood", 0)) <= 0: status = "defender-won"; reason = "attacker-food-exhausted"
+	elif int(data.get("day", 1)) > int(data.get("maxDays", 30)): status = "defender-won"; reason = "day-limit"
+	elif not defender_alive: status = "attacker-won"; reason = "annihilation"
+	elif allow_food and int(data.get("defenderFood", 0)) <= 0: status = "attacker-won"; reason = "defender-food-exhausted"
+	if allow_objective and status.is_empty():
+		for raw_id: Variant in _sorted_keys(data.get("units", {})):
+			var unit: Dictionary = data["units"][raw_id]
+			if unit.get("side") == "attacker" and int(unit.get("troops", 0)) > 0 and _ai_is_objective(data, unit): status = "attacker-won"; reason = "objective-held"; break
+	if status.is_empty(): return data
+	data["status"] = status; data["outcome"] = reason
+	var messages := {"attacker-commander-defeated": "攻方主将败退，守方获胜。", "defender-commander-defeated": "守方主将败退，攻方获胜。", "annihilation": "守军全部溃退，攻方获胜。" if status == "attacker-won" else "攻军全部溃退，守方获胜。", "day-limit": "攻方未能在期限内破城，守方获胜。", "attacker-food-exhausted": "攻方粮草耗尽，被迫撤军。", "defender-food-exhausted": "守方粮草耗尽，城池失守。", "objective-held": "攻方占领城池并坚持到本方阶段结束。"}
+	data["logs"].append(messages.get(reason, reason)); return data
+
+
+static func _ai_is_objective(data: Dictionary, unit: Dictionary) -> bool:
+	for raw_tile: Variant in data.get("tiles", []):
+		if typeof(raw_tile) == TYPE_DICTIONARY and raw_tile.get("objective") == "city" and int(raw_tile.get("x", -1)) == int(unit.get("slotX", -2)) and int(raw_tile.get("y", -1)) == int(unit.get("slotY", -2)): return true
+	return false
+
+
+static func _ai_side_troops(data: Dictionary, side: String) -> int:
+	var total := 0
+	for raw_id: Variant in _sorted_keys(data.get("units", {})):
+		var unit: Dictionary = data["units"][raw_id]
+		if unit.get("side") == side: total += maxi(0, int(unit.get("troops", 0)))
+	return total
+
+
+static func _acted_ids(data: Dictionary) -> Array:
+	var result: Array[String] = []
+	for raw_id: Variant in _sorted_keys(data.get("units", {})):
+		if bool(data["units"][raw_id].get("acted", false)): result.append(String(raw_id))
+	return result
 
 
 static func _set_deployment(battle: BattleState, unit_id: String, slot_x: int, slot_y: int, moving: bool) -> Dictionary:
