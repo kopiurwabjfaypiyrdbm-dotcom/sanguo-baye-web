@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB10",
-  "currentBriefPath": "docs/mission-briefs/MB10-diplomacy-and-strategic-orders.md",
-  "readyMissionIds": ["MB10"],
+  "currentMissionId": "MB11",
+  "currentBriefPath": "docs/mission-briefs/MB11-calendar-events-lifecycle-succession-outcomes.md",
+  "readyMissionIds": ["MB11"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -65,15 +65,21 @@
       "briefPath": "docs/mission-briefs/MB09-reconnaissance-intelligence-visibility.md",
       "reportPath": "docs/migration/mission-reports/MB09-reconnaissance-intelligence-visibility.md",
       "commit": "a2cd2ac"
+    },
+    {
+      "id": "MB10",
+      "briefPath": "docs/mission-briefs/MB10-diplomacy-and-strategic-orders.md",
+      "reportPath": "docs/migration/mission-reports/MB10-diplomacy-and-strategic-orders.md",
+      "commit": "6abe8d7"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB09",
-    "commit": "a2cd2ac",
+    "missionId": "MB10",
+    "commit": "6abe8d7",
     "date": "2026-08-03"
   },
-  "nextAction": "Implement MB10 by migrating the four deterministic diplomatic orders, their intelligence-gated cross-month lifecycle and legal faction/officer closure, plus native touch presentation and shared TypeScript/Godot fixture evidence.",
+  "nextAction": "Implement MB11 by migrating deterministic calendar and city-event stages, annual people/item progression, lifecycle policy, succession and outcome closure, plus native touch presentation and shared TypeScript/Godot fixture evidence.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
