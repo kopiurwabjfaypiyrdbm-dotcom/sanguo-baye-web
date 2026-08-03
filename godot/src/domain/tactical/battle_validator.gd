@@ -311,6 +311,18 @@ static func _validate_optional_attack_fields(snapshot: Dictionary, issues: Array
 			for raw_id: Variant in snapshot["experienceGains"].keys():
 				if (typeof(raw_id) != TYPE_STRING and typeof(raw_id) != TYPE_STRING_NAME) or String(raw_id).is_empty() or not _is_exact_integer(snapshot["experienceGains"][raw_id]) or int(snapshot["experienceGains"][raw_id]) < 0:
 					_issue(issues, "experienceGains", "keys must be non-empty strings with non-negative integer values")
+	if snapshot.has("experienceGainOrder"):
+		if typeof(snapshot.get("experienceGainOrder")) != TYPE_ARRAY:
+			_issue(issues, "experienceGainOrder", "must be an array")
+		else:
+			var seen_experience_ids: Dictionary = {}
+			for raw_id: Variant in snapshot["experienceGainOrder"]:
+				var experience_id := String(raw_id)
+				if typeof(raw_id) != TYPE_STRING or experience_id.is_empty() or seen_experience_ids.has(experience_id) or not snapshot.get("experienceGains", {}).has(experience_id):
+					_issue(issues, "experienceGainOrder", "must list each experience key once")
+				seen_experience_ids[experience_id] = true
+			for raw_id: Variant in snapshot.get("experienceGains", {}).keys():
+				if not seen_experience_ids.has(String(raw_id)): _issue(issues, "experienceGainOrder", "must include every experience key")
 	for raw_key: Variant in units.keys():
 		var raw_id := str(raw_key)
 		var unit: Variant = units[raw_key]

@@ -22,7 +22,7 @@ static func create_snapshot() -> Dictionary:
 			attacker_id: _demo_unit(attacker_id, "demo-attacker", "曹操", "ruler-1", "attacker", 0, 8, 4, 100),
 			defender_id: _demo_unit(defender_id, "demo-defender", "守军主将", "ruler-10", "defender", 1, 2, 4, 100),
 		},
-		"actedUnitIds": [], "commanderUnitIds": {"attacker": attacker_id, "defender": defender_id}, "experienceGains": {},
+		"actedUnitIds": [], "commanderUnitIds": {"attacker": attacker_id, "defender": defender_id}, "experienceGains": {}, "experienceGainOrder": [],
 		"logs": ["进入 MB18 原生战场样片。"], "guard": {"version": 2, "strategicFingerprint": "mb18", "sourceCityId": "city-12", "targetCityId": "city-11", "sourceFood": 240, "targetFood": 320, "targetDefense": 0, "targetReserveTroops": 0, "participants": [{"officerId": "demo-attacker", "equipmentKey": "", "equipmentKeyEncoding": "pipe-v1"}, {"officerId": "demo-defender", "equipmentKey": "", "equipmentKeyEncoding": "pipe-v1"}]},
 		"terrainContractVersion": 1, "tiles": Battlefield.create_tiles(12, 8, "west", "open-plain"),
 	}

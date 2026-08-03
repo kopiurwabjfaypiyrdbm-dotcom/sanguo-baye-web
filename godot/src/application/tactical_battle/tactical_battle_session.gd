@@ -3,6 +3,7 @@ extends RefCounted
 
 const BattleState = preload("res://src/domain/tactical/battle_state.gd")
 const Commands = preload("res://src/domain/tactical/battle_commands.gd")
+const BattleResult = preload("res://src/domain/tactical/battle_result.gd")
 const BattleValidator = preload("res://src/domain/tactical/battle_validator.gd")
 const Canonical = preload("res://src/domain/validation/canonical_json.gd")
 
@@ -81,6 +82,8 @@ func execute(command: Dictionary) -> Dictionary:
 		"end_unit_turn": result = Commands.end_unit_turn(_battle, String(parameters.get("unitId", "")))
 		"end_side_turn": result = Commands.end_side_turn(_battle)
 		"end_ai_side_turn": result = Commands.end_ai_side_turn(_battle)
+		"retreat_side": result = Commands.retreat_side(_battle, String(parameters.get("side", "")))
+		"settle_battle": result = _settle_battle(before_digest)
 		_: result = _failure(before_digest, "不支持的战斗命令：%s" % kind)
 	if result.get("ok", false):
 		_battle = result["battle"]
@@ -95,6 +98,16 @@ func execute(command: Dictionary) -> Dictionary:
 	while _completed_order.size() > 256:
 		_completed.erase(_completed_order.pop_front())
 	return result
+
+
+func _settle_battle(before_digest: String) -> Dictionary:
+	var projection := BattleResult.from_snapshot(_battle.snapshot())
+	if not projection.get("ok", false): return _failure(before_digest, String(projection.get("error", "无法生成战后结果")))
+	var result: Dictionary = projection["result"]
+	return {"ok": true, "error": "", "stateChanged": false,
+		"beforeBattleStateSha256": before_digest, "afterBattleStateSha256": before_digest,
+		"receipt": {"kind": "settle_battle", "details": {"battleId": result["battleId"], "winner": result["winner"], "cityCaptured": result["cityCaptured"]}, "battleStateSha256": before_digest, "settlement": result},
+		"settlement": result, "battle": _battle}
 
 
 func _failure(before_digest: String, error: String) -> Dictionary:
@@ -138,6 +151,9 @@ func _validate_command(command: Dictionary) -> Dictionary:
 		for key: String in ["unitId", "skillId", "targetUnitId"]:
 			if typeof(parameters.get(key)) != TYPE_STRING or String(parameters.get(key)).is_empty():
 				return {"ok": false, "error": "战斗命令缺少 %s" % key}
+	elif kind == "retreat_side":
+		if typeof(parameters.get("side")) != TYPE_STRING or not ["attacker", "defender"].has(String(parameters.get("side"))):
+			return {"ok": false, "error": "撤退命令缺少有效 side"}
 	return {"ok": true, "commandId": String(command["commandId"]), "expectedBattleStateSha256": String(command["expectedBattleStateSha256"]), "kind": kind, "parameters": parameters}
 
 

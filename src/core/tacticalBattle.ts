@@ -150,6 +150,7 @@ export type TacticalBattleState = {
   units: Record<string, TacticalUnit>;
   commanderUnitIds: Partial<Record<TacticalSide, string>>;
   experienceGains: Record<string, number>;
+  experienceGainOrder: string[];
   guard: BattleStateGuard;
   logs: string[];
 };
@@ -365,6 +366,7 @@ export function createTacticalBattle(state: GameState, order: AttackOrder): Tact
       defender: defenders[0] ? `officer:${defenders[0].id}` : undefined,
     },
     experienceGains: {},
+    experienceGainOrder: [],
     guard: createBattleStateGuard(state, context),
     logs: [`${context.source.name}军进入${context.target.name}战场。`],
   };
@@ -870,6 +872,7 @@ export function createTacticalBattleResult(state: TacticalBattleState): BattleRe
     defenderScore,
     casualties,
     experienceGains: state.experienceGains,
+    experienceGainOrder: [...state.experienceGainOrder],
     defenderReserveLosses,
     cityCaptured: winner === 'attacker',
     guard: state.guard,
@@ -1129,12 +1132,16 @@ function driveTacticalStatuses(state: TacticalBattleState): TacticalBattleState 
 }
 
 function addTacticalExperience(state: TacticalBattleState, officerId: string, gained: number): TacticalBattleState {
+  const experienceGainOrder = state.experienceGainOrder.includes(officerId)
+    ? state.experienceGainOrder
+    : [...state.experienceGainOrder, officerId];
   return {
     ...state,
     experienceGains: {
       ...state.experienceGains,
       [officerId]: (state.experienceGains[officerId] ?? 0) + Math.max(0, Math.floor(gained)),
     },
+    experienceGainOrder,
   };
 }
 

@@ -317,6 +317,7 @@
       "defender": "officer:officer-84"
     },
     "experienceGains": {},
+    "experienceGainOrder": [],
     "logs": [
       "濮阳军进入邺战场。"
     ],
@@ -3095,6 +3096,7 @@
         "defender": "officer:officer-84"
       },
       "experienceGains": {},
+      "experienceGainOrder": [],
       "logs": [
         "濮阳军进入邺战场。"
       ],
@@ -5796,6 +5798,7 @@
         "defender": "officer:officer-84"
       },
       "experienceGains": {},
+      "experienceGainOrder": [],
       "logs": [
         "濮阳军进入邺战场。"
       ],
@@ -8244,7 +8247,7 @@
     "command": {
       "commandEnvelopeVersion": 1,
       "commandId": "skill-rally-0001",
-      "expectedBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
+      "expectedBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
       "kind": "use_skill",
       "parameters": {
         "unitId": "officer:officer-1",
@@ -8256,8 +8259,8 @@
       "ok": true,
       "error": "",
       "stateChanged": true,
-      "beforeBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
-      "afterBattleStateSha256": "8be68b33177b236ef1b61ab6d4069b12bf970cd7e55440c05a2ca46698652f48",
+      "beforeBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
+      "afterBattleStateSha256": "8eca475e2f5bdb112934361a75b8b8d2eb16344a9a17a6d33d5d26f607f156c3",
       "receipt": {
         "kind": "use_skill",
         "details": {
@@ -8316,7 +8319,7 @@
           "seedBefore": 48641,
           "seedAfter": 373686124
         },
-        "battleStateSha256": "8be68b33177b236ef1b61ab6d4069b12bf970cd7e55440c05a2ca46698652f48"
+        "battleStateSha256": "8eca475e2f5bdb112934361a75b8b8d2eb16344a9a17a6d33d5d26f607f156c3"
       },
       "commandId": "skill-rally-0001",
       "kind": "use_skill",
@@ -8627,6 +8630,9 @@
         "experienceGains": {
           "officer-1": 6
         },
+        "experienceGainOrder": [
+          "officer-1"
+        ],
         "logs": [
           "濮阳军进入邺战场。",
           "曹操对夏侯惇施展激励，恢复 30 兵力并解除异常状态，目标可以重新行动。"
@@ -11030,7 +11036,7 @@
     "command": {
       "commandEnvelopeVersion": 1,
       "commandId": "skill-rally-self-0002",
-      "expectedBattleStateSha256": "cfe0d6120f2f5baca4f3b35f8caef36070eea49af0c39b6d0444c84d7f88acf3",
+      "expectedBattleStateSha256": "31fb74c63f15835577ce0f481aa8f75019106314e54b293dd17428a2d6e9c30f",
       "kind": "use_skill",
       "parameters": {
         "unitId": "officer:officer-1",
@@ -11042,8 +11048,8 @@
       "ok": true,
       "error": "",
       "stateChanged": true,
-      "beforeBattleStateSha256": "cfe0d6120f2f5baca4f3b35f8caef36070eea49af0c39b6d0444c84d7f88acf3",
-      "afterBattleStateSha256": "d820d8603ef8524c4cb94501bff85415e6e7eedb45d7159d51421cad271ba90a",
+      "beforeBattleStateSha256": "31fb74c63f15835577ce0f481aa8f75019106314e54b293dd17428a2d6e9c30f",
+      "afterBattleStateSha256": "c583a04b9ea9ad2b97b6c56a71402b54b602c02741a9aef5c43c26070d90f1af",
       "receipt": {
         "kind": "use_skill",
         "details": {
@@ -11102,7 +11108,7 @@
           "seedBefore": 48641,
           "seedAfter": 373686124
         },
-        "battleStateSha256": "d820d8603ef8524c4cb94501bff85415e6e7eedb45d7159d51421cad271ba90a"
+        "battleStateSha256": "c583a04b9ea9ad2b97b6c56a71402b54b602c02741a9aef5c43c26070d90f1af"
       },
       "commandId": "skill-rally-self-0002",
       "kind": "use_skill",
@@ -11414,6 +11420,9 @@
         "experienceGains": {
           "officer-1": 6
         },
+        "experienceGainOrder": [
+          "officer-1"
+        ],
         "logs": [
           "濮阳军进入邺战场。",
           "曹操对曹操施展激励，恢复 30 兵力并解除异常状态。"
@@ -13817,7 +13826,7 @@
     "command": {
       "commandEnvelopeVersion": 1,
       "commandId": "skill-rally-0001",
-      "expectedBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
+      "expectedBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
       "kind": "use_skill",
       "parameters": {
         "unitId": "officer:officer-1",
@@ -13829,8 +13838,8 @@
       "ok": true,
       "error": "",
       "stateChanged": true,
-      "beforeBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
-      "afterBattleStateSha256": "8be68b33177b236ef1b61ab6d4069b12bf970cd7e55440c05a2ca46698652f48",
+      "beforeBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
+      "afterBattleStateSha256": "8eca475e2f5bdb112934361a75b8b8d2eb16344a9a17a6d33d5d26f607f156c3",
       "receipt": {
         "kind": "use_skill",
         "details": {
@@ -13889,7 +13898,7 @@
           "seedBefore": 48641,
           "seedAfter": 373686124
         },
-        "battleStateSha256": "8be68b33177b236ef1b61ab6d4069b12bf970cd7e55440c05a2ca46698652f48"
+        "battleStateSha256": "8eca475e2f5bdb112934361a75b8b8d2eb16344a9a17a6d33d5d26f607f156c3"
       },
       "commandId": "skill-rally-0001",
       "kind": "use_skill",
@@ -14200,6 +14209,9 @@
         "experienceGains": {
           "officer-1": 6
         },
+        "experienceGainOrder": [
+          "officer-1"
+        ],
         "logs": [
           "濮阳军进入邺战场。",
           "曹操对夏侯惇施展激励，恢复 30 兵力并解除异常状态，目标可以重新行动。"
@@ -16907,6 +16919,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -19306,7 +19319,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "skill-boundary-phase-0010",
-        "expectedBattleStateSha256": "ecc97a281ccdca2ab4d6c392d2cfebb5a3b6d97ad9eaa5db0fbb5c2e69aa12e1",
+        "expectedBattleStateSha256": "b63487f61efddd4f28c9ea00fcdb9abf94e17429628bbd26e309ab1d6b4dfeb1",
         "kind": "use_skill",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -19318,8 +19331,8 @@
         "ok": false,
         "error": "战斗尚未开始",
         "stateChanged": false,
-        "beforeBattleStateSha256": "ecc97a281ccdca2ab4d6c392d2cfebb5a3b6d97ad9eaa5db0fbb5c2e69aa12e1",
-        "afterBattleStateSha256": "ecc97a281ccdca2ab4d6c392d2cfebb5a3b6d97ad9eaa5db0fbb5c2e69aa12e1",
+        "beforeBattleStateSha256": "b63487f61efddd4f28c9ea00fcdb9abf94e17429628bbd26e309ab1d6b4dfeb1",
+        "afterBattleStateSha256": "b63487f61efddd4f28c9ea00fcdb9abf94e17429628bbd26e309ab1d6b4dfeb1",
         "receipt": {},
         "commandId": "skill-boundary-phase-0010",
         "kind": "use_skill",
@@ -19628,6 +19641,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -22333,6 +22347,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -24732,7 +24747,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "skill-boundary-points-0011",
-        "expectedBattleStateSha256": "0950c828fbec3f8e811a7ab7ddf6943892c6e55840dbc784fc661c9a786a04f4",
+        "expectedBattleStateSha256": "c6bc9ce03681d70d038477c66ec4cc03cc09e073ddc9bd3faf5d9ebe6835e24e",
         "kind": "use_skill",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -24744,8 +24759,8 @@
         "ok": false,
         "error": "计谋不可用",
         "stateChanged": false,
-        "beforeBattleStateSha256": "0950c828fbec3f8e811a7ab7ddf6943892c6e55840dbc784fc661c9a786a04f4",
-        "afterBattleStateSha256": "0950c828fbec3f8e811a7ab7ddf6943892c6e55840dbc784fc661c9a786a04f4",
+        "beforeBattleStateSha256": "c6bc9ce03681d70d038477c66ec4cc03cc09e073ddc9bd3faf5d9ebe6835e24e",
+        "afterBattleStateSha256": "c6bc9ce03681d70d038477c66ec4cc03cc09e073ddc9bd3faf5d9ebe6835e24e",
         "receipt": {},
         "commandId": "skill-boundary-points-0011",
         "kind": "use_skill",
@@ -25054,6 +25069,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -27760,6 +27776,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -30159,7 +30176,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "skill-boundary-acted-0012",
-        "expectedBattleStateSha256": "812d108e99994c5a1de1d9c9475f2e2cfd4b36213bcf7d0f959d22fab61f68a5",
+        "expectedBattleStateSha256": "f3fdec39acfab031e39a4bf8b5b29fca99d0821ce1696d041e113ca4e8bafa35",
         "kind": "use_skill",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -30171,8 +30188,8 @@
         "ok": false,
         "error": "计谋不可用",
         "stateChanged": false,
-        "beforeBattleStateSha256": "812d108e99994c5a1de1d9c9475f2e2cfd4b36213bcf7d0f959d22fab61f68a5",
-        "afterBattleStateSha256": "812d108e99994c5a1de1d9c9475f2e2cfd4b36213bcf7d0f959d22fab61f68a5",
+        "beforeBattleStateSha256": "f3fdec39acfab031e39a4bf8b5b29fca99d0821ce1696d041e113ca4e8bafa35",
+        "afterBattleStateSha256": "f3fdec39acfab031e39a4bf8b5b29fca99d0821ce1696d041e113ca4e8bafa35",
         "receipt": {},
         "commandId": "skill-boundary-acted-0012",
         "kind": "use_skill",
@@ -30482,6 +30499,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -33187,6 +33205,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -35586,7 +35605,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "skill-boundary-silenced-0013",
-        "expectedBattleStateSha256": "8aa82274f2923d453715278a76c00c876ffb7f3f62e721dee5c539fac59b78a9",
+        "expectedBattleStateSha256": "053bffa9c57871463a868652fd227ed5bde29391b8814f954170f670d3c83da0",
         "kind": "use_skill",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -35598,8 +35617,8 @@
         "ok": false,
         "error": "计谋不可用",
         "stateChanged": false,
-        "beforeBattleStateSha256": "8aa82274f2923d453715278a76c00c876ffb7f3f62e721dee5c539fac59b78a9",
-        "afterBattleStateSha256": "8aa82274f2923d453715278a76c00c876ffb7f3f62e721dee5c539fac59b78a9",
+        "beforeBattleStateSha256": "053bffa9c57871463a868652fd227ed5bde29391b8814f954170f670d3c83da0",
+        "afterBattleStateSha256": "053bffa9c57871463a868652fd227ed5bde29391b8814f954170f670d3c83da0",
         "receipt": {},
         "commandId": "skill-boundary-silenced-0013",
         "kind": "use_skill",
@@ -35908,6 +35927,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -38613,6 +38633,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -41012,7 +41033,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "skill-boundary-range-0014",
-        "expectedBattleStateSha256": "f785eb846399a66021557e65cf1165f459466177a779df7560d83363a55aac05",
+        "expectedBattleStateSha256": "0ee335cc7e32af80e7b6ab732616984befe757574bd8b393da203f7dd14feb8f",
         "kind": "use_skill",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -41024,8 +41045,8 @@
         "ok": false,
         "error": "目标不在计谋范围内",
         "stateChanged": false,
-        "beforeBattleStateSha256": "f785eb846399a66021557e65cf1165f459466177a779df7560d83363a55aac05",
-        "afterBattleStateSha256": "f785eb846399a66021557e65cf1165f459466177a779df7560d83363a55aac05",
+        "beforeBattleStateSha256": "0ee335cc7e32af80e7b6ab732616984befe757574bd8b393da203f7dd14feb8f",
+        "afterBattleStateSha256": "0ee335cc7e32af80e7b6ab732616984befe757574bd8b393da203f7dd14feb8f",
         "receipt": {},
         "commandId": "skill-boundary-range-0014",
         "kind": "use_skill",
@@ -41334,6 +41355,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -44039,6 +44061,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -46450,8 +46473,8 @@
         "ok": false,
         "error": "战斗状态摘要已过期",
         "stateChanged": false,
-        "beforeBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
-        "afterBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
+        "beforeBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
+        "afterBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
         "receipt": {},
         "commandId": "skill-boundary-stale-0015",
         "kind": "use_skill",
@@ -46760,6 +46783,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -49465,6 +49489,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -51864,7 +51889,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "skill-boundary-target-0016",
-        "expectedBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
+        "expectedBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
         "kind": "use_skill",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -51876,8 +51901,8 @@
         "ok": false,
         "error": "目标不在计谋范围内",
         "stateChanged": false,
-        "beforeBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
-        "afterBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
+        "beforeBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
+        "afterBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
         "receipt": {},
         "commandId": "skill-boundary-target-0016",
         "kind": "use_skill",
@@ -52186,6 +52211,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -54891,6 +54917,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -57290,7 +57317,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "skill-boundary-skill-0017",
-        "expectedBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
+        "expectedBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
         "kind": "use_skill",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -57302,8 +57329,8 @@
         "ok": false,
         "error": "计谋不可用",
         "stateChanged": false,
-        "beforeBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
-        "afterBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
+        "beforeBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
+        "afterBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
         "receipt": {},
         "commandId": "skill-boundary-skill-0017",
         "kind": "use_skill",
@@ -57612,6 +57639,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -60317,6 +60345,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -62716,7 +62745,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "skill-boundary-type-0018",
-        "expectedBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
+        "expectedBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
         "kind": "use_skill",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -62728,8 +62757,8 @@
         "ok": false,
         "error": "战斗命令缺少 targetUnitId",
         "stateChanged": false,
-        "beforeBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
-        "afterBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
+        "beforeBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
+        "afterBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
         "receipt": {},
         "commandId": "skill-boundary-type-0018",
         "kind": "use_skill",
@@ -63038,6 +63067,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -65441,7 +65471,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "skill-rally-0001",
-        "expectedBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
+        "expectedBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
         "kind": "use_skill",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -65453,8 +65483,8 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
-        "afterBattleStateSha256": "8be68b33177b236ef1b61ab6d4069b12bf970cd7e55440c05a2ca46698652f48",
+        "beforeBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
+        "afterBattleStateSha256": "8eca475e2f5bdb112934361a75b8b8d2eb16344a9a17a6d33d5d26f607f156c3",
         "receipt": {
           "kind": "use_skill",
           "details": {
@@ -65513,7 +65543,7 @@
             "seedBefore": 48641,
             "seedAfter": 373686124
           },
-          "battleStateSha256": "8be68b33177b236ef1b61ab6d4069b12bf970cd7e55440c05a2ca46698652f48"
+          "battleStateSha256": "8eca475e2f5bdb112934361a75b8b8d2eb16344a9a17a6d33d5d26f607f156c3"
         },
         "commandId": "skill-rally-0001",
         "kind": "use_skill",
@@ -65824,6 +65854,9 @@
           "experienceGains": {
             "officer-1": 6
           },
+          "experienceGainOrder": [
+            "officer-1"
+          ],
           "logs": [
             "濮阳军进入邺战场。",
             "曹操对夏侯惇施展激励，恢复 30 兵力并解除异常状态，目标可以重新行动。"
@@ -68226,8 +68259,8 @@
         "ok": true,
         "error": "",
         "stateChanged": false,
-        "beforeBattleStateSha256": "8be68b33177b236ef1b61ab6d4069b12bf970cd7e55440c05a2ca46698652f48",
-        "afterBattleStateSha256": "8be68b33177b236ef1b61ab6d4069b12bf970cd7e55440c05a2ca46698652f48",
+        "beforeBattleStateSha256": "8eca475e2f5bdb112934361a75b8b8d2eb16344a9a17a6d33d5d26f607f156c3",
+        "afterBattleStateSha256": "8eca475e2f5bdb112934361a75b8b8d2eb16344a9a17a6d33d5d26f607f156c3",
         "receipt": {
           "kind": "use_skill",
           "details": {
@@ -68286,7 +68319,7 @@
             "seedBefore": 48641,
             "seedAfter": 373686124
           },
-          "battleStateSha256": "8be68b33177b236ef1b61ab6d4069b12bf970cd7e55440c05a2ca46698652f48"
+          "battleStateSha256": "8eca475e2f5bdb112934361a75b8b8d2eb16344a9a17a6d33d5d26f607f156c3"
         },
         "commandId": "skill-rally-0001",
         "kind": "use_skill",
@@ -68597,6 +68630,9 @@
           "experienceGains": {
             "officer-1": 6
           },
+          "experienceGainOrder": [
+            "officer-1"
+          ],
           "logs": [
             "濮阳军进入邺战场。",
             "曹操对夏侯惇施展激励，恢复 30 兵力并解除异常状态，目标可以重新行动。"
@@ -71304,6 +71340,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -73704,7 +73741,7 @@
         {
           "commandEnvelopeVersion": 1,
           "commandId": "skill-rally-0001",
-          "expectedBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
+          "expectedBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
           "kind": "use_skill",
           "parameters": {
             "unitId": "officer:officer-1",
@@ -73716,7 +73753,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "skill-rally-0001",
-        "expectedBattleStateSha256": "8be68b33177b236ef1b61ab6d4069b12bf970cd7e55440c05a2ca46698652f48",
+        "expectedBattleStateSha256": "8eca475e2f5bdb112934361a75b8b8d2eb16344a9a17a6d33d5d26f607f156c3",
         "kind": "use_skill",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -73728,8 +73765,8 @@
         "ok": false,
         "error": "commandId 已经用于另一条战斗命令",
         "stateChanged": false,
-        "beforeBattleStateSha256": "8be68b33177b236ef1b61ab6d4069b12bf970cd7e55440c05a2ca46698652f48",
-        "afterBattleStateSha256": "8be68b33177b236ef1b61ab6d4069b12bf970cd7e55440c05a2ca46698652f48",
+        "beforeBattleStateSha256": "8eca475e2f5bdb112934361a75b8b8d2eb16344a9a17a6d33d5d26f607f156c3",
+        "afterBattleStateSha256": "8eca475e2f5bdb112934361a75b8b8d2eb16344a9a17a6d33d5d26f607f156c3",
         "receipt": {},
         "commandId": "skill-rally-0001",
         "kind": "use_skill",
@@ -74040,6 +74077,9 @@
           "experienceGains": {
             "officer-1": 6
           },
+          "experienceGainOrder": [
+            "officer-1"
+          ],
           "logs": [
             "濮阳军进入邺战场。",
             "曹操对夏侯惇施展激励，恢复 30 兵力并解除异常状态，目标可以重新行动。"
@@ -76453,7 +76493,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "skill-rally-0001",
-        "expectedBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
+        "expectedBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
         "kind": "use_skill",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -76465,8 +76505,8 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "1775c31ecdc07a32eb762322110558c9d94baf4af1a7deee6aace0cf302a3573",
-        "afterBattleStateSha256": "8be68b33177b236ef1b61ab6d4069b12bf970cd7e55440c05a2ca46698652f48",
+        "beforeBattleStateSha256": "761d80b6ff46f4eae5f57e0014bdb638243736218954d7369e12f6db6d4bd631",
+        "afterBattleStateSha256": "8eca475e2f5bdb112934361a75b8b8d2eb16344a9a17a6d33d5d26f607f156c3",
         "receipt": {
           "kind": "use_skill",
           "details": {
@@ -76525,7 +76565,7 @@
             "seedBefore": 48641,
             "seedAfter": 373686124
           },
-          "battleStateSha256": "8be68b33177b236ef1b61ab6d4069b12bf970cd7e55440c05a2ca46698652f48"
+          "battleStateSha256": "8eca475e2f5bdb112934361a75b8b8d2eb16344a9a17a6d33d5d26f607f156c3"
         },
         "commandId": "skill-rally-0001",
         "kind": "use_skill",
@@ -76836,6 +76876,9 @@
           "experienceGains": {
             "officer-1": 6
           },
+          "experienceGainOrder": [
+            "officer-1"
+          ],
           "logs": [
             "濮阳军进入邺战场。",
             "曹操对夏侯惇施展激励，恢复 30 兵力并解除异常状态，目标可以重新行动。"

@@ -51,7 +51,7 @@ static func create(state: GameState, order: Dictionary) -> Dictionary:
 		"battlefieldTemplate": TEMPLATES[posmod(int(target.get("sourceIndex", 0)), TEMPLATES.size())],
 		"deployment": {"attacker": [], "defender": []}, "units": {}, "actedUnitIds": [],
 		"commanderUnitIds": {"attacker": "officer:%s" % attackers[0]["id"] if not attackers.is_empty() else "", "defender": "officer:%s" % defenders[0]["id"] if not defenders.is_empty() else ""},
-		"experienceGains": {},
+		"experienceGains": {}, "experienceGainOrder": [],
 		"logs": [String(source["name"]) + "军进入" + String(target["name"]) + "战场。"],
 		"guard": _create_guard(before, source, target),
 	}
@@ -175,7 +175,10 @@ static func attack_unit(battle: BattleState, unit_id: String, target_unit_id: St
 	var experience_gained := _battle_experience(damage, int(attacker.get("level", 0)), int(target.get("level", 0))) if damage > 0 and not String(attacker.get("officerId", "")).is_empty() else 0
 	if experience_gained > 0 and not String(attacker.get("officerId", "")).is_empty():
 		if typeof(data.get("experienceGains")) != TYPE_DICTIONARY: data["experienceGains"] = {}
-		data["experienceGains"][String(attacker.get("officerId", ""))] = int(data["experienceGains"].get(String(attacker.get("officerId", "")), 0)) + experience_gained
+		var experience_id := String(attacker.get("officerId", ""))
+		if typeof(data.get("experienceGainOrder")) != TYPE_ARRAY: data["experienceGainOrder"] = []
+		if not (data["experienceGainOrder"] as Array).has(experience_id): (data["experienceGainOrder"] as Array).append(experience_id)
+		data["experienceGains"][experience_id] = int(data["experienceGains"].get(experience_id, 0)) + experience_gained
 	var message := "%s攻击%s，造成 %d 兵力损失%s。" % [attacker.get("name", unit_id), target.get("name", target_unit_id), damage, "，目标溃退" if target_troops_after == 0 else ""]
 	data["logs"].append(message)
 	return _finish(data, before_digest, "attack_unit", {"unitId": unit_id, "targetUnitId": target_unit_id, "preview": preview, "damage": damage, "targetTroopsAfter": target_troops_after, "experienceGained": experience_gained, "seedBefore": data["rngSeed"], "seedAfter": data["rngSeed"]})
@@ -219,7 +222,10 @@ static func use_skill(battle: BattleState, unit_id: String, skill_id: String, ta
 	data["units"][target_unit_id] = target
 	if experience_gained > 0 and not String(actor.get("officerId", "")).is_empty():
 		if typeof(data.get("experienceGains")) != TYPE_DICTIONARY: data["experienceGains"] = {}
-		data["experienceGains"][String(actor["officerId"])] = int(data["experienceGains"].get(String(actor["officerId"]), 0)) + experience_gained
+		var experience_id := String(actor["officerId"])
+		if typeof(data.get("experienceGainOrder")) != TYPE_ARRAY: data["experienceGainOrder"] = []
+		if not (data["experienceGainOrder"] as Array).has(experience_id): (data["experienceGainOrder"] as Array).append(experience_id)
+		data["experienceGains"][experience_id] = int(data["experienceGains"].get(experience_id, 0)) + experience_gained
 	data["logs"].append("%s对%s施展%s，%s。" % [actor.get("name", unit_id), target.get("name", target_unit_id), preview["skill"]["name"], detail])
 	return _finish(data, before_digest, "use_skill", {"unitId": unit_id, "skillId": skill_id, "targetUnitId": target_unit_id, "preview": preview, "succeeded": succeeded, "recovery": recovery, "experienceGained": experience_gained, "seedBefore": seed_before, "seedAfter": data["rngSeed"]})
 
@@ -359,6 +365,21 @@ static func end_ai_side_turn(battle: BattleState) -> Dictionary:
 	return _finish(data, before_digest, "end_ai_side_turn", {"fromSide": side, "toSide": "attacker", "day": data["day"], "turn": data["strategicTurn"]})
 
 
+static func retreat_side(battle: BattleState, side: String) -> Dictionary:
+	var data := battle.snapshot()
+	var before_digest := _digest(data)
+	var preflight := _preflight(data, before_digest)
+	if not preflight.is_empty(): return preflight
+	if data.get("status") != "ongoing": return _battle_failure(before_digest, "战斗已经结束")
+	if not ["attacker", "defender"].has(side): return _battle_failure(before_digest, "撤退阵营无效")
+	if String(data.get("activeSide", "")) != side: return _battle_failure(before_digest, "只能在本方行动阶段下令全军撤退")
+	var status := "defender-won" if side == "attacker" else "attacker-won"
+	var reason := "attacker-retreated" if side == "attacker" else "defender-retreated"
+	data["status"] = status; data["outcome"] = reason
+	data["logs"].append(_victory_reason_message(status, reason))
+	return _finish(data, before_digest, "retreat_side", {"side": side, "status": status, "outcome": reason})
+
+
 static func _ai_mark_side_completed(data: Dictionary, side: String) -> Dictionary:
 	for raw_id: Variant in _sorted_keys(data.get("units", {})):
 		var unit: Dictionary = data["units"][raw_id]
@@ -479,6 +500,18 @@ static func _finish(data: Dictionary, before_digest: String, kind: String, detai
 	return {"ok": true, "error": "", "stateChanged": after_digest != before_digest, "beforeBattleStateSha256": before_digest, "afterBattleStateSha256": after_digest, "receipt": {"kind": kind, "details": details, "battleStateSha256": after_digest}, "battle": BattleState.new(data)}
 
 
+static func _victory_reason_message(status: String, reason: String) -> String:
+	if reason == "attacker-retreated": return "攻方下令全军撤退，守方获胜。"
+	if reason == "defender-retreated": return "守方下令全军撤退，攻方占领城池。"
+	if reason == "attacker-commander-defeated": return "攻方主将败退，守方获胜。"
+	if reason == "defender-commander-defeated": return "守方主将败退，攻方获胜。"
+	if reason == "objective-held": return "攻方占领城池并坚持到本方阶段结束。"
+	if reason == "attacker-food-exhausted": return "攻方粮草耗尽，被迫撤军。"
+	if reason == "defender-food-exhausted": return "守方粮草耗尽，城池失守。"
+	if reason == "day-limit": return "攻方未能在期限内破城，守方获胜。"
+	return "守军全部溃退，攻方获胜。" if status == "attacker-won" else "攻军全部溃退，守方获胜。"
+
+
 static func _battle_experience(damage: int, attacker_level: int, defender_level: int) -> int:
 	var base := floori(sqrt(float(maxi(0, damage))) / 4.0)
 	var level_difference := attacker_level - defender_level
@@ -536,8 +569,7 @@ static func _create_guard(state: Dictionary, source: Dictionary, target: Diction
 		var officer: Dictionary = state["officers"][raw_id]
 		if officer.get("status") == "serving" and (officer.get("cityId") == source["id"] or officer.get("cityId") == target["id"]): participants.append(_participant_snapshot(state, officer))
 	_sort_participants(participants)
-	var no_logs: Dictionary = state.duplicate(true); no_logs.erase("logs")
-	return {"version": 2, "strategicFingerprint": _digest(no_logs), "sourceCityId": source["id"], "targetCityId": target["id"], "sourceFood": source["food"], "targetFood": target["food"], "targetDefense": target["defense"], "targetReserveTroops": target["reserveTroops"], "participants": participants}
+	return {"version": 2, "strategicFingerprint": strategic_fingerprint(state), "sourceCityId": source["id"], "targetCityId": target["id"], "sourceFood": source["food"], "targetFood": target["food"], "targetDefense": target["defense"], "targetReserveTroops": target["reserveTroops"], "participants": participants}
 
 
 static func _participant_snapshot(state: Dictionary, officer: Dictionary) -> Dictionary:
@@ -548,6 +580,13 @@ static func _participant_snapshot(state: Dictionary, officer: Dictionary) -> Dic
 		var item: Dictionary = state.get("items", {}).get(String(raw_item_id), {})
 		force_bonus += int(item.get("forceBonus", 0)); intelligence_bonus += int(item.get("intelligenceBonus", 0)); move_bonus += int(item.get("moveBonus", 0))
 	return {"officerId": officer["id"], "cityId": officer.get("cityId", ""), "factionId": officer["factionId"], "status": officer["status"], "troops": officer["troops"], "stamina": officer["stamina"], "force": officer["force"], "intelligence": officer["intelligence"], "leadership": officer["leadership"], "level": officer.get("level", 1), "experience": officer.get("experience", 0), "armsTypeId": officer["armsTypeId"], "equipmentKey": "|".join(item_ids), "equipmentKeyEncoding": "pipe-v1", "armsAttackModifier": arms.get("attackModifier", 0), "armsDefenseModifier": arms.get("defenseModifier", 0), "armsMobility": arms.get("mobility", 0), "itemForceBonus": force_bonus, "itemIntelligenceBonus": intelligence_bonus, "itemMoveBonus": move_bonus}
+
+
+## Public contract helpers used by strategic settlement validation.  Keeping the
+## implementation here makes the guard and tactical deployment share one
+## equipment interpretation without coupling callers to private methods.
+static func participant_snapshot(state: Dictionary, officer: Dictionary) -> Dictionary:
+	return _participant_snapshot(state, officer)
 
 
 static func _unit_from_officer(state: Dictionary, officer: Dictionary, side: String, slot: Vector2i) -> Dictionary:
@@ -573,6 +612,10 @@ static func _effective_officer_attributes(state: Dictionary, officer: Dictionary
 		var item: Dictionary = state.get("items", {}).get(String(raw_item_id), {})
 		force += int(item.get("forceBonus", 0)); intelligence += int(item.get("intelligenceBonus", 0)); move_bonus += int(item.get("moveBonus", 0))
 	return {"force": force, "intelligence": intelligence, "moveBonus": move_bonus}
+
+
+static func effective_officer_attributes(state: Dictionary, officer: Dictionary) -> Dictionary:
+	return _effective_officer_attributes(state, officer)
 
 
 static func _deployment_positions(count: int, approach: String, side: String) -> Array:
@@ -709,6 +752,8 @@ static func _stable_serialize(value: Variant) -> String:
 		var items: Array = []
 		for item in value: items.append(_stable_serialize(item))
 		return "[" + ",".join(items) + "]"
+	if typeof(value) == TYPE_FLOAT and is_finite(float(value)) and float(value) == floor(float(value)):
+		return str(int(value))
 	if typeof(value) != TYPE_DICTIONARY: return JSON.stringify(value)
 	var dictionary: Dictionary = value
 	var keys: Array = dictionary.keys(); keys.sort()
@@ -722,3 +767,9 @@ static func _fnv1a(value: String) -> String:
 	for index in range(value.length()):
 		hash = int(hash ^ value.unicode_at(index)); hash = int((hash * 0x01000193) & 0xffff_ffff)
 	return "%08x" % hash
+
+
+static func strategic_fingerprint(state: Dictionary) -> String:
+	var projected: Dictionary = state.duplicate(true)
+	projected.erase("logs")
+	return _fnv1a(_stable_serialize(projected))

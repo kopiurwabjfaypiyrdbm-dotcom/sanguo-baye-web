@@ -153,10 +153,8 @@ function projectBattle(battle: TacticalBattleState, state: any): JsonObject {
   for (const unit of Object.values(units) as JsonObject[]) deployment[unit.side].push({ unitId: unit.id, slotX: unit.slotX, slotY: unit.slotY });
   deployment.attacker.sort((left, right) => left.unitId.localeCompare(right.unitId));
   deployment.defender.sort((left, right) => left.unitId.localeCompare(right.unitId));
-  const { logs: _logs, ...guardedState } = state;
   const guard = {
     ...battle.guard,
-    strategicFingerprint: canonicalSha256(guardedState),
     participants: battle.guard.participants.map((participant) => ({ ...participant, equipmentKey: participant.equipmentKey.split('\0').join('|'), equipmentKeyEncoding: 'pipe-v1' })),
   };
   const tiles = battle.tiles.map((tile) => {
@@ -187,7 +185,7 @@ function battleBase(battle: TacticalBattleState, deployment: Record<TacticalSide
     battlefieldVersion: battle.battlefieldVersion, battlefieldKey: battle.battlefieldKey, battlefieldTemplate: battle.battlefieldTemplate,
     deployment, units, actedUnitIds: [], logs: [...battle.logs],
     commanderUnitIds: { attacker: battle.commanderUnitIds.attacker ?? '', defender: battle.commanderUnitIds.defender ?? '' },
-    experienceGains: { ...battle.experienceGains }, guard,
+    experienceGains: { ...battle.experienceGains }, experienceGainOrder: [...((battle as any).experienceGainOrder ?? [])], guard,
   };
 }
 

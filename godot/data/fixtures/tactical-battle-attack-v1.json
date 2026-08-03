@@ -230,6 +230,7 @@
       "defender": "officer:officer-84"
     },
     "experienceGains": {},
+    "experienceGainOrder": [],
     "logs": [
       "濮阳军进入邺战场。"
     ],
@@ -2864,6 +2865,9 @@
       "experienceGains": {
         "officer-1": 3
       },
+      "experienceGainOrder": [
+        "officer-1"
+      ],
       "logs": [
         "濮阳军进入邺战场。",
         "曹操攻击荀谌，造成 19 兵力损失。"
@@ -5266,7 +5270,7 @@
     "command": {
       "commandEnvelopeVersion": 1,
       "commandId": "attack-success-0001",
-      "expectedBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
+      "expectedBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
       "kind": "attack_unit",
       "parameters": {
         "unitId": "officer:officer-1",
@@ -5277,8 +5281,8 @@
       "ok": true,
       "error": "",
       "stateChanged": true,
-      "beforeBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
-      "afterBattleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88",
+      "beforeBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
+      "afterBattleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd",
       "receipt": {
         "kind": "attack_unit",
         "details": {
@@ -5298,7 +5302,7 @@
           "seedBefore": 48641,
           "seedAfter": 48641
         },
-        "battleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88"
+        "battleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd"
       },
       "commandId": "attack-success-0001",
       "kind": "attack_unit",
@@ -5524,6 +5528,9 @@
         "experienceGains": {
           "officer-1": 3
         },
+        "experienceGainOrder": [
+          "officer-1"
+        ],
         "logs": [
           "濮阳军进入邺战场。",
           "曹操攻击荀谌，造成 19 兵力损失。"
@@ -8142,6 +8149,7 @@
         "defender": "officer:officer-84"
       },
       "experienceGains": {},
+      "experienceGainOrder": [],
       "logs": [
         "濮阳军进入邺战场。"
       ],
@@ -10541,7 +10549,7 @@
     "command": {
       "commandEnvelopeVersion": 1,
       "commandId": "attack-defeat-0002",
-      "expectedBattleStateSha256": "5c9056ed116c87a532f864aa2c2f0ff5b2571dc299c7b87b5f9605d33215db03",
+      "expectedBattleStateSha256": "d24d5928fe308166bbdfa83e0c95cef9a0535226f9f180659e602405f0a7f39b",
       "kind": "attack_unit",
       "parameters": {
         "unitId": "officer:officer-1",
@@ -10552,8 +10560,8 @@
       "ok": true,
       "error": "",
       "stateChanged": true,
-      "beforeBattleStateSha256": "5c9056ed116c87a532f864aa2c2f0ff5b2571dc299c7b87b5f9605d33215db03",
-      "afterBattleStateSha256": "f4ca5e10f15ffe25f8f8c7a0b60909e6f6f9fd90bad82dd0a8a3f7c537057d7c",
+      "beforeBattleStateSha256": "d24d5928fe308166bbdfa83e0c95cef9a0535226f9f180659e602405f0a7f39b",
+      "afterBattleStateSha256": "c82d5419c5fed5a842facde4c2ed908742bd88bb98b3bd09fe323dc5dce28a73",
       "receipt": {
         "kind": "attack_unit",
         "details": {
@@ -10573,7 +10581,7 @@
           "seedBefore": 48641,
           "seedAfter": 48641
         },
-        "battleStateSha256": "f4ca5e10f15ffe25f8f8c7a0b60909e6f6f9fd90bad82dd0a8a3f7c537057d7c"
+        "battleStateSha256": "c82d5419c5fed5a842facde4c2ed908742bd88bb98b3bd09fe323dc5dce28a73"
       },
       "commandId": "attack-defeat-0002",
       "kind": "attack_unit",
@@ -10799,6 +10807,9 @@
         "experienceGains": {
           "officer-1": 2
         },
+        "experienceGainOrder": [
+          "officer-1"
+        ],
         "logs": [
           "濮阳军进入邺战场。",
           "曹操攻击荀谌，造成 10 兵力损失，目标溃退。"
@@ -13417,6 +13428,7 @@
         "defender": "officer:officer-84"
       },
       "experienceGains": {},
+      "experienceGainOrder": [],
       "logs": [
         "濮阳军进入邺战场。"
       ],
@@ -15816,7 +15828,7 @@
     "command": {
       "commandEnvelopeVersion": 1,
       "commandId": "attack-dunjia-0003",
-      "expectedBattleStateSha256": "ab3694aa6d868fd2940412773dfbe3e06893c3f0b4c72c7fec6dceebe6894e78",
+      "expectedBattleStateSha256": "be9f1d679d3eb23c8b4e6be1f523575495374054481f51cc79ae88912b6fecdf",
       "kind": "attack_unit",
       "parameters": {
         "unitId": "officer:officer-1",
@@ -15827,8 +15839,8 @@
       "ok": true,
       "error": "",
       "stateChanged": true,
-      "beforeBattleStateSha256": "ab3694aa6d868fd2940412773dfbe3e06893c3f0b4c72c7fec6dceebe6894e78",
-      "afterBattleStateSha256": "26bb7f51d81212fcfb3243207191675588d621ab112b420920c03a684098047f",
+      "beforeBattleStateSha256": "be9f1d679d3eb23c8b4e6be1f523575495374054481f51cc79ae88912b6fecdf",
+      "afterBattleStateSha256": "64c6535bb7118e9105aea5848a7c21826778545b17431d9891bd5bce23b97c48",
       "receipt": {
         "kind": "attack_unit",
         "details": {
@@ -15848,7 +15860,7 @@
           "seedBefore": 48641,
           "seedAfter": 48641
         },
-        "battleStateSha256": "26bb7f51d81212fcfb3243207191675588d621ab112b420920c03a684098047f"
+        "battleStateSha256": "64c6535bb7118e9105aea5848a7c21826778545b17431d9891bd5bce23b97c48"
       },
       "commandId": "attack-dunjia-0003",
       "kind": "attack_unit",
@@ -16074,6 +16086,9 @@
         "experienceGains": {
           "officer-1": 2
         },
+        "experienceGainOrder": [
+          "officer-1"
+        ],
         "logs": [
           "濮阳军进入邺战场。",
           "曹操攻击荀谌，造成 12 兵力损失。"
@@ -18477,7 +18492,7 @@
     "command": {
       "commandEnvelopeVersion": 1,
       "commandId": "attack-success-0001",
-      "expectedBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
+      "expectedBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
       "kind": "attack_unit",
       "parameters": {
         "unitId": "officer:officer-1",
@@ -18488,8 +18503,8 @@
       "ok": true,
       "error": "",
       "stateChanged": true,
-      "beforeBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
-      "afterBattleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88",
+      "beforeBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
+      "afterBattleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd",
       "receipt": {
         "kind": "attack_unit",
         "details": {
@@ -18509,7 +18524,7 @@
           "seedBefore": 48641,
           "seedAfter": 48641
         },
-        "battleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88"
+        "battleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd"
       },
       "commandId": "attack-success-0001",
       "kind": "attack_unit",
@@ -18735,6 +18750,9 @@
         "experienceGains": {
           "officer-1": 3
         },
+        "experienceGainOrder": [
+          "officer-1"
+        ],
         "logs": [
           "濮阳军进入邺战场。",
           "曹操攻击荀谌，造成 19 兵力损失。"
@@ -21355,6 +21373,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -23754,7 +23773,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "attack-boundary-phase-0010",
-        "expectedBattleStateSha256": "bb3401e3ba1edfe6cd0761202c109757050d68ea51266967ef71ff35eb43e72a",
+        "expectedBattleStateSha256": "2bbc31891ab934d394d685e083e78c2c69556ef422cf02668034c1fa418ac4b3",
         "kind": "attack_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -23765,8 +23784,8 @@
         "ok": false,
         "error": "战斗尚未开始",
         "stateChanged": false,
-        "beforeBattleStateSha256": "bb3401e3ba1edfe6cd0761202c109757050d68ea51266967ef71ff35eb43e72a",
-        "afterBattleStateSha256": "bb3401e3ba1edfe6cd0761202c109757050d68ea51266967ef71ff35eb43e72a",
+        "beforeBattleStateSha256": "2bbc31891ab934d394d685e083e78c2c69556ef422cf02668034c1fa418ac4b3",
+        "afterBattleStateSha256": "2bbc31891ab934d394d685e083e78c2c69556ef422cf02668034c1fa418ac4b3",
         "receipt": {},
         "commandId": "attack-boundary-phase-0010",
         "kind": "attack_unit",
@@ -23988,6 +24007,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -26606,6 +26626,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -29005,7 +29026,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "attack-boundary-target-0011",
-        "expectedBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
+        "expectedBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
         "kind": "attack_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -29016,8 +29037,8 @@
         "ok": false,
         "error": "攻击目标无效",
         "stateChanged": false,
-        "beforeBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
-        "afterBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
+        "beforeBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
+        "afterBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
         "receipt": {},
         "commandId": "attack-boundary-target-0011",
         "kind": "attack_unit",
@@ -29239,6 +29260,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -31857,6 +31879,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -34256,7 +34279,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "attack-boundary-friendly-0012",
-        "expectedBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
+        "expectedBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
         "kind": "attack_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -34267,8 +34290,8 @@
         "ok": false,
         "error": "攻击目标无效",
         "stateChanged": false,
-        "beforeBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
-        "afterBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
+        "beforeBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
+        "afterBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
         "receipt": {},
         "commandId": "attack-boundary-friendly-0012",
         "kind": "attack_unit",
@@ -34490,6 +34513,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -37108,6 +37132,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -39507,7 +39532,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "attack-boundary-range-0013",
-        "expectedBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
+        "expectedBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
         "kind": "attack_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -39518,8 +39543,8 @@
         "ok": false,
         "error": "目标不在攻击范围内",
         "stateChanged": false,
-        "beforeBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
-        "afterBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
+        "beforeBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
+        "afterBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
         "receipt": {},
         "commandId": "attack-boundary-range-0013",
         "kind": "attack_unit",
@@ -39741,6 +39766,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -42359,6 +42385,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -44769,8 +44796,8 @@
         "ok": false,
         "error": "战斗状态摘要已过期",
         "stateChanged": false,
-        "beforeBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
-        "afterBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
+        "beforeBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
+        "afterBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
         "receipt": {},
         "commandId": "attack-boundary-stale-0014",
         "kind": "attack_unit",
@@ -44992,6 +45019,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -47395,7 +47423,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "attack-success-0001",
-        "expectedBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
+        "expectedBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
         "kind": "attack_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -47406,8 +47434,8 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
-        "afterBattleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88",
+        "beforeBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
+        "afterBattleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd",
         "receipt": {
           "kind": "attack_unit",
           "details": {
@@ -47427,7 +47455,7 @@
             "seedBefore": 48641,
             "seedAfter": 48641
           },
-          "battleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88"
+          "battleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd"
         },
         "commandId": "attack-success-0001",
         "kind": "attack_unit",
@@ -47653,6 +47681,9 @@
           "experienceGains": {
             "officer-1": 3
           },
+          "experienceGainOrder": [
+            "officer-1"
+          ],
           "logs": [
             "濮阳军进入邺战场。",
             "曹操攻击荀谌，造成 19 兵力损失。"
@@ -50055,8 +50086,8 @@
         "ok": true,
         "error": "",
         "stateChanged": false,
-        "beforeBattleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88",
-        "afterBattleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88",
+        "beforeBattleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd",
+        "afterBattleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd",
         "receipt": {
           "kind": "attack_unit",
           "details": {
@@ -50076,7 +50107,7 @@
             "seedBefore": 48641,
             "seedAfter": 48641
           },
-          "battleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88"
+          "battleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd"
         },
         "commandId": "attack-success-0001",
         "kind": "attack_unit",
@@ -50302,6 +50333,9 @@
           "experienceGains": {
             "officer-1": 3
           },
+          "experienceGainOrder": [
+            "officer-1"
+          ],
           "logs": [
             "濮阳军进入邺战场。",
             "曹操攻击荀谌，造成 19 兵力损失。"
@@ -52922,6 +52956,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -55322,7 +55357,7 @@
         {
           "commandEnvelopeVersion": 1,
           "commandId": "attack-success-0001",
-          "expectedBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
+          "expectedBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
           "kind": "attack_unit",
           "parameters": {
             "unitId": "officer:officer-1",
@@ -55333,7 +55368,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "attack-success-0001",
-        "expectedBattleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88",
+        "expectedBattleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd",
         "kind": "attack_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -55344,8 +55379,8 @@
         "ok": false,
         "error": "commandId 已经用于另一条战斗命令",
         "stateChanged": false,
-        "beforeBattleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88",
-        "afterBattleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88",
+        "beforeBattleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd",
+        "afterBattleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd",
         "receipt": {},
         "commandId": "attack-success-0001",
         "kind": "attack_unit",
@@ -55571,6 +55606,9 @@
           "experienceGains": {
             "officer-1": 3
           },
+          "experienceGainOrder": [
+            "officer-1"
+          ],
           "logs": [
             "濮阳军进入邺战场。",
             "曹操攻击荀谌，造成 19 兵力损失。"
@@ -58190,6 +58228,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -60590,7 +60629,7 @@
         {
           "commandEnvelopeVersion": 1,
           "commandId": "attack-success-0001",
-          "expectedBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
+          "expectedBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
           "kind": "attack_unit",
           "parameters": {
             "unitId": "officer:officer-1",
@@ -60601,7 +60640,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "attack-boundary-acted-0016",
-        "expectedBattleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88",
+        "expectedBattleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd",
         "kind": "attack_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -60612,8 +60651,8 @@
         "ok": false,
         "error": "目标不在攻击范围内",
         "stateChanged": false,
-        "beforeBattleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88",
-        "afterBattleStateSha256": "f7c9066ee3f628e2d4efcc03dd734082bb40fb9979aea3a17a001cd2e76c4e88",
+        "beforeBattleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd",
+        "afterBattleStateSha256": "eb5f45119f5a73e43242d24abbfb6d8ba7df5bcc7009cc35c15ef8ddc8eee7bd",
         "receipt": {},
         "commandId": "attack-boundary-acted-0016",
         "kind": "attack_unit",
@@ -60839,6 +60878,9 @@
           "experienceGains": {
             "officer-1": 3
           },
+          "experienceGainOrder": [
+            "officer-1"
+          ],
           "logs": [
             "濮阳军进入邺战场。",
             "曹操攻击荀谌，造成 19 兵力损失。"
@@ -63458,6 +63500,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -65857,7 +65900,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "attack-boundary-hidden-0017",
-        "expectedBattleStateSha256": "7bd11d912eb61b311ef7d073df72c818f7bc6acedecf192a0a69279903c379cd",
+        "expectedBattleStateSha256": "238c26ace654fed7d6c1521c9fea3d8bc1d063c0ad745bd33492349aba924a65",
         "kind": "attack_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -65868,8 +65911,8 @@
         "ok": false,
         "error": "目标不在攻击范围内",
         "stateChanged": false,
-        "beforeBattleStateSha256": "7bd11d912eb61b311ef7d073df72c818f7bc6acedecf192a0a69279903c379cd",
-        "afterBattleStateSha256": "7bd11d912eb61b311ef7d073df72c818f7bc6acedecf192a0a69279903c379cd",
+        "beforeBattleStateSha256": "238c26ace654fed7d6c1521c9fea3d8bc1d063c0ad745bd33492349aba924a65",
+        "afterBattleStateSha256": "238c26ace654fed7d6c1521c9fea3d8bc1d063c0ad745bd33492349aba924a65",
         "receipt": {},
         "commandId": "attack-boundary-hidden-0017",
         "kind": "attack_unit",
@@ -66091,6 +66134,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -68709,6 +68753,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -71108,7 +71153,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "attack-boundary-type-0018",
-        "expectedBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
+        "expectedBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
         "kind": "attack_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -71119,8 +71164,8 @@
         "ok": false,
         "error": "战斗命令缺少 targetUnitId",
         "stateChanged": false,
-        "beforeBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
-        "afterBattleStateSha256": "5108f792072cee9331b355647babfe5d52c91ca8dc435f882a5a92c0b65f19d5",
+        "beforeBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
+        "afterBattleStateSha256": "fa20f4dafc89e8e8f01e75dc1bc00ce99c20c65db534048cc0df0862f922d823",
         "receipt": {},
         "commandId": "attack-boundary-type-0018",
         "kind": "attack_unit",
@@ -71342,6 +71387,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -73954,6 +74000,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -76353,7 +76400,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "attack-boundary-deployed-0019",
-        "expectedBattleStateSha256": "1cddd616d8cf678755d887654e80fb478e062ed58610aee19be705651f2d62da",
+        "expectedBattleStateSha256": "82cf80e18531bc6c859a9fb823dfbb6adaf9a3e7eed5c3ed81b4cb60f8f964df",
         "kind": "attack_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -76364,8 +76411,8 @@
         "ok": false,
         "error": "攻击单位尚未部署",
         "stateChanged": false,
-        "beforeBattleStateSha256": "1cddd616d8cf678755d887654e80fb478e062ed58610aee19be705651f2d62da",
-        "afterBattleStateSha256": "1cddd616d8cf678755d887654e80fb478e062ed58610aee19be705651f2d62da",
+        "beforeBattleStateSha256": "82cf80e18531bc6c859a9fb823dfbb6adaf9a3e7eed5c3ed81b4cb60f8f964df",
+        "afterBattleStateSha256": "82cf80e18531bc6c859a9fb823dfbb6adaf9a3e7eed5c3ed81b4cb60f8f964df",
         "receipt": {},
         "commandId": "attack-boundary-deployed-0019",
         "kind": "attack_unit",
@@ -76581,6 +76628,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],
@@ -79194,6 +79242,7 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "logs": [
           "濮阳军进入邺战场。"
         ],
@@ -81593,7 +81642,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "attack-boundary-deployed-0020",
-        "expectedBattleStateSha256": "5af7baf3386286e3a18d3259c9f2629f1c15ffad8f5fd8e62929189484123ca8",
+        "expectedBattleStateSha256": "967eb2e53201f16f6bce811bf1d9bfa7d766a19000e3aedf00638004700cab26",
         "kind": "attack_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -81604,8 +81653,8 @@
         "ok": false,
         "error": "攻击目标尚未部署",
         "stateChanged": false,
-        "beforeBattleStateSha256": "5af7baf3386286e3a18d3259c9f2629f1c15ffad8f5fd8e62929189484123ca8",
-        "afterBattleStateSha256": "5af7baf3386286e3a18d3259c9f2629f1c15ffad8f5fd8e62929189484123ca8",
+        "beforeBattleStateSha256": "967eb2e53201f16f6bce811bf1d9bfa7d766a19000e3aedf00638004700cab26",
+        "afterBattleStateSha256": "967eb2e53201f16f6bce811bf1d9bfa7d766a19000e3aedf00638004700cab26",
         "receipt": {},
         "commandId": "attack-boundary-deployed-0020",
         "kind": "attack_unit",
@@ -81822,6 +81871,7 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "logs": [
             "濮阳军进入邺战场。"
           ],

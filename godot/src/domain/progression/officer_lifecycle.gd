@@ -124,6 +124,43 @@ static func kill_officer(state: GameState, input: Dictionary) -> Dictionary:
 	}}
 
 
+## Applies a battle capture through the same lifecycle boundary used by
+## personnel/captive commands.  Battle settlement must not duplicate ruler-loss,
+## order cancellation, or succession semantics locally.
+static func capture_officer(state: GameState, input: Dictionary) -> Dictionary:
+	var before := state.snapshot()
+	var issues: Array[Dictionary] = Validator.validate_runtime(before)
+	if not issues.is_empty(): return _failure(Validator.first_error(issues))
+	var captured := _capture_officer_data(before, input)
+	if not captured["ok"]: return captured
+	var next: Dictionary = captured["next"]
+	issues = Validator.validate_runtime(next)
+	if not issues.is_empty(): return _failure(Validator.first_error(issues))
+	return {"ok": true, "error": "", "next_state": GameState.new(next), "receipt": {
+		"kind": "capture_officer", "officerId": str(input.get("officerId", "")),
+		"beforeSeed": before["rngSeed"], "afterSeed": next["rngSeed"],
+		"phase": next["phase"], "outcome": next.get("outcome", null),
+		"pendingSuccession": next.get("pendingSuccession", null),
+		"appendedLogs": (next["logs"] as Array).slice((before["logs"] as Array).size()).duplicate(true),
+	}}
+
+
+## Settlement-only data adapters. Ownership is switched before defeated
+## officers are processed, so the transient projection is intentionally not
+## validated until all lifecycle transitions have completed.
+static func capture_officer_data(data: Dictionary, input: Dictionary) -> Dictionary:
+	return _capture_officer_data(data.duplicate(true), input)
+
+
+static func kill_officer_data(data: Dictionary, input: Dictionary) -> Dictionary:
+	return _kill_officer_data(data.duplicate(true), input)
+
+
+## Public read-only normalization entry point for cross-domain callers.
+static func update_city_satraps(data: Dictionary) -> Dictionary:
+	return _update_city_satraps(data.duplicate(true))
+
+
 static func resolve_succession(state: GameState, successor_officer_id: String) -> Dictionary:
 	var before: Dictionary = state.snapshot()
 	var issues: Array[Dictionary] = Validator.validate_runtime(before)
@@ -209,6 +246,38 @@ static func _kill_officer_data(data: Dictionary, input: Dictionary) -> Dictionar
 	if not former_faction_id.is_empty() and data["factions"].has(former_faction_id) \
 			and data["factions"][former_faction_id]["rulerOfficerId"] == officer_id:
 		var ruler_loss: Dictionary = _handle_ruler_loss(next, former_faction_id, officer_id, cause)
+		if not ruler_loss["ok"]: return ruler_loss
+		next = ruler_loss["next"]
+	return {"ok": true, "error": "", "next": _update_city_satraps(next)}
+
+
+static func _capture_officer_data(data: Dictionary, input: Dictionary) -> Dictionary:
+	var officer_id := str(input.get("officerId", ""))
+	var captor_faction_id := str(input.get("captorFactionId", ""))
+	var city_id := str(input.get("cityId", ""))
+	var officer: Dictionary = data["officers"].get(officer_id, {})
+	var city: Dictionary = data["cities"].get(city_id, {})
+	if officer.is_empty() or officer.get("status", "") != "serving": return _failure("只有在职人物可以被俘")
+	if city.is_empty() or city.get("ownerId", "") != captor_faction_id: return _failure("俘虏必须关押在俘获方城池")
+	if officer.get("factionId", "") == captor_faction_id: return _failure("不能俘虏己方人物")
+	var former_faction_id := str(officer.get("factionId", ""))
+	var canceled := _cancel_officer_orders(data, officer_id)
+	if not canceled["ok"]: return canceled
+	var next: Dictionary = canceled["next"]
+	(next["actedOfficerIds"] as Array).erase(officer_id)
+	(next["discoveredOfficerIds"] as Array).erase(officer_id)
+	var captured: Dictionary = next["officers"][officer_id].duplicate(true)
+	captured["status"] = "captive"
+	captured["factionId"] = _neutral_faction_id(next)
+	captured["captorFactionId"] = captor_faction_id
+	captured["formerFactionId"] = former_faction_id
+	captured["cityId"] = city_id
+	captured["troops"] = 0
+	captured["stamina"] = 0
+	captured.erase("death")
+	next["officers"][officer_id] = captured
+	if next["factions"].has(former_faction_id) and next["factions"][former_faction_id].get("rulerOfficerId", "") == officer_id:
+		var ruler_loss := _handle_ruler_loss(next, former_faction_id, officer_id, "capture")
 		if not ruler_loss["ok"]: return ruler_loss
 		next = ruler_loss["next"]
 	return {"ok": true, "error": "", "next": _update_city_satraps(next)}

@@ -10,6 +10,7 @@ const ReconnaissanceAdapter = preload("res://src/application/commands/reconnaiss
 const DiplomaticOrderAdapter = preload("res://src/application/commands/diplomatic_order_adapter.gd")
 const SuccessionAdapter = preload("res://src/application/commands/succession_adapter.gd")
 const StrategicTurnAdapter = preload("res://src/application/commands/strategic_turn_adapter.gd")
+const BattleSettlementAdapter = preload("res://src/application/commands/battle_settlement_adapter.gd")
 const StringContract = preload("res://src/application/commands/application_string_contract.gd")
 
 const ENVELOPE_VERSION: int = 1
@@ -44,6 +45,7 @@ const ADAPTERS: Dictionary = {
 	"issue_induce_order": {"module": DiplomaticOrderAdapter, "generic": true},
 	"resolve_succession": {"module": SuccessionAdapter, "generic": true},
 	"advance_turn_month": {"module": StrategicTurnAdapter, "generic": false},
+	"settle_tactical_battle": {"module": BattleSettlementAdapter, "generic": true},
 }
 
 

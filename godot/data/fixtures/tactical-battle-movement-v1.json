@@ -239,9 +239,10 @@
       "defender": "officer:officer-84"
     },
     "experienceGains": {},
+    "experienceGainOrder": [],
     "guard": {
       "version": 2,
-      "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+      "strategicFingerprint": "8bacc25b",
       "sourceCityId": "city-12",
       "targetCityId": "city-11",
       "sourceFood": 309,
@@ -2862,9 +2863,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -5644,9 +5646,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -8299,9 +8302,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -10929,9 +10933,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -14960,9 +14965,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -17551,7 +17557,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-confirm-0001",
-        "expectedBattleStateSha256": "4e2197759eddc844609501038f8f3e63c081f4c7ea145ea794799583d13000b8",
+        "expectedBattleStateSha256": "5c9f94232c1842c03cf808ee8639f91d8bd8f221719c1203e950f147facab3f7",
         "kind": "confirm_deployment",
         "parameters": {}
       },
@@ -17559,14 +17565,14 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "4e2197759eddc844609501038f8f3e63c081f4c7ea145ea794799583d13000b8",
-        "afterBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "beforeBattleStateSha256": "5c9f94232c1842c03cf808ee8639f91d8bd8f221719c1203e950f147facab3f7",
+        "afterBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "receipt": {
           "kind": "confirm_deployment",
           "details": {
             "phase": "battle"
           },
-          "battleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c"
+          "battleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1"
         },
         "commandId": "movement-confirm-0001",
         "kind": "confirm_deployment",
@@ -17798,9 +17804,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -20198,7 +20205,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-move-attacker-0002",
-        "expectedBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "expectedBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "kind": "move_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -20210,8 +20217,8 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
-        "afterBattleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d",
+        "beforeBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
+        "afterBattleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda",
         "receipt": {
           "kind": "move_unit",
           "details": {
@@ -20247,7 +20254,7 @@
             "seedBefore": 48641,
             "seedAfter": 48641
           },
-          "battleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d"
+          "battleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda"
         },
         "commandId": "movement-move-attacker-0002",
         "kind": "move_unit",
@@ -20480,9 +20487,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -22880,7 +22888,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-end-attacker-0003",
-        "expectedBattleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d",
+        "expectedBattleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda",
         "kind": "end_unit_turn",
         "parameters": {
           "unitId": "officer:officer-1"
@@ -22890,15 +22898,15 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d",
-        "afterBattleStateSha256": "fc0dd2d73d286b7bc5c922dfc183ab301cc4910c42ee99cc0235d15c90297953",
+        "beforeBattleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda",
+        "afterBattleStateSha256": "8fd326caafa2128fdbbb3999625dd92e04012eaa69d3f54ce9221e07bc95c0f2",
         "receipt": {
           "kind": "end_unit_turn",
           "details": {
             "unitId": "officer:officer-1",
             "activeSide": "attacker"
           },
-          "battleStateSha256": "fc0dd2d73d286b7bc5c922dfc183ab301cc4910c42ee99cc0235d15c90297953"
+          "battleStateSha256": "8fd326caafa2128fdbbb3999625dd92e04012eaa69d3f54ce9221e07bc95c0f2"
         },
         "commandId": "movement-end-attacker-0003",
         "kind": "end_unit_turn",
@@ -23134,9 +23142,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -25534,7 +25543,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-end-attacker-side-0004",
-        "expectedBattleStateSha256": "fc0dd2d73d286b7bc5c922dfc183ab301cc4910c42ee99cc0235d15c90297953",
+        "expectedBattleStateSha256": "8fd326caafa2128fdbbb3999625dd92e04012eaa69d3f54ce9221e07bc95c0f2",
         "kind": "end_side_turn",
         "parameters": {}
       },
@@ -25542,8 +25551,8 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "fc0dd2d73d286b7bc5c922dfc183ab301cc4910c42ee99cc0235d15c90297953",
-        "afterBattleStateSha256": "bd2a2b02d73a9cbe42e57f771303db0b749c588135c413bd928ef1ee65944e99",
+        "beforeBattleStateSha256": "8fd326caafa2128fdbbb3999625dd92e04012eaa69d3f54ce9221e07bc95c0f2",
+        "afterBattleStateSha256": "c85e5b20873ab112547fcd958dd8fd90d49a46cc468431c8229254dab24f4ef3",
         "receipt": {
           "kind": "end_side_turn",
           "details": {
@@ -25552,7 +25561,7 @@
             "day": 1,
             "turn": 1
           },
-          "battleStateSha256": "bd2a2b02d73a9cbe42e57f771303db0b749c588135c413bd928ef1ee65944e99"
+          "battleStateSha256": "c85e5b20873ab112547fcd958dd8fd90d49a46cc468431c8229254dab24f4ef3"
         },
         "commandId": "movement-end-attacker-side-0004",
         "kind": "end_side_turn",
@@ -25787,9 +25796,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -28187,7 +28197,7 @@
     "command": {
       "commandEnvelopeVersion": 1,
       "commandId": "movement-restored-defender-0005",
-      "expectedBattleStateSha256": "bd2a2b02d73a9cbe42e57f771303db0b749c588135c413bd928ef1ee65944e99",
+      "expectedBattleStateSha256": "c85e5b20873ab112547fcd958dd8fd90d49a46cc468431c8229254dab24f4ef3",
       "kind": "move_unit",
       "parameters": {
         "unitId": "officer:officer-84",
@@ -28199,8 +28209,8 @@
       "ok": true,
       "error": "",
       "stateChanged": true,
-      "beforeBattleStateSha256": "bd2a2b02d73a9cbe42e57f771303db0b749c588135c413bd928ef1ee65944e99",
-      "afterBattleStateSha256": "ec31ec0b153a0310287a574ba120ef9d4940ca19dd318935cc9b7953cda4aec9",
+      "beforeBattleStateSha256": "c85e5b20873ab112547fcd958dd8fd90d49a46cc468431c8229254dab24f4ef3",
+      "afterBattleStateSha256": "a4daf07f37269c5275b5e6a3584202675d31d4f9e6360560406bba6149dd262c",
       "receipt": {
         "kind": "move_unit",
         "details": {
@@ -28232,7 +28242,7 @@
           "seedBefore": 48641,
           "seedAfter": 48641
         },
-        "battleStateSha256": "ec31ec0b153a0310287a574ba120ef9d4940ca19dd318935cc9b7953cda4aec9"
+        "battleStateSha256": "a4daf07f37269c5275b5e6a3584202675d31d4f9e6360560406bba6149dd262c"
       },
       "commandId": "movement-restored-defender-0005",
       "kind": "move_unit",
@@ -28468,9 +28478,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -30869,7 +30880,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-boundary-phase-0011",
-        "expectedBattleStateSha256": "4e2197759eddc844609501038f8f3e63c081f4c7ea145ea794799583d13000b8",
+        "expectedBattleStateSha256": "5c9f94232c1842c03cf808ee8639f91d8bd8f221719c1203e950f147facab3f7",
         "kind": "move_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -30881,8 +30892,8 @@
         "ok": false,
         "error": "战斗回合尚未开始",
         "stateChanged": false,
-        "beforeBattleStateSha256": "4e2197759eddc844609501038f8f3e63c081f4c7ea145ea794799583d13000b8",
-        "afterBattleStateSha256": "4e2197759eddc844609501038f8f3e63c081f4c7ea145ea794799583d13000b8",
+        "beforeBattleStateSha256": "5c9f94232c1842c03cf808ee8639f91d8bd8f221719c1203e950f147facab3f7",
+        "afterBattleStateSha256": "5c9f94232c1842c03cf808ee8639f91d8bd8f221719c1203e950f147facab3f7",
         "receipt": {},
         "commandId": "movement-boundary-phase-0011",
         "kind": "move_unit",
@@ -31113,9 +31124,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -33738,9 +33750,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -36146,8 +36159,8 @@
         "ok": false,
         "error": "战斗状态摘要已过期",
         "stateChanged": false,
-        "beforeBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
-        "afterBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "beforeBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
+        "afterBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "receipt": {},
         "commandId": "movement-boundary-stale-0012",
         "kind": "move_unit",
@@ -36379,9 +36392,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -39004,9 +39018,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -41400,7 +41415,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-boundary-occupied-0013",
-        "expectedBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "expectedBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "kind": "move_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -41412,8 +41427,8 @@
         "ok": false,
         "error": "目标格不在该单位的可移动范围内",
         "stateChanged": false,
-        "beforeBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
-        "afterBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "beforeBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
+        "afterBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "receipt": {},
         "commandId": "movement-boundary-occupied-0013",
         "kind": "move_unit",
@@ -41645,9 +41660,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -44270,9 +44286,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -46666,7 +46683,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-boundary-enemy-0014",
-        "expectedBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "expectedBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "kind": "move_unit",
         "parameters": {
           "unitId": "officer:officer-84",
@@ -46678,8 +46695,8 @@
         "ok": false,
         "error": "当前不是该部队所属阵营的行动阶段",
         "stateChanged": false,
-        "beforeBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
-        "afterBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "beforeBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
+        "afterBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "receipt": {},
         "commandId": "movement-boundary-enemy-0014",
         "kind": "move_unit",
@@ -46911,9 +46928,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -49536,9 +49554,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -51932,7 +51951,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-boundary-blocked-0015",
-        "expectedBattleStateSha256": "f2608978618b65eb5d5a3f42acf853ec335487923e65f4d95cc4688bd16d1012",
+        "expectedBattleStateSha256": "04a8556bc5c7e9b7f3405b2c206b51f139113e143a6dfad73e22a4decc64a524",
         "kind": "move_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -51944,8 +51963,8 @@
         "ok": false,
         "error": "目标格不在该单位的可移动范围内",
         "stateChanged": false,
-        "beforeBattleStateSha256": "f2608978618b65eb5d5a3f42acf853ec335487923e65f4d95cc4688bd16d1012",
-        "afterBattleStateSha256": "f2608978618b65eb5d5a3f42acf853ec335487923e65f4d95cc4688bd16d1012",
+        "beforeBattleStateSha256": "04a8556bc5c7e9b7f3405b2c206b51f139113e143a6dfad73e22a4decc64a524",
+        "afterBattleStateSha256": "04a8556bc5c7e9b7f3405b2c206b51f139113e143a6dfad73e22a4decc64a524",
         "receipt": {},
         "commandId": "movement-boundary-blocked-0015",
         "kind": "move_unit",
@@ -52177,9 +52196,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -54802,9 +54822,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -57198,7 +57219,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-boundary-duplicate-0016",
-        "expectedBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "expectedBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "kind": "move_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -57210,8 +57231,8 @@
         "ok": true,
         "error": "",
         "stateChanged": true,
-        "beforeBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
-        "afterBattleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d",
+        "beforeBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
+        "afterBattleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda",
         "receipt": {
           "kind": "move_unit",
           "details": {
@@ -57247,7 +57268,7 @@
             "seedBefore": 48641,
             "seedAfter": 48641
           },
-          "battleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d"
+          "battleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda"
         },
         "commandId": "movement-boundary-duplicate-0016",
         "kind": "move_unit",
@@ -57480,9 +57501,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -59878,8 +59900,8 @@
         "ok": true,
         "error": "",
         "stateChanged": false,
-        "beforeBattleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d",
-        "afterBattleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d",
+        "beforeBattleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda",
+        "afterBattleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda",
         "receipt": {
           "kind": "move_unit",
           "details": {
@@ -59915,7 +59937,7 @@
             "seedBefore": 48641,
             "seedAfter": 48641
           },
-          "battleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d"
+          "battleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda"
         },
         "commandId": "movement-boundary-duplicate-0016",
         "kind": "move_unit",
@@ -60148,9 +60170,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -62774,9 +62797,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -65171,7 +65195,7 @@
         {
           "commandEnvelopeVersion": 1,
           "commandId": "movement-boundary-conflict-0017",
-          "expectedBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+          "expectedBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
           "kind": "move_unit",
           "parameters": {
             "unitId": "officer:officer-1",
@@ -65183,7 +65207,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-boundary-conflict-0017",
-        "expectedBattleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d",
+        "expectedBattleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda",
         "kind": "move_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -65195,8 +65219,8 @@
         "ok": false,
         "error": "commandId 已经用于另一条战斗命令",
         "stateChanged": false,
-        "beforeBattleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d",
-        "afterBattleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d",
+        "beforeBattleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda",
+        "afterBattleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda",
         "receipt": {},
         "commandId": "movement-boundary-conflict-0017",
         "kind": "move_unit",
@@ -65429,9 +65453,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -68054,9 +68079,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -70451,7 +70477,7 @@
         {
           "commandEnvelopeVersion": 1,
           "commandId": "movement-boundary-moved-0018",
-          "expectedBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+          "expectedBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
           "kind": "move_unit",
           "parameters": {
             "unitId": "officer:officer-1",
@@ -70463,7 +70489,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-boundary-moved-0019",
-        "expectedBattleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d",
+        "expectedBattleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda",
         "kind": "move_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -70475,8 +70501,8 @@
         "ok": false,
         "error": "该部队本回合已经移动",
         "stateChanged": false,
-        "beforeBattleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d",
-        "afterBattleStateSha256": "190f853e4471c9c6b542d7d50048679ca3c704df0da73755a63e92486eea5a7d",
+        "beforeBattleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda",
+        "afterBattleStateSha256": "1561b7121c05f568462a06b5ae85a2f3fe2c140e52cd56ef2cd372f13c8a0cda",
         "receipt": {},
         "commandId": "movement-boundary-moved-0019",
         "kind": "move_unit",
@@ -70709,9 +70735,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -73334,9 +73361,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -75730,7 +75758,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-boundary-decimal-0020",
-        "expectedBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "expectedBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "kind": "move_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -75742,8 +75770,8 @@
         "ok": false,
         "error": "部署坐标必须是整数",
         "stateChanged": false,
-        "beforeBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
-        "afterBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "beforeBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
+        "afterBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "receipt": {},
         "commandId": "movement-boundary-decimal-0020",
         "kind": "move_unit",
@@ -75975,9 +76003,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -78600,9 +78629,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -80996,7 +81026,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-boundary-same-cell-0021",
-        "expectedBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "expectedBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "kind": "move_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -81008,8 +81038,8 @@
         "ok": false,
         "error": "目标格不在该单位的可移动范围内",
         "stateChanged": false,
-        "beforeBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
-        "afterBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "beforeBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
+        "afterBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "receipt": {},
         "commandId": "movement-boundary-same-cell-0021",
         "kind": "move_unit",
@@ -81241,9 +81271,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -83866,9 +83897,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -86262,7 +86294,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-boundary-out-of-bounds-0022",
-        "expectedBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "expectedBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "kind": "move_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -86274,8 +86306,8 @@
         "ok": false,
         "error": "目标格不在该单位的可移动范围内",
         "stateChanged": false,
-        "beforeBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
-        "afterBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "beforeBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
+        "afterBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "receipt": {},
         "commandId": "movement-boundary-out-of-bounds-0022",
         "kind": "move_unit",
@@ -86507,9 +86539,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,
@@ -89132,9 +89165,10 @@
           "defender": "officer:officer-84"
         },
         "experienceGains": {},
+        "experienceGainOrder": [],
         "guard": {
           "version": 2,
-          "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+          "strategicFingerprint": "8bacc25b",
           "sourceCityId": "city-12",
           "targetCityId": "city-11",
           "sourceFood": 309,
@@ -91528,7 +91562,7 @@
       "command": {
         "commandEnvelopeVersion": 1,
         "commandId": "movement-boundary-over-mobility-0023",
-        "expectedBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "expectedBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "kind": "move_unit",
         "parameters": {
           "unitId": "officer:officer-1",
@@ -91540,8 +91574,8 @@
         "ok": false,
         "error": "目标格不在该单位的可移动范围内",
         "stateChanged": false,
-        "beforeBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
-        "afterBattleStateSha256": "62023811f6284e42c66603936a4d26225bd2a95d2ec540938ce590519473482c",
+        "beforeBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
+        "afterBattleStateSha256": "e445faa8b392260615b79db9d5c77779d09ddf6afbf15e8bf5082fe587b867f1",
         "receipt": {},
         "commandId": "movement-boundary-over-mobility-0023",
         "kind": "move_unit",
@@ -91773,9 +91807,10 @@
             "defender": "officer:officer-84"
           },
           "experienceGains": {},
+          "experienceGainOrder": [],
           "guard": {
             "version": 2,
-            "strategicFingerprint": "216ccd8d986c97f3e5c2b109ee75a86d92eb614ea9dbde261d900598a98d5f50",
+            "strategicFingerprint": "8bacc25b",
             "sourceCityId": "city-12",
             "targetCityId": "city-11",
             "sourceFood": 309,

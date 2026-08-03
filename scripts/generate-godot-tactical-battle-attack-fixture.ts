@@ -159,7 +159,7 @@ function projectBattle(battle: TacticalBattleState): JsonObject {
     attackerFood: battle.attackerFood, defenderFood: battle.defenderFood, width: battle.width, height: battle.height, day: battle.day, maxDays: battle.maxDays,
     weather: battle.weather, phase: 'battle', activeSide: battle.activeSide, status: battle.status, outcome: battle.victoryReason ?? '', approach: battle.approach,
     battlefieldVersion: battle.battlefieldVersion, battlefieldKey: battle.battlefieldKey, battlefieldTemplate: battle.battlefieldTemplate,
-    deployment, units, actedUnitIds: Object.values(units).filter((unit: JsonObject) => unit.acted).map((unit: JsonObject) => unit.id).sort(), commanderUnitIds: { ...battle.commanderUnitIds }, experienceGains: { ...battle.experienceGains }, logs: [...battle.logs], guard: { ...battle.guard, participants: battle.guard.participants.map((participant) => ({ ...participant, equipmentKey: participant.equipmentKey.split('\0').join('|'), equipmentKeyEncoding: 'pipe-v1' })) }, terrainContractVersion: 1, tiles,
+    deployment, units, actedUnitIds: Object.values(units).filter((unit: JsonObject) => unit.acted).map((unit: JsonObject) => unit.id).sort(), commanderUnitIds: { ...battle.commanderUnitIds }, experienceGains: { ...battle.experienceGains }, experienceGainOrder: [...((battle as any).experienceGainOrder ?? [])], logs: [...battle.logs], guard: { ...battle.guard, participants: battle.guard.participants.map((participant) => ({ ...participant, equipmentKey: participant.equipmentKey.split('\0').join('|'), equipmentKeyEncoding: 'pipe-v1' })) }, terrainContractVersion: 1, tiles,
   };
 }
 
