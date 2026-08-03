@@ -1,10 +1,10 @@
 {
-  "version": 1,
+  "version": 2,
   "status": "production-candidate",
-  "style": "orderly 16-bit pixel sprites with historically informed late Eastern Han / Three Kingdoms clothing and equipment",
+  "style": "orderly 16-bit commander sprites with heroic silhouettes, historically informed late Eastern Han / Three Kingdoms clothing and equipment",
   "generation": {
     "mode": "built-in image generation plus local chroma-key removal and normalization",
-    "sourcePrompt": "Six compact, same-scale, same-baseline Three Kingdoms tactical unit sprites in a 3x2 sheet: cavalry with horse and long spear; infantry with round shield and ring-pommel sword; archer with composite bow and quiver; light river soldier with saber and shipboard gear; elite heavy cavalry with heavy lamellar armor and polearm; scholar strategist in guanfu/ru jin with feather fan. Crisp orderly pixel art, no text, no watermark, no fantasy effects, flat #00ff00 chroma-key background.",
+    "sourcePrompt": "Six compact, same-scale, same-baseline Three Kingdoms commander sprites in a 3x2 sheet: heroic cavalry commander with horse and long spear; infantry commander with round shield and ring-pommel sword; archer commander with composite bow and quiver; river commander with saber and practical light armor; imposing elite heavy cavalry commander with heavy lamellar armor and polearm; high-ranking scholar strategist in guanfu/ru jin with feather fan. Clean high-contrast 16-bit pixel clusters, no text, no watermark, no fantasy effects, flat #00ff00 chroma-key background.",
     "historicalBoundary": "Original historically informed interpretation; not an exact reproduction of unlicensed original-game binary or artwork."
   },
   "assets": [
@@ -14,8 +14,8 @@
       "label": "骑兵",
       "role": "mounted cavalry",
       "equipment": ["late Han lamellar armor", "warhorse", "long spear"],
-      "source": "assets/source/tactical/units/cavalry-v1.png",
-      "production": "assets/production/tactical/units/cavalry-v1.png",
+      "source": "assets/source/tactical/units/cavalry-v2.png",
+      "production": "assets/production/tactical/units/cavalry-v2.png",
       "dimensions": { "source": [256, 288], "production": [64, 72] }
     },
     {
@@ -24,8 +24,8 @@
       "label": "步兵",
       "role": "shield infantry",
       "equipment": ["leather or lamellar armor", "round shield", "ring-pommel longsword"],
-      "source": "assets/source/tactical/units/infantry-v1.png",
-      "production": "assets/production/tactical/units/infantry-v1.png",
+      "source": "assets/source/tactical/units/infantry-v2.png",
+      "production": "assets/production/tactical/units/infantry-v2.png",
       "dimensions": { "source": [256, 288], "production": [64, 72] }
     },
     {
@@ -34,8 +34,8 @@
       "label": "弓兵",
       "role": "composite-bow archer",
       "equipment": ["light armor", "Chinese composite bow", "arrow quiver"],
-      "source": "assets/source/tactical/units/archer-v1.png",
-      "production": "assets/production/tactical/units/archer-v1.png",
+      "source": "assets/source/tactical/units/archer-v2.png",
+      "production": "assets/production/tactical/units/archer-v2.png",
       "dimensions": { "source": [256, 288], "production": [64, 72] }
     },
     {
@@ -44,8 +44,8 @@
       "label": "水兵",
       "role": "light river soldier",
       "equipment": ["short robe", "light protection", "cloth head wrap", "ring-pommel saber"],
-      "source": "assets/source/tactical/units/navy-v1.png",
-      "production": "assets/production/tactical/units/navy-v1.png",
+      "source": "assets/source/tactical/units/navy-v2.png",
+      "production": "assets/production/tactical/units/navy-v2.png",
       "dimensions": { "source": [256, 288], "production": [64, 72] }
     },
     {
@@ -54,8 +54,8 @@
       "label": "极兵",
       "role": "elite heavy cavalry",
       "equipment": ["heavy lamellar armor", "armored warhorse", "heavy polearm"],
-      "source": "assets/source/tactical/units/elite-cavalry-v1.png",
-      "production": "assets/production/tactical/units/elite-cavalry-v1.png",
+      "source": "assets/source/tactical/units/elite-cavalry-v2.png",
+      "production": "assets/production/tactical/units/elite-cavalry-v2.png",
       "dimensions": { "source": [256, 288], "production": [64, 72] }
     },
     {
@@ -64,8 +64,8 @@
       "label": "玄兵",
       "role": "scholar strategist",
       "equipment": ["guanfu and ru jin robes", "scholar headcloth", "feather fan"],
-      "source": "assets/source/tactical/units/mystic-strategist-v1.png",
-      "production": "assets/production/tactical/units/mystic-strategist-v1.png",
+      "source": "assets/source/tactical/units/mystic-strategist-v2.png",
+      "production": "assets/production/tactical/units/mystic-strategist-v2.png",
       "dimensions": { "source": [256, 288], "production": [64, 72] }
     }
   ]
