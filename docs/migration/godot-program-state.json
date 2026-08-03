@@ -175,7 +175,7 @@
     "commit": "f1fe29c",
     "date": "2026-08-04"
   },
-  "nextAction": "Implement MB27 current-source Android acceptance: obtain approved 4.7.1 export template if needed, export/install the current APK, collect direct MuMu/real-device touch evidence, and make the final Goal decision without fabricating a pass.",
+  "nextAction": "MB27 current-source APK is exported and installed and aggregate npm run check passed; collect direct MuMu/real-device touch evidence at both landscape sizes, then make the final Goal decision without fabricating a pass.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
