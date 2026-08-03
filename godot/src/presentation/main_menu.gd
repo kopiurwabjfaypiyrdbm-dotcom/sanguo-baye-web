@@ -2,6 +2,7 @@ extends Control
 
 const CONTEXT = preload("res://src/application/campaign_launch_context.gd")
 const SESSION_CONTEXT = preload("res://src/application/campaign_session_context.gd")
+const SafeArea = preload("res://src/presentation/safe_area_margin.gd")
 
 @onready var continue_button: Button = %ContinueButton
 @onready var new_campaign_button: Button = %NewCampaignButton
@@ -54,6 +55,11 @@ func _apply_responsive_layout() -> void:
 
 
 func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
+	var safe_rect := SafeArea.compute_safe_rect(get_viewport_rect().size)
+	var center: Control = $Center
+	center.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	center.position = safe_rect.position
+	center.size = safe_rect.size
 	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
 	var compact := physical_size.x <= 900 or physical_size.y <= 440
 	var card: PanelContainer = $Center/Card
@@ -96,3 +102,15 @@ func _continue_campaign() -> void:
 
 func _quit_requested() -> void:
 	get_tree().quit()
+
+
+func _handle_system_back() -> bool:
+	return false
+
+
+func _on_application_paused() -> void:
+	status_label.text = tr("应用已暂停；战役状态保留在当前会话")
+
+
+func _on_application_resumed() -> void:
+	status_label.text = tr("应用已恢复；可以继续战役")

@@ -10,6 +10,7 @@ const BattleSkill = preload("res://src/domain/tactical/battle_skill.gd")
 const Canonical = preload("res://src/domain/validation/canonical_json.gd")
 const Session = preload("res://src/application/tactical_battle/tactical_battle_session.gd")
 const DemoFactory = preload("res://src/application/tactical_battle/tactical_battle_demo_factory.gd")
+const SafeArea = preload("res://src/presentation/safe_area_margin.gd")
 
 const CELL_SIZE := 88.0
 const BOARD_SIZE := Vector2(12.0 * CELL_SIZE, 8.0 * CELL_SIZE)
@@ -569,6 +570,21 @@ func _return_to_strategy() -> void:
 		_set_status("无法返回战略地图：错误 %d" % error, Color("f38c78"))
 
 
+func _handle_system_back() -> bool:
+	if is_instance_valid(_settings_panel) and _settings_panel.visible:
+		_close_settings()
+		return true
+	return false
+
+
+func _on_application_paused() -> void:
+	_set_status("应用已暂停；战术状态保留在当前会话", Color("f3cf72"))
+
+
+func _on_application_resumed() -> void:
+	_set_status("应用已恢复；战术状态保持确定性", Color("9be59f"))
+
+
 func _sorted_unit_ids() -> Array[String]:
 	var ids: Array[String] = []
 	for raw_id: Variant in _snapshot.get("units", {}).keys(): ids.append(String(raw_id))
@@ -588,6 +604,10 @@ func _safe_viewport_rect() -> Rect2:
 	var margin := 12.0
 	var top := 104.0
 	var bottom := 72.0
+	var platform_safe := SafeArea.compute_safe_rect(viewport_size)
+	margin = maxf(margin, platform_safe.position.x)
+	top = maxf(top, platform_safe.position.y)
+	bottom = maxf(bottom, viewport_size.y - platform_safe.end.y)
 	var physical_size := Vector2(get_tree().root.size)
 	# Keep a conservative logical inset for status bars/notches.  The Android
 	# platform adapter can provide larger insets later without changing camera

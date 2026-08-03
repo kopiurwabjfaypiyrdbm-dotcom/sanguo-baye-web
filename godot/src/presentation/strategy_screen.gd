@@ -793,6 +793,55 @@ func _return_to_menu() -> void:
 	_leave_to_menu()
 
 
+func _handle_system_back() -> bool:
+	# Back first dismisses the top-most in-scene surface. This keeps Android
+	# Back and the desktop keyboard equivalent from discarding a pending command
+	# or bypassing the explicit return confirmation.
+	if is_instance_valid(_return_confirmation) and _return_confirmation.visible:
+		_return_confirmation.hide()
+		menu_button.grab_focus()
+		return true
+	if chronicle_panel.visible:
+		_close_chronicle()
+		return true
+	if diplomacy_panel.visible:
+		_close_diplomacy()
+		return true
+	if reconnaissance_panel.visible:
+		_close_reconnaissance()
+		return true
+	if logistics_panel.visible:
+		_close_strategic_logistics()
+		return true
+	if personnel_panel.visible:
+		_close_personnel_lifecycle()
+		return true
+	if officer_panel.visible:
+		_close_officer_management()
+		return true
+	if city_card.visible:
+		_close_city_card()
+		return true
+	return false
+
+
+func _on_application_paused() -> void:
+	# Persist the authoritative GameSession before Android may reclaim the
+	# activity. The method is idempotent and does not touch presentation state.
+	if _persistence_enabled and is_instance_valid(_session):
+		var result := _call_session("save_game")
+		if bool(result.get("ok", false)):
+			_set_status(tr("应用已暂停；战役状态已保存"), "warning")
+		else:
+			_set_status(tr("应用暂停保存失败：%s") % _result_error(result), "error")
+	else:
+		_set_status(tr("应用已暂停；战役状态保留在当前会话"), "warning")
+
+
+func _on_application_resumed() -> void:
+	_set_status(tr("应用已恢复；已保留确定性战役状态"), "ready")
+
+
 func _leave_to_menu() -> void:
 	LAUNCH_CONTEXT.clear()
 	SESSION_CONTEXT.clear()
