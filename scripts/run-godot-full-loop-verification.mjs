@@ -23,7 +23,7 @@ if (version.error || version.signal || version.status !== 0 || !/^4\.7\.1(?:\.|$
 }
 process.stdout.write(`[Godot full loop] engine=${stdout}\n`);
 const result = spawnSync(engine, ['--headless', '--path', project, '--script', 'res://tests/full_loop_replay_runner.gd'], {
-  cwd: root, env, encoding: 'utf8', timeout: 60_000,
+  cwd: root, env, encoding: 'utf8', timeout: 180_000,
 });
 if (result.stdout) process.stdout.write(result.stdout);
 if (result.stderr) process.stderr.write(result.stderr);

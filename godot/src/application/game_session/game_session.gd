@@ -14,6 +14,7 @@ const AnnualProgression = preload("res://src/domain/progression/annual_progressi
 const OfficerLifecycle = preload("res://src/domain/progression/officer_lifecycle.gd")
 const CampaignOutcome = preload("res://src/domain/progression/campaign_outcome.gd")
 const StrategicTurn = preload("res://src/domain/progression/strategic_turn.gd")
+const TacticalBattleCommands = preload("res://src/domain/tactical/battle_commands.gd")
 
 const DEFAULT_PERIOD_PATH: String = "res://data/period-1.json"
 const DEFAULT_SAVE_PATH: String = "user://godot-spike-save.json"
@@ -146,6 +147,24 @@ func state_sha256() -> String:
 		return ""
 	var digest: Dictionary = CanonicalJson.try_sha256(_state.snapshot())
 	return String(digest["value"]) if digest["ok"] else ""
+
+
+func create_tactical_battle(order: Dictionary) -> Dictionary:
+	if _state == null:
+		return _failure("战役尚未启动")
+	var result: Dictionary = TacticalBattleCommands.create(_state, order)
+	if not bool(result.get("ok", false)):
+		return _failure(str(result.get("error", "战术战场创建失败")))
+	var battle: Variant = result.get("battle")
+	if not is_instance_valid(battle) or not battle.has_method("snapshot"):
+		return _failure("战术战场创建结果无效")
+	return {
+		"ok": true,
+		"error": "",
+		"stateSha256": state_sha256(),
+		"battle": battle.call("snapshot"),
+		"receipt": result.get("receipt", {}),
+	}
 
 
 func campaign_descriptor() -> Dictionary:

@@ -51,6 +51,7 @@ var _camera_tween: Tween
 var _compact_layout := false
 var _command_serial := 0
 var _persistence_enabled := false
+var _pause_save_failed := false
 var _return_confirmation: ConfirmationDialog
 
 var _mouse_pressed := false
@@ -828,18 +829,23 @@ func _handle_system_back() -> bool:
 func _on_application_paused() -> void:
 	# Persist the authoritative GameSession before Android may reclaim the
 	# activity. The method is idempotent and does not touch presentation state.
+	_pause_save_failed = false
 	if _persistence_enabled and is_instance_valid(_session):
 		var result := _call_session("save_game")
 		if bool(result.get("ok", false)):
 			_set_status(tr("应用已暂停；战役状态已保存"), "warning")
 		else:
+			_pause_save_failed = true
 			_set_status(tr("应用暂停保存失败：%s") % _result_error(result), "error")
 	else:
 		_set_status(tr("应用已暂停；战役状态保留在当前会话"), "warning")
 
 
 func _on_application_resumed() -> void:
-	_set_status(tr("应用已恢复；已保留确定性战役状态"), "ready")
+	if _pause_save_failed:
+		_set_status(tr("应用已恢复；暂停时存档失败，请手动保存"), "error")
+	else:
+		_set_status(tr("应用已恢复；已保留确定性战役状态"), "ready")
 
 
 func _leave_to_menu() -> void:

@@ -39,10 +39,21 @@ func _initialize() -> void:
 	_assert_equal(resumed.state_sha256(), strategic.get("afterDevelopSha256", ""), "full loop checkpoint digest")
 
 	var tactical: Dictionary = fixture.get("tactical", {})
-	var tactical_session := TacticalBattleSession.from_snapshot(tactical.get("initialBattle", {}))
+	var native_creation := resumed.create_tactical_battle(tactical.get("order", {}))
+	_assert_true(bool(native_creation.get("ok", false)), "full loop native tactical creation must succeed: %s" % native_creation.get("error", ""))
+	_assert_equal(_digest(native_creation.get("battle", {})), tactical.get("initialBattleSha256", ""), "full loop native tactical creation digest")
+	var tactical_session := TacticalBattleSession.from_snapshot(native_creation.get("battle", {}))
 	_assert_true(tactical_session != null, "full loop tactical entry must validate")
 	if tactical_session != null:
 		_assert_equal(tactical_session.state_sha256(), tactical.get("initialBattleSha256", ""), "full loop tactical entry digest")
+		var confirm := tactical_session.execute({
+			"commandEnvelopeVersion": 1,
+			"commandId": "mb24-full-loop-confirm-0001",
+			"expectedBattleStateSha256": tactical_session.state_sha256(),
+			"kind": "confirm_deployment",
+			"parameters": {},
+		})
+		_assert_true(bool(confirm.get("ok", false)), "full loop tactical deployment confirmation")
 		var retreat := tactical_session.execute({
 			"commandEnvelopeVersion": 1,
 			"commandId": "mb24-full-loop-retreat-0001",
@@ -82,7 +93,54 @@ func _initialize() -> void:
 	var final_reload_result := final_reload.load_game()
 	_assert_true(bool(final_reload_result.get("ok", false)), "full loop final reload")
 	_assert_equal(final_reload.state_sha256(), fixture.get("persistence", {}).get("finalStateSha256", ""), "full loop final reload digest")
+	_run_month_replay()
+	_run_tactical_command_slices()
 	_finish()
+
+
+func _run_month_replay() -> void:
+	# The production session owns the AI/month boundary. Run it twice from the
+	# same explicit period seed and require identical digest/seed output.
+	var first := GameSession.new()
+	var second := GameSession.new()
+	first.clear_battle_recovery(); second.clear_battle_recovery()
+	_assert_true(bool(first.start_campaign(1, 1).get("ok", false)), "month replay first campaign")
+	_assert_true(bool(second.start_campaign(1, 1).get("ok", false)), "month replay second campaign")
+	var first_result := first.advance_turn_month()
+	var second_result := second.advance_turn_month()
+	_assert_true(bool(first_result.get("ok", false)), "month replay first AI/month transition")
+	_assert_true(bool(second_result.get("ok", false)), "month replay second AI/month transition")
+	_assert_equal(first.state_sha256(), second.state_sha256(), "same-seed AI/month final digest")
+	_assert_equal(first.snapshot().get("rngSeed", -1), second.snapshot().get("rngSeed", -2), "same-seed AI/month final seed")
+
+
+func _run_tactical_command_slices() -> void:
+	# The continuous native-entry path above covers creation and settlement;
+	# these fixture-backed sessions execute the representative movement, attack
+	# and skill commands on their real Godot TacticalBattleSession boundary.
+	var movement_fixture := _read_dictionary("res://data/fixtures/tactical-battle-movement-v1.json")
+	var movement_session := TacticalBattleSession.from_snapshot(movement_fixture.get("initialBattle", {}))
+	_assert_true(movement_session != null, "movement slice entry")
+	if movement_session != null:
+		var movement_steps: Array = movement_fixture.get("steps", [])
+		for index in range(mini(2, movement_steps.size())):
+			var step: Dictionary = movement_steps[index]
+			var result := movement_session.execute(step.get("command", {}))
+			_assert_true(bool(result.get("ok", false)), "movement slice %s" % step.get("id", index))
+
+	var attack_fixture := _read_dictionary("res://data/fixtures/tactical-battle-attack-v1.json")
+	var attack_session := TacticalBattleSession.from_snapshot(attack_fixture.get("initialBattle", {}))
+	_assert_true(attack_session != null, "attack slice entry")
+	if attack_session != null:
+		var attack_result := attack_session.execute(attack_fixture.get("success", {}).get("command", {}))
+		_assert_true(bool(attack_result.get("ok", false)), "attack slice command")
+
+	var skill_fixture := _read_dictionary("res://data/fixtures/tactical-battle-skill-v1.json")
+	var skill_session := TacticalBattleSession.from_snapshot(skill_fixture.get("initialBattle", {}))
+	_assert_true(skill_session != null, "skill slice entry")
+	if skill_session != null:
+		var skill_result := skill_session.execute(skill_fixture.get("success", {}).get("command", {}))
+		_assert_true(bool(skill_result.get("ok", false)), "skill slice command")
 
 
 func _finish() -> void:

@@ -35,9 +35,10 @@ func _notification(what: int) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	# Preserve the desktop Escape equivalent without consuming the generic
-	# ui_cancel action before a scene can close its own modal/settings surface.
-	if event is InputEventKey and event.is_pressed() and not event.is_echo() and event.keycode == KEY_ESCAPE:
+	# Route both the default and remapped Cancel actions. Scene-specific Back
+	# handlers run first, so tactical settings and strategy modals still close
+	# before the scene boundary is changed.
+	if event.is_pressed() and not event.is_echo() and (event.is_action_pressed("ui_cancel") or (event is InputEventKey and event.keycode == KEY_ESCAPE)):
 		_route_back()
 		get_viewport().set_input_as_handled()
 

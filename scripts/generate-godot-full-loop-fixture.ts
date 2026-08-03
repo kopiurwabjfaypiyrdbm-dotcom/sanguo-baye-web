@@ -6,7 +6,7 @@ import {
   type ApplicationCommandEnvelope,
 } from '../src/core/migration/applicationSessionContract';
 import { applyBattleResult } from '../src/core/battle';
-import { canonicalSha256 } from '../src/core/migration/canonicalJson';
+import { canonicalSha256, compareUnicodeScalar } from '../src/core/migration/canonicalJson';
 import {
   createTacticalBattle,
   createTacticalBattleResult,
@@ -50,16 +50,19 @@ function jsonClean<T>(value: T): T {
 // invariant instead of silently resetting it.
 const order = { sourceCityId: 'city-12', targetCityId: 'city-11', officerIds: ['officer-32'], provisions: 20 };
 const battleInitial = jsonClean(createTacticalBattle(afterDevelop, order));
-const battleTerminal = jsonClean(retreatTacticalSide(battleInitial, 'attacker'));
+const battleForOutcome = jsonClean({
+  ...battleInitial,
+  logs: [...battleInitial.logs, '双方部署确认，战斗回合开始。'],
+});
+const battleTerminal = jsonClean(retreatTacticalSide(battleForOutcome, 'attacker'));
 const rawBattleResult = jsonClean(createTacticalBattleResult(battleTerminal));
 const battleResult = jsonClean(projectResult(rawBattleResult));
 const finalState = jsonClean(applyBattleResult(afterDevelop, rawBattleResult));
 const projectedBattleInitial = projectBattle(battleInitial, afterDevelop);
 const projectedBattleTerminal = projectBattle(battleTerminal, afterDevelop);
-// createTacticalBattle starts at deployment in the Web model. The native
-// command runner consumes a post-deployment snapshot, so make that boundary
-// explicit while retaining the same units, map and guard digest.
-projectedBattleInitial.phase = 'battle';
+// createTacticalBattle starts at deployment; the Godot runner confirms that
+// native creation boundary before entering battle commands.
+projectedBattleInitial.phase = 'deployment';
 projectedBattleInitial.activeSide = 'attacker';
 const saveEnvelope = createSaveEnvelope(finalState, 'MB24 full-loop', '2026-08-04T00:00:00.000Z');
 const saveRoundtrip = parseSave(serializeSave(finalState, 'MB24 full-loop', '2026-08-04T00:00:00.000Z')).state;
@@ -121,7 +124,7 @@ process.stdout.write(`[Godot full-loop] ${writeMode ? 'wrote' : 'verified'} ${ou
 function projectResult(value: Record<string, any>): Record<string, any> {
   return {
     ...value,
-    experienceGainOrder: Object.keys(value.experienceGains ?? {}),
+    experienceGainOrder: Object.keys(value.experienceGains ?? {}).sort(compareUnicodeScalar),
     guard: {
       ...value.guard,
       participants: value.guard.participants.map((participant: Record<string, any>) => ({
@@ -136,7 +139,8 @@ function projectResult(value: Record<string, any>): Record<string, any> {
 function projectBattle(battle: TacticalBattleState, state: any): Record<string, any> {
   const officers = state.officers as Record<string, any>;
   const units: Record<string, any> = {};
-  for (const unit of Object.values(battle.units).sort((left, right) => left.id.localeCompare(right.id))) {
+  const battleUnits = Object.values(battle.units).sort((left, right) => compareUnicodeScalar(left.id, right.id));
+  for (const unit of battleUnits) {
     const officer = unit.officerId ? officers[unit.officerId] : undefined;
     units[unit.id] = {
       id: unit.id, name: unit.name, officerId: unit.officerId ?? '', factionId: unit.factionId, side: unit.side,
@@ -148,8 +152,8 @@ function projectBattle(battle: TacticalBattleState, state: any): Record<string, 
   }
   const deployment: Record<TacticalSide, Record<string, any>[]> = { attacker: [], defender: [] };
   for (const unit of Object.values(units)) deployment[unit.side].push({ unitId: unit.id, slotX: unit.slotX, slotY: unit.slotY });
-  deployment.attacker.sort((left, right) => left.unitId.localeCompare(right.unitId));
-  deployment.defender.sort((left, right) => left.unitId.localeCompare(right.unitId));
+  deployment.attacker.sort((left, right) => compareUnicodeScalar(left.unitId, right.unitId));
+  deployment.defender.sort((left, right) => compareUnicodeScalar(left.unitId, right.unitId));
   const guard = {
     ...battle.guard,
     participants: battle.guard.participants.map((participant) => ({

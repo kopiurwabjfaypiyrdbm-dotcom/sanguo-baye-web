@@ -2,7 +2,7 @@
 
 ## 结论
 
-MB24 已补上跨阶段 fixture 的 canonical 回归闭环，并新增一条实际贯通回放：TypeScript 生成 13 个战略、战术、存档和入口 fixture 的语言无关清单，Godot 4.7.1 独立读取同一 JSON、重新计算 canonical SHA-256，并通过 136 项清单断言；Godot full-loop runner 另通过 20 项连续状态断言。该 Mission 没有改动 GameState、RNG、命令事务或存档契约，也没有把 Web 运行时嵌入 Godot。
+MB24 已补上跨阶段 fixture 的 canonical 回归闭环，并新增一条实际贯通回放：TypeScript 生成 13 个战略、战术、存档和入口 fixture 的语言无关清单，Godot 4.7.1 独立读取同一 JSON、重新计算 canonical SHA-256，并通过 136 项清单断言；Godot full-loop runner 另通过 36 项断言，包含 Godot 原生战术创建、部署确认、撤退/结算、AI/月度双次同 seed 回放，以及独立 fixture-backed 移动、攻击和技能命令切片。该 Mission 没有改动 RNG 算法、命令事务或存档契约，也没有把 Web 运行时嵌入 Godot。
 
 MB23 遗留的 MuMu 物理触控 P2 仍明确保留：当前 `adb shell input tap/touchscreen` 在 MuMu 的旋转窗口上没有稳定命中 Godot 控件；键盘导航、渲染、返回、暂停/恢复和双尺寸截图已通过，真实触摸、拖动/缩放、点城与战术入口仍需人工窗口/真机复核。
 
@@ -11,7 +11,7 @@ MB23 遗留的 MuMu 物理触控 P2 仍明确保留：当前 `adb shell input ta
 - 新增 `scripts/generate-godot-parity-regression-manifest.ts`：固定 fixture 列表、版本字段和 canonical SHA-256；默认检查模式拒绝清单漂移，`--write` 只用于受控更新。
 - 新增 `godot/data/fixtures/full-parity-regression-v1.json`：13 个 fixture 的语言无关回归输入/输出摘要，路径限制在 `res://data/fixtures/`。
 - 新增 `godot/tests/parity_regression_runner.gd` 与 `scripts/run-godot-parity-regression-verification.mjs`：Godot 4.7.1 重算每个 fixture 的 canonical digest，检查版本元数据、精确清单覆盖和路径边界；当前通过 136 项断言。
-- 新增 `scripts/generate-godot-full-loop-fixture.ts`、`godot/data/fixtures/godot-full-loop-v1.json`、`godot/tests/full_loop_replay_runner.gd` 与对应验证 wrapper，执行战役启动→开垦→中间存档重载→战术撤退→结算→最终存档重载；当前通过 20 项断言。
+- 新增 `scripts/generate-godot-full-loop-fixture.ts`、`godot/data/fixtures/godot-full-loop-v1.json`、`godot/tests/full_loop_replay_runner.gd` 与对应验证 wrapper，执行战役启动→开垦→中间存档重载→Godot 原生战术创建/部署确认→撤退→结算→最终存档重载，并额外双次回放 AI/月度转换及移动/攻击/技能切片；当前通过 36 项断言。
 - 将 `npm run godot:parity-regression:verify`、`npm run godot:full-loop:verify`、`npm run godot:migration-check` 与 `npm run godot:project:verify` 接入 `npm run check`。
 - 修复 Android Back 的场景优先级：战术设置/战略面板/返回确认先关闭；补回 Windows 标题栏关闭通知；暂停时战略 GameSession 自动保存，主菜单、战役设置、战略和战术场景接收恢复通知。
 - 将统一平台安全区计算应用到主菜单、战役设置、战略 HUD 和战术相机/操作区。
@@ -22,7 +22,7 @@ MB23 遗留的 MuMu 物理触控 P2 仍明确保留：当前 `adb shell input ta
 | 检查 | 结果 |
 |---|---|
 | `npm run godot:parity-regression:verify` | 13 fixture entries；Godot 136 assertions 通过 |
-| `npm run godot:full-loop:verify` | Godot full-loop 20 assertions 通过 |
+| `npm run godot:full-loop:verify` | Godot full-loop 36 assertions 通过 |
 | `npm run check` | 通过；Godot 13 fixture/20 项 full-loop、迁移负例、主场景/导入、各领域事务与呈现检查、Web 47 files/378 tests（2 skipped files/4 skipped tests）、生产构建均通过 |
 | `npm run godot:project:verify` | 211 domain + 212 presentation input smoke；主场景和导入通过 |
 | `npm run godot:tactical-presentation:verify` | 74 assertions 通过 |

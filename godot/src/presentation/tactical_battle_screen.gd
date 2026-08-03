@@ -11,6 +11,7 @@ const Canonical = preload("res://src/domain/validation/canonical_json.gd")
 const Session = preload("res://src/application/tactical_battle/tactical_battle_session.gd")
 const DemoFactory = preload("res://src/application/tactical_battle/tactical_battle_demo_factory.gd")
 const SafeArea = preload("res://src/presentation/safe_area_margin.gd")
+const TACTICAL_PAUSE_PATH := "user://godot-tactical-pause.json"
 
 const CELL_SIZE := 88.0
 const BOARD_SIZE := Vector2(12.0 * CELL_SIZE, 8.0 * CELL_SIZE)
@@ -69,7 +70,8 @@ var _compact_layout := false
 
 func _ready() -> void:
 	_build_interface()
-	_session = Session.from_snapshot(DemoFactory.create_snapshot())
+	var recovered_snapshot := _load_pause_snapshot()
+	_session = Session.from_snapshot(recovered_snapshot if not recovered_snapshot.is_empty() else DemoFactory.create_snapshot())
 	if _session == null:
 		_set_status("战场样片状态校验失败", Color(0.95, 0.4, 0.35))
 		return
@@ -462,6 +464,9 @@ func _apply_responsive_layout() -> void:
 
 func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
+	var safe_rect := SafeArea.compute_safe_rect(get_viewport_rect().size)
+	var safe_left := safe_rect.position.x
+	var safe_right := get_viewport_rect().size.x - safe_rect.end.x
 	var compact := physical_size.x <= 900 or physical_size.y <= 440
 	_compact_layout = compact
 	var scale := maxf(canvas_scale, 0.01)
@@ -476,12 +481,16 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		if is_instance_valid(label):
 			label.add_theme_font_size_override("font_size", body_size)
 	if is_instance_valid(_top_bar):
+		_top_bar.offset_left = safe_left
+		_top_bar.offset_right = -safe_right
 		_top_bar.offset_bottom = touch_size + 22.0
 	if is_instance_valid(_turn_bar):
+		_turn_bar.offset_left = safe_left
+		_turn_bar.offset_right = -safe_right
 		_turn_bar.offset_top = -(touch_size + 18.0)
 	if is_instance_valid(_settings_panel):
 		_settings_panel.custom_minimum_size = Vector2(ceilf(360.0 / scale), ceilf(290.0 / scale))
-		_settings_panel.position = Vector2((get_viewport_rect().size.x - _settings_panel.custom_minimum_size.x) * 0.5, (get_viewport_rect().size.y - _settings_panel.custom_minimum_size.y) * 0.5)
+		_settings_panel.position = safe_rect.position + (safe_rect.size - _settings_panel.custom_minimum_size) * 0.5
 	if is_instance_valid(_selection_panel):
 		_selection_panel.custom_minimum_size = Vector2(ceilf((300.0 if compact else 330.0) / scale), ceilf((188.0 if compact else 190.0) / scale))
 	_apply_feedback_style()
@@ -565,6 +574,8 @@ func _on_viewport_size_changed() -> void:
 
 
 func _return_to_strategy() -> void:
+	if FileAccess.file_exists(TACTICAL_PAUSE_PATH):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(TACTICAL_PAUSE_PATH))
 	var error := get_tree().change_scene_to_file("res://scenes/presentation/strategy_screen.tscn")
 	if error != OK:
 		_set_status("无法返回战略地图：错误 %d" % error, Color("f38c78"))
@@ -578,11 +589,39 @@ func _handle_system_back() -> bool:
 
 
 func _on_application_paused() -> void:
-	_set_status("应用已暂停；战术状态保留在当前会话", Color("f3cf72"))
+	_save_pause_snapshot()
+	_set_status("应用已暂停；战术状态已写入恢复检查点", Color("f3cf72"))
 
 
 func _on_application_resumed() -> void:
 	_set_status("应用已恢复；战术状态保持确定性", Color("9be59f"))
+
+
+func _save_pause_snapshot() -> void:
+	if not is_instance_valid(_session):
+		return
+	var payload := {"version": 1, "stateSha256": _session.state_sha256(), "battle": _session.snapshot()}
+	var file := FileAccess.open(TACTICAL_PAUSE_PATH, FileAccess.WRITE)
+	if file != null:
+		file.store_string(JSON.stringify(payload))
+		file.close()
+
+
+func _load_pause_snapshot() -> Dictionary:
+	if not FileAccess.file_exists(TACTICAL_PAUSE_PATH):
+		return {}
+	var file := FileAccess.open(TACTICAL_PAUSE_PATH, FileAccess.READ)
+	if file == null:
+		return {}
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	file.close()
+	if not parsed is Dictionary or int(parsed.get("version", -1)) != 1 or not parsed.get("battle", {}) is Dictionary:
+		return {}
+	var battle: Dictionary = parsed["battle"]
+	var digest := Canonical.try_sha256(battle)
+	if not bool(digest.get("ok", false)) or str(digest.get("value", "")) != str(parsed.get("stateSha256", "")):
+		return {}
+	return battle
 
 
 func _sorted_unit_ids() -> Array[String]:
@@ -605,7 +644,8 @@ func _safe_viewport_rect() -> Rect2:
 	var top := 104.0
 	var bottom := 72.0
 	var platform_safe := SafeArea.compute_safe_rect(viewport_size)
-	margin = maxf(margin, platform_safe.position.x)
+	var left_margin := maxf(margin, platform_safe.position.x)
+	var right_margin := maxf(margin, viewport_size.x - platform_safe.end.x)
 	top = maxf(top, platform_safe.position.y)
 	bottom = maxf(bottom, viewport_size.y - platform_safe.end.y)
 	var physical_size := Vector2(get_tree().root.size)
@@ -614,10 +654,11 @@ func _safe_viewport_rect() -> Rect2:
 	# ownership or the battlefield contract.
 	if physical_size.x > 0 and physical_size.y > 0:
 		var canvas_scale := Vector2(viewport_size.x / physical_size.x, viewport_size.y / physical_size.y)
-		margin = maxf(margin, 12.0 * canvas_scale.x)
+		left_margin = maxf(left_margin, 12.0 * canvas_scale.x)
+		right_margin = maxf(right_margin, 12.0 * canvas_scale.x)
 		top = maxf(top, 104.0 * canvas_scale.y)
 		bottom = maxf(bottom, 72.0 * canvas_scale.y)
-	return Rect2(Vector2(margin, top), Vector2(maxf(1.0, viewport_size.x - margin * 2.0), maxf(1.0, viewport_size.y - top - bottom)))
+	return Rect2(Vector2(left_margin, top), Vector2(maxf(1.0, viewport_size.x - left_margin - right_margin), maxf(1.0, viewport_size.y - top - bottom)))
 
 
 func _update_touch_targets() -> void:

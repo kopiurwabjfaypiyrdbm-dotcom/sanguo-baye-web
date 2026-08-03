@@ -103,7 +103,7 @@
       "day": 1,
       "maxDays": 30,
       "weather": "wind",
-      "phase": "battle",
+      "phase": "deployment",
       "activeSide": "attacker",
       "status": "ongoing",
       "outcome": "",
@@ -2696,7 +2696,7 @@
         }
       ]
     },
-    "initialBattleSha256": "b9fc3bbc2cb537e67c13ad8e49e253c49342179c1789cb024a1bf0de3cb8124a",
+    "initialBattleSha256": "2cbe9053b355e62cdca7a7b0eb200c257c7fe479459ab5df21b3f5ca12ba7477",
     "terminalBattle": {
       "contractVersion": 1,
       "id": "1:373686124:city-12:city-11:officer-32:20",
@@ -2918,6 +2918,7 @@
       "actedUnitIds": [],
       "logs": [
         "濮阳军进入邺战场。",
+        "双方部署确认，战斗回合开始。",
         "攻方下令全军撤退，守方获胜。"
       ],
       "commanderUnitIds": {
@@ -5319,7 +5320,7 @@
         }
       ]
     },
-    "terminalBattleSha256": "4ff67c5e3be15df46a58110da8373c4540358e3cd9ea90ac57b844df9ca39fd7",
+    "terminalBattleSha256": "b122469e36986b0967318e617687a58f5a73e327b925a0d2fecc56bc2f4e877d",
     "result": {
       "battleId": "1:373686124:city-12:city-11:officer-32:20",
       "turn": 1,
@@ -5634,16 +5635,17 @@
       "targetFoodAfter": 680,
       "logs": [
         "濮阳军进入邺战场。",
+        "双方部署确认，战斗回合开始。",
         "攻方下令全军撤退，守方获胜。",
         "战后兵力：攻方 100，守方 500。",
         "守方赢得战斗并击退进攻。"
       ]
     },
-    "resultSha256": "010add5848273ea9745a49f194ea253fadf0baa5454d6fe6d0291912649e3b1e"
+    "resultSha256": "fdacbf28933f00ec88e73e7e01335cbd116b5d64a2350fcb1e2539e12b441317"
   },
   "settlement": {
     "afterDevelopSha256": "259de2e83cf84d5c46e5127e520a15d148d567ffda86604e1a26cd8b4a5087a3",
-    "expectedStateSha256": "48a0899e6c2cc5669ab0fbea8c7035ccddda17366976a43082955843ecc7b8c9",
+    "expectedStateSha256": "59afe2f9cc66b5bdb0a2434928582f087f3000805b1f36bf8e79396b0009a823",
     "expectedState": {
       "dataContractVersion": 2,
       "cityOrder": [
@@ -11889,29 +11891,35 @@
         {
           "id": "log-1-004",
           "kind": "battle",
-          "message": "攻方下令全军撤退，守方获胜。",
+          "message": "双方部署确认，战斗回合开始。",
           "turn": 1
         },
         {
           "id": "log-1-005",
           "kind": "battle",
-          "message": "战后兵力：攻方 100，守方 500。",
+          "message": "攻方下令全军撤退，守方获胜。",
           "turn": 1
         },
         {
           "id": "log-1-006",
           "kind": "battle",
-          "message": "守方赢得战斗并击退进攻。",
+          "message": "战后兵力：攻方 100，守方 500。",
           "turn": 1
         },
         {
           "id": "log-1-007",
           "kind": "battle",
-          "message": "邺经此战农业、商业与金钱各损耗二十分之一，民忠损耗十分之一。",
+          "message": "守方赢得战斗并击退进攻。",
           "turn": 1
         },
         {
           "id": "log-1-008",
+          "kind": "battle",
+          "message": "邺经此战农业、商业与金钱各损耗二十分之一，民忠损耗十分之一。",
+          "turn": 1
+        },
+        {
+          "id": "log-1-009",
           "kind": "battle",
           "message": "夏侯惇突围退往濮阳。",
           "turn": 1
@@ -18170,29 +18178,35 @@
           {
             "id": "log-1-004",
             "kind": "battle",
-            "message": "攻方下令全军撤退，守方获胜。",
+            "message": "双方部署确认，战斗回合开始。",
             "turn": 1
           },
           {
             "id": "log-1-005",
             "kind": "battle",
-            "message": "战后兵力：攻方 100，守方 500。",
+            "message": "攻方下令全军撤退，守方获胜。",
             "turn": 1
           },
           {
             "id": "log-1-006",
             "kind": "battle",
-            "message": "守方赢得战斗并击退进攻。",
+            "message": "战后兵力：攻方 100，守方 500。",
             "turn": 1
           },
           {
             "id": "log-1-007",
             "kind": "battle",
-            "message": "邺经此战农业、商业与金钱各损耗二十分之一，民忠损耗十分之一。",
+            "message": "守方赢得战斗并击退进攻。",
             "turn": 1
           },
           {
             "id": "log-1-008",
+            "kind": "battle",
+            "message": "邺经此战农业、商业与金钱各损耗二十分之一，民忠损耗十分之一。",
+            "turn": 1
+          },
+          {
+            "id": "log-1-009",
             "kind": "battle",
             "message": "夏侯惇突围退往濮阳。",
             "turn": 1
@@ -18200,6 +18214,6 @@
         ]
       }
     },
-    "finalStateSha256": "48a0899e6c2cc5669ab0fbea8c7035ccddda17366976a43082955843ecc7b8c9"
+    "finalStateSha256": "59afe2f9cc66b5bdb0a2434928582f087f3000805b1f36bf8e79396b0009a823"
   }
 }
