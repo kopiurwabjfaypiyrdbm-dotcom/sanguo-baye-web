@@ -1,0 +1,32 @@
+{
+  "manifestVersion": 1,
+  "collection": "application-shell",
+  "createdAt": "2026-08-01",
+  "author": "sanguo-baye-web contributors with OpenAI coding assistance",
+  "license": "Project-origin asset; release terms follow the repository's eventual asset licensing decision.",
+  "assets": [
+    {
+      "id": "application-icon",
+      "category": "application-icon",
+      "sourceFile": "public/app-icon.svg",
+      "exportFiles": [
+        "public/icons/app-icon-192.png",
+        "public/icons/app-icon-512.png",
+        "public/icons/app-icon-maskable-512.png",
+        "android/app/src/main/res/mipmap-*/ic_launcher*.png",
+        "android/app/src/main/res/drawable*/splash.png"
+      ],
+      "derivedFrom": "Original code-native fortress, banner and landscape composition; no upstream binary art or font used.",
+      "generationPrompt": null,
+      "sha256": {
+        "source": "ec4f72f8acb7f85be52ed927bf62e59c9aed9dfd968a98cce45792ec267eed5f",
+        "exports": {
+          "public/icons/app-icon-192.png": "c5137c6e1a1e5c57cc7f1d143fc5464cfd2b16468ae7298803be5937bb16d308",
+          "public/icons/app-icon-512.png": "698ee69f1b88c22e6ba0f38f0e4365e4c74e15a67cce93b9c5b1b091643b2660",
+          "public/icons/app-icon-maskable-512.png": "1c2d3b27f3e7a2a281b1b5b60f6419b95e1c9b37270eb8cd70ca7fd0c8080bc2"
+        }
+      },
+      "reviewStatus": "technical-pass; release-license-decision-pending"
+    }
+  ]
+}

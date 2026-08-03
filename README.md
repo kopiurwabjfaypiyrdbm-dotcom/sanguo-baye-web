@@ -34,6 +34,8 @@
 
 当前界面以手机横屏全屏游玩为首要目标：战略阶段使用地图常驻、城池情境抽屉、五类全局目录和独立“结束本月”入口，战术阶段使用全屏地图、底部触控动作栏和按需边缘面板。667×375 至 915×412 手机横屏、1024×768 平板等效视口和 1280×720 桌面浏览器已完成模拟验收；真实 iOS Safari 与 Android Chrome 仍列为发布前真机验证项。设备矩阵和剩余风险见 [`docs/design/mobile-device-acceptance.md`](docs/design/mobile-device-acceptance.md)。
 
+应用已经具备 PWA 安装清单、确认式离线更新和核心游戏壳预缓存，并提供 Capacitor 8 Android 工程。Android 调试壳锁定正反横屏、使用沉浸式系统栏和刘海短边区域，并将系统返回键依次用于关闭当前层级、返回上一级或最小化标题页。PWA 与 Android 构建、临时包名和真机验收要求见 [`docs/design/pwa-android-shell.md`](docs/design/pwa-android-shell.md)。
+
 固定 C 的 `LoadPeriod` 已确认时期载入后把人物体力与兵力设为 100。新开局默认使用这一经典校准值；schema 1–5 旧存档迁移为现代平衡身份，不会因升级静默改变既有 400 兵力战役。
 
 原版兼容证据已与临时玩法层分离：`src/compat/baye/` 包含经过参考样本验证的 Web 移植 RNG、战术攻防/伤害、状态驱动、普通攻击形状和战略自动战斗公式。战场按战略方向部署，从七张代码定义地图中确定性选择，并提供路径/伤害/计谋预览、中文兵种与状态、明确胜因和目标/主将评分 AI；每方最多部署 10 名武将。地图逐城对应、十项计谋目录、地形移动/攻防修正、粮草消耗和 AI 权重仍是现代临时规则。仓库不保存原版 `.lib` 或生成资源数组，只保留允许的语义、偏移、长度与哈希证据。范围和剩余不确定性见 `references/parity-matrix.md`。
@@ -62,6 +64,24 @@ npm run check
 ```powershell
 npm run dev
 ```
+
+验证可安装 PWA 时使用生产构建，不要用开发服务器代替：
+
+```powershell
+npm run build
+npm run preview
+```
+
+Android Studio 与 SDK Platform 36 安装完成后，可生成并同步原生工程：
+
+```powershell
+npm run android:doctor
+npm run android:assets
+npm run android:sync
+npm run android:open
+```
+
+直接生成 Debug APK 使用 `npm run android:apk`，产物位于 `android/app/build/outputs/apk/debug/app-debug.apk`。`android:add` 只用于原生目录不存在时的首次生成，日常开发不要重复执行。
 
 `npm run check` 用于首次接手和提交前验证，会依次校验已入库参考基线、并行运行 Vitest 并执行生产构建；不需要在每次启动开发服务器前运行。测试和构建会短暂使用多个 CPU 核心，完成后自动退出。
 
@@ -114,7 +134,10 @@ src/core/          状态、校验、战斗、经济、回合和 AI
 src/compat/baye/   经过独立参考输出验证的原版兼容算法
 src/data/          CSV、原版剧本到领域状态的转换与校验
 src/game/          Phaser 战略地图、事件桥与生命周期
+src/platform/      Web 与 Android 原生壳之间的最小平台适配
 src/ui/            React UI
+android/           Capacitor Android 原生工程
+public/            PWA 图标与静态安装资源
 ```
 
 ## 核心回合
