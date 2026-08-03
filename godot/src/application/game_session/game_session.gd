@@ -739,7 +739,7 @@ func resume_battle_recovery() -> Dictionary:
 	return {"ok": true, "error": "", "code": "resumed", "status": "pending", "stateChanged": false, "state": snapshot(), "battleId": recovery["battleId"], "order": recovery["order"], "resume": recovery["resume"]}
 
 
-func load_game() -> Dictionary:
+func load_game(preserve_committed_recovery: bool = false) -> Dictionary:
 	var result: Dictionary = _repository.load()
 	if not result["ok"]:
 		return result
@@ -799,7 +799,7 @@ func load_game() -> Dictionary:
 					"state": snapshot(),
 				}
 			return resumed_committed
-		var recovered_save: Dictionary = save_game()
+		var recovered_save: Dictionary = save_game(preserve_committed_recovery)
 		if not bool(recovered_save.get("ok", false)):
 			return recovered_save
 		normalized_envelope = recovered_save.get("envelope", normalized_envelope)

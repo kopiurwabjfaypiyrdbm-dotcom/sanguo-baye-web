@@ -3,6 +3,8 @@ extends RefCounted
 
 const Canonical = preload("res://src/domain/validation/canonical_json.gd")
 const SaveRepository = preload("res://src/application/persistence/json_save_repository.gd")
+const BattleRecoveryRepository = preload("res://src/application/persistence/battle_recovery_repository.gd")
+const BattleResult = preload("res://src/domain/tactical/battle_result.gd")
 const BattleValidator = preload("res://src/domain/tactical/battle_validator.gd")
 const PATH := "user://godot-tactical-pause.json"
 const CANDIDATES: Array[String] = [PATH, PATH + ".tmp", PATH + ".bak"]
@@ -108,6 +110,12 @@ func _read_candidate(path: String) -> Dictionary:
 		return {"ok": false, "error": "恢复文件战场身份类型无效"}
 	if str(identity.get("battleId")) != str(battle.get("id")) or str(identity.get("sourceCityId")) != str(battle.get("sourceCityId")) or str(identity.get("targetCityId")) != str(battle.get("targetCityId")) or int(identity.get("rngSeed")) != int(battle.get("rngSeed", -2)):
 		return {"ok": false, "error": "恢复文件身份与战场不一致"}
+	var early_battle_issues: Array[Dictionary] = BattleValidator.validate(battle)
+	if not early_battle_issues.is_empty():
+		return {"ok": false, "error": BattleValidator.first_error(early_battle_issues)}
+	var digest: Dictionary = Canonical.try_sha256(battle)
+	if not bool(digest.get("ok", false)) or str(digest.get("value", "")) != str(parsed.get("stateSha256", "")):
+		return {"ok": false, "error": "恢复文件摘要校验失败"}
 	var parent_state_sha256 := str(identity.get("parentStateSha256", ""))
 	if parent_state_sha256.is_empty():
 		return {"ok": false, "error": "恢复文件缺少父战略状态摘要"}
@@ -123,12 +131,33 @@ func _read_candidate(path: String) -> Dictionary:
 			return {"ok": false, "error": String(strategic_save.get("recoveryPromotionError"))}
 		var envelope: Dictionary = strategic_save.get("envelope", {})
 		if str(envelope.get("stateSha256", "")) != parent_state_sha256:
-			return {"ok": false, "error": "恢复文件与当前战略存档不匹配"}
-	var digest: Dictionary = Canonical.try_sha256(battle)
-	if not bool(digest.get("ok", false)) or str(digest.get("value", "")) != str(parsed.get("stateSha256", "")):
-		return {"ok": false, "error": "恢复文件摘要校验失败"}
-	var battle_issues: Array[Dictionary] = BattleValidator.validate(battle)
-	if not battle_issues.is_empty(): return {"ok": false, "error": BattleValidator.first_error(battle_issues)}
+			# A terminal tactical checkpoint can outlive the strategic save that
+			# created it: the presentation deliberately keeps a committed recovery
+			# marker until the pause checkpoint is removed. Accept that one durable
+			# post-state only when the marker binds the same battle, source digest,
+			# and current post-state digest; unrelated newer saves remain rejected.
+			var committed := BattleRecoveryRepository.new("user://godot-spike-save.json.battle-recovery.json").load()
+			if not bool(committed.get("ok", false)) or not bool(committed.get("found", false)) or str(committed.get("status", "")) != "committed":
+				return {"ok": false, "error": "恢复文件与当前战略存档不匹配"}
+			var committed_envelope: Dictionary = committed.get("envelope", {})
+			var source_envelope: Dictionary = committed_envelope.get("sourceStrategicSave", {})
+			var post_envelope: Dictionary = committed_envelope.get("strategicSave", {})
+			var settlement_result: Dictionary = committed_envelope.get("settlementResult", {})
+			var battle_status := str(battle.get("status", "ongoing"))
+			var expected_winner := "attacker" if battle_status == "attacker-won" else "defender" if battle_status == "defender-won" else ""
+			var terminal_projection := BattleResult.from_snapshot(battle)
+			var projection_digest := Canonical.try_sha256(terminal_projection.get("result", {})) if bool(terminal_projection.get("ok", false)) else {"ok": false}
+			var committed_result_digest := Canonical.try_sha256(settlement_result)
+			if str(committed.get("battleId", "")) != str(battle.get("id", "")) \
+					or str(source_envelope.get("stateSha256", "")) != parent_state_sha256 \
+					or str(post_envelope.get("stateSha256", "")) != str(envelope.get("stateSha256", "")) \
+					or expected_winner.is_empty() \
+					or str(settlement_result.get("battleId", "")) != str(battle.get("id", "")) \
+					or str(settlement_result.get("winner", "")) != expected_winner \
+					or not bool(projection_digest.get("ok", false)) \
+					or not bool(committed_result_digest.get("ok", false)) \
+					or str(projection_digest.get("value", "")) != str(committed_result_digest.get("value", "")):
+				return {"ok": false, "error": "恢复文件与当前战略存档不匹配"}
 	return {"ok": true, "battle": battle, "parentStateSha256": parent_state_sha256}
 
 

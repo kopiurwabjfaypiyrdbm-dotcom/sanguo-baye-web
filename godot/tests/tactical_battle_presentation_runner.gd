@@ -3,6 +3,10 @@ extends SceneTree
 const TacticalScene = preload("res://scenes/presentation/tactical_battle_screen.tscn")
 const Session = preload("res://src/application/tactical_battle/tactical_battle_session.gd")
 const Canonical = preload("res://src/domain/validation/canonical_json.gd")
+const GameSession = preload("res://src/application/game_session/game_session.gd")
+const TACTICAL_CONTEXT = preload("res://src/application/tactical_launch_context.gd")
+const SESSION_CONTEXT = preload("res://src/application/campaign_session_context.gd")
+const PauseRepository = preload("res://src/application/persistence/tactical_pause_repository.gd")
 var _failures := 0
 var _assertions := 0
 
@@ -142,8 +146,94 @@ func _run() -> void:
 		for candidate: String in pause_candidates:
 			if FileAccess.file_exists(candidate): DirAccess.remove_absolute(ProjectSettings.globalize_path(candidate))
 		screen.queue_free()
+	await _run_terminal_settlement_presentation()
 	if _failures > 0: push_error("[Godot tactical presentation] FAILED: %d failure(s), %d assertion(s)" % [_failures, _assertions]); quit(1); return
 	print("[Godot tactical presentation] PASSED: %d assertion(s)" % _assertions); quit(0)
+
+
+func _run_terminal_settlement_presentation() -> void:
+	# Exercise the application-owned hand-off and presentation return path with
+	# a real production strategic session. This closes the vertical gap between
+	# the domain exact-once runner and the terminal tactical screen.
+	PauseRepository.clear_candidates()
+	SESSION_CONTEXT.clear()
+	TACTICAL_CONTEXT.clear()
+	var strategic := GameSession.new()
+	strategic.clear_battle_recovery()
+	var started := strategic.start_campaign(1, 1)
+	_assert_true(bool(started.get("ok", false)), "terminal presentation campaign must start")
+	if not bool(started.get("ok", false)): return
+	var order := {"sourceCityId": "city-12", "targetCityId": "city-11", "officerIds": ["officer-32"], "provisions": 20}
+	var saved := strategic.save_game()
+	_assert_true(bool(saved.get("ok", false)), "terminal presentation strategic baseline must save")
+	var created := strategic.create_tactical_battle(order)
+	_assert_true(bool(created.get("ok", false)), "terminal presentation native battle must create: %s" % created.get("error", ""))
+	if not bool(created.get("ok", false)): return
+	TACTICAL_CONTEXT.store(created.get("battle", {}), order, strategic.state_sha256(), strategic.campaign_descriptor())
+	SESSION_CONTEXT.store(strategic)
+	var screen := TacticalScene.instantiate()
+	root.add_child(screen)
+	await process_frame
+	await process_frame
+	_assert_true(screen.get("_session") != null, "terminal presentation must consume native hand-off")
+	screen._execute_command("confirm_deployment", {})
+	_assert_true(bool(screen._save_pause_snapshot()), "terminal presentation must save an ongoing checkpoint before the result")
+	var ongoing_snapshot := (screen.get("_snapshot") as Dictionary).duplicate(true)
+	var ongoing_session = screen.get("_session")
+	var ongoing_digest: String = ongoing_session.state_sha256()
+	screen._execute_command("retreat_side", {"side": "attacker"})
+	var terminal_state: Dictionary = screen.get("_snapshot") as Dictionary
+	_assert_equal(str(terminal_state.get("status", "")), "defender-won", "terminal presentation must reach a terminal battle")
+	_assert_equal(str(terminal_state.get("outcome", "")), "attacker-retreated", "terminal presentation must preserve retreat outcome")
+	var baseline_digest := strategic.state_sha256()
+	_assert_true(screen._settle_into_strategic_session(), "warm terminal presentation settlement must succeed")
+	var settled_digest := strategic.state_sha256()
+	_assert_true(settled_digest != baseline_digest, "warm terminal settlement must change strategic state")
+	var committed := strategic.load_battle_recovery()
+	_assert_true(bool(committed.get("ok", false)) and bool(committed.get("found", false)) and str(committed.get("status", "")) == "committed", "warm terminal save must retain committed marker until pause cleanup")
+	_assert_true(screen._settle_into_strategic_session(), "repeated warm terminal return must be idempotent")
+	_assert_equal(strategic.state_sha256(), settled_digest, "repeated warm terminal return must not dispatch settlement twice")
+	var stale_pause_write := PauseRepository.new().save(ongoing_snapshot, ongoing_digest, baseline_digest)
+	_assert_true(bool(stale_pause_write.get("ok", false)), "test must be able to restore the pre-terminal pause checkpoint")
+	var stale_pause_load := PauseRepository.new().load()
+	_assert_true(not bool(stale_pause_load.get("ok", false)), "same-battle ongoing pause must be rejected after committed settlement")
+	_assert_true(bool(PauseRepository.clear_candidates().get("ok", false)), "stale pause rejection test must clean its candidate")
+	_assert_true(bool(screen._save_pause_snapshot()), "terminal presentation must restore the terminal checkpoint after stale rejection")
+	var stored_terminal_pause := PauseRepository.new().load()
+	_assert_true(bool(stored_terminal_pause.get("ok", false)), "terminal settlement must retain a readable pause checkpoint")
+	_assert_equal(str((stored_terminal_pause.get("battle", {}) as Dictionary).get("status", "")), "defender-won", "terminal settlement must replace an older ongoing checkpoint")
+	var terminal_snapshot := (screen.get("_snapshot") as Dictionary).duplicate(true)
+	screen.queue_free()
+	await process_frame
+	SESSION_CONTEXT.clear()
+	TACTICAL_CONTEXT.clear()
+	var recovered := TacticalScene.instantiate()
+	root.add_child(recovered)
+	await process_frame
+	await process_frame
+	_assert_equal(_digest(recovered.get("_snapshot")), _digest(terminal_snapshot), "cold terminal pause must restore the same battle snapshot")
+	_assert_true(recovered._settle_into_strategic_session(), "cold terminal presentation settlement must consume committed marker")
+	_assert_true(bool(recovered.get("_strategic_settlement_applied")), "cold terminal presentation must mark settlement as already applied")
+	var recovered_session = SESSION_CONTEXT.peek()
+	var recovered_marker: Dictionary = {}
+	_assert_true(is_instance_valid(recovered_session), "cold terminal presentation must rebuild strategic session")
+	if is_instance_valid(recovered_session):
+		_assert_equal(recovered_session.state_sha256(), settled_digest, "cold terminal promotion must preserve strategic settlement digest")
+		recovered_marker = recovered_session.load_battle_recovery()
+		_assert_true(bool(recovered_marker.get("ok", false)) and bool(recovered_marker.get("found", false)) and str(recovered_marker.get("status", "")) == "committed", "cold tactical save must preserve marker until pause cleanup")
+	_assert_true(recovered._settle_into_strategic_session(), "repeated cold terminal return must remain idempotent")
+	_assert_equal(recovered_session.state_sha256() if is_instance_valid(recovered_session) else "", settled_digest, "repeated cold terminal return must keep strategic digest")
+	var pause_clear := PauseRepository.clear_candidates()
+	_assert_true(bool(pause_clear.get("ok", false)), "terminal return must clear pause candidates")
+	if is_instance_valid(recovered_session):
+		var marker_clear := recovered_session.clear_battle_recovery()
+		_assert_true(bool(marker_clear.get("ok", false)), "terminal return must clear committed marker after pause cleanup")
+		recovered_marker = recovered_session.load_battle_recovery()
+		_assert_true(bool(recovered_marker.get("ok", false)) and not bool(recovered_marker.get("found", false)), "terminal return must leave no committed marker")
+	recovered.queue_free()
+	await process_frame
+	SESSION_CONTEXT.clear()
+	TACTICAL_CONTEXT.clear()
 
 func _assert_equal(actual: Variant, expected: Variant, message: String) -> void:
 	_assertions += 1

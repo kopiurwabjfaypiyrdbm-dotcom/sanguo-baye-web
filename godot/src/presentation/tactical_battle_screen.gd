@@ -688,6 +688,12 @@ func _settle_into_strategic_session() -> bool:
 	if settlement.is_empty():
 		_set_status("战后结果为空，无法回写战略", Color("f38c78"))
 		return false
+	# The tactical checkpoint is the first phase of this hand-off. Persist the
+	# terminal battle before committing the strategic post-state so a crash in
+	# the following window cannot resurrect an older ongoing snapshot.
+	if not _save_pause_snapshot():
+		_set_status("无法保存终局战术检查点，已取消战果回写", Color("f38c78"))
+		return false
 	var settlement_digest: Dictionary = Canonical.try_sha256(settlement)
 	if not bool(settlement_digest.get("ok", false)):
 		_set_status("战后结果摘要失败，无法回写战略", Color("f38c78"))
@@ -696,7 +702,10 @@ func _settle_into_strategic_session() -> bool:
 	var created_session := false
 	if not is_instance_valid(strategic_session):
 		strategic_session = GAME_SESSION_SCRIPT.new()
-		var loaded: Dictionary = strategic_session.load_game()
+		# Keep the committed marker until this terminal tactical checkpoint is
+		# removed. This makes a crash after cold promotion but before scene return
+		# recoverable instead of leaving a parent-digest orphan.
+		var loaded: Dictionary = strategic_session.load_game(true)
 		if not bool(loaded.get("ok", false)):
 			_set_status("无法载入战略存档以结算战果：%s" % str(loaded.get("error", "")), Color("f38c78"))
 			return false

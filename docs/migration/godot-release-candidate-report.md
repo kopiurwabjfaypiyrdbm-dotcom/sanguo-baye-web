@@ -2,14 +2,14 @@
 
 ## Scope and recommendation
 
-MB25 verified a fresh Godot 4.7.1 GDScript Android Debug export, installed it on the running MuMu instance, exercised the cold launch path, and closed two code-side P1s found by the final read-only reviews. The native client remains suitable for conditional continuation of the full migration, but this is not a final Android acceptance or publish decision: physical MuMu/real-device touch evidence is still missing, and the existing provenance review still governs any redistribution of structured period data.
+MB25 recorded a Godot 4.7.1 GDScript Android Debug export, installed it on the running MuMu instance, exercised the cold launch path, and closed two code-side P1s found by the final read-only reviews. The recorded APK was exported at 05:02, before the MB25 code-fix commit at 05:22 and the MB26 terminal-recovery changes; it is therefore a diagnostic artifact, not a current release candidate. The native client remains suitable for conditional continuation of the full migration, but this is not a final Android acceptance or publish decision: a current-source export template is missing, physical MuMu/real-device touch evidence is still missing, and the existing provenance review still governs any redistribution of structured period data.
 
 ## Current Android candidate
 
 | Item | Evidence |
 |---|---|
 | Engine | Godot 4.7.1 stable (`a13da4feb`), standard GDScript project |
-| APK | `godot/builds/sanguo-baye-godot-mb25-debug.apk` |
+| Recorded diagnostic APK (pre-MB25/MB26 fixes) | `godot/builds/sanguo-baye-godot-mb25-debug.apk` |
 | Size | 57,887,025 bytes (about 55.2 MiB / 57.9 MB; not 5 GB) |
 | SHA-256 | `794D19D35290452B8D47B070248F541EB1C96984E56FC8890DDCFD6F26B7C6` |
 | Package | `com.sumo91.sanguobaye.godotspike`, version `0.1.0-spike`, code 1 |
@@ -29,22 +29,23 @@ The captured cold-launch screen shows the native main menu and the Godot 4.7.1 l
 ## Recovery and determinism closure
 
 - `GameSession.save_game(true)` gives the tactical presentation a narrow transaction window in which the committed marker survives the strategic save until the tactical checkpoint is removed; cleanup then clears the marker.
+- MB26 now writes the terminal tactical checkpoint before this transaction window and rejects an ongoing same-battle pause when a committed post-state marker exists; the presentation runner covers this crash window and exact settlement projection binding.
 - Cold `load_game()` consumes a matching committed battle id and returns it to the presentation, preventing a second `settle_tactical_battle` dispatch.
 - A committed marker older than a newer valid main save is now classified as `stale_recovery`, isolated, and ignored while the newer main state loads. This prevents a stale marker from bricking every subsequent cold start.
-- Production save/recovery runner: 139 assertions. Tactical presentation runner: 96 assertions, including compact return-confirmation touch targets. Campaign setup presentation runner: 62 assertions.
+- Production save/recovery runner: 139 assertions. Tactical presentation runner: 125 assertions, including warm/cold terminal settlement hand-off, committed-marker retention, terminal replacement of an older ongoing checkpoint, stale same-battle rejection, post-state pause validation, repeat-return idempotency, and compact return-confirmation touch targets. Campaign setup presentation runner: 62 assertions.
 
 ## Verification gate
 
-The final post-fix `npm run check` passed all Godot and Web checks (Godot domain/presentation/project, parity/full-loop/migration, save/recovery, 47 Web test files / 378 tests, and production build). The run includes the stale-marker isolation and compact confirmation-dialog changes; expected Windows root-certificate, popup-position, and missing Android build-tools warnings remain non-fatal environment warnings.
+The post-fix component gates pass: Godot domain/presentation/project, parity/full-loop/migration, save/recovery, tactical presentation (125), campaign setup (62), 47 Web test files / 378 tests, and production build. A fresh full `npm run check` must be rerun after installing the missing Godot 4.7.1 Android build template; the prior aggregate run reached the component gates but exceeded the local command timeout. Expected Windows root-certificate, popup-position, and missing Android build-tools warnings remain non-fatal environment warnings.
 
 ## Review and known risks
 
-- Architecture review: no P0; core state remains outside the scene tree. A presentation-layer settlement coordinator and a full terminal presentation E2E runner remain P2 structural follow-ups.
+- Architecture review: no P0; core state remains outside the scene tree. The terminal presentation vertical runner now covers warm/cold settlement and repeat-return idempotency; a dedicated application-level settlement coordinator remains a P2 structural follow-up.
 - Determinism review: no P0/P1 after the stale-marker fix; canonical ordering, explicit RNG, battle identity, parent digest, and exact-once settlement remain enforced.
-- Mobile review: no code-side P0/P1 after the new-campaign confirmation and compact confirmation-dialog fixes; physical touch/device acceptance remains P1 pending direct observation.
+- Mobile review: no code-side P0/P1 in the native input path; the recorded APK predates the MB25/MB26 fixes, MuMu is currently offline, and a fresh current-source APK plus physical touch/device acceptance remain P1.
 - Structured period data provenance and any future public distribution remain subject to the repository’s existing licensing/provenance decision.
 - The final APK is a local Debug artifact only. No APK/AAB was published, pushed, or attached to a release.
 
 ## Recommendation
 
-Continue the full migration Goal with the Web client as oracle and promote the next evidence mission only after the user-visible MuMu/real-device touch pass is captured. Do not call the Android-first acceptance complete or publish an artifact until that P1, the final post-fix `npm run check`, and the provenance decision are all closed.
+Continue the full migration Goal with the Web client as oracle and promote the next evidence mission for Android template installation, current-source export, and user-visible MuMu/real-device touch. Do not call the Android-first acceptance complete or publish an artifact until that P1, the final post-fix `npm run check`, and the provenance decision are all closed.
