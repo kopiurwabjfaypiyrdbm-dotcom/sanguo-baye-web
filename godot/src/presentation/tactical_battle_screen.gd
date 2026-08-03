@@ -15,6 +15,7 @@ const LAUNCH_CONTEXT = preload("res://src/application/campaign_launch_context.gd
 const SESSION_CONTEXT = preload("res://src/application/campaign_session_context.gd")
 const TACTICAL_CONTEXT = preload("res://src/application/tactical_launch_context.gd")
 const PauseRepository = preload("res://src/application/persistence/tactical_pause_repository.gd")
+const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
 const GAME_SESSION_SCRIPT = preload("res://src/application/game_session/game_session.gd")
 
 const CELL_SIZE := 88.0
@@ -22,7 +23,6 @@ const BOARD_SIZE := Vector2(12.0 * CELL_SIZE, 8.0 * CELL_SIZE)
 const MIN_ZOOM := 0.72
 const MAX_ZOOM := 2.15
 const ZOOM_STEP := 1.16
-const DRAG_THRESHOLD := 10.0
 
 @onready var battle_camera: Camera2D = %BattleCamera
 @onready var overlay: Control = %Overlay
@@ -214,7 +214,7 @@ func _handle_drag(position: Vector2) -> void:
 		_pinch_distance = distance
 		return
 	if not _pressed: return
-	if _press_position.distance_to(position) >= DRAG_THRESHOLD and not _dragging:
+	if _press_position.distance_to(position) >= _drag_threshold() and not _dragging:
 		_dragging = true; _cancel_camera_tween()
 	if _dragging:
 		var delta := position - _last_position
@@ -503,14 +503,14 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	var compact := physical_size.x <= 900 or physical_size.y <= 440
 	if is_instance_valid(_return_confirmation):
 		var dialog_width := minf(520.0, maxf(300.0, safe_rect.size.x - 24.0))
-		var dialog_touch_size := ceilf(48.0 / maxf(canvas_scale, 0.01))
+		var dialog_touch_size := TouchMetrics.target_size(canvas_scale)
 		_return_confirmation.min_size = Vector2i(ceili(dialog_width), ceili(dialog_touch_size * 2.0 + 72.0))
 		for dialog_button: Button in [_return_confirmation.get_ok_button(), _return_confirmation.get_cancel_button()]:
 			dialog_button.custom_minimum_size = Vector2(maxf(140.0, dialog_width * 0.34), dialog_touch_size)
 			dialog_button.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)) if compact else 18)
 	_compact_layout = compact
 	var scale := maxf(canvas_scale, 0.01)
-	var touch_size := ceilf(48.0 / scale)
+	var touch_size := TouchMetrics.target_size(scale)
 	var body_size := ceili((15.0 if compact else 18.0) * _text_scale / scale)
 	var action_size := ceili(17.0 * _text_scale / scale)
 	for button: Button in [_move_button, _attack_button, _skill_button, _wait_button, _settings_button, _back_button, _turn_button, _settle_button, _settings_close_button]:
@@ -833,9 +833,25 @@ func _update_touch_targets() -> void:
 	var viewport_size := get_viewport_rect().size
 	var physical_size := Vector2(get_tree().root.size)
 	var canvas_to_physical := minf(physical_size.x / maxf(1.0, viewport_size.x), physical_size.y / maxf(1.0, viewport_size.y))
-	var scale := clampf(48.0 / (46.0 * maxf(0.01, canvas_to_physical)), 1.0, 2.2)
-	for button: Button in [_move_button, _attack_button, _skill_button, _wait_button]: button.custom_minimum_size = Vector2(maxf(52.0, 72.0 * scale), 48.0 * scale)
-	_back_button.custom_minimum_size = Vector2(maxf(150.0, 150.0 * scale), 48.0 * scale)
-	if is_instance_valid(_settings_button): _settings_button.custom_minimum_size = Vector2(maxf(78.0, 88.0 * scale), 48.0 * scale)
-	if is_instance_valid(_turn_button): _turn_button.custom_minimum_size = Vector2(maxf(148.0, 148.0 * scale), 48.0 * scale)
-	if is_instance_valid(_settle_button): _settle_button.custom_minimum_size = Vector2(maxf(112.0, 112.0 * scale), 48.0 * scale)
+	var touch_size := TouchMetrics.target_size(canvas_to_physical)
+	var scale := maxf(1.0, touch_size / 48.0)
+	for button: Button in [_move_button, _attack_button, _skill_button, _wait_button]: button.custom_minimum_size = Vector2(maxf(52.0, 72.0 * scale), touch_size)
+	_back_button.custom_minimum_size = Vector2(maxf(150.0, 150.0 * scale), touch_size)
+	if is_instance_valid(_settings_button): _settings_button.custom_minimum_size = Vector2(maxf(78.0, 88.0 * scale), touch_size)
+	if is_instance_valid(_turn_button): _turn_button.custom_minimum_size = Vector2(maxf(148.0, 148.0 * scale), touch_size)
+	if is_instance_valid(_settle_button): _settle_button.custom_minimum_size = Vector2(maxf(112.0, 112.0 * scale), touch_size)
+
+
+func _drag_threshold() -> float:
+	return TouchMetrics.drag_threshold(_canvas_to_physical_scale())
+
+
+func _canvas_to_physical_scale() -> float:
+	var viewport_size := get_viewport_rect().size
+	var physical_size := Vector2(get_tree().root.size)
+	if physical_size.x <= 1.0 or physical_size.y <= 1.0:
+		physical_size = viewport_size
+	return minf(
+		physical_size.x / maxf(1.0, viewport_size.x),
+		physical_size.y / maxf(1.0, viewport_size.y)
+	)

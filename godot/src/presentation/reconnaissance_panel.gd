@@ -1,6 +1,8 @@
 class_name ReconnaissancePanel
 extends PanelContainer
 
+const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
+
 signal command_requested(kind: String, parameters: Dictionary)
 signal target_preview_requested(source_city_id: String, target_city_id: String)
 signal close_requested
@@ -79,7 +81,7 @@ func set_busy(value: bool) -> void:
 
 func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: Vector2i) -> void:
 	var scale: float = maxf(canvas_scale, 0.01)
-	var touch_size: float = ceilf(48.0 / scale) if compact else 52.0
+	var touch_size: float = TouchMetrics.target_size(scale) if compact else 52.0
 	var target_width_px: float = minf(420.0, maxf(330.0, float(physical_size.x) - 40.0)) if compact else 430.0
 	custom_minimum_size = Vector2(ceilf(target_width_px / scale) if compact else target_width_px, 0.0)
 	outer_margin.add_theme_constant_override("margin_left", ceili(10.0 / scale) if compact else 16)

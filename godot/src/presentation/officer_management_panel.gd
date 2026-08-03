@@ -1,6 +1,8 @@
 class_name OfficerManagementPanel
 extends PanelContainer
 
+const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
+
 signal command_requested(kind: String, parameters: Dictionary)
 signal close_requested
 
@@ -105,7 +107,7 @@ func set_busy(value: bool) -> void:
 func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: Vector2i) -> void:
 	_compact = compact
 	_canvas_scale = maxf(canvas_scale, 0.01)
-	var touch_size: float = ceilf(48.0 / _canvas_scale) if compact else 52.0
+	var touch_size: float = TouchMetrics.target_size(_canvas_scale) if compact else 52.0
 	var body_size: int = ceili(15.0 / _canvas_scale) if compact else 18
 	var action_size: int = ceili(17.0 / _canvas_scale) if compact else 18
 	if compact:

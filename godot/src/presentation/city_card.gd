@@ -3,6 +3,8 @@
 class_name CityCard
 extends PanelContainer
 
+const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
+
 signal command_requested(kind: String, parameters: Dictionary)
 signal officer_management_requested(city_id: String)
 signal personnel_lifecycle_requested(city_id: String)
@@ -200,7 +202,7 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 		outer_margin.add_theme_constant_override("margin_top", 8)
 		outer_margin.add_theme_constant_override("margin_bottom", 8)
 		content.add_theme_constant_override("separation", 2)
-		var touch_size := ceilf(48.0 / scale)
+		var touch_size := TouchMetrics.target_size(scale)
 		var target_width_px := minf(360.0, maxf(320.0, float(physical_size.x) - 48.0))
 		custom_minimum_size = Vector2(ceilf(target_width_px / scale), 0.0)
 		close_button.custom_minimum_size = Vector2(touch_size, touch_size)
@@ -426,7 +428,7 @@ func _emit_selected_command() -> void:
 
 func _apply_confirmation_layout() -> void:
 	var scale: float = maxf(_last_canvas_scale, 0.01)
-	var touch_size: float = ceilf(48.0 / scale) if _compact_mode else 52.0
+	var touch_size: float = TouchMetrics.target_size(scale) if _compact_mode else 52.0
 	_confirm_dialog.get_ok_button().custom_minimum_size = Vector2(
 		ceilf(112.0 / scale) if _compact_mode else 132.0, touch_size
 	)

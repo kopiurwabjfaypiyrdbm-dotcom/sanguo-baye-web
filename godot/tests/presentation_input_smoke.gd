@@ -2,6 +2,7 @@ extends SceneTree
 
 const MAIN_SCENE := preload("res://scenes/presentation/strategy_screen.tscn")
 const LAUNCH_CONTEXT := preload("res://src/application/campaign_launch_context.gd")
+const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
 
 var _assertions := 0
 var _failures := 0
@@ -12,6 +13,11 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	_assert_equal(TouchMetrics.density_scale_for_dpi(160.0), 1.0, "touch metrics must preserve the 160 dpi baseline")
+	_assert_equal(TouchMetrics.density_scale_for_dpi(360.0), 2.25, "touch metrics must derive Android density from dpi")
+	var high_density_target := TouchMetrics.target_size(0.5, 2.25)
+	_assert_true(high_density_target * 0.5 >= 108.0, "high-density compact controls must retain a 48dp physical target")
+	_assert_true(TouchMetrics.drag_threshold(0.5, 2.25) * 0.5 >= 31.5, "high-density touch drag threshold must scale with dpi")
 	var screen := MAIN_SCENE.instantiate()
 	screen.allow_demo_samples = true
 	LAUNCH_CONTEXT.request_campaign(1, 1)

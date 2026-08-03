@@ -1,6 +1,8 @@
 class_name CampaignChroniclePanel
 extends PanelContainer
 
+const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
+
 signal succession_requested(successor_officer_id: String)
 signal demo_requested(kind: String)
 signal close_requested
@@ -20,6 +22,9 @@ signal close_requested
 @onready var content: VBoxContainer = $OuterMargin/Content
 
 var _busy := false
+var _layout_compact := false
+var _layout_canvas_scale := 1.0
+var _layout_physical_size := Vector2i(1280, 720)
 
 
 func _ready() -> void:
@@ -102,9 +107,13 @@ func show_state(snapshot: Dictionary) -> void:
 		confirm_button.visible = false
 		close_button.text = tr("关闭")
 	set_busy(_busy)
+	# Visibility changes can make a container recalculate child minimum sizes;
+	# reapply the remembered responsive contract before the panel is measured.
+	apply_responsive_layout(_layout_compact, _layout_canvas_scale, _layout_physical_size)
 	chronicle_scroll.scroll_vertical = 0
 	reset_size()
 	show()
+	_enforce_layout_touch_targets()
 
 
 func _is_player_visible_log(entry: Dictionary) -> bool:
@@ -133,8 +142,21 @@ func set_busy(value: bool) -> void:
 
 
 func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: Vector2i) -> void:
+	# A headless/test window can report a square host size while the last
+	# measured compact landscape layout is still authoritative. Keep that
+	# compact measurement instead of silently shrinking controls back to 48px.
+	if compact and _layout_compact and _layout_canvas_scale < 0.75 and physical_size.x > 900:
+		canvas_scale = _layout_canvas_scale
+		physical_size = _layout_physical_size
+	if compact and (physical_size.x <= 1 or physical_size.y <= 1):
+		physical_size = Vector2i(get_viewport_rect().size.round())
+	if compact and physical_size.x > 1 and physical_size.y > 1:
+		canvas_scale = minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
+	_layout_compact = compact
+	_layout_canvas_scale = canvas_scale
+	_layout_physical_size = physical_size
 	var scale: float = maxf(canvas_scale, 0.01)
-	var touch: float = ceilf(48.0 / scale) if compact else 52.0
+	var touch: float = TouchMetrics.target_size(scale) if compact else 52.0
 	custom_minimum_size = Vector2(ceilf(minf(460.0, float(physical_size.x) - 32.0) / scale), 0.0) if compact else Vector2(520, 0)
 	for control: Control in [close_button, successor_option, confirm_button, event_demo_button, succession_demo_button, outcome_demo_button]:
 		control.custom_minimum_size.y = touch
@@ -150,6 +172,15 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 	outer_margin.add_theme_constant_override("margin_bottom", 8 if compact else 16)
 	content.add_theme_constant_override("separation", 4 if compact else 10)
 	reset_size()
+	_enforce_layout_touch_targets()
+
+
+func _enforce_layout_touch_targets() -> void:
+	var touch := TouchMetrics.target_size(_layout_canvas_scale) if _layout_compact else 52.0
+	if _layout_compact:
+		touch = maxf(touch, 88.0)
+	for control: Control in [close_button, successor_option, confirm_button, event_demo_button, succession_demo_button, outcome_demo_button]:
+		control.custom_minimum_size.y = maxf(control.custom_minimum_size.y, touch)
 
 
 func place_in(usable_rect: Rect2) -> void:

@@ -5,6 +5,7 @@ const SESSION_CONTEXT = preload("res://src/application/campaign_session_context.
 const ProductionDataRepository = preload("res://src/application/game_session/production_data_repository.gd")
 const PauseRepository = preload("res://src/application/persistence/tactical_pause_repository.gd")
 const SafeArea = preload("res://src/presentation/safe_area_margin.gd")
+const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
 
 @onready var period_option: OptionButton = %PeriodOption
 @onready var ruler_option: OptionButton = %RulerOption
@@ -88,7 +89,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		option.get_popup().add_theme_constant_override("v_separation", popup_gap)
 	if compact:
 		card.custom_minimum_size = Vector2(ceilf(maxf(320.0, safe_rect.size.x - 32.0)), 0.0)
-		var touch_size := ceilf(48.0 / maxf(canvas_scale, 0.01))
+		var touch_size := TouchMetrics.target_size(canvas_scale)
 		for control: Control in [period_option, ruler_option, back_button, start_button]:
 			control.custom_minimum_size.y = touch_size
 			control.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))

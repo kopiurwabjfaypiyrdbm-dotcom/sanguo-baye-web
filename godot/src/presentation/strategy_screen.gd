@@ -7,13 +7,13 @@ const LAUNCH_CONTEXT := preload("res://src/application/campaign_launch_context.g
 const SESSION_CONTEXT := preload("res://src/application/campaign_session_context.gd")
 const TACTICAL_CONTEXT := preload("res://src/application/tactical_launch_context.gd")
 const PauseRepository = preload("res://src/application/persistence/tactical_pause_repository.gd")
+const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
 
 @export var allow_demo_samples := false
 
 const EXPECTED_CITY_COUNT := 38
 const EXPECTED_ROAD_COUNT := 54
 const MOUSE_DRAG_THRESHOLD := 9.0
-const TOUCH_DRAG_THRESHOLD := 14.0
 const TAP_MAX_DURATION_SECONDS := 0.48
 const MIN_ZOOM := 0.68
 const MAX_ZOOM := 2.35
@@ -1007,7 +1007,7 @@ func _handle_screen_touch(event: InputEventScreenTouch) -> void:
 			if _touches.size() == 1:
 				var remaining_id: Variant = _touches.keys()[0]
 				_touch_origins[remaining_id] = _touches[remaining_id]
-		if not was_dragged and not was_multitouch and duration <= TAP_MAX_DURATION_SECONDS and origin.distance_to(event.position) <= TOUCH_DRAG_THRESHOLD:
+		if not was_dragged and not was_multitouch and duration <= TAP_MAX_DURATION_SECONDS and origin.distance_to(event.position) <= _touch_drag_threshold():
 			if not event.canceled:
 				_handle_tap(event.position, true)
 	get_viewport().set_input_as_handled()
@@ -1021,7 +1021,7 @@ func _handle_screen_drag(event: InputEventScreenDrag) -> void:
 	_touches[touch_id] = event.position
 	if _touches.size() == 1:
 		var origin := Vector2(_touch_origins.get(touch_id, event.position))
-		if origin.distance_to(event.position) >= TOUCH_DRAG_THRESHOLD:
+		if origin.distance_to(event.position) >= _touch_drag_threshold():
 			_touch_dragged[touch_id] = true
 		if bool(_touch_dragged.get(touch_id, false)):
 			_pan_camera(event.position - previous)
@@ -1198,7 +1198,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	menu_button.text = tr("菜单" if compact else "主菜单")
 
 	if compact:
-		var touch_size := ceilf(48.0 / maxf(canvas_scale, 0.01))
+		var touch_size := TouchMetrics.target_size(canvas_scale)
 		var label_font_size := ceili(15.0 / maxf(canvas_scale, 0.01))
 		var action_font_size := ceili(17.0 / maxf(canvas_scale, 0.01))
 		top_panel.custom_minimum_size = Vector2(0.0, touch_size + 14.0)
@@ -1227,7 +1227,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		seed_label.add_theme_font_size_override("font_size", 18)
 		status_badge.add_theme_font_size_override("font_size", 18)
 		status_line.add_theme_font_size_override("font_size", 18)
-	map_world.set_minimum_physical_hit_radius(24.0, canvas_scale)
+	map_world.set_minimum_physical_hit_radius(TouchMetrics.target_size(canvas_scale) * canvas_scale * 0.5, canvas_scale)
 	city_card.apply_responsive_layout(compact, canvas_scale, physical_size)
 	officer_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
 	personnel_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
@@ -1323,7 +1323,13 @@ func _as_dictionary(value: Variant) -> Dictionary:
 func _current_canvas_scale() -> float:
 	var physical_size := DisplayServer.window_get_size()
 	var viewport_size := get_viewport_rect().size
+	if physical_size.x <= 1 or physical_size.y <= 1:
+		physical_size = Vector2i(viewport_size.round())
 	return minf(
 		float(physical_size.x) / maxf(viewport_size.x, 1.0),
 		float(physical_size.y) / maxf(viewport_size.y, 1.0)
 	)
+
+
+func _touch_drag_threshold() -> float:
+	return TouchMetrics.drag_threshold(_current_canvas_scale())

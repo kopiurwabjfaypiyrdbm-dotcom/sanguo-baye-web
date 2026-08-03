@@ -4,6 +4,7 @@ const CONTEXT = preload("res://src/application/campaign_launch_context.gd")
 const SESSION_CONTEXT = preload("res://src/application/campaign_session_context.gd")
 const TACTICAL_CONTEXT = preload("res://src/application/tactical_launch_context.gd")
 const SafeArea = preload("res://src/presentation/safe_area_margin.gd")
+const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
 const PauseRepository = preload("res://src/application/persistence/tactical_pause_repository.gd")
 
 @onready var continue_button: Button = %ContinueButton
@@ -77,7 +78,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	var card: PanelContainer = $Center/Card
 	if compact:
 		card.custom_minimum_size = Vector2(ceilf(maxf(320.0, safe_rect.size.x - 32.0)), 0.0)
-		var touch_size := ceilf(48.0 / maxf(canvas_scale, 0.01))
+		var touch_size := TouchMetrics.target_size(canvas_scale)
 		for button: Button in [new_campaign_button, continue_button, quit_button]:
 			button.custom_minimum_size.y = touch_size
 			button.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
