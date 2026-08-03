@@ -137,10 +137,25 @@ func save_committed(
 		var existing_binding: Dictionary = _binding_from_envelope(existing_envelope)
 		if not _binding_equal(existing_binding, binding):
 			return _failure("战斗恢复记录冲突：战斗身份绑定不一致")
+		if not _is_safe_revision(existing_envelope.get("parentSaveRevision")) \
+				or int(existing_envelope["parentSaveRevision"]) != parent_save_revision:
+			return _failure("战斗恢复记录冲突：parentSaveRevision 不一致")
 		if existing["status"] == "committed":
 			var old_save: Dictionary = existing_envelope.get("strategicSave", {})
 			if String(old_save.get("stateSha256", "")) != String(strategic_save["envelope"].get("stateSha256", "")):
 				return _failure("战斗恢复记录冲突：已提交状态不一致")
+			var old_source: Dictionary = existing_envelope.get("sourceStrategicSave", {})
+			if String(old_source.get("stateSha256", "")) != String(source_envelope["envelope"].get("stateSha256", "")):
+				return _failure("战斗恢复记录冲突：已提交源状态不一致")
+			var old_result_digest: Dictionary = Canonical.try_sha256(existing_envelope.get("settlementResult", {}))
+			var result_digest: Dictionary = Canonical.try_sha256(settlement_result)
+			if not old_result_digest.get("ok", false) or not result_digest.get("ok", false) \
+					or String(old_result_digest["value"]) != String(result_digest["value"]):
+				return _failure("战斗恢复记录冲突：已提交战后结果不一致")
+		else:
+			var pending_source: Dictionary = existing_envelope.get("strategicSave", {})
+			if String(pending_source.get("stateSha256", "")) != String(source_envelope["envelope"].get("stateSha256", "")):
+				return _failure("战斗恢复记录冲突：待处理战前状态不一致")
 	var envelope: Dictionary = {
 		"format": RECOVERY_FORMAT,
 		"version": RECOVERY_VERSION,

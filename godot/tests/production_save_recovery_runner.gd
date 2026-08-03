@@ -106,6 +106,24 @@ func _initialize() -> void:
 	_assert_true(migrated_web.get("ok", false) and migrated_web.get("migrated", false), "supported Web v1 production save must migrate")
 	if migrated_web.get("ok", false):
 		_assert_equal(_digest(migrated_web["state"]), fixture["initialStateSha256"], "Web v1 migration must preserve digest")
+	var invalid_web_primary: Dictionary = fixture["webSaveV1"].duplicate(true)
+	(invalid_web_primary["state"] as Dictionary)["scenario"] = ((fixture["webSaveV1"]["state"] as Dictionary)["scenario"] as Dictionary).duplicate(true)
+	(invalid_web_primary["state"] as Dictionary)["scenario"]["id"] = "catalog-invalid"
+	_write_json(SAVE_PATH, invalid_web_primary)
+	_write_json(SAVE_PATH + ".tmp", fixture["webSaveV1"])
+	var semantic_fallback := GameSession.new(SAVE_PATH).load_game()
+	_assert_true(semantic_fallback.get("ok", false), "catalog-invalid Web primary must fall back to a valid temporary save")
+	_assert_true(String(semantic_fallback.get("recoveredFrom", "")).ends_with(".tmp"), "catalog-invalid Web primary must report fallback source")
+	_remove_file(SAVE_PATH + ".tmp")
+	var invalid_campaign_primary: Dictionary = fixture["productionSave"].duplicate(true)
+	invalid_campaign_primary["campaign"] = (fixture["campaign"] as Dictionary).duplicate(true)
+	invalid_campaign_primary["campaign"]["title"] = "目录外标题"
+	_write_json(SAVE_PATH, invalid_campaign_primary)
+	_write_json(SAVE_PATH + ".tmp", fixture["productionSave"])
+	var campaign_fallback := GameSession.new(SAVE_PATH).load_game()
+	_assert_true(campaign_fallback.get("ok", false), "catalog-invalid campaign primary must fall back to a valid temporary save")
+	_assert_true(String(campaign_fallback.get("recoveredFrom", "")).ends_with(".tmp"), "catalog-invalid campaign must report fallback source")
+	_remove_file(SAVE_PATH + ".tmp")
 
 	# Pending player and AI checkpoints round-trip through the same versioned
 	# recovery envelope and never depend on Dictionary traversal order.
@@ -288,6 +306,18 @@ func _initialize() -> void:
 		"officerIds": settlement_fixture["result"]["attackerOfficerIds"].duplicate(true),
 		"provisions": settlement_fixture["result"]["provisions"],
 	}
+	var lineage_session := GameSession.new(SAVE_PATH)
+	lineage_session.start_campaign(1, 1)
+	lineage_session.save_game()
+	var lineage_pending := lineage_session.save_battle_recovery_pending(settlement_order, {"kind": "player-phase"}, "战前 lineage", "2026-08-03T00:00:00.000Z")
+	_assert_true(lineage_pending.get("ok", false), "lineage pending marker must save")
+	lineage_session.save_game()
+	var lineage_settled := lineage_session.execute_command({
+		"commandEnvelopeVersion": 1, "commandId": "mb20-lineage-conflict", "expectedStateSha256": settlement_fixture["initialStateSha256"],
+		"kind": "settle_tactical_battle", "parameters": {"battleResult": settlement_fixture["result"]},
+	})
+	_assert_true(not lineage_settled.get("ok", false), "pending marker must reject commit after main save revision advances")
+	lineage_session.clear_battle_recovery()
 	var pending_settlement := settle_session.save_battle_recovery_pending(settlement_order, {"kind": "player-phase"}, "战前待处理", "2026-08-03T00:00:00.000Z")
 	_assert_true(pending_settlement.get("ok", false), "settlement pending marker must be written before commit")
 	var settlement_command := {

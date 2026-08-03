@@ -1,13 +1,14 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const exactEngine = 'D:\\03_Godot\\01_Engine\\Godot_v4.7.1-stable_win64.exe';
 const engine = process.env.GODOT_BIN || (existsSync(exactEngine) ? exactEngine : 'godot');
-const runtimeUserDir = resolve(root, 'godot/.runtime-user', `run-${process.pid}`);
-mkdirSync(runtimeUserDir, { recursive: true });
+const runtimeRoot = resolve(root, 'godot/.runtime-user');
+mkdirSync(runtimeRoot, { recursive: true });
+const runtimeUserDir = mkdtempSync(resolve(runtimeRoot, `run-${process.pid}-`));
 const godotEnv = { ...process.env, APPDATA: runtimeUserDir, LOCALAPPDATA: runtimeUserDir };
 const version = spawnSync(engine, ['--version'], { cwd: root, env: godotEnv, encoding: 'utf8', timeout: 60_000, windowsHide: true });
 const versionText = String(version.stdout ?? '').trim();

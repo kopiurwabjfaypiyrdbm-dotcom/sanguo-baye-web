@@ -3,6 +3,7 @@ extends RefCounted
 const GameState = preload("res://src/domain/game_state/game_state.gd")
 const Validator = preload("res://src/domain/validation/game_state_validator.gd")
 const CanonicalJson = preload("res://src/domain/validation/canonical_json.gd")
+const ProductionDataRepository = preload("res://src/application/game_session/production_data_repository.gd")
 
 const SAVE_FORMAT: String = "sanguo-baye-godot-spike"
 const SAVE_VERSION: int = 1
@@ -252,6 +253,8 @@ func _load_web_production(envelope: Dictionary) -> Dictionary:
 	if typeof(envelope.get("state")) != TYPE_DICTIONARY:
 		return _failure("Web 存档中的游戏状态无效")
 	var state_data: Dictionary = envelope["state"]
+	var catalog_error := _validate_catalog_identity(state_data)
+	if not catalog_error.is_empty(): return _failure(catalog_error)
 	if not _is_integer_number(state_data.get("dataContractVersion")) \
 			or int(state_data.get("dataContractVersion")) != PRODUCTION_DATA_CONTRACT_VERSION \
 			or String(state_data.get("rulesetId", "")) != PRODUCTION_RULESET_ID:
@@ -297,6 +300,8 @@ func _load_production(envelope: Dictionary) -> Dictionary:
 	if typeof(envelope["state"]) != TYPE_DICTIONARY:
 		return _failure("生产存档中的游戏状态无效")
 	var state_data: Dictionary = envelope["state"]
+	var catalog_error := _validate_catalog_identity(state_data)
+	if not catalog_error.is_empty(): return _failure(catalog_error)
 	if not _is_integer_number(state_data.get("dataContractVersion")) \
 			or int(state_data.get("dataContractVersion")) != PRODUCTION_DATA_CONTRACT_VERSION \
 			or String(state_data.get("rulesetId", "")) != PRODUCTION_RULESET_ID:
@@ -331,6 +336,8 @@ func _load_legacy_production(envelope: Dictionary) -> Dictionary:
 	if typeof(envelope.get("state")) != TYPE_DICTIONARY:
 		return _failure("旧生产存档中的游戏状态无效")
 	var state_data: Dictionary = envelope["state"]
+	var catalog_error := _validate_catalog_identity(state_data)
+	if not catalog_error.is_empty(): return _failure(catalog_error)
 	if not _is_integer_number(state_data.get("dataContractVersion")) \
 			or int(state_data.get("dataContractVersion")) != PRODUCTION_DATA_CONTRACT_VERSION \
 			or String(state_data.get("rulesetId", "")) != PRODUCTION_RULESET_ID:
@@ -406,9 +413,26 @@ func _validate_campaign(campaign: Variant, state_data: Dictionary) -> String:
 			or int(data["rulerSourceIndex"]) < 0 \
 			or typeof(data["title"]) != TYPE_STRING \
 			or typeof(data["playerFactionId"]) != TYPE_STRING \
-			or typeof(data["rulerOfficerId"]) != TYPE_STRING \
+		or typeof(data["rulerOfficerId"]) != TYPE_STRING \
 			or typeof(data["rulerName"]) != TYPE_STRING:
 		return "生产存档 campaign 字段类型或时期不匹配"
+	var catalog_result: Dictionary = ProductionDataRepository.load_period(int(data["periodId"]))
+	if not catalog_result.get("ok", false):
+		return "生产存档时期目录不可用：%s" % String(catalog_result.get("error", ""))
+	var catalog_scenario: Dictionary = catalog_result["envelope"].get("scenario", {})
+	if String(data["title"]) != String(catalog_scenario.get("title", "")):
+		return "生产存档 campaign title 与时期目录不一致"
+	var candidate_found := false
+	for raw_candidate: Variant in catalog_scenario.get("playerCandidates", []):
+		var candidate: Dictionary = raw_candidate
+		if String(candidate.get("factionId", "")) != String(data["playerFactionId"]):
+			continue
+		candidate_found = true
+		if int(candidate.get("sourceIndex", -1)) != int(data["rulerSourceIndex"]):
+			return "生产存档 campaign rulerSourceIndex 与时期目录不一致"
+		break
+	if not candidate_found:
+		return "生产存档 campaign playerFactionId 不是时期可选势力"
 	var factions: Dictionary = state_data.get("factions", {})
 	var officers: Dictionary = state_data.get("officers", {})
 	var faction: Dictionary = factions.get(data["playerFactionId"], {})
@@ -428,6 +452,29 @@ func _first_unknown_key(data: Dictionary, allowed: Array[String]) -> String:
 		if not allowed.has(key): unknown.append(key)
 	unknown.sort()
 	return unknown[0] if not unknown.is_empty() else ""
+
+
+func _validate_catalog_identity(state_data: Dictionary) -> String:
+	if typeof(state_data.get("scenario")) != TYPE_DICTIONARY:
+		return "生产存档缺少 scenario 身份"
+	var scenario: Dictionary = state_data["scenario"]
+	if not _is_integer_number(scenario.get("period")) or int(scenario["period"]) < 1:
+		return "生产存档 scenario.period 无效"
+	var catalog_result: Dictionary = ProductionDataRepository.load_period(int(scenario["period"]))
+	if not catalog_result.get("ok", false):
+		return "生产存档时期目录不可用：%s" % String(catalog_result.get("error", ""))
+	var catalog_state: Dictionary = (catalog_result["state"] as GameState).snapshot()
+	if scenario != catalog_state.get("scenario", {}):
+		return "生产存档 scenario 身份与时期目录不一致"
+	var catalog_scenario: Dictionary = catalog_result["envelope"].get("scenario", {})
+	var candidate_found := false
+	for raw_candidate: Variant in catalog_scenario.get("playerCandidates", []):
+		if String((raw_candidate as Dictionary).get("factionId", "")) == String(state_data.get("playerFactionId", "")):
+			candidate_found = true
+			break
+	if not candidate_found:
+		return "生产存档 playerFactionId 不是时期可选势力"
+	return ""
 
 
 func get_save_path() -> String:
