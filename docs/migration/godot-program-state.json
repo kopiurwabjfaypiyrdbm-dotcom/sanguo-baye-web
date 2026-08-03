@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB20",
-  "currentBriefPath": "docs/mission-briefs/MB20-production-saves-migration-corruption-recovery.md",
-  "readyMissionIds": ["MB20"],
+  "currentMissionId": "MB21",
+  "currentBriefPath": "docs/mission-briefs/MB21-main-menu-campaign-setup-strategic-ui.md",
+  "readyMissionIds": ["MB21"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -125,15 +125,21 @@
       "briefPath": "docs/mission-briefs/MB19-battle-outcomes-retreat-settlement-campaign-reintegration.md",
       "reportPath": "docs/migration/mission-reports/MB19-battle-outcomes-retreat-settlement-campaign-reintegration.md",
       "commit": "b5600e6"
+    },
+    {
+      "id": "MB20",
+      "briefPath": "docs/mission-briefs/MB20-production-saves-migration-corruption-recovery.md",
+      "reportPath": "docs/migration/mission-reports/MB20-production-saves-migration-corruption-recovery.md",
+      "commit": "233bd7a"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB19",
-    "commit": "b5600e6",
+    "missionId": "MB20",
+    "commit": "233bd7a",
     "date": "2026-08-03"
   },
-  "nextAction": "Implement MB20 production saves, migration, and corruption recovery; preserve MB19 exact-once settlement.",
+  "nextAction": "Implement MB21 main menu, campaign setup, and strategic UI; preserve MB20 production save and recovery contracts.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
