@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB16",
-  "currentBriefPath": "docs/mission-briefs/MB16-unit-types-skills-tactics-equipment.md",
-  "readyMissionIds": ["MB16"],
+  "currentMissionId": "MB17",
+  "currentBriefPath": "docs/mission-briefs/MB17-deterministic-tactical-ai.md",
+  "readyMissionIds": ["MB17"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -101,15 +101,21 @@
       "briefPath": "docs/mission-briefs/MB15-attacks-damage-status-defeat.md",
       "reportPath": "docs/migration/mission-reports/MB15-attacks-damage-status-defeat.md",
       "commit": "d58b6d5"
+    },
+    {
+      "id": "MB16",
+      "briefPath": "docs/mission-briefs/MB16-unit-types-skills-tactics-equipment.md",
+      "reportPath": "docs/migration/mission-reports/MB16-unit-types-skills-tactics-equipment.md",
+      "commit": "ae70847"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB15",
-    "commit": "d58b6d5",
+    "missionId": "MB16",
+    "commit": "ae70847",
     "date": "2026-08-03"
   },
-  "nextAction": "Implement MB16 by adding one deterministic skill/tactic and equipment or unit-type modifier on top of the MB15 attack contract; keep tactical AI, presentation, and campaign settlement deferred.",
+  "nextAction": "Implement MB17 by adding a bounded deterministic tactical AI decision trace on the MB13–MB16 battle contract; keep battlefield presentation, Android touch validation, and campaign settlement deferred.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
