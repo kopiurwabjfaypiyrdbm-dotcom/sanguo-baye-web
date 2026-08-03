@@ -18,6 +18,9 @@ func _run() -> void:
 	var high_density_target := TouchMetrics.target_size(0.5, 2.25)
 	_assert_true(high_density_target * 0.5 >= 108.0, "high-density compact controls must retain a 48dp physical target")
 	_assert_true(TouchMetrics.drag_threshold(0.5, 2.25) * 0.5 >= 31.5, "high-density touch drag threshold must scale with dpi")
+	_assert_equal(TouchMetrics.target_size(1.0, 8.0), 192.0, "explicit density must respect the 4x safety cap")
+	_assert_equal(TouchMetrics.drag_threshold(1.0, 8.0), 56.0, "explicit drag density must respect the 4x safety cap")
+	_assert_equal(TouchMetrics.popup_separation(0.5, 31.0, 2.25), 185, "high-density popup rows must reserve a full 48dp target")
 	var screen := MAIN_SCENE.instantiate()
 	screen.allow_demo_samples = true
 	LAUNCH_CONTEXT.request_campaign(1, 1)

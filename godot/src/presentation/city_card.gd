@@ -198,11 +198,12 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 	var scale := maxf(canvas_scale, 0.01)
 	_compact_mode = compact
 	_last_canvas_scale = scale
+	var touch_mode := compact or TouchMetrics.uses_density_scaled_targets()
+	var touch_size: float = TouchMetrics.target_size(scale) if touch_mode else 52.0
 	if compact:
 		outer_margin.add_theme_constant_override("margin_top", 8)
 		outer_margin.add_theme_constant_override("margin_bottom", 8)
 		content.add_theme_constant_override("separation", 2)
-		var touch_size := TouchMetrics.target_size(scale)
 		var target_width_px := minf(360.0, maxf(320.0, float(physical_size.x) - 48.0))
 		custom_minimum_size = Vector2(ceilf(target_width_px / scale), 0.0)
 		close_button.custom_minimum_size = Vector2(touch_size, touch_size)
@@ -224,7 +225,7 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 			control.add_theme_font_size_override("font_size", action_font_size)
 		for popup: PopupMenu in [command_option.get_popup(), executor_option.get_popup(), trade_direction.get_popup()]:
 			popup.add_theme_font_size_override("font_size", action_font_size)
-			popup.add_theme_constant_override("v_separation", ceili(31.0 / scale))
+			popup.add_theme_constant_override("v_separation", TouchMetrics.popup_separation(scale, action_font_size))
 		_confirm_dialog.min_size = Vector2i(ceilf(340.0 / scale), ceilf(176.0 / scale))
 		_confirm_dialog.get_ok_button().custom_minimum_size = Vector2(ceilf(112.0 / scale), touch_size)
 		_confirm_dialog.get_cancel_button().custom_minimum_size = Vector2(ceilf(88.0 / scale), touch_size)
@@ -237,34 +238,35 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 		outer_margin.add_theme_constant_override("margin_bottom", 14)
 		content.add_theme_constant_override("separation", 8)
 		custom_minimum_size = DEFAULT_CARD_MINIMUM
-		close_button.custom_minimum_size = DEFAULT_CLOSE_MINIMUM
-		previous_command.custom_minimum_size = DEFAULT_CLOSE_MINIMUM
-		command_option.custom_minimum_size = Vector2(0.0, 48.0)
-		next_command.custom_minimum_size = DEFAULT_CLOSE_MINIMUM
-		executor_option.custom_minimum_size = DEFAULT_EXECUTOR_MINIMUM
-		trade_direction.custom_minimum_size = Vector2(92.0, 48.0)
-		trade_amount.custom_minimum_size = Vector2(0.0, 48.0)
-		officer_button.custom_minimum_size = Vector2(112.0, 54.0)
-		personnel_button.custom_minimum_size = Vector2(112.0, 54.0)
-		logistics_button.custom_minimum_size = Vector2(96.0, 54.0)
-		reconnaissance_button.custom_minimum_size = Vector2(82.0, 54.0)
-		diplomacy_button.custom_minimum_size = Vector2(82.0, 54.0)
-		develop_button.custom_minimum_size = Vector2(112.0, 54.0)
-		title_label.add_theme_font_size_override("font_size", 24)
+		close_button.custom_minimum_size = Vector2(DEFAULT_CLOSE_MINIMUM.x, touch_size)
+		previous_command.custom_minimum_size = Vector2(DEFAULT_CLOSE_MINIMUM.x, touch_size)
+		command_option.custom_minimum_size = Vector2(0.0, touch_size)
+		next_command.custom_minimum_size = Vector2(DEFAULT_CLOSE_MINIMUM.x, touch_size)
+		executor_option.custom_minimum_size = Vector2(DEFAULT_EXECUTOR_MINIMUM.x, touch_size)
+		trade_direction.custom_minimum_size = Vector2(92.0, touch_size)
+		trade_amount.custom_minimum_size = Vector2(0.0, touch_size)
+		officer_button.custom_minimum_size = Vector2(112.0, maxf(54.0, touch_size))
+		personnel_button.custom_minimum_size = Vector2(112.0, maxf(54.0, touch_size))
+		logistics_button.custom_minimum_size = Vector2(96.0, maxf(54.0, touch_size))
+		reconnaissance_button.custom_minimum_size = Vector2(82.0, maxf(54.0, touch_size))
+		diplomacy_button.custom_minimum_size = Vector2(82.0, maxf(54.0, touch_size))
+		develop_button.custom_minimum_size = Vector2(112.0, maxf(54.0, touch_size))
+		var desktop_action_size := ceili(18.0 / scale) if touch_mode else 18
+		title_label.add_theme_font_size_override("font_size", ceili(24.0 / scale) if touch_mode else 24)
 		for label: Label in [ownership_label, stats_label, command_label, executor_label]:
-			label.add_theme_font_size_override("font_size", 18)
+			label.add_theme_font_size_override("font_size", desktop_action_size)
 		stats_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		for control: Control in [close_button, previous_command, command_option, next_command, executor_option, trade_direction, trade_amount, logistics_button, reconnaissance_button, diplomacy_button, personnel_button, officer_button, develop_button]:
-			control.add_theme_font_size_override("font_size", 18)
+			control.add_theme_font_size_override("font_size", desktop_action_size)
 		for popup: PopupMenu in [command_option.get_popup(), executor_option.get_popup(), trade_direction.get_popup()]:
-			popup.add_theme_font_size_override("font_size", 18)
-			popup.add_theme_constant_override("v_separation", 8)
+			popup.add_theme_font_size_override("font_size", desktop_action_size)
+			popup.add_theme_constant_override("v_separation", TouchMetrics.popup_separation(scale, desktop_action_size))
 		_confirm_dialog.min_size = Vector2i(420, 190)
-		_confirm_dialog.get_ok_button().custom_minimum_size = Vector2(132.0, 52.0)
-		_confirm_dialog.get_cancel_button().custom_minimum_size = Vector2(96.0, 52.0)
-		_confirm_dialog.get_label().add_theme_font_size_override("font_size", 18)
+		_confirm_dialog.get_ok_button().custom_minimum_size = Vector2(132.0, touch_size)
+		_confirm_dialog.get_cancel_button().custom_minimum_size = Vector2(96.0, touch_size)
+		_confirm_dialog.get_label().add_theme_font_size_override("font_size", desktop_action_size)
 		for button: Button in [_confirm_dialog.get_ok_button(), _confirm_dialog.get_cancel_button()]:
-			button.add_theme_font_size_override("font_size", 18)
+			button.add_theme_font_size_override("font_size", desktop_action_size)
 		command_label.visible = true
 	_apply_information_density()
 	reset_size()
@@ -428,7 +430,7 @@ func _emit_selected_command() -> void:
 
 func _apply_confirmation_layout() -> void:
 	var scale: float = maxf(_last_canvas_scale, 0.01)
-	var touch_size: float = TouchMetrics.target_size(scale) if _compact_mode else 52.0
+	var touch_size: float = TouchMetrics.target_size(scale) if (_compact_mode or TouchMetrics.uses_density_scaled_targets()) else 52.0
 	_confirm_dialog.get_ok_button().custom_minimum_size = Vector2(
 		ceilf(112.0 / scale) if _compact_mode else 132.0, touch_size
 	)

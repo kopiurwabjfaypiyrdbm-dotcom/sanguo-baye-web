@@ -17,6 +17,8 @@ const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
 @onready var selection_label: Label = %SelectionLabel
 @onready var start_button: Button = %StartButton
 @onready var back_button: Button = %BackButton
+@onready var period_row: HBoxContainer = $Center/Card/Margin/Stack/PeriodRow
+@onready var ruler_row: HBoxContainer = $Center/Card/Margin/Stack/RulerRow
 
 var _periods: Array[Dictionary] = []
 var _selected_period := -1
@@ -81,13 +83,15 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	center.size = safe_rect.size
 	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
 	var compact := physical_size.x <= 900 or physical_size.y <= 440
+	var mobile_touch := TouchMetrics.uses_density_scaled_targets()
+	var touch_mode := compact or mobile_touch
+	var ultra_compact := mobile_touch and (physical_size.x <= 900 or physical_size.y <= 440)
 	var card: PanelContainer = $Center/Card
-	var popup_font := 17 if compact else 18
-	var popup_gap := ceili(28.0 / maxf(canvas_scale, 0.01)) if compact else 8
+	var popup_font := ceili(17.0 / maxf(canvas_scale, 0.01)) if touch_mode else 18
 	for option: OptionButton in [period_option, ruler_option]:
-		option.get_popup().add_theme_font_size_override("font_size", ceili(float(popup_font) / maxf(canvas_scale, 0.01)))
-		option.get_popup().add_theme_constant_override("v_separation", popup_gap)
-	if compact:
+		option.get_popup().add_theme_font_size_override("font_size", popup_font)
+		option.get_popup().add_theme_constant_override("v_separation", TouchMetrics.popup_separation(canvas_scale, popup_font))
+	if touch_mode:
 		card.custom_minimum_size = Vector2(ceilf(maxf(320.0, safe_rect.size.x - 32.0)), 0.0)
 		var touch_size := TouchMetrics.target_size(canvas_scale)
 		for control: Control in [period_option, ruler_option, back_button, start_button]:
@@ -95,7 +99,24 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 			control.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
 		for label: Label in [title_label, description_label, facts_label, period_label, ruler_label, selection_label]:
 			label.add_theme_font_size_override("font_size", ceili(15.0 / maxf(canvas_scale, 0.01)))
+		period_row.custom_minimum_size.y = touch_size
+		ruler_row.custom_minimum_size.y = touch_size
+		if ultra_compact:
+			description_label.visible = false
+			facts_label.visible = false
+			selection_label.visible = false
+			period_row.get_node("PeriodLabel").custom_minimum_size.x = ceilf(100.0 / maxf(canvas_scale, 0.01))
+			ruler_row.get_node("RulerLabel").custom_minimum_size.x = ceilf(100.0 / maxf(canvas_scale, 0.01))
+		else:
+			description_label.visible = true
+			facts_label.visible = true
+			selection_label.visible = true
+			period_row.get_node("PeriodLabel").custom_minimum_size.x = 150.0
+			ruler_row.get_node("RulerLabel").custom_minimum_size.x = 150.0
 	else:
+		description_label.visible = true
+		facts_label.visible = true
+		selection_label.visible = true
 		card.custom_minimum_size = Vector2(760.0, 0.0)
 		period_option.custom_minimum_size.y = 54.0
 		ruler_option.custom_minimum_size.y = 54.0

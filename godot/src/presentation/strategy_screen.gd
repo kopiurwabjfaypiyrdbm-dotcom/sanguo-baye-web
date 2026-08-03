@@ -1180,6 +1180,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	# target as compact so the menu remains reachable; larger desktop windows
 	# retain the expanded labels.
 	var compact := physical_size.x <= 1280 or physical_size.y <= 720
+	var touch_mode := compact or TouchMetrics.uses_density_scaled_targets()
 	var viewport_size := get_viewport_rect().size
 	var canvas_scale := minf(
 		float(physical_size.x) / maxf(viewport_size.x, 1.0),
@@ -1197,7 +1198,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	end_turn_button.text = tr("结束" if compact else "结束本月")
 	menu_button.text = tr("菜单" if compact else "主菜单")
 
-	if compact:
+	if touch_mode:
 		var touch_size := TouchMetrics.target_size(canvas_scale)
 		var label_font_size := ceili(15.0 / maxf(canvas_scale, 0.01))
 		var action_font_size := ceili(17.0 / maxf(canvas_scale, 0.01))
@@ -1246,8 +1247,9 @@ func _apply_return_confirmation_layout(compact: bool, canvas_scale: float) -> vo
 	if compact:
 		_return_confirmation.min_size = Vector2i(ceilf(360.0 / scale), ceilf(190.0 / scale))
 		_return_confirmation.get_label().add_theme_font_size_override("font_size", ceili(15.0 / scale))
+		var touch_size := TouchMetrics.target_size(scale) if TouchMetrics.uses_density_scaled_targets() else ceilf(48.0 / scale)
 		for button: Button in [_return_confirmation.get_ok_button(), _return_confirmation.get_cancel_button()]:
-			button.custom_minimum_size = Vector2(ceilf(96.0 / scale), ceilf(48.0 / scale))
+			button.custom_minimum_size = Vector2(ceilf(96.0 / scale), touch_size)
 			button.add_theme_font_size_override("font_size", ceili(17.0 / scale))
 	else:
 		_return_confirmation.min_size = Vector2i(420, 190)

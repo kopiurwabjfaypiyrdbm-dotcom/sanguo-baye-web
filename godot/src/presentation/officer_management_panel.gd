@@ -107,9 +107,10 @@ func set_busy(value: bool) -> void:
 func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: Vector2i) -> void:
 	_compact = compact
 	_canvas_scale = maxf(canvas_scale, 0.01)
-	var touch_size: float = TouchMetrics.target_size(_canvas_scale) if compact else 52.0
-	var body_size: int = ceili(15.0 / _canvas_scale) if compact else 18
-	var action_size: int = ceili(17.0 / _canvas_scale) if compact else 18
+	var touch_mode := compact or TouchMetrics.uses_density_scaled_targets()
+	var touch_size: float = TouchMetrics.target_size(_canvas_scale) if touch_mode else 52.0
+	var body_size: int = ceili(15.0 / _canvas_scale) if touch_mode else 18
+	var action_size: int = ceili(17.0 / _canvas_scale) if touch_mode else 18
 	if compact:
 		var target_width_px := minf(790.0, maxf(720.0, float(physical_size.x) - 28.0))
 		custom_minimum_size = Vector2(ceilf(target_width_px / _canvas_scale), ceilf(250.0 / _canvas_scale))
@@ -131,12 +132,12 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 	]:
 		control.custom_minimum_size.y = touch_size
 		control.add_theme_font_size_override("font_size", action_size)
-	if compact:
+	if touch_mode:
 		previous_officer.custom_minimum_size = Vector2(touch_size, touch_size)
 		next_officer.custom_minimum_size = Vector2(touch_size, touch_size)
 	for popup: PopupMenu in [officer_option.get_popup(), give_option.get_popup(), unequip_option.get_popup()]:
 		popup.add_theme_font_size_override("font_size", action_size)
-		popup.add_theme_constant_override("v_separation", ceili(31.0 / _canvas_scale) if compact else 8)
+		popup.add_theme_constant_override("v_separation", TouchMetrics.popup_separation(_canvas_scale, action_size))
 	city_title.add_theme_font_size_override("font_size", ceili(20.0 / _canvas_scale) if compact else 24)
 	for label: Label in [ruleset_label, identity_label, attributes_label, equipment_label, reason_label]:
 		label.add_theme_font_size_override("font_size", body_size)

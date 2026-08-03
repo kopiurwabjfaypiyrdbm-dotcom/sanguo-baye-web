@@ -81,7 +81,8 @@ func set_busy(value: bool) -> void:
 
 func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: Vector2i) -> void:
 	var scale: float = maxf(canvas_scale, 0.01)
-	var touch_size: float = TouchMetrics.target_size(scale) if compact else 52.0
+	var touch_mode := compact or TouchMetrics.uses_density_scaled_targets()
+	var touch_size: float = TouchMetrics.target_size(scale) if touch_mode else 52.0
 	var target_width_px: float = minf(420.0, maxf(330.0, float(physical_size.x) - 40.0)) if compact else 430.0
 	custom_minimum_size = Vector2(ceilf(target_width_px / scale) if compact else target_width_px, 0.0)
 	outer_margin.add_theme_constant_override("margin_left", ceili(10.0 / scale) if compact else 16)
@@ -93,13 +94,13 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 	target_option.custom_minimum_size = Vector2(0.0, touch_size)
 	executor_option.custom_minimum_size = Vector2(0.0, touch_size)
 	execute_button.custom_minimum_size = Vector2(ceilf(120.0 / scale) if compact else 138.0, touch_size)
-	var body_size: int = ceili(15.0 / scale) if compact else 18
+	var body_size: int = ceili(15.0 / scale) if touch_mode else 18
 	title_label.add_theme_font_size_override("font_size", ceili(20.0 / scale) if compact else 24)
 	for control: Control in [cost_label, target_label, target_option, executor_label, executor_option, intel_label, close_button, execute_button]:
 		control.add_theme_font_size_override("font_size", body_size)
 	for popup: PopupMenu in [target_option.get_popup(), executor_option.get_popup()]:
 		popup.add_theme_font_size_override("font_size", body_size)
-		popup.add_theme_constant_override("v_separation", ceili(30.0 / scale) if compact else 10)
+		popup.add_theme_constant_override("v_separation", TouchMetrics.popup_separation(scale, body_size))
 	reset_size()
 
 

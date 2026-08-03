@@ -104,9 +104,10 @@ func set_busy(value: bool) -> void:
 func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: Vector2i) -> void:
 	_compact = compact
 	_canvas_scale = maxf(canvas_scale, 0.01)
-	var touch_size: float = TouchMetrics.target_size(_canvas_scale) if compact else 52.0
-	var body_size: int = ceili(14.0 / _canvas_scale) if compact else 18
-	var action_size: int = ceili(16.0 / _canvas_scale) if compact else 18
+	var touch_mode := compact or TouchMetrics.uses_density_scaled_targets()
+	var touch_size: float = TouchMetrics.target_size(_canvas_scale) if touch_mode else 52.0
+	var body_size: int = ceili(14.0 / _canvas_scale) if touch_mode else 18
+	var action_size: int = ceili(16.0 / _canvas_scale) if touch_mode else 18
 	if compact:
 		var width_px: float = minf(820.0, maxf(720.0, float(physical_size.x) - 24.0))
 		custom_minimum_size = Vector2(ceilf(width_px / _canvas_scale), ceilf(270.0 / _canvas_scale))
@@ -123,7 +124,7 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 		control.add_theme_font_size_override("font_size", action_size)
 	for option: OptionButton in [mode_option, target_option, executor_option]:
 		option.get_popup().add_theme_font_size_override("font_size", action_size)
-		option.get_popup().add_theme_constant_override("v_separation", ceili(31.0 / _canvas_scale) if compact else 8)
+		option.get_popup().add_theme_constant_override("v_separation", TouchMetrics.popup_separation(_canvas_scale, action_size))
 	city_title.add_theme_font_size_override("font_size", ceili(20.0 / _canvas_scale) if compact else 24)
 	for label: Label in [route_label, orders_label, reason_label]: label.add_theme_font_size_override("font_size", body_size)
 	reset_size()

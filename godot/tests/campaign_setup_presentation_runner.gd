@@ -5,6 +5,7 @@ const CampaignSetup = preload("res://scenes/presentation/campaign_setup.tscn")
 const StrategyScreen = preload("res://scenes/presentation/strategy_screen.tscn")
 const Context = preload("res://src/application/campaign_launch_context.gd")
 const SessionContext = preload("res://src/application/campaign_session_context.gd")
+const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
 
 var _assertions := 0
 var _failures := 0
@@ -15,6 +16,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	TouchMetrics.set_density_override_for_testing(2.25)
 	var menu := MainMenu.instantiate()
 	root.add_child(menu)
 	await process_frame
@@ -22,7 +24,7 @@ func _run() -> void:
 	var menu_scale := minf(844.0 / 1280.0, 390.0 / 720.0)
 	for control_name: String in ["NewCampaignButton", "ContinueButton", "QuitButton"]:
 		var menu_control: Control = menu.get_node("%%%s" % control_name)
-		_assert_true(menu_control.custom_minimum_size.y * menu_scale >= 47.5, "compact menu %s must retain a 48px-class physical target" % control_name)
+		_assert_true(menu_control.custom_minimum_size.y * menu_scale >= 108.0, "high-density menu %s must retain a 48dp physical target" % control_name)
 	_assert_true(menu.get_node("%NewCampaignButton").disabled == false, "main menu must expose new campaign entry")
 	_assert_true(menu.get_node("%ContinueButton").disabled, "cold launch must not invent a continuation save")
 	menu.queue_free()
@@ -39,7 +41,10 @@ func _run() -> void:
 	var compact_scale := minf(844.0 / 1280.0, 390.0 / 720.0)
 	for control_name: String in ["PeriodOption", "RulerOption", "BackButton", "StartButton"]:
 		var control: Control = setup.get_node("%%%s" % control_name)
-		_assert_true(control.custom_minimum_size.y * compact_scale >= 47.5, "compact setup %s must retain a 48px-class physical target" % control_name)
+		_assert_true(control.custom_minimum_size.y * compact_scale >= 108.0, "high-density setup %s must retain a 48dp physical target" % control_name)
+	_assert_true(not setup.get_node("%DescriptionLabel").visible, "high-density 844x390 setup must collapse redundant description copy")
+	_assert_true(not setup.get_node("%FactsLabel").visible, "high-density 844x390 setup must collapse redundant facts copy")
+	TouchMetrics.clear_density_override_for_testing()
 	_assert_equal(period_option.item_count, 4, "setup must expose all bundled production periods")
 	_assert_true(ruler_option.selected < 0 and start_button.disabled, "setup must not silently select a ruler")
 	for index: int in range(period_option.item_count):

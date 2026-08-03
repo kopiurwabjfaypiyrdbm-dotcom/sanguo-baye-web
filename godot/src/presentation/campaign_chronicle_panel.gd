@@ -23,6 +23,7 @@ signal close_requested
 
 var _busy := false
 var _layout_compact := false
+var _layout_touch_mode := false
 var _layout_canvas_scale := 1.0
 var _layout_physical_size := Vector2i(1280, 720)
 
@@ -153,21 +154,24 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 	if compact and physical_size.x > 1 and physical_size.y > 1:
 		canvas_scale = minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
 	_layout_compact = compact
+	_layout_touch_mode = compact or TouchMetrics.uses_density_scaled_targets()
 	_layout_canvas_scale = canvas_scale
 	_layout_physical_size = physical_size
 	var scale: float = maxf(canvas_scale, 0.01)
-	var touch: float = TouchMetrics.target_size(scale) if compact else 52.0
+	var touch: float = TouchMetrics.target_size(scale) if _layout_touch_mode else 52.0
 	custom_minimum_size = Vector2(ceilf(minf(460.0, float(physical_size.x) - 32.0) / scale), 0.0) if compact else Vector2(520, 0)
 	for control: Control in [close_button, successor_option, confirm_button, event_demo_button, succession_demo_button, outcome_demo_button]:
 		control.custom_minimum_size.y = touch
-	var body_size: int = ceili(16.0 / scale) if compact else 18
-	var action_size: int = ceili(17.0 / scale) if compact else 18
+	var body_size: int = ceili(16.0 / scale) if _layout_touch_mode else 18
+	var action_size: int = ceili(17.0 / scale) if _layout_touch_mode else 18
 	chronicle_scroll.custom_minimum_size.y = ceili(116.0 / scale) if compact else 116.0
 	chronicle_label.custom_minimum_size.y = chronicle_scroll.custom_minimum_size.y
 	title_label.add_theme_font_size_override("font_size", ceili(22.0 / scale) if compact else 24)
 	for label: Label in [phase_label, chronicle_label]: label.add_theme_font_size_override("font_size", body_size)
 	for control: Control in [close_button, successor_option, confirm_button, event_demo_button, succession_demo_button, outcome_demo_button]:
 		control.add_theme_font_size_override("font_size", action_size)
+	successor_option.get_popup().add_theme_font_size_override("font_size", action_size)
+	successor_option.get_popup().add_theme_constant_override("v_separation", TouchMetrics.popup_separation(scale, action_size))
 	outer_margin.add_theme_constant_override("margin_top", 8 if compact else 16)
 	outer_margin.add_theme_constant_override("margin_bottom", 8 if compact else 16)
 	content.add_theme_constant_override("separation", 4 if compact else 10)
@@ -176,7 +180,7 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 
 
 func _enforce_layout_touch_targets() -> void:
-	var touch := TouchMetrics.target_size(_layout_canvas_scale) if _layout_compact else 52.0
+	var touch := TouchMetrics.target_size(_layout_canvas_scale) if _layout_touch_mode else 52.0
 	if _layout_compact:
 		touch = maxf(touch, 88.0)
 	for control: Control in [close_button, successor_option, confirm_button, event_demo_button, succession_demo_button, outcome_demo_button]:

@@ -81,24 +81,38 @@ theme_override_colors/font_color = Color(0.63, 0.77, 0.71, 1)
 text = ""
 horizontal_alignment = 1
 
-[node name="PeriodLabel" type="Label" parent="Center/Card/Margin/Stack"]
+[node name="PeriodRow" type="HBoxContainer" parent="Center/Card/Margin/Stack"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PeriodLabel" type="Label" parent="Center/Card/Margin/Stack/PeriodRow"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(150, 0)
+size_flags_vertical = 4
 text = "选择时期"
 
-[node name="PeriodOption" type="OptionButton" parent="Center/Card/Margin/Stack"]
+[node name="PeriodOption" type="OptionButton" parent="Center/Card/Margin/Stack/PeriodRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 54)
+size_flags_horizontal = 3
 layout_mode = 2
 
-[node name="RulerLabel" type="Label" parent="Center/Card/Margin/Stack"]
+[node name="RulerRow" type="HBoxContainer" parent="Center/Card/Margin/Stack"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RulerLabel" type="Label" parent="Center/Card/Margin/Stack/RulerRow"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(150, 0)
+size_flags_vertical = 4
 text = "选择君主"
 
-[node name="RulerOption" type="OptionButton" parent="Center/Card/Margin/Stack"]
+[node name="RulerOption" type="OptionButton" parent="Center/Card/Margin/Stack/RulerRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 54)
+size_flags_horizontal = 3
 layout_mode = 2
 
 [node name="SelectionLabel" type="Label" parent="Center/Card/Margin/Stack"]

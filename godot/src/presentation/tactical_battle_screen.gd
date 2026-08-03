@@ -517,6 +517,11 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		if is_instance_valid(button):
 			button.custom_minimum_size.y = touch_size
 			button.add_theme_font_size_override("font_size", action_size)
+	if is_instance_valid(_text_scale_option):
+		_text_scale_option.custom_minimum_size.y = touch_size
+		_text_scale_option.add_theme_font_size_override("font_size", action_size)
+		_text_scale_option.get_popup().add_theme_font_size_override("font_size", action_size)
+		_text_scale_option.get_popup().add_theme_constant_override("v_separation", TouchMetrics.popup_separation(scale, action_size))
 	for label: Label in [_status_label, _round_label, _phase_label, _unit_count_label, _hint_label, _selection_label]:
 		if is_instance_valid(label):
 			label.add_theme_font_size_override("font_size", body_size)

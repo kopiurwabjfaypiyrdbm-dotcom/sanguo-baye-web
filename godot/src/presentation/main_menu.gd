@@ -13,6 +13,7 @@ const PauseRepository = preload("res://src/application/persistence/tactical_paus
 @onready var status_label: Label = %StatusLabel
 @onready var title_label: Label = %TitleLabel
 @onready var subtitle_label: Label = %SubtitleLabel
+@onready var action_row: HBoxContainer = %ActionRow
 
 
 func _ready() -> void:
@@ -76,7 +77,11 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
 	var compact := physical_size.x <= 900 or physical_size.y <= 440
 	var card: PanelContainer = $Center/Card
-	if compact:
+	var mobile_touch := TouchMetrics.uses_density_scaled_targets()
+	var touch_mode := compact or mobile_touch
+	var ultra_compact := mobile_touch and (physical_size.x <= 900 or physical_size.y <= 440)
+	action_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	if touch_mode:
 		card.custom_minimum_size = Vector2(ceilf(maxf(320.0, safe_rect.size.x - 32.0)), 0.0)
 		var touch_size := TouchMetrics.target_size(canvas_scale)
 		for button: Button in [new_campaign_button, continue_button, quit_button]:
@@ -95,6 +100,12 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		title_label.add_theme_font_size_override("font_size", 48)
 		subtitle_label.add_theme_font_size_override("font_size", 18)
 		status_label.add_theme_font_size_override("font_size", 18)
+	if ultra_compact:
+		# Three vertical 48dp targets cannot fit an 844x390 landscape viewport.
+		# Keep all commands reachable in one horizontal row instead of shrinking
+		# below the platform touch target.
+		status_label.custom_minimum_size.y = 28.0
+		title_label.add_theme_font_size_override("font_size", ceili(28.0 / maxf(canvas_scale, 0.01)))
 
 
 func _open_campaign_setup() -> void:
