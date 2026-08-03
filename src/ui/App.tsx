@@ -75,7 +75,9 @@ import { createGameBridge } from '../game/events';
 import type { StrategyMapController } from '../game/createGame';
 import { RulerScreen, ScenarioScreen, TitleScreen } from './CampaignSetup';
 import { CampaignNavigator, type CampaignNavView } from './CampaignNavigator';
-import { CityPanel } from './CityPanel';
+import { CityPanel, type CityPanelSection } from './CityPanel';
+import { CityContextMenu, type CityContextAnchor } from './CityContextMenu';
+import { getCityCommand, type CityCommandId, type CityCommandSection } from './cityCommandCatalog';
 import { MonthEndReviewDialog, MonthResolutionDialog } from './MonthEndReviewDialog';
 import { TacticalBattleScreen } from './TacticalBattleScreen';
 import { getFactionStrategicOrders, issueTransportOrder } from '../core/strategicOrders';
@@ -90,9 +92,9 @@ import {
 } from '../core/officerLifecycle';
 import {
   DEFAULT_NEW_CAMPAIGN_RULESET,
-  getCampaignRuleset,
   type CampaignRulesetId,
 } from '../core/rulesets';
+import { registerNativeBackHandler } from '../platform/mobileShell';
 
 type AppScreen = 'title' | 'scenario' | 'ruler' | 'game' | 'battle';
 const scenarioOptions = getScenarioOptions();
@@ -110,6 +112,14 @@ export function App() {
   const [selectedRulesetId, setSelectedRulesetId] = useState<CampaignRulesetId>(DEFAULT_NEW_CAMPAIGN_RULESET);
   const [selectedCityId, setSelectedCityId] = useState(() => firstOwnedCityId(initialGame.state));
   const [isCityPanelOpen, setIsCityPanelOpen] = useState(false);
+  const [isCityContextOpen, setIsCityContextOpen] = useState(false);
+  const [cityContextAnchor, setCityContextAnchor] = useState<CityContextAnchor>();
+  const [cityContextSection, setCityContextSection] = useState<CityCommandSection>();
+  const [cityPanelPresentation, setCityPanelPresentation] = useState<'detail' | 'command'>('detail');
+  const [cityPanelSection, setCityPanelSection] = useState<CityPanelSection>('summary');
+  const [cityPanelCommand, setCityPanelCommand] = useState<CityCommandId>();
+  const [isDangerousCommandConfirmationOpen, setIsDangerousCommandConfirmationOpen] = useState(false);
+  const [dangerousCommandDismissRequest, setDangerousCommandDismissRequest] = useState(0);
   const [activeNavView, setActiveNavView] = useState<CampaignNavView>();
   const [focusedOfficerId, setFocusedOfficerId] = useState<string>();
   const [sourceLabel, setSourceLabel] = useState(initialGame.sourceLabel);
@@ -131,6 +141,7 @@ export function App() {
   const latestStrategyMapInput = useRef({ state, selectedCityId });
   const aiTurnLogStart = useRef(0);
   const monthResolutionInProgress = useRef(false);
+  const nativeBackAction = useRef<() => boolean>(() => false);
   const bridge = useMemo(() => createGameBridge(), []);
   latestStrategyMapInput.current = { state, selectedCityId };
   const tacticalReachable = useMemo(() => {
@@ -160,17 +171,47 @@ export function App() {
 
   useEffect(() => bridge.on('city:selected', ({ cityId }) => {
     setSelectedCityId(cityId);
-    setIsCityPanelOpen(true);
+    setIsCityPanelOpen(false);
+    setCityContextSection(undefined);
+    setIsCityContextOpen(true);
     setActiveNavView(undefined);
     setFocusedOfficerId(undefined);
+  }), [bridge]);
+
+  useEffect(() => bridge.on('city:anchor-changed', (anchor) => {
+    const host = mapHost.current;
+    if (!host) return;
+    setCityContextAnchor({
+      ...anchor,
+      x: anchor.x + host.offsetLeft,
+      y: anchor.y + host.offsetTop,
+      viewportWidth: host.offsetWidth + host.offsetLeft * 2,
+      viewportHeight: host.offsetHeight + host.offsetTop * 2,
+      mapLeft: host.offsetLeft,
+      mapRight: host.offsetLeft + host.offsetWidth,
+      mapTop: host.offsetTop,
+      mapBottom: host.offsetTop + host.offsetHeight,
+    });
+  }), [bridge]);
+
+  useEffect(() => bridge.on('map:cleared', () => {
+    setCityContextSection(undefined);
+    setIsCityContextOpen(false);
   }), [bridge]);
 
   useEffect(() => {
     if (state.cities[selectedCityId]) return;
     setSelectedCityId(firstOwnedCityId(state));
     setIsCityPanelOpen(false);
+    setIsCityContextOpen(false);
     setFocusedOfficerId(undefined);
   }, [selectedCityId, state]);
+
+  useEffect(() => {
+    if (screen === 'game') return;
+    setIsCityContextOpen(false);
+    setIsCityPanelOpen(false);
+  }, [screen]);
 
   useEffect(() => {
     if (!focusedOfficerId) return;
@@ -181,13 +222,71 @@ export function App() {
   }, [focusedOfficerId, selectedCityId, state.officers]);
 
   useEffect(() => {
-    if (screen !== 'game' || !isCityPanelOpen) return;
+    if (screen !== 'game' || (!isCityPanelOpen && !isCityContextOpen)) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsCityPanelOpen(false);
+      if (event.key !== 'Escape') return;
+      if (isCityPanelOpen) closeCityPanelToContext();
+      else if (cityContextSection) setCityContextSection(undefined);
+      else setIsCityContextOpen(false);
     };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [isCityPanelOpen, screen]);
+  }, [cityContextSection, isCityContextOpen, isCityPanelOpen, screen]);
+
+  nativeBackAction.current = () => {
+    if (screen === 'battle') {
+      setFeedback({ kind: 'success', message: '战斗中请通过撤退命令离开战场。' });
+      return true;
+    }
+    if (state.pendingSuccession) {
+      setFeedback({ kind: 'success', message: '请先选择继承人，当前决策不能跳过。' });
+      return true;
+    }
+    if (pendingAttack) {
+      setPendingAttack(undefined);
+      return true;
+    }
+    if (monthAdvanceReview) {
+      setMonthAdvanceReview(undefined);
+      return true;
+    }
+    if (isMonthReportOpen) {
+      setIsMonthReportOpen(false);
+      return true;
+    }
+    if (activeNavView) {
+      setActiveNavView(undefined);
+      return true;
+    }
+    if (isDangerousCommandConfirmationOpen) {
+      setDangerousCommandDismissRequest((current) => current + 1);
+      return true;
+    }
+    if (isCityPanelOpen) {
+      closeCityPanelToContext();
+      return true;
+    }
+    if (isCityContextOpen) {
+      if (cityContextSection) setCityContextSection(undefined);
+      else setIsCityContextOpen(false);
+      return true;
+    }
+    if (screen === 'ruler') {
+      setScreen('scenario');
+      return true;
+    }
+    if (screen === 'scenario') {
+      setScreen('title');
+      return true;
+    }
+    if (screen === 'game') {
+      setScreen('title');
+      return true;
+    }
+    return false;
+  };
+
+  useEffect(() => registerNativeBackHandler(() => nativeBackAction.current()), []);
 
   useEffect(() => {
     if (screen !== 'game' || !mapHost.current) return;
@@ -286,7 +385,7 @@ export function App() {
     try {
       saveToSlot(window.localStorage, 'auto', next, `${label} · 自动存档`);
       setHasContinue(true);
-      setFeedback({ kind: 'success', message: `已选择${next.factions[next.playerFactionId].name}，霸业由此开始。` });
+      setFeedback(undefined);
     } catch (error) {
       setFeedback({
         kind: 'error',
@@ -418,7 +517,37 @@ export function App() {
   }
 
   function openCampaignNavigator(view: CampaignNavView) {
+    setIsCityPanelOpen(false);
+    setIsCityContextOpen(false);
+    setCityContextSection(undefined);
+    setFocusedOfficerId(undefined);
     setActiveNavView(view);
+  }
+
+  function openCityDetail() {
+    setCityPanelPresentation('detail');
+    setCityPanelSection('summary');
+    setCityPanelCommand(undefined);
+    setCityContextSection(undefined);
+    setIsCityContextOpen(false);
+    setIsCityPanelOpen(true);
+  }
+
+  function openCityCommand(commandId: CityCommandId) {
+    const command = getCityCommand(commandId);
+    setCityPanelPresentation('command');
+    setCityPanelSection(command.section);
+    setCityPanelCommand(commandId);
+    setCityContextSection(command.section);
+    setIsCityContextOpen(false);
+    setIsCityPanelOpen(true);
+  }
+
+  function closeCityPanelToContext() {
+    setIsDangerousCommandConfirmationOpen(false);
+    setIsCityPanelOpen(false);
+    setFocusedOfficerId(undefined);
+    setIsCityContextOpen(Boolean(cityContextAnchor?.visible));
   }
 
   function selectCityFromNavigator(cityId: string) {
@@ -426,6 +555,10 @@ export function App() {
     setSelectedCityId(cityId);
     setFocusedOfficerId(undefined);
     setActiveNavView(undefined);
+    setCityPanelPresentation('detail');
+    setCityPanelSection('summary');
+    setCityPanelCommand(undefined);
+    setIsCityContextOpen(false);
     setIsCityPanelOpen(true);
   }
 
@@ -434,6 +567,10 @@ export function App() {
     setSelectedCityId(cityId);
     setFocusedOfficerId(officerId);
     setActiveNavView(undefined);
+    setCityPanelPresentation('detail');
+    setCityPanelSection('summary');
+    setCityPanelCommand(undefined);
+    setIsCityContextOpen(false);
     setIsCityPanelOpen(true);
   }
 
@@ -780,6 +917,8 @@ export function App() {
   function openMonthEndReview() {
     if (isResolving || state.phase === 'ended' || state.pendingSuccession || pendingAttack) return;
     setActiveNavView(undefined);
+    setIsCityContextOpen(false);
+    setIsCityPanelOpen(false);
     setMonthAdvanceReview(buildMonthAdvanceReview(state));
   }
 
@@ -788,6 +927,10 @@ export function App() {
     setSelectedCityId(cityId);
     setFocusedOfficerId(undefined);
     setActiveNavView(undefined);
+    setCityPanelPresentation('detail');
+    setCityPanelSection('summary');
+    setCityPanelCommand(undefined);
+    setIsCityContextOpen(false);
     setIsCityPanelOpen(true);
     setMonthAdvanceReview(undefined);
     setIsMonthReportOpen(false);
@@ -896,24 +1039,58 @@ export function App() {
     );
   }
 
+  const playerFaction = state.factions[state.playerFactionId];
+  const playerRuler = state.officers[playerFaction?.rulerOfficerId];
+  const playerCities = Object.values(state.cities).filter((city) => city.ownerId === state.playerFactionId);
+  const playerMoney = playerCities.reduce((total, city) => total + city.money, 0);
+  const playerFood = playerCities.reduce((total, city) => total + city.food, 0);
+  const playerTroops = playerCities.reduce((total, city) => total + city.reserveTroops, 0)
+    + Object.values(state.officers)
+      .filter((officer) => officer.factionId === state.playerFactionId && officer.status !== 'dead')
+      .reduce((total, officer) => total + officer.troops, 0);
+  const selectedCity = state.cities[selectedCityId];
+  const latestCampaignEvent = state.logs.at(-1)?.message ?? '天下局势尚待主公决断。';
+  const campaignAttentionCount = buildMonthAdvanceReview(state).notices.length
+    + playerStrategicOrders.length
+    + playerDiplomaticOrders.length;
+  const focusedCityCommand = cityPanelCommand ? getCityCommand(cityPanelCommand) : undefined;
+  const isExpandedCityCommandOpen = isCityPanelOpen
+    && cityPanelPresentation === 'command'
+    && focusedCityCommand?.editorSize === 'expanded';
+
   return (
-    <main className="app-shell">
+    <main className={`app-shell ${isExpandedCityCommandOpen ? 'city-command-active' : ''}`}>
       <header className="top-bar">
-        <div className="brand-block">
-          <p className="eyebrow">Playable strategy slice</p>
-          <h1>三国霸业 · Web 重写</h1>
+        <div className="campaign-identity">
+          <span className="faction-seal" style={{ backgroundColor: playerFaction?.color ?? '#69766e' }} aria-hidden="true">
+            {playerFaction?.name.slice(0, 1) ?? '汉'}
+          </span>
+          <strong>{playerFaction?.name ?? '未知势力'}</strong>
+          <small>{playerRuler?.name ?? '无主'}</small>
         </div>
-        <div className="campaign-status">
-          <span>{state.calendar.year} 年 {state.calendar.month} 月</span>
-          <span>{sourceLabel}</span>
-          <span>{getCampaignRuleset(state.rulesetId).label}</span>
+        <div className="campaign-date" aria-label="当前年月">
+          <strong>{state.calendar.year}</strong>
+          <span>年</span>
+          <strong>{state.calendar.month}</strong>
+          <span>月</span>
+        </div>
+        <div className="campaign-resources" aria-label="势力资源总览">
+          <span><small>城池</small><strong>{playerCities.length}</strong></span>
+          <span><small>金钱</small><strong>{playerMoney.toLocaleString('zh-CN')}</strong></span>
+          <span><small>粮草</small><strong>{playerFood.toLocaleString('zh-CN')}</strong></span>
+          <span><small>兵力</small><strong>{playerTroops.toLocaleString('zh-CN')}</strong></span>
+        </div>
+        <div className="campaign-map-actions" aria-label="地图镜头">
+          <button type="button" onClick={() => mapController.current?.focusPlayerTerritory()}>本势力</button>
+          <button type="button" onClick={() => mapController.current?.showWholeMap()}>全天下</button>
+          <button type="button" onClick={() => openCampaignNavigator('system')}>菜单</button>
         </div>
       </header>
 
       <section className="map-section" aria-label="战略地图">
         <div className="map-toolbar">
-          <span>拖动地图 · 滚轮缩放 · 点击城池</span>
-          <span>{Object.keys(state.cities).length} 城 / {countCurrentOfficers(state)} 名当前人物</span>
+          <span>{selectedCity ? `${selectedCity.name} · ${state.factions[selectedCity.ownerId]?.name ?? '未知势力'}` : '点击城池查看详情'}</span>
+          <span>{Object.keys(state.cities).length} 城 · {countCurrentOfficers(state)} 将</span>
         </div>
         {playerStrategicOrders.length > 0 && (
           <div className="strategic-order-strip" aria-label="执行中的战略命令">
@@ -968,6 +1145,21 @@ export function App() {
             {state.outcome === 'victory' ? '战役胜利' : '战役失败'}
           </div>
         )}
+        {isCityContextOpen && cityContextAnchor && (
+          <CityContextMenu
+            state={state}
+            cityId={selectedCityId}
+            anchor={cityContextAnchor}
+            activeSection={cityContextSection}
+            onActiveSectionChange={setCityContextSection}
+            onClose={() => {
+              setCityContextSection(undefined);
+              setIsCityContextOpen(false);
+            }}
+            onOpenDetail={openCityDetail}
+            onOpenCommand={openCityCommand}
+          />
+        )}
       </section>
 
       {isCityPanelOpen && (
@@ -976,7 +1168,13 @@ export function App() {
           cityId={selectedCityId}
           focusOfficerId={focusedOfficerId}
           disabled={isResolving || Boolean(state.pendingSuccession)}
-          onClose={() => setIsCityPanelOpen(false)}
+          presentation={cityPanelPresentation}
+          initialSection={cityPanelSection}
+          initialCommand={cityPanelCommand}
+          contextAnchor={cityContextAnchor}
+          dangerousConfirmationDismissRequest={dangerousCommandDismissRequest}
+          onDangerousConfirmationChange={setIsDangerousCommandConfirmationOpen}
+          onClose={closeCityPanelToContext}
         onDevelop={(cityId, officerId) => applyPlayerAction(
           (current) => developFarming(current, { cityId, officerId }),
         )}
@@ -1201,20 +1399,14 @@ export function App() {
         </div>
       )}
 
-      <section className="log-panel" aria-label="日志">
-        <div>
-          <p className="panel-kicker">Campaign log</p>
-          {monthReport && monthReport.headline.length > 0 && (
-            <div className="month-summary">
-              <strong>本月摘要</strong>
-              {monthReport.headline.map((message) => <p key={message}>{message}</p>)}
-              <button type="button" onClick={() => setIsMonthReportOpen(true)}>查看完整月报</button>
-            </div>
-          )}
-        </div>
-        <div className="log-lines">
-          {state.logs.slice(-5).map((log) => <p key={log.id}>{log.message}</p>)}
-        </div>
+      <section className="log-panel" aria-label="最新情报">
+        <button
+          type="button"
+          className="campaign-event-summary"
+          onClick={() => openCampaignNavigator('intelligence')}
+        >
+          <strong>{latestCampaignEvent}</strong>
+        </button>
       </section>
 
       {activeNavView && (
@@ -1243,20 +1435,18 @@ export function App() {
       <nav className="campaign-dock" aria-label="战略地图导航">
         <button
           type="button"
-          className={!isCityPanelOpen && !activeNavView ? 'active' : undefined}
-          aria-pressed={!isCityPanelOpen && !activeNavView}
-          onClick={() => {
-            setActiveNavView(undefined);
-            setIsCityPanelOpen(false);
-          }}
+          className={activeNavView === 'intelligence' ? 'active' : undefined}
+          aria-pressed={activeNavView === 'intelligence'}
+          onClick={() => openCampaignNavigator('intelligence')}
         >
-          <span aria-hidden="true">图</span>
-          地图
+          <span aria-hidden="true">报</span>
+          情报
+          {campaignAttentionCount > 0 && <b>{campaignAttentionCount}</b>}
         </button>
         <button
           type="button"
-          className={isCityPanelOpen || activeNavView === 'cities' ? 'active' : undefined}
-          aria-pressed={isCityPanelOpen || activeNavView === 'cities'}
+          className={activeNavView === 'cities' ? 'active' : undefined}
+          aria-pressed={activeNavView === 'cities'}
           onClick={() => openCampaignNavigator('cities')}
         >
           <span aria-hidden="true">城</span>
@@ -1265,12 +1455,11 @@ export function App() {
         <button type="button" className={activeNavView === 'officers' ? 'active' : undefined} aria-pressed={activeNavView === 'officers'} onClick={() => openCampaignNavigator('officers')}>
           <span aria-hidden="true">将</span>人物
         </button>
-        <button type="button" className={activeNavView === 'orders' ? 'active' : undefined} aria-pressed={activeNavView === 'orders'} onClick={() => openCampaignNavigator('orders')}>
-          <span aria-hidden="true">途</span>军令
-          {(playerStrategicOrders.length + playerDiplomaticOrders.length) > 0 && <b>{playerStrategicOrders.length + playerDiplomaticOrders.length}</b>}
+        <button type="button" className={activeNavView === 'treasures' ? 'active' : undefined} aria-pressed={activeNavView === 'treasures'} onClick={() => openCampaignNavigator('treasures')}>
+          <span aria-hidden="true">宝</span>宝物
         </button>
-        <button type="button" className={activeNavView === 'system' ? 'active' : undefined} aria-pressed={activeNavView === 'system'} onClick={() => openCampaignNavigator('system')}>
-          <span aria-hidden="true">设</span>系统
+        <button type="button" className={activeNavView === 'delegation' ? 'active' : undefined} aria-pressed={activeNavView === 'delegation'} onClick={() => openCampaignNavigator('delegation')}>
+          <span aria-hidden="true">任</span>委任
         </button>
         <button
           type="button"

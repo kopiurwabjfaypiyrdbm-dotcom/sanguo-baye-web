@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">三国霸业</string>
+    <string name="title_activity_main">三国霸业</string>
+    <string name="package_name">com.sumo91.sanguobaye.debug</string>
+    <string name="custom_url_scheme">com.sumo91.sanguobaye.debug</string>
+</resources>

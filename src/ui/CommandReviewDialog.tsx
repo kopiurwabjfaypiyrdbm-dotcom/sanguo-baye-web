@@ -59,7 +59,7 @@ export function CommandReviewDialog({ review, onCancel, onConfirm }: CommandRevi
     >
       <section
         ref={dialogRef}
-        className={`command-review-dialog ${review.dangerous ? 'dangerous' : ''}`}
+        className="command-review-dialog dangerous"
         role="dialog"
         aria-modal="true"
         aria-labelledby="command-review-title"
@@ -68,48 +68,34 @@ export function CommandReviewDialog({ review, onCancel, onConfirm }: CommandRevi
       >
         <header className="command-review-heading">
           <div>
-            <p className="panel-kicker">{review.category}命令 · 最终确认</p>
+            <p className="panel-kicker">高风险{review.category}命令</p>
             <h2 id="command-review-title">{review.title}</h2>
           </div>
-          <button type="button" aria-label="取消命令" onClick={onCancel}>×</button>
         </header>
 
-        <ol className="command-flow-steps" aria-label="命令流程">
-          <li className="complete">指令</li>
-          <li className="complete">执行者</li>
-          <li className="complete">目标参数</li>
-          <li className="active">确认</li>
-        </ol>
-
-        <dl className="command-review-context">
-          <div><dt>所在城池</dt><dd>{review.city}</dd></div>
-          {review.actor && <div><dt>执行武将</dt><dd>{review.actor}</dd></div>}
-          {review.target && <div><dt>命令目标</dt><dd>{review.target}</dd></div>}
-        </dl>
-
-        <div className="command-review-columns">
-          <section>
-            <h3>预期效果</h3>
-            <ul>{review.effects.map((effect) => <li key={effect}>{effect}</li>)}</ul>
-          </section>
-          <section>
-            <h3>消耗</h3>
-            <ul>{review.costs.map((cost) => <li key={cost}>{cost}</li>)}</ul>
-          </section>
-        </div>
+        <p className="command-danger-context">
+          {review.city}
+          {review.actor ? ` · ${review.actor}` : ''}
+          {review.target ? ` → ${review.target}` : ''}
+        </p>
 
         {review.risks && review.risks.length > 0 && (
           <section className="command-review-risks">
-            <h3>{review.dangerous ? '不可逆风险' : '结果说明'}</h3>
+            <h3>确认承担以下后果</h3>
             <ul>{review.risks.map((risk) => <li key={risk}>{risk}</li>)}</ul>
           </section>
         )}
 
+        <p className="command-danger-gain">
+          {review.effects.join('；')}
+          {review.costs.length > 0 ? `。消耗：${review.costs.join('、')}` : ''}
+        </p>
+
         <footer className="command-review-actions">
-          <button type="button" onClick={onCancel}>返回调整</button>
+          <button type="button" autoFocus onClick={onCancel}>取消</button>
           <button
             type="button"
-            className={review.dangerous ? 'danger-action' : 'primary-action'}
+            className="danger-action"
             data-command-confirm
             onClick={onConfirm}
           >

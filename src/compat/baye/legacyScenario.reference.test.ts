@@ -1,6 +1,4 @@
-// @ts-expect-error Node built-in is available to Vitest at runtime.
 import { readFileSync } from 'node:fs';
-// @ts-expect-error Node built-in is available to Vitest at runtime.
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createLegacyPeriodGameState } from '../../data/legacyScenario';

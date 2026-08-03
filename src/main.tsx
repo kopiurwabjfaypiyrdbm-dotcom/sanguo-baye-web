@@ -1,11 +1,14 @@
 import React from 'react';
+import { Capacitor } from '@capacitor/core';
 import { createRoot } from 'react-dom/client';
 import { App } from './ui/App';
+import { PwaStatus } from './ui/PwaStatus';
 import './styles.css';
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
+    {!Capacitor.isNativePlatform() && <PwaStatus />}
     <aside className="orientation-notice" role="status" aria-label="屏幕方向提示">
       <span aria-hidden="true">↻</span>
       <strong>横屏游玩体验更佳</strong>
