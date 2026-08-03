@@ -38,6 +38,42 @@ describe('Godot production application session oracle', () => {
     expect(canonicalSha256(session.snapshot())).toBe(first.afterStateSha256);
   });
 
+  it('issues an intelligence-gated diplomatic order and settles it through the oracle bridge', () => {
+    const initial = createProductionSessionState(1, 1);
+    const session = new OracleApplicationSession(initial);
+    const reconnaissance = session.execute({
+      commandEnvelopeVersion: 1,
+      commandId: 'test-diplomacy-recon',
+      expectedStateSha256: canonicalSha256(initial),
+      kind: 'reconnoitre_city',
+      parameters: { sourceCityId: 'city-12', targetCityId: 'city-0', officerId: 'officer-32' },
+    });
+    expect(reconnaissance.ok).toBe(true);
+    const issued = session.execute({
+      commandEnvelopeVersion: 1,
+      commandId: 'test-diplomacy-issue',
+      expectedStateSha256: reconnaissance.afterStateSha256,
+      kind: 'issue_alienate_order',
+      parameters: { sourceCityId: 'city-12', officerId: 'officer-1', targetOfficerId: 'officer-56' },
+    });
+    expect(issued).toMatchObject({ ok: true, stateChanged: true });
+    expect(issued.state.diplomaticOrders['diplomatic-order-1']).toMatchObject({
+      kind: 'alienate', officerId: 'officer-1', targetOfficerId: 'officer-56', remainingMonths: 1,
+    });
+    expect(issued.state.rngSeed).toBe(initial.rngSeed);
+
+    const settled = session.advanceDiplomaticOrders();
+    expect(settled.ok).toBe(true);
+    expect(settled.state.diplomaticOrders).toEqual({});
+    expect(settled.state.officers['officer-1'].cityId).toBe('city-12');
+    expect(settled.state.rngSeed).not.toBe(initial.rngSeed);
+    expect(settled.receipt).toMatchObject({
+      kind: 'advance_diplomatic_orders',
+      completedOrderIds: ['diplomatic-order-1'],
+      activeOrders: [],
+    });
+  });
+
   it('uses stable closed-envelope validation errors', () => {
     expect(validateEnvelope({ z: 1, a: 2 })).toEqual({
       ok: false,

@@ -5,6 +5,7 @@ const Validator = preload("res://src/domain/validation/game_state_validator.gd")
 const CoreLcg = preload("res://src/domain/random/core_lcg.gd")
 const DevelopFarming = preload("res://src/domain/commands/develop_farming_command.gd")
 const StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
+const BayeDiplomacy = preload("res://src/domain/compat/baye/baye_diplomacy.gd")
 const GameSession = preload("res://src/application/game_session/game_session.gd")
 const SaveRepository = preload("res://src/application/persistence/json_save_repository.gd")
 
@@ -21,6 +22,7 @@ func _initialize() -> void:
 	_test_period_structure_and_roads()
 	_test_reciprocal_road_validation()
 	_test_exact_lcg()
+	_test_baye_diplomacy_rng_contract()
 	_test_develop_farming_fixture_and_immutability()
 	_test_equipment_intelligence_bonus()
 	_test_uint32_shift_boundaries()
@@ -38,6 +40,38 @@ func _initialize() -> void:
 		return
 	print("[Godot domain tests] PASSED: %d assertion(s)" % _assertions)
 	quit(0)
+
+
+func _test_baye_diplomacy_rng_contract() -> void:
+	_assert_equal(
+		BayeDiplomacy.roll("alienate", 100, 50, 0, 0, 1),
+		{"ok": true, "error": "", "success": true, "seed": 2_165_703_038},
+		"alienate must preserve the fixed comparison and draw order",
+	)
+	_assert_equal(
+		BayeDiplomacy.roll("counterespionage", 100, 50, 0, 3, 1),
+		{"ok": true, "error": "", "success": true, "seed": 217_083_232},
+		"counterespionage must preserve success report draws",
+	)
+	_assert_equal(
+		BayeDiplomacy.roll("canvass", 100, 0, 0, 1, 2),
+		{"ok": true, "error": "", "success": true, "seed": 3_079_534_013, "recruitedLoyalty": 69},
+		"canvass must use the fourth draw for recruited loyalty",
+	)
+	_assert_true(
+		BayeDiplomacy.roll("canvass", 10, 100, 0, 1, 2)["success"],
+		"canvass must preserve unsigned IQ subtraction",
+	)
+	_assert_equal(
+		BayeDiplomacy.roll("induce", 100, 50, 100, 4, 8),
+		{"ok": true, "error": "", "success": true, "seed": 18_026_106},
+		"AI induce must skip the player report draw",
+	)
+	_assert_equal(
+		BayeDiplomacy.roll("induce", 100, 50, 100, 4, 8, true),
+		{"ok": true, "error": "", "success": true, "seed": 1_276_464_017},
+		"player induce must preserve its report draw",
+	)
 
 
 func _test_strategic_order_lifecycle_cancellation() -> void:

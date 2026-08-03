@@ -92,7 +92,7 @@ static func _validate(state: Dictionary, initial_contract: bool) -> Array[Dictio
 		_validate_empty_spike_record(intel_reports, "intelReports", issues)
 	else:
 		_validate_strategic_orders(strategic_orders, factions, cities, officers, state, issues)
-		_validate_empty_runtime_record(diplomatic_orders, "diplomaticOrders", issues)
+		_validate_diplomatic_orders(diplomatic_orders, factions, cities, officers, state, issues)
 		_validate_intel_reports(intel_reports, cities, officers, state, issues)
 
 	_validate_exact_order(state.get("cityOrder"), "cityOrder", cities, issues)
@@ -465,6 +465,75 @@ static func _validate_strategic_orders(
 	if _is_positive_integer(state.get("nextStrategicOrderSerial")) \
 			and int(state["nextStrategicOrderSerial"]) <= highest_serial:
 		_add(issues, "nextStrategicOrderSerial", "must exceed every active strategic order serial")
+
+
+static func _validate_diplomatic_orders(
+		orders: Dictionary, factions: Dictionary, cities: Dictionary, officers: Dictionary,
+		state: Dictionary, issues: Array[Dictionary]
+) -> void:
+	var highest_serial: int = 0
+	for key: String in _sorted_string_keys(orders):
+		var path: String = "diplomaticOrders.%s" % key
+		var raw: Variant = orders[key]
+		if typeof(raw) != TYPE_DICTIONARY:
+			continue
+		var order: Dictionary = raw
+		if not _is_diplomatic_order_id(key):
+			_add(issues, "%s.id" % path, "must use diplomatic-order-N format")
+		else:
+			highest_serial = maxi(highest_serial, int(key.trim_prefix("diplomatic-order-")))
+		if not ["alienate", "canvass", "counterespionage", "induce"].has(order.get("kind")):
+			_add(issues, "%s.kind" % path, "must be a supported diplomatic order")
+		var faction_id: String = str(order.get("factionId", ""))
+		var target_faction_id: String = str(order.get("targetFactionId", ""))
+		if not factions.has(target_faction_id):
+			_add(issues, "%s.targetFactionId" % path, "unknown faction: %s" % target_faction_id)
+		elif target_faction_id == faction_id:
+			_add(issues, "%s.targetFactionId" % path, "must differ from the issuing faction")
+		var officer_id: String = str(order.get("officerId", ""))
+		if factions.has(faction_id) and officers.has(officer_id) \
+				and typeof(officers[officer_id]) == TYPE_DICTIONARY:
+			var officer: Dictionary = officers[officer_id]
+			if officer.get("status") != "serving" or officer.get("factionId") != faction_id:
+				_add(issues, "%s.officerId" % path, "executor must be a serving officer of the order faction")
+		var target_officer_id: String = _required_reference(
+			order.get("targetOfficerId"), "%s.targetOfficerId" % path, officers, issues
+		)
+		if not target_officer_id.is_empty() and target_officer_id == officer_id:
+			_add(issues, "%s.targetOfficerId" % path, "must differ from the executing officer")
+		for field: String in ["createdTurn", "createdYear", "durationMonths", "remainingMonths"]:
+			if not _is_positive_integer(order.get(field)):
+				_add(issues, "%s.%s" % [path, field], "must be a positive integer")
+		if _is_positive_integer(order.get("durationMonths")) and _is_positive_integer(order.get("remainingMonths")) \
+				and int(order["remainingMonths"]) > int(order["durationMonths"]):
+			_add(issues, "%s.remainingMonths" % path, "must not exceed durationMonths")
+		if not _is_integer_number(order.get("createdMonth")) or int(order.get("createdMonth", 0)) < 1 \
+				or int(order.get("createdMonth", 0)) > 12:
+			_add(issues, "%s.createdMonth" % path, "must be an integer from 1 to 12")
+		_validate_non_negative_integer(order.get("moneyCost"), "%s.moneyCost" % path, issues)
+		if _is_positive_integer(order.get("createdTurn")) and int(order["createdTurn"]) > int(state.get("turn", 0)):
+			_add(issues, "%s.createdTurn" % path, "must not be later than the current turn")
+		var raw_calendar: Variant = state.get("calendar", {})
+		var calendar: Dictionary = raw_calendar if raw_calendar is Dictionary else {}
+		if _is_positive_integer(order.get("createdYear")) and _is_integer_number(order.get("createdMonth")) \
+				and _is_integer_number(calendar.get("year")) and _is_integer_number(calendar.get("month")) \
+				and int(order["createdYear"]) * 12 + int(order["createdMonth"]) \
+				> int(calendar.get("year", 0)) * 12 + int(calendar.get("month", 0)):
+			_add(issues, "%s.createdYear" % path, "creation date must not be later than the current calendar")
+		if _is_positive_integer(order.get("createdTurn")) and _is_positive_integer(order.get("durationMonths")) \
+				and _is_positive_integer(order.get("remainingMonths")):
+			var elapsed_turns: int = int(state.get("turn", 0)) - int(order["createdTurn"])
+			if int(order["remainingMonths"]) != int(order["durationMonths"]) - elapsed_turns:
+				_add(issues, "%s.remainingMonths" % path, "must agree with durationMonths and elapsed campaign turns")
+			if _is_positive_integer(order.get("createdYear")) and _is_integer_number(order.get("createdMonth")) \
+					and _is_integer_number(calendar.get("year")) and _is_integer_number(calendar.get("month")):
+				var created_calendar_index: int = int(order["createdYear"]) * 12 + int(order["createdMonth"]) - 1
+				var current_calendar_index: int = int(calendar.get("year", 0)) * 12 + int(calendar.get("month", 0)) - 1
+				if current_calendar_index - created_calendar_index != elapsed_turns:
+					_add(issues, "%s.createdYear" % path, "creation date must agree with createdTurn and the current calendar")
+	if _is_positive_integer(state.get("nextDiplomaticOrderSerial")) \
+			and int(state["nextDiplomaticOrderSerial"]) <= highest_serial:
+		_add(issues, "nextDiplomaticOrderSerial", "must exceed every active diplomatic order serial")
 
 
 static func _validate_cities(
@@ -1073,6 +1142,17 @@ static func _is_positive_integer(raw: Variant) -> bool:
 
 static func _is_strategic_order_id(value: String) -> bool:
 	const PREFIX := "strategic-order-"
+	if not value.begins_with(PREFIX): return false
+	var suffix: String = value.trim_prefix(PREFIX)
+	if suffix.is_empty() or suffix.length() > 16 or suffix[0] < "1" or suffix[0] > "9":
+		return false
+	for index: int in range(1, suffix.length()):
+		if suffix[index] < "0" or suffix[index] > "9": return false
+	return int(suffix) <= JS_MAX_SAFE_INTEGER
+
+
+static func _is_diplomatic_order_id(value: String) -> bool:
+	const PREFIX := "diplomatic-order-"
 	if not value.begins_with(PREFIX): return false
 	var suffix: String = value.trim_prefix(PREFIX)
 	if suffix.is_empty() or suffix.length() > 16 or suffix[0] < "1" or suffix[0] > "9":

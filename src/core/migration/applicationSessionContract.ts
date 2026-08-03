@@ -23,6 +23,7 @@ import {
 } from '../officerLifecycle';
 import { advanceStrategicOrders, issueMoveOrder, issueTransportOrder } from '../strategicOrders';
 import { reconnoitreCity } from '../reconnaissance';
+import { advanceDiplomaticOrders, issueDiplomaticOrder } from '../diplomaticOrders';
 import type { GameState } from '../types';
 import { selectPlayerFaction } from '../../data/legacyScenario';
 import { canonicalSha256, compareUnicodeScalar } from './canonicalJson';
@@ -120,6 +121,56 @@ export class OracleApplicationSession {
         completedOrderIds,
         activeOrders: Object.values(next.strategicOrders)
           .sort((left, right) => compareUnicodeScalar(left.id, right.id))
+          .map((order) => structuredClone(order)),
+        appendedLogs: structuredClone(next.logs.slice(before.logs.length)),
+      };
+      this.state = structuredClone(next);
+      return {
+        ok: true,
+        error: '',
+        stateChanged: afterDigest !== beforeDigest,
+        beforeStateSha256: beforeDigest,
+        afterStateSha256: afterDigest,
+        receipt,
+        state: structuredClone(next),
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+        stateChanged: false,
+        beforeStateSha256: beforeDigest,
+        afterStateSha256: beforeDigest,
+        receipt: {},
+        state: before,
+      };
+    }
+  }
+
+  advanceDiplomaticOrders(): ApplicationAdvanceResult {
+    const before = this.snapshot();
+    const beforeDigest = canonicalSha256(before);
+    try {
+      const settling: GameState = {
+        ...before,
+        turn: before.turn + 1,
+        calendar: before.calendar.month === 12
+          ? { year: before.calendar.year + 1, month: 1 }
+          : { year: before.calendar.year, month: before.calendar.month + 1 },
+        phase: 'player',
+        activeFactionId: before.playerFactionId,
+        actedOfficerIds: [],
+      };
+      const next = JSON.parse(JSON.stringify(advanceDiplomaticOrders(settling))) as GameState;
+      const afterDigest = canonicalSha256(next);
+      const beforeOrderIds = Object.keys(before.diplomaticOrders).sort(compareDiplomaticOrderIds);
+      const completedOrderIds = beforeOrderIds.filter((id) => !next.diplomaticOrders[id]);
+      const receipt = {
+        kind: 'advance_diplomatic_orders',
+        state: projectStrategicState(next),
+        completedOrderIds,
+        activeOrders: Object.values(next.diplomaticOrders)
+          .sort((left, right) => compareDiplomaticOrderIds(left.id, right.id))
           .map((order) => structuredClone(order)),
         appendedLogs: structuredClone(next.logs.slice(before.logs.length)),
       };
@@ -263,6 +314,10 @@ export function validateEnvelope(raw: unknown):
     issue_move_order: ['sourceCityId', 'targetCityId', 'officerId'],
     issue_transport_order: ['sourceCityId', 'targetCityId', 'officerId', 'cargo'],
     reconnoitre_city: ['sourceCityId', 'targetCityId', 'officerId'],
+    issue_alienate_order: ['sourceCityId', 'officerId', 'targetOfficerId'],
+    issue_canvass_order: ['sourceCityId', 'officerId', 'targetOfficerId'],
+    issue_counterespionage_order: ['sourceCityId', 'officerId', 'targetOfficerId'],
+    issue_induce_order: ['sourceCityId', 'officerId', 'targetOfficerId'],
   };
   const parameterKeys = parameterKeysByKind[raw.kind];
   if (!parameterKeys) return rejected('unknown_command', `unsupported command kind: ${raw.kind}`);
@@ -380,6 +435,17 @@ function executeDomainCommand(before: GameState, envelope: ApplicationCommandEnv
       return reconnoitreCity(before, parameters as {
         sourceCityId: string; targetCityId: string; officerId: string;
       });
+    case 'issue_alienate_order':
+    case 'issue_canvass_order':
+    case 'issue_counterespionage_order':
+    case 'issue_induce_order':
+      return issueDiplomaticOrder(before, {
+        kind: envelope.kind.slice('issue_'.length, -'_order'.length) as
+          'alienate' | 'canvass' | 'counterespionage' | 'induce',
+        sourceCityId: parameters.sourceCityId as string,
+        officerId: parameters.officerId as string,
+        targetOfficerId: parameters.targetOfficerId as string,
+      });
     default:
       throw new Error(`unsupported command kind: ${envelope.kind}`);
   }
@@ -396,6 +462,12 @@ function projectReceipt(
   }
   if (kind === 'reconnoitre_city') {
     return projectReconnaissanceReceipt(before, after, command);
+  }
+  if ([
+    'issue_alienate_order', 'issue_canvass_order',
+    'issue_counterespionage_order', 'issue_induce_order',
+  ].includes(kind)) {
+    return projectDiplomaticOrderReceipt(kind, before, after, command);
   }
   if ([
     'search_city', 'recruit_free_officer', 'recruit_captive', 'release_captive',
@@ -483,6 +555,46 @@ function projectReconnaissanceReceipt(
     report: structuredClone(report),
     appendedLog: structuredClone(appendedLog),
   };
+}
+
+function projectDiplomaticOrderReceipt(
+  kind: string,
+  before: GameState,
+  after: GameState,
+  command: Record<string, unknown>,
+): Record<string, unknown> {
+  const order = Object.values(after.diplomaticOrders)
+    .filter((candidate) => !before.diplomaticOrders[candidate.id])
+    .sort((left, right) => compareDiplomaticOrderIds(left.id, right.id))[0];
+  const sourceCityId = command.sourceCityId as string;
+  const officerId = command.officerId as string;
+  const targetOfficerId = command.targetOfficerId as string;
+  const appendedLog = after.logs.at(-1);
+  if (!order || !appendedLog) {
+    throw new Error(`Successful ${kind} transaction is missing observable output`);
+  }
+  return {
+    kind,
+    state: projectStrategicState(after),
+    order: structuredClone(order),
+    sourceCity: {
+      id: sourceCityId,
+      before: { money: before.cities[sourceCityId].money },
+      after: { money: after.cities[sourceCityId].money },
+    },
+    officer: {
+      id: officerId,
+      before: projectTransitOfficer(before.officers[officerId]),
+      after: projectTransitOfficer(after.officers[officerId]),
+    },
+    targetOfficer: { id: targetOfficerId },
+    appendedLog: structuredClone(appendedLog),
+  };
+}
+
+function compareDiplomaticOrderIds(left: string, right: string): number {
+  const prefix = 'diplomatic-order-';
+  return Number(left.slice(prefix.length)) - Number(right.slice(prefix.length));
 }
 
 function projectStrategicOrderReceipt(
