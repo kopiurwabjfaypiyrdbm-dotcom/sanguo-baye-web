@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB21",
-  "currentBriefPath": "docs/mission-briefs/MB21-main-menu-campaign-setup-strategic-ui.md",
-  "readyMissionIds": ["MB21"],
+  "currentMissionId": "MB22",
+  "currentBriefPath": "docs/mission-briefs/MB22-tactical-hud-feedback-settings-accessibility.md",
+  "readyMissionIds": ["MB22"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -131,15 +131,21 @@
       "briefPath": "docs/mission-briefs/MB20-production-saves-migration-corruption-recovery.md",
       "reportPath": "docs/migration/mission-reports/MB20-production-saves-migration-corruption-recovery.md",
       "commit": "233bd7a"
+    },
+    {
+      "id": "MB21",
+      "briefPath": "docs/mission-briefs/MB21-main-menu-campaign-setup-strategic-ui.md",
+      "reportPath": "docs/migration/mission-reports/MB21-main-menu-campaign-setup-strategic-ui.md",
+      "commit": "2b006bf"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB20",
-    "commit": "233bd7a",
-    "date": "2026-08-03"
+    "missionId": "MB21",
+    "commit": "2b006bf",
+    "date": "2026-08-04"
   },
-  "nextAction": "Implement MB21 main menu, campaign setup, and strategic UI; preserve MB20 production save and recovery contracts.",
+  "nextAction": "Implement MB22 tactical HUD, feedback, settings, and accessibility; preserve MB21 campaign entry and session hand-off contracts.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
