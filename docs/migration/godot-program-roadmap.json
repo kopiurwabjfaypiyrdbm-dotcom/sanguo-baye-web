@@ -6,7 +6,7 @@
   "charterSha256": "0c95fc8da7287a833080a6703514357326c27fbe48a7d8141675e869218f817f",
   "missionRange": {
     "first": "MB01",
-    "last": "MB25",
+    "last": "MB26",
     "adaptive": true
   },
   "missions": [
@@ -159,6 +159,12 @@
       "wave": "program-closure",
       "title": "Release-candidate and migration-completion evidence",
       "dependsOn": ["MB24"]
+    },
+    {
+      "id": "MB26",
+      "wave": "program-closure",
+      "title": "Android touch acceptance and final migration gate",
+      "dependsOn": ["MB25"]
     }
   ]
 }

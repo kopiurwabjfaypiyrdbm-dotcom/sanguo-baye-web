@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB25",
-  "currentBriefPath": "docs/mission-briefs/MB25-release-candidate-and-migration-completion-evidence.md",
-  "readyMissionIds": ["MB25"],
+  "currentMissionId": "MB26",
+  "currentBriefPath": "docs/mission-briefs/MB26-android-touch-acceptance-and-goal-gate.md",
+  "readyMissionIds": ["MB26"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -155,15 +155,21 @@
       "briefPath": "docs/mission-briefs/MB24-full-parity-deterministic-regression-closure.md",
       "reportPath": "docs/migration/mission-reports/MB24-full-parity-deterministic-regression-closure.md",
       "commit": "962432d"
+    },
+    {
+      "id": "MB25",
+      "briefPath": "docs/mission-briefs/MB25-release-candidate-and-migration-completion-evidence.md",
+      "reportPath": "docs/migration/godot-release-candidate-report.md",
+      "commit": "9b0d11a"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB24",
-    "commit": "962432d",
+    "missionId": "MB25",
+    "commit": "9b0d11a",
     "date": "2026-08-04"
   },
-  "nextAction": "Implement MB25 release-candidate and migration-completion evidence; obtain direct MuMu/real-device touch evidence, complete the cold terminal recovery path, and issue a bounded migration recommendation.",
+  "nextAction": "Implement MB26 Android touch acceptance and final migration gate; obtain direct MuMu/real-device touch evidence or hand off the exact external blocker without declaring the Goal complete.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
