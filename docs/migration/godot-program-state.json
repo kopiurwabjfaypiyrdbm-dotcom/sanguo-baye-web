@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB17",
-  "currentBriefPath": "docs/mission-briefs/MB17-deterministic-tactical-ai.md",
-  "readyMissionIds": ["MB17"],
+  "currentMissionId": "MB18",
+  "currentBriefPath": "docs/mission-briefs/MB18-native-battlefield-presentation-camera-mobile-input.md",
+  "readyMissionIds": ["MB18"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -107,15 +107,21 @@
       "briefPath": "docs/mission-briefs/MB16-unit-types-skills-tactics-equipment.md",
       "reportPath": "docs/migration/mission-reports/MB16-unit-types-skills-tactics-equipment.md",
       "commit": "ae70847"
+    },
+    {
+      "id": "MB17",
+      "briefPath": "docs/mission-briefs/MB17-deterministic-tactical-ai.md",
+      "reportPath": "docs/migration/mission-reports/MB17-deterministic-tactical-ai.md",
+      "commit": "88c6311"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB16",
-    "commit": "ae70847",
+    "missionId": "MB17",
+    "commit": "88c6311",
     "date": "2026-08-03"
   },
-  "nextAction": "Implement MB17 by adding a bounded deterministic tactical AI decision trace on the MB13–MB16 battle contract; keep battlefield presentation, Android touch validation, and campaign settlement deferred.",
+  "nextAction": "Implement MB18 native battlefield presentation, bounded camera, and touch/mouse input on the existing tactical contracts; defer settlement, full HUD, and platform hardening.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
