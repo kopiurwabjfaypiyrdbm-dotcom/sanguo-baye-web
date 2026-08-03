@@ -223,15 +223,18 @@ func _run_terminal_settlement_presentation() -> void:
 		_assert_true(bool(recovered_marker.get("ok", false)) and bool(recovered_marker.get("found", false)) and str(recovered_marker.get("status", "")) == "committed", "cold tactical save must preserve marker until pause cleanup")
 	_assert_true(recovered._settle_into_strategic_session(), "repeated cold terminal return must remain idempotent")
 	_assert_equal(recovered_session.state_sha256() if is_instance_valid(recovered_session) else "", settled_digest, "repeated cold terminal return must keep strategic digest")
-	var pause_clear := PauseRepository.clear_candidates()
-	_assert_true(bool(pause_clear.get("ok", false)), "terminal return must clear pause candidates")
+	# Exercise the real presentation return path, not only its settlement helper.
+	# The scene transition itself owns checkpoint/marker cleanup and should land
+	# on the native strategic scene with the already-promoted session intact.
+	recovered._return_to_strategy()
+	await process_frame
+	await process_frame
+	var strategy_scene: Node = root.find_child("StrategyScreen", true, false)
+	_assert_true(is_instance_valid(strategy_scene) and String(strategy_scene.scene_file_path).ends_with("strategy_screen.tscn"), "terminal return must switch to the native strategic scene")
+	_assert_true(not PauseRepository.has_candidate(), "terminal return must clear pause candidates")
 	if is_instance_valid(recovered_session):
-		var marker_clear := recovered_session.clear_battle_recovery()
-		_assert_true(bool(marker_clear.get("ok", false)), "terminal return must clear committed marker after pause cleanup")
 		recovered_marker = recovered_session.load_battle_recovery()
 		_assert_true(bool(recovered_marker.get("ok", false)) and not bool(recovered_marker.get("found", false)), "terminal return must leave no committed marker")
-	recovered.queue_free()
-	await process_frame
 	SESSION_CONTEXT.clear()
 	TACTICAL_CONTEXT.clear()
 

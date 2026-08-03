@@ -23,7 +23,7 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 
 ## 自动回归
 
-- tactical presentation：125 assertions；覆盖 terminal checkpoint 替换旧 ongoing、同战斗旧 ongoing 拒绝、完整 terminal projection/settlement digest、warm/cold exact-once 和 1280×720/844×390 输入。
+- tactical presentation：125 assertions；覆盖 terminal checkpoint 替换旧 ongoing、同战斗旧 ongoing 拒绝、完整 terminal projection/settlement digest、warm/cold exact-once、真实 `_return_to_strategy()` 场景切换/清理和 1280×720/844×390 输入。
 - production save/recovery：139 assertions。
 - campaign setup presentation：62 assertions；38 城、54 道路和生产 GameSession 入口。
 - Web：47 个测试文件、378 tests，构建通过。
