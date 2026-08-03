@@ -108,13 +108,18 @@ func show_city(
 	var owner_name: String = str(owner.get("name", tr("无主")))
 	if knowledge == "current":
 		ownership_label.text = tr("势力：%s · 己方实时") % owner_name
-		_full_stats_text = "%s  %s\n%s  %s\n%s  %s" % [
+		var condition_name: String = {
+			"normal": tr("正常"), "famine": tr("饥荒"), "drought": tr("旱灾"),
+			"flood": tr("水灾"), "rebellion": tr("叛乱"),
+		}.get(str(city.get("condition", "normal")), tr("未知"))
+		_full_stats_text = "%s  %s\n%s  %s\n%s  %s\n%s" % [
 			tr("人口：%s") % _format_number(int(city.get("population", 0))),
 			tr("民忠：%d") % int(city.get("publicLoyalty", 0)),
 			tr("农业：%d / %d") % [int(city.get("farming", 0)), int(city.get("farmingLimit", 0))],
 			tr("商业：%d / %d") % [int(city.get("commerce", 0)), int(city.get("commerceLimit", 0))],
 			tr("金：%d") % int(city.get("money", 0)),
 			tr("粮：%d") % int(city.get("food", 0)),
+			tr("城况：%s · 防灾 %d") % [condition_name, int(city.get("disasterPrevention", 0))],
 		]
 		_compact_hostile_stats_text = ""
 	elif knowledge == "report":

@@ -13,6 +13,7 @@ var city_name := ""
 var is_player_city := false
 var has_owner := false
 var owner_color := OTHER_FILL
+var condition := "normal"
 var _selected := false
 var _pulse_tween: Tween
 var _font: SystemFont
@@ -41,6 +42,9 @@ func configure(city: Dictionary, faction: Dictionary, player_faction_id: String)
 	var owner_id := str(city.get("ownerId", ""))
 	has_owner = not owner_id.is_empty()
 	is_player_city = has_owner and owner_id == player_faction_id
+	# Enemy event state is live intelligence and remains hidden until a future
+	# report contract carries it. Owned cities get an explicit non-color badge.
+	condition = str(city.get("condition", "normal")) if is_player_city else "normal"
 	owner_color = Color(str(faction.get("color", "#73594b"))) if not faction.is_empty() else NEUTRAL_FILL
 	queue_redraw()
 
@@ -74,6 +78,18 @@ func _draw() -> void:
 		draw_arc(Vector2.ZERO, pulse_radius, 0.0, TAU, 48, Color(GOLD, 0.86 * (1.0 - pulse_phase)), 3.0, true)
 		var chevron := PackedVector2Array([Vector2(-8, -35), Vector2(0, -43), Vector2(8, -35)])
 		draw_polyline(chevron, GOLD, 3.0, true)
+
+	if condition != "normal":
+		var condition_colors := {
+			"famine": Color("#d5a94c"), "drought": Color("#e47b3f"),
+			"flood": Color("#4fa8d8"), "rebellion": Color("#dc5b58"),
+		}
+		var condition_text := {"famine": "荒", "drought": "旱", "flood": "水", "rebellion": "乱"}
+		var badge_color: Color = condition_colors.get(condition, Color("#d5a94c"))
+		draw_circle(Vector2(22, -22), 12.0, Color("#172124"))
+		draw_circle(Vector2(22, -22), 10.0, badge_color)
+		if _font:
+			draw_string(_font, Vector2(12, -16), str(condition_text.get(condition, "灾")), HORIZONTAL_ALIGNMENT_CENTER, 20.0, 15, Color("#fff8df"))
 
 	if _font:
 		draw_string(

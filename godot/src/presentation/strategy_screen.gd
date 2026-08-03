@@ -28,12 +28,14 @@ const ZOOM_STEP := 1.14
 @onready var player_button: Button = %PlayerButton
 @onready var save_button: Button = %SaveButton
 @onready var load_button: Button = %LoadButton
+@onready var chronicle_button: Button = %ChronicleButton
 @onready var city_card: CityCard = %CityCard
 @onready var officer_panel = %OfficerManagementPanel
 @onready var personnel_panel = %PersonnelLifecyclePanel
 @onready var logistics_panel = %StrategicLogisticsPanel
 @onready var reconnaissance_panel: ReconnaissancePanel = %ReconnaissancePanel
 @onready var diplomacy_panel = %DiplomaticOrderPanel
+@onready var chronicle_panel = %CampaignChroniclePanel
 
 var _session: Object
 var _snapshot: Dictionary = {}
@@ -94,6 +96,8 @@ func _process(_delta: float) -> void:
 		reconnaissance_panel.place_in(_get_card_usable_rect())
 	if diplomacy_panel.visible:
 		diplomacy_panel.place_in(_get_card_usable_rect())
+	if chronicle_panel.visible:
+		chronicle_panel.place_in(_get_card_usable_rect())
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -116,6 +120,7 @@ func _configure_localized_ui() -> void:
 	player_button.tooltip_text = tr("定位并选择玩家城池")
 	save_button.tooltip_text = tr("保存当前最小 GameState")
 	load_button.tooltip_text = tr("重建 GameSession 并载入存档")
+	chronicle_button.tooltip_text = tr("查看年月、事件、继承与战役结局")
 	_apply_responsive_labels()
 
 
@@ -124,6 +129,7 @@ func _connect_ui() -> void:
 	player_button.pressed.connect(_focus_player_city)
 	save_button.pressed.connect(_save_game)
 	load_button.pressed.connect(_load_game)
+	chronicle_button.pressed.connect(_open_chronicle)
 	city_card.command_requested.connect(_execute_internal_command)
 	city_card.officer_management_requested.connect(_open_officer_management)
 	city_card.personnel_lifecycle_requested.connect(_open_personnel_lifecycle)
@@ -147,6 +153,9 @@ func _connect_ui() -> void:
 	diplomacy_panel.advance_requested.connect(_advance_diplomatic_orders)
 	diplomacy_panel.target_preview_requested.connect(_preview_diplomacy)
 	diplomacy_panel.close_requested.connect(_close_diplomacy)
+	chronicle_panel.close_requested.connect(_close_chronicle)
+	chronicle_panel.succession_requested.connect(_resolve_succession)
+	chronicle_panel.demo_requested.connect(_run_mb11_demo)
 
 
 func _refresh_snapshot(keep_card_open: bool = true) -> bool:
@@ -160,6 +169,8 @@ func _refresh_snapshot(keep_card_open: bool = true) -> bool:
 	_snapshot = value as Dictionary
 	map_world.rebuild(_snapshot)
 	_update_hud_from_snapshot()
+	if str(_snapshot.get("phase", "")) in ["succession", "ended"]:
+		chronicle_panel.show_state(_snapshot)
 
 	var city_ids := map_world.get_ordered_city_ids()
 	if city_ids.size() != EXPECTED_CITY_COUNT or map_world.get_road_count() != EXPECTED_ROAD_COUNT:
@@ -201,6 +212,7 @@ func _select_city(city_id: String) -> void:
 	_close_strategic_logistics(false)
 	_close_reconnaissance(false)
 	_close_diplomacy(false)
+	_close_chronicle()
 	map_world.set_selected_city(city_id)
 	_show_selected_city_card()
 	var city := _as_dictionary(_as_dictionary(_snapshot.get("cities", {})).get(city_id, {}))
@@ -399,6 +411,50 @@ func _close_diplomacy(show_card: bool = true) -> void:
 	if show_card and not _selected_city_id.is_empty(): _show_selected_city_card()
 
 
+func _open_chronicle() -> void:
+	city_card.hide()
+	officer_panel.hide()
+	personnel_panel.hide()
+	logistics_panel.hide()
+	reconnaissance_panel.hide()
+	diplomacy_panel.hide()
+	chronicle_panel.show_state(_snapshot)
+	chronicle_panel.apply_responsive_layout(_compact_layout, _current_canvas_scale(), DisplayServer.window_get_size())
+	chronicle_panel.place_in(_get_card_usable_rect())
+
+
+func _close_chronicle() -> void:
+	chronicle_panel.hide()
+
+
+func _run_mb11_demo(kind: String) -> void:
+	_set_interaction_busy(true)
+	_set_status(tr("正在载入确定性验收场景……"), "busy")
+	var result: Dictionary = _call_session("start_mb11_acceptance_demo", [kind])
+	_set_interaction_busy(false)
+	if not bool(result.get("ok", false)):
+		_set_status(tr("验收场景失败：%s") % _result_error(result), "error")
+		return
+	_selected_city_id = "city-12" if kind == "city_event" else ""
+	_refresh_snapshot(false)
+	chronicle_panel.show_state(_snapshot)
+	chronicle_panel.apply_responsive_layout(_compact_layout, _current_canvas_scale(), DisplayServer.window_get_size())
+	chronicle_panel.place_in(_get_card_usable_rect())
+	if kind == "city_event":
+		map_world.set_selected_city("city-12")
+		_animate_camera_to(map_world.get_city_world_position("city-12"), 1.15, 0.38)
+		_set_status(tr("濮阳水灾已结算 · 地图节点显示“水”标记"), "success")
+	elif kind == "succession":
+		_set_status(tr("君主自然死亡已结算 · 月份推进被冻结，等待拥立"), "warning")
+	else:
+		_focus_world()
+		_set_status(tr("天下再无敌对诸侯 · 战役胜利"), "success")
+
+
+func _resolve_succession(successor_officer_id: String) -> void:
+	_execute_internal_command("resolve_succession", {"successorOfficerId": successor_officer_id})
+
+
 func _refresh_diplomacy() -> void:
 	if not diplomacy_panel.visible or _selected_city_id.is_empty(): return
 	var query: Variant = _session.call("diplomacy_query", _selected_city_id)
@@ -522,6 +578,11 @@ func _execute_internal_command(kind: String, parameters: Dictionary) -> void:
 	_refresh_strategic_logistics()
 	_refresh_reconnaissance()
 	_refresh_diplomacy()
+	if kind == "resolve_succession":
+		chronicle_panel.show_state(_snapshot)
+		chronicle_panel.place_in(_get_card_usable_rect())
+		_set_status(tr("新君已拥立，战役恢复"), "success")
+		return
 	if kind == "reconnoitre_city":
 		map_world.play_recon_scan(str(parameters.get("sourceCityId", "")), str(parameters.get("targetCityId", "")))
 		var recon_receipt: Dictionary = _as_dictionary(result.get("receipt", {}))
@@ -593,6 +654,7 @@ func _internal_command_label(kind: String) -> String:
 		"issue_canvass_order": tr("招揽"),
 		"issue_counterespionage_order": tr("策反"),
 		"issue_induce_order": tr("劝降"),
+		"resolve_succession": tr("拥立新君"),
 	}.get(kind, kind)
 
 
@@ -795,6 +857,9 @@ func _handle_tap(screen_position: Vector2, is_touch: bool) -> void:
 	if diplomacy_panel.visible:
 		_close_diplomacy()
 		return
+	if chronicle_panel.visible:
+		_close_chronicle()
+		return
 	if is_touch:
 		map_world.show_touch_ripple(screen_position)
 	var city_id := map_world.pick_city(screen_position)
@@ -894,13 +959,14 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	player_button.text = tr("我方" if compact else "我方城池")
 	save_button.text = tr("存" if compact else "保存")
 	load_button.text = tr("读" if compact else "读取")
+	chronicle_button.text = tr("纪" if compact else "纪事")
 
 	if compact:
 		var touch_size := ceilf(48.0 / maxf(canvas_scale, 0.01))
 		var label_font_size := ceili(15.0 / maxf(canvas_scale, 0.01))
 		var action_font_size := ceili(17.0 / maxf(canvas_scale, 0.01))
 		top_panel.custom_minimum_size = Vector2(0.0, touch_size + 14.0)
-		for button: Button in [world_button, player_button, save_button, load_button]:
+		for button: Button in [world_button, player_button, save_button, load_button, chronicle_button]:
 			button.custom_minimum_size = Vector2(touch_size, touch_size)
 			button.add_theme_font_size_override("font_size", action_font_size)
 		status_badge_panel.custom_minimum_size = Vector2(touch_size, touch_size)
@@ -914,7 +980,8 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		player_button.custom_minimum_size = Vector2(76.0, 52.0)
 		save_button.custom_minimum_size = Vector2(68.0, 52.0)
 		load_button.custom_minimum_size = Vector2(68.0, 52.0)
-		for button: Button in [world_button, player_button, save_button, load_button]:
+		chronicle_button.custom_minimum_size = Vector2(76.0, 52.0)
+		for button: Button in [world_button, player_button, save_button, load_button, chronicle_button]:
 			button.add_theme_font_size_override("font_size", 18)
 		status_badge_panel.custom_minimum_size = Vector2(82.0, 48.0)
 		year_label.add_theme_font_size_override("font_size", 18)
@@ -928,6 +995,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	logistics_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
 	reconnaissance_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
 	diplomacy_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
+	chronicle_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
 	if not _snapshot.is_empty():
 		_update_hud_from_snapshot()
 
@@ -937,12 +1005,14 @@ func _set_interaction_busy(busy: bool) -> void:
 	load_button.disabled = busy or not _spike_persistence_enabled
 	world_button.disabled = busy
 	player_button.disabled = busy
+	chronicle_button.disabled = busy
 	city_card.set_busy(busy)
 	officer_panel.set_busy(busy)
 	personnel_panel.set_busy(busy)
 	logistics_panel.set_busy(busy)
 	reconnaissance_panel.set_busy(busy)
 	diplomacy_panel.set_busy(busy)
+	chronicle_panel.set_busy(busy)
 
 
 func _set_status(message: String, tone: String) -> void:

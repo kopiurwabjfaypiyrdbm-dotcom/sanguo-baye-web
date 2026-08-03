@@ -24,6 +24,7 @@ func _run() -> void:
 	var logistics_panel = screen.get_node("%StrategicLogisticsPanel")
 	var reconnaissance_panel = screen.get_node("%ReconnaissancePanel")
 	var diplomacy_panel = screen.get_node("%DiplomaticOrderPanel")
+	var chronicle_panel = screen.get_node("%CampaignChroniclePanel")
 	var physical_size := Vector2i(844, 390)
 	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
 	_assert_equal(map_world.get_ordered_city_ids().size(), 38, "main scene must render all 38 cities")
@@ -471,6 +472,61 @@ func _run() -> void:
 	screen.call("_advance_strategic_logistics")
 	_assert_true(int(screen.get("_snapshot")["rngSeed"]) != transport_seed_before, "valid transport arrival must consume exactly the deterministic loss roll")
 	_assert_true("全部损失" in screen.get_node("%StatusLine").text or "完成对" in screen.get_node("%StatusLine").text, "advance feedback must expose the transport outcome")
+
+	# MB11 native lifecycle/outcome acceptance paths remain explicit technical
+	# samples, but every state transition crosses the production session boundary.
+	screen.call("_apply_responsive_layout_for_size", physical_size)
+	_assert_true(
+		screen.get_node("%ChronicleButton").custom_minimum_size.y * canvas_scale >= 47.5,
+		"compact chronicle entry must retain a 48px-class physical target"
+	)
+	screen.call("_run_mb11_demo", "city_event")
+	var city_event_snapshot: Dictionary = screen.get("_snapshot")
+	_assert_equal(city_event_snapshot["cities"]["city-12"]["condition"], "flood", "city-event sample must expose the settled flood state")
+	var flood_marker: CityMarker = map_world.get("_markers")["city-12"]
+	_assert_equal(flood_marker.condition, "flood", "owned city marker must render the non-color flood badge state")
+	_assert_true("水灾" in chronicle_panel.get_node("%ChronicleLabel").text, "chronicle must surface the deterministic city-event log")
+	chronicle_panel.apply_responsive_layout(true, canvas_scale, physical_size)
+	chronicle_panel.reset_size()
+	await process_frame
+	var chronicle_usable := Rect2(Vector2.ZERO, Vector2(1558.0, 278.0 / canvas_scale))
+	chronicle_panel.place_in(chronicle_usable)
+	_assert_true(
+		chronicle_panel.position.y >= chronicle_usable.position.y - 1.0
+			and chronicle_panel.position.y + chronicle_panel.size.y <= chronicle_usable.end.y + 1.0,
+		"compact chronicle panel must remain above the bottom status region"
+	)
+	for control_name: String in ["CloseButton", "EventDemoButton", "SuccessionDemoButton", "OutcomeDemoButton"]:
+		var control: Control = chronicle_panel.get_node("%%%s" % control_name)
+		_assert_true(control.custom_minimum_size.y * canvas_scale >= 47.5, "compact chronicle %s must retain a 48px-class physical target" % control_name)
+
+	screen.call("_run_mb11_demo", "succession")
+	var succession_snapshot: Dictionary = screen.get("_snapshot")
+	_assert_equal(succession_snapshot["phase"], "succession", "ruler death must enter the explicit succession phase")
+	var successor_option: OptionButton = chronicle_panel.get_node("%SuccessorOption")
+	_assert_true(successor_option.item_count > 0, "succession panel must expose stable eligible candidates")
+	for control_name: String in ["SuccessorOption", "ConfirmButton"]:
+		var control: Control = chronicle_panel.get_node("%%%s" % control_name)
+		_assert_true(control.custom_minimum_size.y * canvas_scale >= 47.5, "compact succession %s must retain a 48px-class physical target" % control_name)
+	var frozen_digest: String = screen.get("_session").state_sha256()
+	var frozen_result: Dictionary = screen.get("_session").settle_city_events()
+	_assert_true(not frozen_result["ok"] and "拥立新君" in frozen_result["error"], "ordinary month progression must freeze while succession is pending")
+	_assert_equal(screen.get("_session").state_sha256(), frozen_digest, "rejected succession-phase progression must not mutate state or RNG")
+	var successor_id: String = str(successor_option.get_item_metadata(0))
+	screen.call("_resolve_succession", successor_id)
+	_assert_equal(screen.get("_snapshot")["phase"], "player", "choosing a successor must restore the player phase")
+	_assert_equal(screen.get("_snapshot")["factions"]["ruler-1"]["rulerOfficerId"], successor_id, "succession must update the faction ruler through the command transaction")
+	_assert_true(not screen.get("_snapshot").has("pendingSuccession"), "resolved succession must clear the pending decision")
+
+	screen.call("_run_mb11_demo", "victory")
+	var victory_snapshot: Dictionary = screen.get("_snapshot")
+	_assert_equal(victory_snapshot["phase"], "ended", "last hostile faction removal must close the campaign")
+	_assert_equal(victory_snapshot["outcome"], "victory", "closed player campaign must report victory")
+	_assert_true("战役胜利" in chronicle_panel.get_node("%TitleLabel").text, "native chronicle panel must display the victory outcome")
+	var ended_digest: String = screen.get("_session").state_sha256()
+	var ended_result: Dictionary = screen.get("_session").settle_natural_deaths()
+	_assert_true(ended_result["ok"] and not ended_result["stateChanged"], "ended campaign progression must be an idempotent no-op")
+	_assert_equal(screen.get("_session").state_sha256(), ended_digest, "ended campaign must preserve exact state and RNG")
 
 	if _failures > 0:
 		push_error(

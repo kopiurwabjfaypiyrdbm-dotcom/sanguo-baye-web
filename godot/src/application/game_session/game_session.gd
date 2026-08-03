@@ -397,6 +397,42 @@ func evaluate_campaign_outcome() -> Dictionary:
 	return _apply_progression_result(CampaignOutcome.evaluate(_state), "evaluate_outcome", true)
 
 
+## Deterministic, explicitly labeled acceptance states for the MB11 technical
+## sample. This resets period 1 and never enters production campaign data.
+func start_mb11_acceptance_demo(kind: String) -> Dictionary:
+	if not ["city_event", "succession", "victory"].has(kind):
+		return _failure("unknown MB11 acceptance demo: %s" % kind)
+	var started: Dictionary = start_campaign(1, 1)
+	if not started["ok"]: return started
+	var input: Dictionary = snapshot()
+	if kind == "city_event":
+		for raw_city_id: Variant in input["cityOrder"]:
+			var city_id: String = str(raw_city_id)
+			var faction: Dictionary = input["factions"].get(input["cities"][city_id]["ownerId"], {})
+			if faction.is_empty() or bool(faction.get("isNeutral", false)): continue
+			input["cities"][city_id]["condition"] = "normal"
+			input["cities"][city_id]["disasterPrevention"] = 100
+			input["cities"][city_id]["publicLoyalty"] = 100
+		input["cities"]["city-12"]["condition"] = "flood"
+		input["cities"]["city-12"]["disasterPrevention"] = 0
+		for field: String in ["farming", "commerce", "money", "food", "reserveTroops", "population"]:
+			input["cities"]["city-12"][field] = 101
+		_state = GameState.new(input)
+		return settle_city_events()
+	if kind == "succession":
+		input["lifecyclePolicy"]["naturalDeath"] = "age-90-coinflip"
+		input["rngSeed"] = 1972
+		input["officers"]["officer-1"]["age"] = 90
+		_state = GameState.new(input)
+		return settle_natural_deaths()
+	for raw_city_id: Variant in input["cityOrder"]:
+		var city_id: String = str(raw_city_id)
+		input["cities"][city_id]["ownerId"] = input["playerFactionId"]
+		input["cities"][city_id].erase("satrapOfficerId")
+	_state = GameState.new(input)
+	return evaluate_campaign_outcome()
+
+
 func _progression_not_started(kind: String) -> Dictionary:
 	return {"ok": false, "error": "campaign session has not started", "stateChanged": false,
 		"beforeStateSha256": "", "afterStateSha256": "", "receipt": {"kind": kind}, "state": {}}
