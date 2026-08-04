@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { BAYE_TERRAINS } from '../compat/baye/tacticalBattle';
 import { getTacticalPath, type TacticalBattleState, type TacticalPosition } from '../core/tacticalBattle';
 import { TACTICAL_UNIT_ART, getTacticalUnitArt } from './tacticalUnitArt';
+import { TACTICAL_CAVALRY_ANIMATION } from './tacticalCavalryAnimation';
 import type { GameBridge } from './events';
 
 const CELL_SIZE = 68;
@@ -50,9 +51,28 @@ export class BattleScene extends Phaser.Scene {
     for (const art of Object.values(TACTICAL_UNIT_ART)) {
       this.load.image(art.key, art.source);
     }
+    this.load.spritesheet(
+      TACTICAL_CAVALRY_ANIMATION.key,
+      TACTICAL_CAVALRY_ANIMATION.source,
+      {
+        frameWidth: TACTICAL_CAVALRY_ANIMATION.frameWidth,
+        frameHeight: TACTICAL_CAVALRY_ANIMATION.frameHeight,
+        startFrame: TACTICAL_CAVALRY_ANIMATION.startFrame,
+        endFrame: TACTICAL_CAVALRY_ANIMATION.endFrame,
+      },
+    );
   }
 
   create(): void {
+    this.anims.create({
+      key: TACTICAL_CAVALRY_ANIMATION.key,
+      frames: this.anims.generateFrameNumbers(TACTICAL_CAVALRY_ANIMATION.key, {
+        start: TACTICAL_CAVALRY_ANIMATION.startFrame,
+        end: TACTICAL_CAVALRY_ANIMATION.endFrame,
+      }),
+      frameRate: TACTICAL_CAVALRY_ANIMATION.frameRate,
+      repeat: TACTICAL_CAVALRY_ANIMATION.repeat,
+    });
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.redraw();
     this.fitBattlefield();
@@ -156,7 +176,12 @@ export class BattleScene extends Phaser.Scene {
       feedback.setStrokeStyle(selected ? 4 : canAttack ? 4 : 2, selected ? 0xffdf80 : canAttack ? 0xff776d : 0xf4ead0, 1);
 
       const art = getTacticalUnitArt(unit.armsType);
-      const sprite = this.textures.exists(art.key)
+      const sprite = unit.armsType === 0 && this.textures.exists(TACTICAL_CAVALRY_ANIMATION.key)
+        ? this.add.sprite(centerX, centerY + 27, TACTICAL_CAVALRY_ANIMATION.key)
+            .setDisplaySize(54, 54)
+            .setOrigin(0.5, 1)
+            .play(TACTICAL_CAVALRY_ANIMATION.key)
+        : this.textures.exists(art.key)
         ? this.add.image(centerX, centerY + 27, art.key).setDisplaySize(54, 54).setOrigin(0.5, 1)
         : this.add.circle(centerX, centerY - 2, 18, color, unit.acted ? 0.48 : 0.96);
       sprite.setAlpha(unit.acted ? 0.52 : 1);
