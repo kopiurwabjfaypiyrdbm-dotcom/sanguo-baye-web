@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "flightDeckVersion": "1.6.0-cursor.1",
+  "godotPath": "",
+  "editorBridge": {
+    "host": "127.0.0.1",
+    "port": 47835,
+    "allowWrites": false,
+    "resourceRoots": [
+      "res://resources/"
+    ]
+  },
+  "pi": {
+    "confirmationTimeoutSeconds": 90,
+    "approvalLeaseSeconds": 120
+  },
+  "profiles": {
+    "default": {
+      "description": "Main project scene",
+      "frames": 30,
+      "benchmarkWarmupFrames": 60,
+      "seed": 42,
+      "userArgs": []
+    }
+  }
+}

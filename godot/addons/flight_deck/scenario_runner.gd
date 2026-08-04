@@ -1,0 +1,231 @@
+class_name FlightDeckScenarioRunner
+extends RefCounted
+
+var scenario_path := ""
+var scenario: Dictionary = {}
+var steps: Array = []
+var assertions: Array = []
+var current_step := 0
+var step_frame := 0
+var step_event_offset := 0
+var preserve_event_offset_for_next_wait := false
+var status := "idle"
+var failure := ""
+var failure_kind := "none"
+var failure_details: Dictionary = {}
+var assertion_results: Array[Dictionary] = []
+var active_actions: Dictionary = {}
+
+func load_file(path: String) -> bool:
+	scenario_path = path
+	if not FileAccess.file_exists(path):
+		_fail("Scenario file not found: %s" % path)
+		return false
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		_fail("Cannot read scenario: %s" % path)
+		return false
+	var parsed = JSON.parse_string(file.get_as_text())
+	if not parsed is Dictionary:
+		_fail("Scenario must be a JSON object: %s" % path)
+		return false
+	scenario = parsed
+	steps = scenario.get("steps", [])
+	assertions = scenario.get("assertions", [])
+	if not steps is Array or steps.is_empty():
+		_fail("Scenario has no steps: %s" % path)
+		return false
+	if not assertions is Array:
+		_fail("Scenario assertions must be an array")
+		return false
+	status = "running"
+	return true
+
+func tick(probe: Node) -> void:
+	if status != "running":
+		return
+	if current_step >= steps.size():
+		_evaluate_assertions(probe)
+		return
+	var step = steps[current_step]
+	if not step is Dictionary:
+		_fail("Step %d must be an object" % current_step)
+		return
+	if step_frame == 0:
+		if current_step == 0 and step.has("wait_event"):
+			step_event_offset = 0
+		elif not step.has("wait_event") or not preserve_event_offset_for_next_wait:
+			step_event_offset = probe.semantic_events.size()
+		preserve_event_offset_for_next_wait = false
+		probe.event("scenario_step_started", {"index": current_step, "step": step})
+
+	if step.has("wait_frames"):
+		step_frame += 1
+		if step_frame >= maxi(1, int(step.wait_frames)):
+			_complete_step(probe)
+		return
+
+	if step.has("press") or step.has("hold"):
+		var action_name := str(step.get("press", step.get("hold", "")))
+		var duration := maxi(1, int(step.get("frames", 2)))
+		if step_frame == 0:
+			_press_action(action_name)
+		step_frame += 1
+		if step_frame >= duration:
+			_release_action(action_name)
+			_complete_step(probe)
+		return
+
+	if step.has("move_mouse"):
+		var coordinates = step.move_mouse
+		if not coordinates is Array or coordinates.size() < 2:
+			_fail("Step %d move_mouse must be [x, y]" % current_step)
+			return
+		var position := Vector2(float(coordinates[0]), float(coordinates[1]))
+		Input.warp_mouse(position)
+		var motion := InputEventMouseMotion.new()
+		motion.position = position
+		motion.global_position = position
+		Input.parse_input_event(motion)
+		_complete_step(probe)
+		return
+
+	if step.has("wait_event"):
+		var event_name := str(step.wait_event)
+		var where_value = step.get("where", {})
+		if not where_value is Dictionary:
+			_fail("Step %d wait_event where must be an object" % current_step)
+			return
+		var where: Dictionary = where_value
+		var timeout := maxi(1, int(step.get("timeout_frames", 600)))
+		var required_count := maxi(1, int(step.get("count_gte", 1)))
+		var matches_in_window: int = probe.count_semantic_events(event_name, where, step_event_offset)
+		if matches_in_window >= required_count:
+			_complete_step(probe)
+			return
+		step_frame += 1
+		if step_frame >= timeout:
+			failure_details = {
+				"kind": "wait_event_timeout",
+				"step_index": current_step,
+				"event": event_name,
+				"where": where,
+				"required_count": required_count,
+				"matches_in_window": matches_in_window,
+				"event_window_start": step_event_offset,
+				"event_window_end": probe.semantic_events.size(),
+				"prior_matches": probe.matching_semantic_events_before(event_name, where, step_event_offset),
+			}
+			_fail("Step %d timed out waiting for event '%s'" % [current_step, event_name], "expectation")
+		return
+
+	if step.has("command"):
+		probe.issue_command(str(step.command), step.get("payload", {}))
+		_complete_step(probe)
+		return
+
+	_fail("Unsupported scenario step %d: %s" % [current_step, JSON.stringify(step)])
+
+func abort(reason: String) -> void:
+	_release_all_actions()
+	_fail(reason, "expectation")
+
+func result() -> Dictionary:
+	return {
+		"name": scenario.get("name", scenario_path.get_file().get_basename()),
+		"path": scenario_path,
+		"status": status,
+		"steps_completed": current_step,
+		"steps_total": steps.size(),
+		"failure": failure,
+		"failure_kind": failure_kind,
+		"failure_details": failure_details,
+		"assertions": assertion_results,
+	}
+
+func _complete_step(probe: Node) -> void:
+	var completed_step = steps[current_step]
+	probe.event("scenario_step_completed", {"index": current_step})
+	preserve_event_offset_for_next_wait = completed_step is Dictionary and not completed_step.has("wait_event")
+	current_step += 1
+	step_frame = 0
+	if not preserve_event_offset_for_next_wait:
+		step_event_offset = probe.semantic_events.size()
+
+func _evaluate_assertions(probe: Node) -> void:
+	assertion_results.clear()
+	var all_passed := true
+	var invalid_definition := false
+	for assertion_index in range(assertions.size()):
+		var assertion = assertions[assertion_index]
+		if not assertion is Dictionary:
+			assertion_results.append({"index": assertion_index, "passed": false, "reason": "Assertion must be an object", "failure_kind": "precondition"})
+			all_passed = false
+			invalid_definition = true
+			continue
+		var event_name := str(assertion.get("event", ""))
+		var where_value = assertion.get("where", {})
+		if not where_value is Dictionary:
+			assertion_results.append({"index": assertion_index, "passed": false, "reason": "Assertion where must be an object", "failure_kind": "precondition"})
+			all_passed = false
+			invalid_definition = true
+			continue
+		var where: Dictionary = where_value
+		var minimum := int(assertion.get("count_gte", 1))
+		var maximum := int(assertion.get("count_lte", 2147483647))
+		var count: int = int(probe.count_semantic_events(event_name, where))
+		var valid_definition: bool = not event_name.is_empty() and minimum <= maximum
+		var passed: bool = valid_definition and count >= minimum and count <= maximum
+		if not valid_definition:
+			invalid_definition = true
+		var reason := "event '%s' count %d, expected %d..%d" % [event_name, count, minimum, maximum]
+		assertion_results.append({
+			"index": assertion_index,
+			"passed": passed,
+			"failure_kind": "expectation" if valid_definition else "precondition",
+			"event": event_name,
+			"where": where,
+			"count": count,
+			"expected_count_gte": minimum,
+			"expected_count_lte": maximum,
+			"reason": reason,
+		})
+		if not passed:
+			all_passed = false
+	_release_all_actions()
+	status = "passed" if all_passed else "failed"
+	if not all_passed:
+		failure_kind = "precondition" if invalid_definition else "expectation"
+		failure = "One or more scenario assertions failed"
+
+func _press_action(action_name: String) -> void:
+	if action_name.is_empty():
+		_fail("Input action cannot be empty")
+		return
+	var input_event := InputEventAction.new()
+	input_event.action = action_name
+	input_event.pressed = true
+	input_event.strength = 1.0
+	Input.parse_input_event(input_event)
+	active_actions[action_name] = true
+
+func _release_action(action_name: String) -> void:
+	if action_name.is_empty():
+		return
+	var input_event := InputEventAction.new()
+	input_event.action = action_name
+	input_event.pressed = false
+	input_event.strength = 0.0
+	Input.parse_input_event(input_event)
+	active_actions.erase(action_name)
+
+func _release_all_actions() -> void:
+	for action_name in active_actions.keys():
+		_release_action(str(action_name))
+	active_actions.clear()
+
+func _fail(reason: String, kind: String = "precondition") -> void:
+	_release_all_actions()
+	status = "failed"
+	failure = reason
+	failure_kind = kind

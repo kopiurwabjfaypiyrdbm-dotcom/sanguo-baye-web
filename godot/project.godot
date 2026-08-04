@@ -12,12 +12,13 @@ config_version=5
 
 config/name="三国霸业 Godot 技术样片"
 run/main_scene="res://scenes/presentation/main_menu.tscn"
+config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
-config/quit_on_go_back=false
 
 [autoload]
 
+FlightDeckProbe="*res://addons/flight_deck/runtime_probe.gd"
 AndroidBackRouter="*res://src/platform/android/android_back_router.gd"
 
 [display]
@@ -29,6 +30,10 @@ window/size/window_height_override=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=4
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/flight_deck/plugin.cfg")
 
 [input_devices]
 
