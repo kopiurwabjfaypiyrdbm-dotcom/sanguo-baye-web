@@ -63,6 +63,8 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 
 在这些动作完成前，不能宣称 Android-first 接受完成，也不能完成 MB00 Goal。当前 ADB/键盘/坐标注入结果只用于定位输入坐标和程序稳定性。
 
+补充失败尝试：曾在无窗口的 Godot presentation runner 中调用原生 `PopupMenu.popup()` 后读取 `get_item_rect()`，runner 超过 120 秒未退出；该试探已撤回，未把它写成通过证据。PopupMenu 实际 item rect 仍须在可见 MuMu/真机上测量。
+
 ## 决策
 
 继续 Goal，下一步等待用户可见设备触控证据；不推送、不创建 PR、不发布 APK/AAB。真实 `_return_to_strategy()` 场景切换与 pause/marker 清理已由 131 tactical assertions 覆盖，不再列为 P2。响应式状态恢复 P2 已在 3315de7 修复，四边非对称安全区注入与缩放覆盖已在 363187d/994c394 闭环，纪事布局回退启发式已在本轮移除并由 225 项表现断言覆盖；图标资源提示已由当前 APK 条目和 Godot 稳定文档解释关闭；仍保留两项 P2：360dpi 字体实机可读性校准，以及 PopupMenu 实际 item rect 的设备测量。代码侧高密度 P1 已修复；Android-first 的剩余 P1 只是真实 MuMu/真机人工动作证据。
