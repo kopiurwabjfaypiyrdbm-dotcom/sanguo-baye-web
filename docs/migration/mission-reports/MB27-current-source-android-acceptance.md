@@ -28,6 +28,7 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 - 09:48 按桌面快捷方式参数启动 `MuMuNxMain.exe --from-shortcut` 后复查，`MuMuNxMain` 及相关后端进程仍全部为 `MainWindowHandle=0`；未把这次后台启动尝试记录为可见窗口或人工触控证据。
 - 09:51 对同一实例调用 MuMu `show_window`、`top_most`、`fullscreen`，三项 RPC 均返回 `errcode=0`，但进程窗口句柄仍为 0；这些 RPC 成功只表示命令被后端接受，不构成可见 GUI 或人工触控证据。
 - 09:53 在当前 Windows 会话用 `EnumWindows` 按 MuMu 进程 ID 枚举可见顶层窗口，结果为 `no-visible-top-level-mumu-windows`；这进一步确认本工具会话没有可交互 MuMu 画面。
+- 10:30:44 重新执行 `mumu-cli control --vmindex 0 --version 15 launch` 返回 `errcode=0`；等待 2 秒后 `MuMuNxMain`/`MuMuNxDevice` 的 `MainWindowHandle` 仍为 `0`，所以这次后台启动成功也不构成可见 GUI 或人工触控证据。
 - 复跑 `npm run godot:project:verify` 退出码 0（211 domain、223 presentation、import 和主场景通过）；复跑 `npm run godot:program-check` 退出码 0（4 项 mutation self-test）。上述结果只证明当前源码和运行时准备度，不替代人工触控。
 
 ## 自动回归
