@@ -157,7 +157,7 @@ export class BattleScene extends Phaser.Scene {
 
       const art = getTacticalUnitArt(unit.armsType);
       const sprite = this.textures.exists(art.key)
-        ? this.add.image(centerX, centerY + 27, art.key).setDisplaySize(54, 61).setOrigin(0.5, 1)
+        ? this.add.image(centerX, centerY + 27, art.key).setDisplaySize(54, 54).setOrigin(0.5, 1)
         : this.add.circle(centerX, centerY - 2, 18, color, unit.acted ? 0.48 : 0.96);
       sprite.setAlpha(unit.acted ? 0.52 : 1);
 

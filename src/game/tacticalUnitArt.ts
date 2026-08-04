@@ -8,27 +8,27 @@ export type TacticalUnitArt = {
 export const TACTICAL_UNIT_ART: Record<BayeArmsType, TacticalUnitArt> = {
   0: {
     key: 'tactical-unit-cavalry',
-    source: new URL('../../assets/production/tactical/units/cavalry-v2.png', import.meta.url).href,
+    source: new URL('../../assets/production/tactical/units/cavalry-v4-q.png', import.meta.url).href,
   },
   1: {
     key: 'tactical-unit-infantry',
-    source: new URL('../../assets/production/tactical/units/infantry-v2.png', import.meta.url).href,
+    source: new URL('../../assets/production/tactical/units/infantry-v4-q.png', import.meta.url).href,
   },
   2: {
     key: 'tactical-unit-archer',
-    source: new URL('../../assets/production/tactical/units/archer-v2.png', import.meta.url).href,
+    source: new URL('../../assets/production/tactical/units/archer-v4-q.png', import.meta.url).href,
   },
   3: {
     key: 'tactical-unit-navy',
-    source: new URL('../../assets/production/tactical/units/navy-v2.png', import.meta.url).href,
+    source: new URL('../../assets/production/tactical/units/navy-v4-q.png', import.meta.url).href,
   },
   4: {
     key: 'tactical-unit-elite-cavalry',
-    source: new URL('../../assets/production/tactical/units/elite-cavalry-v2.png', import.meta.url).href,
+    source: new URL('../../assets/production/tactical/units/elite-cavalry-v4-q.png', import.meta.url).href,
   },
   5: {
     key: 'tactical-unit-mystic-strategist',
-    source: new URL('../../assets/production/tactical/units/mystic-strategist-v2.png', import.meta.url).href,
+    source: new URL('../../assets/production/tactical/units/mystic-strategist-v4-q.png', import.meta.url).href,
   },
 };
 
