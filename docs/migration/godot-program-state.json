@@ -175,7 +175,7 @@
     "commit": "f1fe29c",
     "date": "2026-08-04"
   },
-  "nextAction": "MB27 current-source APK godot/builds/sanguo-baye-godot-mb27-touch-debug.apk is exported, installed and cold-launched after DPI-aware touch changes; aggregate npm run check passed. Collect direct MuMu/real-device touch evidence at both landscape sizes, then make the final Goal decision without fabricating a pass. The Android launcher preset and project-native adaptive icon sources are committed; a residual Godot template themed_icon warning remains P2.",
+  "nextAction": "MB27 code-side high-density touch gaps are fixed in bfb7f90; current-source APK godot/builds/sanguo-baye-godot-mb27-touch-debug.apk (57,817,572 bytes, SHA-256 F69BD4344F39898458594467C4AF1AB652359282D68917DEF054639CD89B38B9) is exported, installed and cold-launched after aggregate npm run check passed. Collect direct MuMu/real-device touch evidence at both landscape sizes, then make the final Goal decision without fabricating a pass. The Android launcher preset and project-native adaptive icon sources are committed; themed_icon, safe-area, chronicle fallback and physical DPI calibration remain P2.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
