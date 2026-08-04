@@ -18,7 +18,7 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 - ADB：MuMu 稳定端点 `127.0.0.1:16384`，当前 streamed install 后冷启动进程可见。
 - Android 15 / API 35，x86_64；物理面板 1440×2560，density 360，surface orientation 1（横屏旋转）。
 - 冷启动截图：[mb27-touch-current-launch.png](../../godot/builds/mb27-touch-current-launch.png)，截图时间 09:21:33，晚于本次 APK 导出。画面显示原生主菜单和 Godot 4.7.1 标识。
-- 历史 ADB `input tap 1280 795` 诊断截图：[mb27-after-adb-tap.png](../../godot/builds/mb27-after-adb-tap.png)。该文件时间早于本次 08:59:14 当前 APK，画面仍是旧版上下布局；它只保留作坐标注入历史，不支持当前 APK 的开局页结论，也不是人工触控证据。
+- 历史 ADB `input tap 1280 795` 诊断截图：[mb27-after-adb-tap.png](../../godot/builds/mb27-after-adb-tap.png)。该文件时间早于本次 09:21:11 当前 APK，画面仍是旧版上下布局；它只保留作坐标注入历史，不支持当前 APK 的开局页结论，也不是人工触控证据。
 - 运行过程未观察到安装失败、Java/FATAL 崩溃或进程立即退出；首次安装尝试遇到短暂 `device offline`，重试后成功。
 
 ## 自动回归
@@ -39,7 +39,7 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 - 主菜单与战役设置的卡片位于可滚动容器内，战术设置面板也支持高密度纵向滚动；三个 CheckButton、文字大小选择和完成按钮均纳入 48dp 目标。
 - 新增完整场景的 2.25 density 注入测试；不把桌面 density=1 的 headless 结果冒充 Android 物理触控。
 - 修复战役设置从 ultra-compact 返回桌面尺寸时的响应式状态残留：恢复时期/君主标签宽度并清除临时字号覆盖；新增回归断言。
-- 将安全区计算拆为可注入纯几何函数，覆盖非对称左/上/右/下 inset；运行时仍仅在移动平台读取 `DisplayServer` 安全区。
+- 将安全区计算拆为可注入纯几何函数，覆盖四边不同的左/上/右/下 inset 及 screen-to-viewport 缩放；运行时仍仅在移动平台读取 `DisplayServer` 安全区。
 
 ## 尚未关闭的 P1 与人工交接
 

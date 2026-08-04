@@ -21,12 +21,12 @@ func _run() -> void:
 	_assert_equal(TouchMetrics.density_scale(), 4.0, "touch metrics test override must apply the 4x safety cap")
 	TouchMetrics.clear_density_override_for_testing()
 	var asymmetric_safe := SafeArea.compute_safe_rect_for_insets(
-		Vector2(1280.0, 720.0),
-		Rect2(120.0, 30.0, 1040.0, 660.0),
-		Vector2(1280.0, 720.0)
+		Vector2(1200.0, 600.0),
+		Rect2(96.0, 24.0, 1224.0, 624.0),
+		Vector2(1440.0, 720.0)
 	)
-	_assert_equal(asymmetric_safe.position, Vector2(120.0, 30.0), "safe-area calculation must preserve asymmetric left/top insets")
-	_assert_equal(asymmetric_safe.size, Vector2(1040.0, 660.0), "safe-area calculation must preserve asymmetric right/bottom insets")
+	_assert_equal(asymmetric_safe.position, Vector2(80.0, 20.0), "safe-area calculation must preserve distinct left/top insets")
+	_assert_equal(asymmetric_safe.size, Vector2(1020.0, 520.0), "safe-area calculation must preserve distinct right/bottom insets and screen scaling")
 	var high_density_target := TouchMetrics.target_size(0.5, 2.25)
 	_assert_true(high_density_target * 0.5 >= 108.0, "high-density compact controls must retain a 48dp physical target")
 	_assert_true(TouchMetrics.drag_threshold(0.5, 2.25) * 0.5 >= 31.5, "high-density touch drag threshold must scale with dpi")
