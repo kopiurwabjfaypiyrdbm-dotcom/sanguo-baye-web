@@ -28,7 +28,7 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 - campaign setup presentation：74 assertions；包含 360dpi/844×390 高密度主菜单与战役设置行高/折叠/滚动边界检查、离开高密度布局后的行高/标签宽度/字号状态恢复、2560×1440 战略 Back 对话框检查，以及 38 城、54 道路和生产 GameSession 入口。
 - Web：47 个测试文件、378 tests，构建通过。
 - 聚合 `npm run check`：退出码 0，通过；本轮耗时 543 秒，包含最终的高密度布局与响应式字体恢复断言。日志中的 migration replay 失败项属于预期的负向篡改演练，未改变聚合命令成功结果；根证书、弹窗位置和 Android build-tools 提示为环境警告。
-- 增量项目验证：`npm run godot:project:verify` 退出码 0（211 domain、219 presentation assertions）。当前源码的 Android preset 已使用项目自有 `res://icon.svg` 主图标及独立 adaptive foreground/background/monochrome SVG；触控度量覆盖 160/360 dpi、48dp/拖动阈值换算、显式密度上限和 PopupMenu 行高。
+- 增量项目验证：最新 `npm run godot:project:verify` 退出码 0（211 domain、221 presentation assertions；d59df85 新增 DPI/测试 override 的 4× 上限断言）。当前源码的 Android preset 已使用项目自有 `res://icon.svg` 主图标及独立 adaptive foreground/background/monochrome SVG；触控度量覆盖 160/360 dpi、48dp/拖动阈值换算、显式密度上限和 PopupMenu 行高。
 - 增量导出：沙箱上下文曾把已存在的模板误报为 missing；改用授权环境读取现有模板后导出成功。没有下载或安装组件。
 - 响应式状态修复后重新导出并安装了上述 APK；MuMu `127.0.0.1:16384` 冷启动进程可见，截图已更新。完整 `npm run check` 在 543 秒后退出码 0，Godot/Web/构建门禁均通过；迁移回放中的错误仍是预期负向篡改演练。
 
