@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "status": "production-candidate",
+  "unit": "tactical-unit-cavalry",
+  "style": "Q-version 16-bit right-facing cavalry commander animation",
+  "source": "assets/source/tactical/units/cavalry-actions-v1.png",
+  "production": "assets/production/tactical/units/cavalry-actions-v1.png",
+  "dimensions": {
+    "source": [1024, 256],
+    "production": [256, 64],
+    "frame": [256, 256],
+    "productionFrame": [64, 64]
+  },
+  "frames": [
+    { "index": 0, "key": "idle", "label": "待机" },
+    { "index": 1, "key": "move", "label": "移动" },
+    { "index": 2, "key": "attack", "label": "攻击" },
+    { "index": 3, "key": "hit", "label": "受击" }
+  ],
+  "generation": {
+    "mode": "built-in image generation plus local chroma-key removal and square-frame normalization",
+    "historicalBoundary": "Original historically informed interpretation; not an exact reproduction of unlicensed original-game binary or artwork."
+  }
+}
