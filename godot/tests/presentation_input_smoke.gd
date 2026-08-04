@@ -525,6 +525,12 @@ func _run() -> void:
 		screen.get_node("%ChronicleButton").custom_minimum_size.y * canvas_scale >= 47.5,
 		"compact chronicle entry must retain a 48px-class physical target"
 	)
+	chronicle_panel.apply_responsive_layout(true, 1.0, Vector2i(1280, 720))
+	_assert_equal(chronicle_panel.get("_layout_canvas_scale"), 1.0,
+		"chronicle must honor a new large-landscape measurement after a compact layout")
+	_assert_equal(chronicle_panel.get_node("%ChronicleScroll").custom_minimum_size.y, 116.0,
+		"chronicle large-landscape measurement must restore the expanded scroll viewport")
+	chronicle_panel.apply_responsive_layout(true, canvas_scale, physical_size)
 	var filtered_chronicle: Dictionary = screen.get("_snapshot").duplicate(true)
 	(filtered_chronicle["logs"] as Array).append({
 		"id": "mb12-hidden-map-log", "kind": "map", "turn": int(filtered_chronicle["turn"]),

@@ -143,12 +143,6 @@ func set_busy(value: bool) -> void:
 
 
 func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: Vector2i) -> void:
-	# A headless/test window can report a square host size while the last
-	# measured compact landscape layout is still authoritative. Keep that
-	# compact measurement instead of silently shrinking controls back to 48px.
-	if compact and _layout_compact and _layout_canvas_scale < 0.75 and physical_size.x > 900:
-		canvas_scale = _layout_canvas_scale
-		physical_size = _layout_physical_size
 	if compact and (physical_size.x <= 1 or physical_size.y <= 1):
 		physical_size = Vector2i(get_viewport_rect().size.round())
 	if compact and physical_size.x > 1 and physical_size.y > 1:
