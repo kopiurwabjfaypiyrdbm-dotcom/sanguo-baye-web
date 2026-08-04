@@ -18,7 +18,7 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 - ADB：MuMu 稳定端点 `127.0.0.1:16384`，当前 streamed install 后冷启动进程可见。
 - Android 15 / API 35，x86_64；物理面板 1440×2560，density 360，surface orientation 1（横屏旋转）。
 - 冷启动截图：[mb27-touch-current-launch.png](../../godot/builds/mb27-touch-current-launch.png)，截图时间 10:01:19，晚于本次 APK 导出。画面显示当前源码的原生主菜单和 Godot 4.7.1 标识。
-- 历史 ADB `input tap 1280 795` 诊断截图：[mb27-after-adb-tap.png](../../godot/builds/mb27-after-adb-tap.png)。该文件时间早于本次 09:21:11 当前 APK，画面仍是旧版上下布局；它只保留作坐标注入历史，不支持当前 APK 的开局页结论，也不是人工触控证据。
+- 历史 ADB `input tap 1280 795` 诊断截图：[mb27-after-adb-tap.png](../../godot/builds/mb27-after-adb-tap.png)。该文件时间早于此前 09:21:11 APK，画面仍是旧版上下布局；它只保留作坐标注入历史，不支持当前 10:00:31 APK 的开局页结论，也不是人工触控证据。
 - 运行过程未观察到安装失败、Java/FATAL 崩溃或进程立即退出；首次安装尝试遇到短暂 `device offline`，重试后成功。
 
 ### 2026-08-04 09:44 复核
