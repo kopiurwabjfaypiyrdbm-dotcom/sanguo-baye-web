@@ -16,11 +16,28 @@
   },
   "profiles": {
     "default": {
-      "description": "Main project scene",
+      "description": "Main menu cold-start smoke (project main scene)",
       "frames": 30,
       "benchmarkWarmupFrames": 60,
       "seed": 42,
       "userArgs": []
+    },
+    "main-menu": {
+      "description": "Longer main-menu headless smoke for capture/benchmark",
+      "frames": 90,
+      "benchmarkWarmupFrames": 30,
+      "seed": 42,
+      "userArgs": []
+    }
+  },
+  "verificationProfiles": {
+    "fast": {
+      "check": true,
+      "unit": "auto"
+    },
+    "daily": {
+      "check": true,
+      "unit": true
     }
   }
 }
