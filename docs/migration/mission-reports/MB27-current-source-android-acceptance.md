@@ -26,6 +26,7 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 - 使用仓库外已存在的 MuMu ADB：`D:\04_Apps\MuMuPlayer\nx_main\adb.exe`；`127.0.0.1:16384` 仍为 `device`，前台为 `com.sumo91.sanguobaye.godotspike/com.godot.game.GodotAppLauncher`，物理尺寸 `1440x2560`、density `360`、ABI `x86_64`。
 - `mumu-cli control --vmindex 0 show_window` 返回 RPC `errcode=0`，但对应 `MuMuNxDevice` 进程的 `MainWindowHandle=0`、窗口标题为空；因此当前工具会话没有可审计的可见 MuMu GUI。`main launch` 的无参数调用返回 `action key missing`，不改变已经在线且前台的 Android Activity 事实。
 - 09:48 按桌面快捷方式参数启动 `MuMuNxMain.exe --from-shortcut` 后复查，`MuMuNxMain` 及相关后端进程仍全部为 `MainWindowHandle=0`；未把这次后台启动尝试记录为可见窗口或人工触控证据。
+- 09:51 对同一实例调用 MuMu `show_window`、`top_most`、`fullscreen`，三项 RPC 均返回 `errcode=0`，但进程窗口句柄仍为 0；这些 RPC 成功只表示命令被后端接受，不构成可见 GUI 或人工触控证据。
 - 复跑 `npm run godot:project:verify` 退出码 0（211 domain、223 presentation、import 和主场景通过）；复跑 `npm run godot:program-check` 退出码 0（4 项 mutation self-test）。上述结果只证明当前源码和运行时准备度，不替代人工触控。
 
 ## 自动回归
