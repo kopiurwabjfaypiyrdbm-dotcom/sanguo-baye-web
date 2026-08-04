@@ -71,30 +71,27 @@ texture = ExtResource("4_wordmark")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Center" type="ScrollContainer" parent="."]
+[node name="Center" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-horizontal_scroll_mode = 0
-vertical_scroll_mode = 1
-follow_focus = true
+mouse_filter = 2
 
 [node name="Card" type="PanelContainer" parent="Center"]
-custom_minimum_size = Vector2(520, 0)
-size_flags_horizontal = 4
-size_flags_vertical = 8
-layout_mode = 2
+unique_name_in_owner = true
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 0
 theme_override_styles/panel = SubResource("StyleBox_empty")
 
 [node name="Margin" type="MarginContainer" parent="Center/Card"]
 layout_mode = 2
 theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 12
+theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 28
+theme_override_constants/margin_bottom = 8
 
 [node name="Stack" type="VBoxContainer" parent="Center/Card/Margin"]
 layout_mode = 2

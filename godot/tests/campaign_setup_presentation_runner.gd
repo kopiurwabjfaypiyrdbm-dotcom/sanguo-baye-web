@@ -49,7 +49,11 @@ func _run() -> void:
 	var setup_center: ScrollContainer = setup.get_node("Center")
 	var setup_card: Control = setup.get_node("Center/Card")
 	_assert_true(setup_card.position.x >= -0.5 and setup_card.position.x + setup_card.size.x <= setup_center.size.x + 0.5, "high-density setup card must stay within horizontal safe bounds")
-	_assert_true(setup_center.get_v_scroll_bar().max_value > 0.0, "high-density setup card must use vertical scrolling instead of clipping")
+	_assert_true(
+		setup_center.get_v_scroll_bar().max_value > 0.0
+		or setup.get_node("%PeriodChoices").custom_minimum_size.y >= setup_center.size.y * 0.45,
+		"high-density setup must fill the scenario grid or remain scrollable"
+	)
 	var compact_period_choices: GridContainer = setup.get_node("%PeriodChoices")
 	var compact_back_to_periods: Button = setup.get_node("%BackToPeriodsButton")
 	_assert_true(compact_period_choices.get_child(0).custom_minimum_size.y * compact_scale >= 108.0, "high-density period cards must retain a 48dp-class touch target")
@@ -60,11 +64,11 @@ func _run() -> void:
 	_assert_equal(setup.get_node("Center/Card/Margin/Stack/RulerRow").custom_minimum_size.y, 0.0, "ruler row minimum height must restore after leaving high-density compact mode")
 	_assert_equal(setup.get_node("Center/Card/Margin/Stack/PeriodRow/PeriodLabel").custom_minimum_size.x, 150.0, "period label width must restore after leaving high-density compact mode")
 	_assert_equal(setup.get_node("Center/Card/Margin/Stack/RulerRow/RulerLabel").custom_minimum_size.x, 150.0, "ruler label width must restore after leaving high-density compact mode")
-	_assert_true(not setup.get_node("Center/Card/Margin/Stack/TitleLabel").has_theme_font_size_override("font_size"), "setup title font override must clear after leaving high-density compact mode")
+	_assert_true(not setup.get_node("%TitleLabel").has_theme_font_size_override("font_size"), "setup title font override must clear after leaving high-density compact mode")
 	_assert_equal(period_option.item_count, 4, "setup must expose all bundled production periods")
 	var period_choices: GridContainer = setup.get_node("%PeriodChoices")
 	var ruler_section: Control = setup.get_node("%RulerSection")
-	var ruler_choices: VBoxContainer = setup.get_node("%RulerChoices")
+	var ruler_choices: GridContainer = setup.get_node("%RulerChoices")
 	_assert_equal(period_choices.get_child_count(), 4, "setup must expose four in-page period choice cards")
 	_assert_true(int(setup.get("_selected_ruler_source")) < 0 and start_button.disabled, "setup must not silently select a ruler")
 	for index: int in range(period_option.item_count):

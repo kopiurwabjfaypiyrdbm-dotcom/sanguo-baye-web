@@ -60,24 +60,49 @@ theme_override_styles/panel = SubResource("StyleBox_empty")
 [node name="Margin" type="MarginContainer" parent="Center/Card"]
 layout_mode = 2
 theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 18
+theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 18
+theme_override_constants/margin_bottom = 16
 
 [node name="Stack" type="VBoxContainer" parent="Center/Card/Margin"]
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/separation = 12
 
-[node name="TitleLabel" type="Label" parent="Center/Card/Margin/Stack"]
+[node name="SetupHeader" type="HBoxContainer" parent="Center/Card/Margin/Stack"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HeaderBackButton" type="Button" parent="Center/Card/Margin/Stack/SetupHeader"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(142, 54)
+layout_mode = 2
+text = "返回"
+
+[node name="TitleLabel" type="Label" parent="Center/Card/Margin/Stack/SetupHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.659, 0.51, 0.239, 1)
 theme_override_font_sizes/font_size = 40
 text = "选择剧本"
 horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PeriodStepLabel" type="Label" parent="Center/Card/Margin/Stack/SetupHeader"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.514, 0.6, 0.549, 1)
+theme_override_font_sizes/font_size = 14
+text = "第一步 / 共两步"
+horizontal_alignment = 2
+vertical_alignment = 1
 
 [node name="DescriptionLabel" type="Label" parent="Center/Card/Margin/Stack"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.83, 0.87, 0.81, 1)
 text = "第一步 / 共两步 · 点选一个时期进入君主选择"
@@ -86,6 +111,7 @@ autowrap_mode = 2
 
 [node name="FactsLabel" type="Label" parent="Center/Card/Margin/Stack"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.63, 0.77, 0.71, 1)
 text = "38 城 · 四段历史剧本"
@@ -96,24 +122,17 @@ autowrap_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/separation = 8
-
-[node name="PeriodStepLabel" type="Label" parent="Center/Card/Margin/Stack/PeriodSection"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.514, 0.6, 0.549, 1)
-theme_override_font_sizes/font_size = 14
-text = "第一步 / 共两步"
-horizontal_alignment = 2
 
 [node name="PeriodChoices" type="GridContainer" parent="Center/Card/Margin/Stack/PeriodSection"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 280)
+custom_minimum_size = Vector2(0, 420)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 columns = 2
-theme_override_constants/h_separation = 14
+theme_override_constants/h_separation = 16
 theme_override_constants/v_separation = 14
 
 [node name="RulerSection" type="VBoxContainer" parent="Center/Card/Margin/Stack"]
@@ -125,6 +144,7 @@ size_flags_vertical = 3
 theme_override_constants/separation = 8
 
 [node name="RulerHeader" type="HBoxContainer" parent="Center/Card/Margin/Stack/RulerSection"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 10
 
@@ -143,9 +163,16 @@ custom_minimum_size = Vector2(120, 48)
 layout_mode = 2
 text = "返回"
 
-[node name="RulerChoicesScroll" type="ScrollContainer" parent="Center/Card/Margin/Stack/RulerSection"]
+[node name="RulerBody" type="HBoxContainer" parent="Center/Card/Margin/Stack/RulerSection"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 210)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="RulerChoicesScroll" type="ScrollContainer" parent="Center/Card/Margin/Stack/RulerSection/RulerBody"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 280)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -153,47 +180,57 @@ horizontal_scroll_mode = 0
 vertical_scroll_mode = 1
 follow_focus = true
 
-[node name="RulerChoices" type="VBoxContainer" parent="Center/Card/Margin/Stack/RulerSection/RulerChoicesScroll"]
+[node name="RulerChoices" type="GridContainer" parent="Center/Card/Margin/Stack/RulerSection/RulerBody/RulerChoicesScroll"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 8
+columns = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
 
-[node name="RulerPreview" type="PanelContainer" parent="Center/Card/Margin/Stack/RulerSection"]
+[node name="RulerAside" type="VBoxContainer" parent="Center/Card/Margin/Stack/RulerSection/RulerBody"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="RulerPreview" type="PanelContainer" parent="Center/Card/Margin/Stack/RulerSection/RulerBody/RulerAside"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="RulerPreviewText" type="Label" parent="Center/Card/Margin/Stack/RulerSection/RulerPreview"]
+[node name="RulerPreviewText" type="Label" parent="Center/Card/Margin/Stack/RulerSection/RulerBody/RulerAside/RulerPreview"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.83, 0.87, 0.81, 1)
 theme_override_font_sizes/font_size = 16
 text = "请选择一位君主"
-horizontal_alignment = 1
-vertical_alignment = 1
+horizontal_alignment = 0
+vertical_alignment = 0
 autowrap_mode = 2
 
-[node name="PolicySection" type="VBoxContainer" parent="Center/Card/Margin/Stack/RulerSection"]
+[node name="PolicySection" type="VBoxContainer" parent="Center/Card/Margin/Stack/RulerSection/RulerBody/RulerAside"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="RulesetLabel" type="Label" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+[node name="RulesetLabel" type="Label" parent="Center/Card/Margin/Stack/RulerSection/RulerBody/RulerAside/PolicySection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.898, 0.827, 0.651, 1)
 text = "战役规则集"
 
-[node name="RulesetOption" type="OptionButton" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+[node name="RulesetOption" type="OptionButton" parent="Center/Card/Margin/Stack/RulerSection/RulerBody/RulerAside/PolicySection"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="RulesetHint" type="Label" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+[node name="RulesetHint" type="Label" parent="Center/Card/Margin/Stack/RulerSection/RulerBody/RulerAside/PolicySection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.51, 0.59, 0.541, 1)
@@ -201,32 +238,32 @@ theme_override_font_sizes/font_size = 13
 text = "规则在开局后锁定并随存档保存。"
 autowrap_mode = 2
 
-[node name="BattleDeathLabel" type="Label" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+[node name="BattleDeathLabel" type="Label" parent="Center/Card/Margin/Stack/RulerSection/RulerBody/RulerAside/PolicySection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.898, 0.827, 0.651, 1)
 text = "战斗死亡"
 
-[node name="BattleDeathOption" type="OptionButton" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+[node name="BattleDeathOption" type="OptionButton" parent="Center/Card/Margin/Stack/RulerSection/RulerBody/RulerAside/PolicySection"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 
-[node name="NaturalDeathLabel" type="Label" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+[node name="NaturalDeathLabel" type="Label" parent="Center/Card/Margin/Stack/RulerSection/RulerBody/RulerAside/PolicySection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.898, 0.827, 0.651, 1)
 text = "年龄死亡"
 
-[node name="NaturalDeathOption" type="OptionButton" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+[node name="NaturalDeathOption" type="OptionButton" parent="Center/Card/Margin/Stack/RulerSection/RulerBody/RulerAside/PolicySection"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 
-[node name="CaptiveEscapeLabel" type="Label" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+[node name="CaptiveEscapeLabel" type="Label" parent="Center/Card/Margin/Stack/RulerSection/RulerBody/RulerAside/PolicySection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.898, 0.827, 0.651, 1)
 text = "俘虏逃脱"
 
-[node name="CaptiveEscapeOption" type="OptionButton" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+[node name="CaptiveEscapeOption" type="OptionButton" parent="Center/Card/Margin/Stack/RulerSection/RulerBody/RulerAside/PolicySection"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
@@ -269,6 +306,7 @@ layout_mode = 2
 
 [node name="SelectionLabel" type="Label" parent="Center/Card/Margin/Stack"]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.898, 0.827, 0.651, 1)
@@ -278,6 +316,7 @@ vertical_alignment = 1
 autowrap_mode = 2
 
 [node name="Actions" type="HBoxContainer" parent="Center/Card/Margin/Stack"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 12
 
@@ -286,11 +325,11 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 56)
 size_flags_horizontal = 3
 layout_mode = 2
-text = "返回"
+text = "返回主菜单"
 
 [node name="StartButton" type="Button" parent="Center/Card/Margin/Stack/Actions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 56)
 size_flags_horizontal = 3
 layout_mode = 2
-text = "下一步：选择君主"
+text = "开始霸业"

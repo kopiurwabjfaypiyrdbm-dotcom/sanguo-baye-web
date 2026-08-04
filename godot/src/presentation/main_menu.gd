@@ -72,6 +72,7 @@ func _ready() -> void:
 	wordmark.modulate.a = 0.0
 	tween.tween_property(wordmark, "modulate:a", 1.0, 0.55)
 	_apply_responsive_layout()
+	call_deferred("_apply_responsive_layout")
 
 
 func _on_viewport_size_changed() -> void:
@@ -132,6 +133,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	else:
 		status_label.visible = true
 		status_label.custom_minimum_size.y = 56.0
+	_layout_action_card(safe_rect, ultra_compact)
 
 
 func _layout_wordmark(safe_rect: Rect2, canvas_scale: float, ultra_compact: bool) -> void:
@@ -144,6 +146,24 @@ func _layout_wordmark(safe_rect: Rect2, canvas_scale: float, ultra_compact: bool
 	wordmark.position = Vector2(
 		safe_rect.position.x + (safe_rect.size.x - width) * 0.5,
 		safe_rect.position.y + maxf(12.0, safe_rect.size.y * (0.08 if not ultra_compact else 0.02)) * maxf(canvas_scale, 0.75)
+	)
+
+
+func _layout_action_card(_safe_rect: Rect2, ultra_compact: bool) -> void:
+	# Match Web `.title-actions`: centered near the bottom of the title screen.
+	var card: PanelContainer = $Center/Card
+	card.reset_size()
+	var card_size := card.get_combined_minimum_size()
+	if card_size.x <= 1.0:
+		card_size.x = card.custom_minimum_size.x
+	if card_size.y <= 1.0:
+		card_size.y = 120.0
+	var bottom_margin := 16.0 if ultra_compact else maxf(24.0, $Center.size.y * 0.07)
+	card.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	card.size = card_size
+	card.position = Vector2(
+		($Center.size.x - card_size.x) * 0.5,
+		maxf(0.0, $Center.size.y - card_size.y - bottom_margin)
 	)
 
 

@@ -27,6 +27,7 @@ const ZOOM_STEP := 1.14
 @onready var title_label: Label = %TitleLabel
 @onready var year_label: Label = %YearLabel
 @onready var seed_label: Label = %SeedLabel
+@onready var resource_label: Label = %ResourceLabel
 @onready var status_badge_panel: PanelContainer = %StatusBadgePanel
 @onready var status_badge: Label = %StatusBadge
 @onready var status_line: Label = %StatusLine
@@ -121,8 +122,8 @@ func _ready() -> void:
 	_persistence_enabled = true
 	save_button.disabled = false
 	load_button.disabled = false
-	_set_status(tr("已载入 %s · 拖动地图，点击城池下令") % str(_snapshot.get("scenario", {}).get("period", "")), "ready")
-	call_deferred("_focus_world")
+	_set_status(tr("已载入战役 · 拖动地图，点击城池下令"), "ready")
+	call_deferred("_focus_player_city", false)
 
 
 func _process(_delta: float) -> void:
@@ -241,11 +242,16 @@ func _refresh_snapshot(keep_card_open: bool = true) -> bool:
 
 func _update_hud_from_snapshot() -> void:
 	var campaign := _call_session("campaign_descriptor")
+	var factions := _as_dictionary(_snapshot.get("factions", {}))
+	var player_faction_id := str(_snapshot.get("playerFactionId", ""))
+	var player_faction := _as_dictionary(factions.get(player_faction_id, {}))
 	if not campaign.is_empty():
-		title_label.text = tr("三国霸业 · %s · %s") % [
-			str(campaign.get("title", "")), str(campaign.get("rulerName", ""))
+		title_label.text = tr("%s · %s") % [
+			str(player_faction.get("name", campaign.get("title", "三国霸业"))),
+			str(campaign.get("rulerName", "")),
 		]
 	var calendar := _as_dictionary(_snapshot.get("calendar", {}))
+	seed_label.visible = false
 	if _compact_layout:
 		year_label.text = tr("%d 年 %d 月") % [
 			int(calendar.get("year", 0)),
@@ -258,9 +264,38 @@ func _update_hud_from_snapshot() -> void:
 			int(calendar.get("month", 0)),
 		]
 		seed_label.text = tr("种子 %d") % int(_snapshot.get("rngSeed", 0))
+	resource_label.text = _format_player_resources()
 
 
-func _select_city(city_id: String) -> void:
+func _format_player_resources() -> String:
+	var player_faction_id := str(_snapshot.get("playerFactionId", ""))
+	var cities := _as_dictionary(_snapshot.get("cities", {}))
+	var officers := _as_dictionary(_snapshot.get("officers", {}))
+	var city_count := 0
+	var money := 0
+	var food := 0
+	var troops := 0
+	for city_id: Variant in cities.keys():
+		var city := _as_dictionary(cities[city_id])
+		if str(city.get("ownerId", "")) != player_faction_id:
+			continue
+		city_count += 1
+		money += int(city.get("money", 0))
+		food += int(city.get("food", 0))
+		troops += int(city.get("reserveTroops", 0))
+	for officer_id: Variant in officers.keys():
+		var officer := _as_dictionary(officers[officer_id])
+		if str(officer.get("factionId", "")) != player_faction_id:
+			continue
+		if str(officer.get("status", "")) == "dead":
+			continue
+		troops += int(officer.get("troops", 0))
+	if _compact_layout:
+		return tr("城%d 金%d 粮%d 兵%d") % [city_count, money, food, troops]
+	return tr("城池 %d · 金钱 %d · 粮草 %d · 兵力 %d") % [city_count, money, food, troops]
+
+
+func _select_city(city_id: String, open_card: bool = true) -> void:
 	if city_id.is_empty():
 		return
 	_selected_city_id = city_id
@@ -271,7 +306,10 @@ func _select_city(city_id: String) -> void:
 	_close_diplomacy(false)
 	_close_chronicle()
 	map_world.set_selected_city(city_id)
-	_show_selected_city_card()
+	if open_card:
+		_show_selected_city_card()
+	else:
+		_close_city_card()
 	var city := _as_dictionary(_as_dictionary(_snapshot.get("cities", {})).get(city_id, {}))
 	_set_status(tr("已选择 %s") % str(city.get("name", city_id)), "ready")
 	var target_zoom := maxf(map_camera.zoom.x, 0.92)
@@ -933,15 +971,18 @@ func _focus_world() -> void:
 	_set_status(tr("已定位完整战略地图"), "ready")
 
 
-func _focus_player_city() -> void:
+func _focus_player_city(open_card: bool = true) -> void:
 	var player_faction_id := str(_snapshot.get("playerFactionId", ""))
 	var cities := _as_dictionary(_snapshot.get("cities", {}))
 	for city_id in map_world.get_ordered_city_ids():
 		var city := _as_dictionary(cities.get(city_id, {}))
 		if str(city.get("ownerId", "")) == player_faction_id:
-			_select_city(city_id)
+			_select_city(city_id, open_card)
+			if not open_card:
+				_set_status(tr("已定位本势力首城 · 点击城池下令"), "ready")
 			return
 	_set_status(tr("当前快照没有玩家城池"), "warning")
+	_focus_world()
 
 
 func _handle_mouse_button(event: InputEventMouseButton) -> void:
@@ -1195,9 +1236,9 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	_apply_return_confirmation_layout(compact, canvas_scale)
 	_compact_layout = compact
 	title_label.visible = not compact
-	world_button.text = tr("全图" if compact else "世界全图")
-	player_button.text = tr("我方" if compact else "我方城池")
-	tactical_demo_button.text = tr("临战" if compact else "临战入口")
+	world_button.text = tr("全图" if compact else "全天下")
+	player_button.text = tr("本势" if compact else "本势力")
+	tactical_demo_button.text = tr("临战" if compact else "临战")
 	save_button.text = tr("存" if compact else "保存")
 	load_button.text = tr("读" if compact else "读取")
 	chronicle_button.text = tr("纪" if compact else "纪事")
@@ -1215,6 +1256,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		status_badge_panel.custom_minimum_size = Vector2(touch_size, touch_size)
 		year_label.add_theme_font_size_override("font_size", label_font_size)
 		seed_label.add_theme_font_size_override("font_size", label_font_size)
+		resource_label.add_theme_font_size_override("font_size", label_font_size)
 		status_badge.add_theme_font_size_override("font_size", label_font_size)
 		status_line.add_theme_font_size_override("font_size", ceili(15.0 / maxf(canvas_scale, 0.01)))
 	else:
@@ -1232,6 +1274,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		status_badge_panel.custom_minimum_size = Vector2(82.0, 48.0)
 		year_label.add_theme_font_size_override("font_size", 18)
 		seed_label.add_theme_font_size_override("font_size", 18)
+		resource_label.add_theme_font_size_override("font_size", 16)
 		status_badge.add_theme_font_size_override("font_size", 18)
 		status_line.add_theme_font_size_override("font_size", 18)
 	map_world.set_minimum_physical_hit_radius(TouchMetrics.target_size(canvas_scale) * canvas_scale * 0.5, canvas_scale)

@@ -102,9 +102,17 @@ vertical_alignment = 1
 
 [node name="SeedLabel" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.63, 0.77, 0.71, 1)
 text = "种子 0"
+vertical_alignment = 1
+
+[node name="ResourceLabel" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.898, 0.867, 0.741, 1)
+text = "城 0 · 金 0 · 粮 0 · 兵 0"
 vertical_alignment = 1
 
 [node name="ToolbarSpacer" type="Control" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
@@ -117,21 +125,21 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(76, 52)
 layout_mode = 2
 focus_mode = 2
-text = "世界全图"
+text = "全天下"
 
 [node name="PlayerButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(76, 52)
 layout_mode = 2
 focus_mode = 2
-text = "我方城池"
+text = "本势力"
 
 [node name="TacticalDemoButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(92, 52)
 layout_mode = 2
 focus_mode = 2
-text = "战术样片"
+text = "临战"
 
 [node name="SaveButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
 unique_name_in_owner = true

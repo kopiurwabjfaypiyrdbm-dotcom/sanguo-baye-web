@@ -19,6 +19,9 @@ const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
 @onready var selection_label: Label = %SelectionLabel
 @onready var start_button: Button = %StartButton
 @onready var back_button: Button = %BackButton
+@onready var header_back_button: Button = %HeaderBackButton
+@onready var setup_header: HBoxContainer = %SetupHeader
+@onready var actions_row: HBoxContainer = %Actions
 @onready var period_section: VBoxContainer = %PeriodSection
 @onready var period_choices: GridContainer = %PeriodChoices
 @onready var period_step_label: Label = %PeriodStepLabel
@@ -26,9 +29,11 @@ const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
 @onready var ruler_step_label: Label = %RulerStepLabel
 @onready var back_to_periods_button: Button = %BackToPeriodsButton
 @onready var ruler_choices_scroll: ScrollContainer = %RulerChoicesScroll
-@onready var ruler_choices: VBoxContainer = %RulerChoices
+@onready var ruler_choices: GridContainer = %RulerChoices
 @onready var ruler_preview_text: Label = %RulerPreviewText
 @onready var policy_section: VBoxContainer = %PolicySection
+@onready var ruler_aside: VBoxContainer = %RulerAside
+@onready var ruler_body: HBoxContainer = %RulerBody
 @onready var ruleset_option: OptionButton = %RulesetOption
 @onready var ruleset_hint: Label = %RulesetHint
 @onready var battle_death_option: OptionButton = %BattleDeathOption
@@ -50,6 +55,7 @@ func _ready() -> void:
 	ruler_option.item_selected.connect(_on_ruler_selected)
 	start_button.pressed.connect(_on_primary_action_pressed)
 	back_button.pressed.connect(_return_to_menu)
+	header_back_button.pressed.connect(_on_header_back_pressed)
 	back_to_periods_button.pressed.connect(_show_period_selection)
 	ruleset_option.item_selected.connect(_on_ruleset_selected)
 	battle_death_option.item_selected.connect(_on_lifecycle_option_changed)
@@ -57,6 +63,7 @@ func _ready() -> void:
 	captive_escape_option.item_selected.connect(_on_lifecycle_option_changed)
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	EntryChrome.apply_plaque_button(back_button, false)
+	EntryChrome.apply_plaque_button(header_back_button, false)
 	EntryChrome.apply_plaque_button(start_button, true)
 	EntryChrome.apply_plaque_button(back_to_periods_button, false)
 	_populate_policy_options()
@@ -158,9 +165,9 @@ func _add_period_choice(index: int) -> void:
 	var button := Button.new()
 	button.name = "PeriodChoice%d" % index
 	button.clip_contents = true
-	button.text = _period_choice_text(period)
-	button.alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# TextureRect children paint above Button text in Godot 4, so captions live in
+	# an overlay Label that matches the Web scenario-card caption placement.
+	button.text = ""
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	button.focus_mode = Control.FOCUS_ALL
@@ -169,18 +176,34 @@ func _add_period_choice(index: int) -> void:
 	var art := TextureRect.new()
 	art.name = "Art"
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	art.set_anchors_preset(Control.PRESET_FULL_RECT)
-	art.anchor_right = 1.0
-	art.anchor_bottom = 1.0
-	art.offset_left = 0.0
-	art.offset_top = 0.0
-	art.offset_right = 0.0
-	art.offset_bottom = 0.0
+	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	art.texture = EntryChrome.load_texture(EntryChrome.period_texture_path(period_id))
 	button.add_child(art)
-	button.move_child(art, 0)
+	var veil := ColorRect.new()
+	veil.name = "Veil"
+	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	veil.color = Color(0.02, 0.05, 0.04, 0.22)
+	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	button.add_child(veil)
+	var caption := Label.new()
+	caption.name = "Caption"
+	caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	caption.text = _period_choice_text(period)
+	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	caption.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	caption.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	caption.offset_left = 18.0
+	caption.offset_top = 18.0
+	caption.offset_right = -18.0
+	caption.offset_bottom = -18.0
+	caption.add_theme_color_override("font_color", Color("#fff0c9"))
+	caption.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.92))
+	caption.add_theme_constant_override("shadow_offset_x", 1)
+	caption.add_theme_constant_override("shadow_offset_y", 2)
+	button.add_child(caption)
 	period_choices.add_child(button)
 	_style_choice_button(button, false, true)
 
@@ -293,9 +316,9 @@ func _show_period_selection() -> void:
 	period_section.visible = true
 	ruler_section.visible = false
 	title_label.text = tr("选择剧本")
-	description_label.text = tr("第一步 / 共两步 · 点选一个时期进入君主选择")
-	facts_label.text = tr("38 城 · 四段历史剧本")
 	period_step_label.text = tr("第一步 / 共两步")
+	description_label.text = tr("点选一个时期进入君主选择")
+	facts_label.text = tr("38 城 · 四段历史剧本")
 	start_button.text = tr("下一步：选择君主")
 	start_button.disabled = _selected_period < 0
 	selection_label.text = tr("选择一个剧本后，再选择你要扮演的君主") if _selected_period < 0 else tr("已选择剧本；点击下一步选择君主")
@@ -312,10 +335,18 @@ func _show_ruler_selection() -> void:
 	period_section.visible = false
 	ruler_section.visible = true
 	start_button.text = tr("开始霸业")
+	period_step_label.text = tr("第二步 / 共两步")
 	_selection_label_reset()
 	_apply_responsive_layout()
 	if ruler_choices.get_child_count() > 0:
 		ruler_choices.get_child(0).grab_focus()
+
+
+func _on_header_back_pressed() -> void:
+	if _showing_rulers:
+		_show_period_selection()
+		return
+	_return_to_menu()
 
 
 func _on_primary_action_pressed() -> void:
@@ -347,69 +378,63 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	var card: PanelContainer = $Center/Card
 	# The legacy OptionButtons remain as an application-state bridge for old
 	# presentation fixtures, but the product surface uses real in-page buttons.
-	# Native PopupMenu is a poor touch surface here: it can span the whole screen
-	# and makes the blank row spacing look selectable when it is not.
 	period_option.visible = false
 	ruler_option.visible = false
 	var touch_size := TouchMetrics.target_size(canvas_scale) if touch_mode else 128.0
 	period_choices.columns = 2
-	period_choices.custom_minimum_size.y = (touch_size * 2.0 + 14.0) if not _showing_rulers else 0.0
+	var grid_min_y := maxf(touch_size * 2.0 + 16.0, safe_rect.size.y * (0.58 if not ultra_compact else 0.48))
+	period_choices.custom_minimum_size.y = grid_min_y if not _showing_rulers else 0.0
 	period_option.custom_minimum_size.y = touch_size
 	ruler_option.custom_minimum_size.y = touch_size
+	var caption_font := ceili(15.0 / maxf(canvas_scale, 0.01)) if touch_mode else 16
 	for choice: Button in period_choices.get_children():
-		choice.custom_minimum_size = Vector2(0.0, touch_size)
-		choice.add_theme_font_size_override("font_size", ceili(16.0 / maxf(canvas_scale, 0.01)) if touch_mode else 16)
+		choice.custom_minimum_size = Vector2(0.0, maxf(touch_size, grid_min_y * 0.45) if not _showing_rulers else touch_size)
+		var caption: Label = choice.get_node_or_null("Caption") as Label
+		if caption != null:
+			caption.add_theme_font_size_override("font_size", caption_font)
 	for choice: Button in ruler_choices.get_children():
 		choice.custom_minimum_size = Vector2(0.0, touch_size if touch_mode else 72.0)
 		choice.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)) if touch_mode else 17)
 	ruler_choices_scroll.custom_minimum_size.y = maxf(touch_size * 2.0, 210.0) if _showing_rulers else 0.0
 	back_to_periods_button.custom_minimum_size = Vector2(touch_size if touch_mode else 120.0, touch_size if touch_mode else 48.0)
+	header_back_button.custom_minimum_size = Vector2(
+		maxf(142.0, touch_size) if touch_mode else 142.0,
+		touch_size if touch_mode else 54.0
+	)
 	if touch_mode:
-		card.custom_minimum_size = Vector2(ceilf(maxf(320.0, safe_rect.size.x - 32.0)), 0.0)
-		for control: Control in [back_button, start_button]:
+		card.custom_minimum_size = Vector2(ceilf(maxf(320.0, safe_rect.size.x - 24.0)), 0.0)
+		for control: Control in [back_button, start_button, header_back_button]:
 			control.custom_minimum_size.y = touch_size
 			control.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
 		back_to_periods_button.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
 		for label: Label in [description_label, facts_label, period_label, ruler_label, selection_label]:
 			label.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
-		title_label.add_theme_font_size_override("font_size", ceili(30.0 / maxf(canvas_scale, 0.01)))
-		period_step_label.add_theme_font_size_override("font_size", ceili(14.0 / maxf(canvas_scale, 0.01)))
+		title_label.add_theme_font_size_override("font_size", ceili(28.0 / maxf(canvas_scale, 0.01)))
+		period_step_label.add_theme_font_size_override("font_size", ceili(13.0 / maxf(canvas_scale, 0.01)))
 		ruler_step_label.add_theme_font_size_override("font_size", ceili(20.0 / maxf(canvas_scale, 0.01)))
 		ruler_preview_text.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
 		period_row.custom_minimum_size.y = touch_size
 		ruler_row.custom_minimum_size.y = touch_size
-		if ultra_compact:
-			description_label.visible = false
-			facts_label.visible = false
-			selection_label.visible = false
-			if start_button.disabled:
-				start_button.text = tr("请先完成选择")
-			period_row.get_node("PeriodLabel").custom_minimum_size.x = ceilf(100.0 / maxf(canvas_scale, 0.01))
-			ruler_row.get_node("RulerLabel").custom_minimum_size.x = ceilf(100.0 / maxf(canvas_scale, 0.01))
+		period_row.get_node("PeriodLabel").custom_minimum_size.x = ceilf(100.0 / maxf(canvas_scale, 0.01)) if ultra_compact else 150.0
+		ruler_row.get_node("RulerLabel").custom_minimum_size.x = ceilf(100.0 / maxf(canvas_scale, 0.01)) if ultra_compact else 150.0
+		if _showing_rulers and ultra_compact and start_button.disabled:
+			start_button.text = tr("请先完成选择")
+		elif _showing_rulers:
+			start_button.text = tr("开始霸业")
 		else:
-			description_label.visible = true
-			facts_label.visible = true
-			selection_label.visible = true
-			if not _showing_rulers:
-				start_button.text = tr("下一步：选择君主")
-			else:
-				start_button.text = tr("开始霸业")
-			period_row.get_node("PeriodLabel").custom_minimum_size.x = 150.0
-			ruler_row.get_node("RulerLabel").custom_minimum_size.x = 150.0
+			start_button.text = tr("下一步：选择君主")
 	else:
-		description_label.visible = true
-		facts_label.visible = true
-		selection_label.visible = true
 		period_row.custom_minimum_size.y = 0.0
 		ruler_row.custom_minimum_size.y = 0.0
 		period_label.custom_minimum_size.x = 150.0
 		ruler_label.custom_minimum_size.x = 150.0
-		card.custom_minimum_size = Vector2(980.0, 0.0)
+		card.custom_minimum_size = Vector2(minf(1240.0, maxf(980.0, safe_rect.size.x - 48.0)), 0.0)
 		back_button.custom_minimum_size.y = 56.0
 		start_button.custom_minimum_size.y = 56.0
+		header_back_button.custom_minimum_size = Vector2(142.0, 54.0)
 		period_option.custom_minimum_size.y = 54.0
 		ruler_option.custom_minimum_size.y = 54.0
-		for control: Control in [back_button, start_button]:
+		for control: Control in [back_button, start_button, header_back_button]:
 			control.add_theme_font_size_override("font_size", 18)
 		back_to_periods_button.remove_theme_font_size_override("font_size")
 		for label: Label in [title_label, period_step_label, description_label, facts_label, period_label, ruler_label, selection_label, ruler_step_label, ruler_preview_text, ruleset_hint]:
@@ -417,11 +442,26 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	for policy_control: Control in [ruleset_option, battle_death_option, natural_death_option, captive_escape_option]:
 		policy_control.custom_minimum_size.y = touch_size if touch_mode else 48.0
 		policy_control.add_theme_font_size_override("font_size", ceili(16.0 / maxf(canvas_scale, 0.01)) if touch_mode else 16)
+	# Web scenario screen: header + full grid, no footer CTA. Ruler step keeps
+	# the start action and optional policy copy.
+	description_label.visible = _showing_rulers and not ultra_compact
+	facts_label.visible = false
+	selection_label.visible = false
+	actions_row.visible = _showing_rulers
+	back_button.visible = false
+	start_button.visible = _showing_rulers
+	header_back_button.visible = true
 	policy_section.visible = _showing_rulers
-	if ultra_compact and _showing_rulers:
-		ruleset_hint.visible = false
+	ruleset_hint.visible = _showing_rulers and not ultra_compact
+	period_step_label.visible = true
+	back_to_periods_button.visible = false
+	ruler_aside.visible = _showing_rulers
+	if _showing_rulers:
+		ruler_choices.columns = 2 if (compact or ultra_compact) else 3
+		header_back_button.text = tr("返回")
 	else:
-		ruleset_hint.visible = true
+		header_back_button.text = tr("返回")
+		ruler_choices.columns = 3
 
 
 func _on_period_selected(index: int) -> void:
@@ -467,7 +507,7 @@ func _on_ruler_selected(index: int) -> void:
 	else:
 		var candidate: Dictionary = candidates[index]
 		_selected_ruler_source = int(candidate.get("sourceIndex", -1))
-		ruler_preview_text.text = tr("即将扮演：%s\n初始城池 %d · 所属人物 %d · 天下城池 38") % [
+		ruler_preview_text.text = tr("即将扮演\n%s\n初始城池 %d · 所属人物 %d · 天下城池 38") % [
 			str(candidate.get("name", "")), int(candidate.get("cityCount", 0)), int(candidate.get("officerCount", 0))
 		]
 	_selection_label_reset()
