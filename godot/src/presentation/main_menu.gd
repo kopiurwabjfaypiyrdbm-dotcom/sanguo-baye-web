@@ -44,10 +44,10 @@ func _ready() -> void:
 			tactical_recovery_error = String(tactical_check.get("error", "战术恢复文件校验失败"))
 	var has_resume := has_save or has_tactical_recovery
 	continue_button.disabled = not has_resume
-	continue_button.text = tr("恢复战术演练") if has_tactical_recovery else (tr("继续上次战役") if has_save else tr("暂无可继续的战役"))
+	continue_button.text = tr("恢复未完成战术") if has_tactical_recovery else (tr("继续上次战役") if has_save else tr("暂无可继续的战役"))
 	(new_campaign_button if not has_resume else continue_button).grab_focus()
 	title_label.text = tr("三国霸业")
-	subtitle_label.text = tr("原生战略迁移样片 · Godot 4.7.1")
+	subtitle_label.text = tr("Godot 原生客户端 · 4.7.1")
 	status_label.text = tr("选择战役时期与君主，进入 38 城战略地图")
 	if not tactical_recovery_error.is_empty():
 		status_label.text = tr("战术恢复文件无效：%s") % tactical_recovery_error

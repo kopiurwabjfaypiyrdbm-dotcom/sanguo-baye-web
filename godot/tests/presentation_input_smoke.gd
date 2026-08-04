@@ -558,7 +558,10 @@ func _run() -> void:
 	await process_frame
 	_assert_equal(int(screen.get("_snapshot")["turn"]), turn_before + 1, "end-turn control must advance exactly one month")
 	_assert_equal(screen.get("_snapshot")["phase"], "player", "end-turn control must settle back into the player phase")
-	_assert_true(chronicle_panel.visible, "end-turn control must open the month chronicle")
+	_assert_true(not chronicle_panel.visible, "end-turn must not force-open the chronicle panel over the map")
+	_assert_true("已进入" in str(screen.get_node("%StatusLine").text), "end-turn must surface the settled calendar in the status line")
+	screen.call("_open_chronicle")
+	_assert_true(chronicle_panel.visible, "players must still be able to open the chronicle on demand")
 	_assert_true("进入" in chronicle_panel.get_node("%ChronicleLabel").text, "month chronicle must expose the settled calendar entry")
 	screen.call("_run_mb11_demo", "city_event")
 	var city_event_snapshot: Dictionary = screen.get("_snapshot")

@@ -3,6 +3,7 @@ extends RefCounted
 
 const DevelopFarming = preload("res://src/domain/commands/develop_farming_command.gd")
 const InternalAffairs = preload("res://src/domain/commands/internal_affairs_commands.gd")
+const Manpower = preload("res://src/domain/commands/manpower_commands.gd")
 const OfficerManagement = preload("res://src/domain/commands/officer_management_commands.gd")
 const PersonnelLifecycle = preload("res://src/domain/commands/personnel_lifecycle_commands.gd")
 const StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
@@ -17,6 +18,8 @@ const INTERNAL_COMMANDS: Array[Dictionary] = [
 	{"kind": "trade_food", "label": "交易", "mode": "trade", "dangerous": false},
 	{"kind": "banquet_officer", "label": "宴请", "mode": "target", "dangerous": false},
 	{"kind": "plunder_city", "label": "掠夺", "mode": "executor", "dangerous": true},
+	{"kind": "recruit_troops", "label": "征兵", "mode": "executor", "dangerous": false},
+	{"kind": "distribute_troops", "label": "兵力分配", "mode": "distribute", "dangerous": false},
 ]
 
 
@@ -191,6 +194,8 @@ static func _internal_affairs(
 	var result: Array[Dictionary] = []
 	var domain_catalog: Dictionary = InternalAffairs.query_city_catalog(state, city_id)
 	var domain_commands: Dictionary = domain_catalog["commands"]
+	var manpower_catalog: Dictionary = Manpower.query_city_catalog(state, city_id)
+	var manpower_commands: Dictionary = manpower_catalog["commands"]
 	for definition: Dictionary in INTERNAL_COMMANDS:
 		var kind: String = definition["kind"]
 		var query: Dictionary
@@ -198,6 +203,8 @@ static func _internal_affairs(
 			query = farming.duplicate(true)
 		elif kind == "banquet_officer":
 			query = _banquet(data, domain_catalog["banquet"])
+		elif kind == "recruit_troops" or kind == "distribute_troops":
+			query = _executor_command(data, manpower_commands[kind])
 		else:
 			query = _executor_command(data, domain_commands[kind])
 		query["kind"] = kind
@@ -206,8 +213,34 @@ static func _internal_affairs(
 		query["dangerous"] = definition["dangerous"]
 		if kind == "trade_food":
 			_apply_trade_defaults(query, (domain_commands[kind] as Dictionary)["tradeOptions"])
+		if kind == "distribute_troops":
+			_apply_distribute_defaults(data, city_id, query)
+		if kind == "recruit_troops":
+			query["defaultAmount"] = Manpower.DEFAULT_RECRUIT_AMOUNT
 		result.append(query)
 	return result
+
+
+static func _apply_distribute_defaults(data: Dictionary, city_id: String, query: Dictionary) -> void:
+	var executor_id := str(query.get("defaultOfficerId", ""))
+	var city: Dictionary = data["cities"].get(city_id, {})
+	var officer: Dictionary = data["officers"].get(executor_id, {})
+	if executor_id.is_empty() or officer.is_empty():
+		query["defaultTargetTroops"] = 0
+		query["maxTargetTroops"] = 0
+		return
+	var capacity := Manpower.calculate_officer_troop_capacity(officer)
+	var suggested := mini(
+		capacity,
+		mini(
+			int(officer.get("troops", 0)) + int(city.get("reserveTroops", 0)),
+			int(officer.get("troops", 0)) + Manpower.MAX_DISTRIBUTION_INCREASE,
+		),
+	)
+	query["defaultTargetTroops"] = suggested
+	query["maxTargetTroops"] = capacity
+	query["currentTroops"] = int(officer.get("troops", 0))
+	query["reserveTroops"] = int(city.get("reserveTroops", 0))
 
 
 static func _apply_trade_defaults(query: Dictionary, options: Dictionary) -> void:

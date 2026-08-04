@@ -160,6 +160,8 @@ func show_city(
 			"trade_food": "%s · %s · %s" % [owner_short, money_short, tr("粮 %d") % int(city.get("food", 0))],
 			"banquet_officer": "%s · %s" % [owner_short, money_short],
 			"plunder_city": "%s · %s · %s · %s" % [owner_short, tr("忠 %d") % int(city.get("publicLoyalty", 0)), tr("农 %d") % int(city.get("farming", 0)), tr("商 %d") % int(city.get("commerce", 0))],
+			"recruit_troops": "%s · %s · %s" % [owner_short, money_short, tr("后备 %d") % int(city.get("reserveTroops", 0))],
+			"distribute_troops": "%s · %s · %s" % [owner_short, money_short, tr("后备 %d") % int(city.get("reserveTroops", 0))],
 		}
 	stats_label.text = _full_stats_text
 	_populate_commands(command_queries)
@@ -184,7 +186,7 @@ func set_busy(value: bool) -> void:
 	previous_command.disabled = value or _command_queries.size() <= 1
 	next_command.disabled = value or _command_queries.size() <= 1
 	executor_option.disabled = value or not _base_action_enabled
-	trade_direction.disabled = value or not _base_action_enabled
+	trade_direction.disabled = value or not _base_action_enabled or str(_selected_query.get("mode", "")) != "trade"
 	trade_amount.editable = not value and _base_action_enabled
 	develop_button.disabled = value or not _base_action_enabled
 	officer_button.disabled = value or _city_id.is_empty()
@@ -354,8 +356,9 @@ func _render_selected_command() -> void:
 		executor_option.add_item(str(_selected_query.get("reason", tr("无可用在职武将"))))
 	else:
 		executor_option.select(0)
-	trade_row.visible = mode == "trade"
+	trade_row.visible = mode == "trade" or mode == "distribute"
 	if mode == "trade":
+		trade_direction.visible = true
 		trade_direction.clear()
 		for raw_direction: Variant in _selected_query.get("directions", []):
 			var allowed_direction: String = str(raw_direction)
@@ -368,6 +371,14 @@ func _render_selected_command() -> void:
 				break
 		_apply_trade_amount_limit()
 		trade_amount.value = float(_selected_query.get("defaultAmount", 100))
+	elif mode == "distribute":
+		trade_direction.visible = false
+		trade_amount.min_value = 0.0
+		trade_amount.max_value = maxf(1.0, float(_selected_query.get("maxTargetTroops", 1)))
+		trade_amount.value = float(_selected_query.get(
+			"defaultTargetTroops",
+			_selected_query.get("currentTroops", 0),
+		))
 	develop_button.text = str(_selected_query.get("label", tr("执行")))
 	_apply_information_density()
 	set_busy(_busy)
@@ -425,6 +436,8 @@ func _emit_selected_command() -> void:
 	if mode == "trade":
 		parameters["direction"] = str(trade_direction.get_item_metadata(trade_direction.selected))
 		parameters["amount"] = int(trade_amount.value)
+	elif mode == "distribute":
+		parameters["targetTroops"] = int(trade_amount.value)
 	command_requested.emit(kind, parameters)
 
 

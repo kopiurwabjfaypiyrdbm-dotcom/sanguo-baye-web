@@ -9,13 +9,14 @@ const OfficerManagement = preload("res://src/domain/commands/officer_management_
 const StrategicOrders = preload("res://src/domain/commands/strategic_order_commands.gd")
 const DiplomaticOrders = preload("res://src/domain/commands/diplomatic_order_commands.gd")
 const DevelopFarmingCommand = preload("res://src/domain/commands/develop_farming_command.gd")
+const ManpowerCommands = preload("res://src/domain/commands/manpower_commands.gd")
 const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
 
 const AI_MAX_ACTIONS: int = 5
 const BUY_FOOD_PRICE: int = 5
 const TRADE_MONEY_SOFT_CAP: int = 30_000
-const MAX_DISTRIBUTION_INCREASE: int = 400
-const DEFAULT_RECRUIT_AMOUNT: int = 500
+const MAX_DISTRIBUTION_INCREASE: int = ManpowerCommands.MAX_DISTRIBUTION_INCREASE
+const DEFAULT_RECRUIT_AMOUNT: int = ManpowerCommands.DEFAULT_RECRUIT_AMOUNT
 
 
 static func run_faction_turn(state: GameState) -> Dictionary:
@@ -27,9 +28,8 @@ static func run_faction_turn(state: GameState) -> Dictionary:
 	if bool(faction.get("isPlayer", false)): return _failure("玩家势力不能执行 AI 回合")
 	var next: GameState = state
 	var action_count: int = 0
-	# Keep the Web oracle's fixed ten-step order. Troop balancing/recruitment are
-	# domain operations here even though they are not player-facing adapters yet;
-	# tactical attack planning remains explicitly outside MB12.
+	# Keep the Web oracle's fixed ten-step order. Troop balancing/recruitment use
+	# shared player manpower commands; tactical attack planning remains outside.
 	for operation: String in [
 		"stabilize_food", "recruit_captive", "diplomacy", "city_item",
 		"balance_troops", "recruit_reserves", "improve_city", "search_talent",
@@ -311,7 +311,7 @@ static func _balance_troops(state: GameState, faction_id: String) -> Dictionary:
 			var officer: Dictionary = data["officers"][str(raw_officer_id)]
 			if officer.get("status", "") != "serving" or officer.get("factionId", "") != faction_id \
 					or officer.get("cityId", "") != city_id or (data["actedOfficerIds"] as Array).has(officer["id"]): continue
-			var capacity := mini(0xffff - 1, maxi(int(officer.get("troops", 0)), int(officer.get("level", 10)) * 100 + int(officer.get("force", 0)) * 10 + int(officer.get("intelligence", 0)) * 10))
+			var capacity := ManpowerCommands.calculate_officer_troop_capacity(officer)
 			if int(officer.get("troops", 0)) >= capacity: continue
 			candidates.append({"city": city, "officer": officer, "capacity": capacity})
 	candidates.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
@@ -330,14 +330,11 @@ static func _balance_troops(state: GameState, faction_id: String) -> Dictionary:
 	var target_troops := mini(int(candidate["capacity"]), mini(int(officer.get("troops", 0)) + int(city.get("reserveTroops", 0)), int(officer.get("troops", 0)) + MAX_DISTRIBUTION_INCREASE))
 	var delta := target_troops - int(officer.get("troops", 0))
 	if delta <= 0: return {"ok": false, "error": ""}
-	var next := data.duplicate(true)
-	next["cities"][city["id"]]["reserveTroops"] = int(city.get("reserveTroops", 0)) - delta
-	next["officers"][officer["id"]]["troops"] = target_troops
-	(next["actedOfficerIds"] as Array).append(officer["id"])
-	_append_logs(next, "map", ["%s完成兵力分配：%s现统率 %d 人，城中后备兵 %d。" % [city["name"], officer["name"], target_troops, int(next["cities"][city["id"]]["reserveTroops"])]] )
-	var issues := Validator.validate_runtime(next)
-	if not issues.is_empty(): return {"ok": false, "error": Validator.first_error(issues)}
-	return {"ok": true, "error": "", "next_state": GameState.new(next), "receipt": {"kind": "distribute_troops", "cityId": city["id"], "officerId": officer["id"], "targetTroops": target_troops}}
+	return ManpowerCommands.execute(state, "distribute_troops", {
+		"cityId": str(city["id"]),
+		"officerId": str(officer["id"]),
+		"targetTroops": target_troops,
+	})
 
 
 static func _recruit_reserves(state: GameState, faction_id: String) -> Dictionary:
@@ -346,8 +343,7 @@ static func _recruit_reserves(state: GameState, faction_id: String) -> Dictionar
 	for raw_city_id: Variant in data["cityOrder"]:
 		var city: Dictionary = data["cities"][str(raw_city_id)]
 		if city.get("ownerId", "") != faction_id or int(city.get("reserveTroops", 0)) >= 1000 or int(city.get("food", 0)) < 200: continue
-		var loyalty := int(city.get("publicLoyalty", 70))
-		var capacity := maxi(0, mini(loyalty * 20, mini(int(city.get("money", 0)) * 10, 0xfffe)))
+		var capacity := ManpowerCommands.calculate_recruit_capacity(city)
 		if capacity > 0: candidates.append({"city": city, "capacity": capacity})
 	candidates.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
 		var lc: Dictionary = left["city"]
@@ -360,17 +356,14 @@ static func _recruit_reserves(state: GameState, faction_id: String) -> Dictionar
 		var cost := Rulesets.get_command_cost(data["rulesetId"], "recruit-troops")
 		var executors := _available_officers(data, faction_id, str(city["id"]), int(cost.get("stamina", 12)))
 		if executors.is_empty(): continue
-		var gain := mini(DEFAULT_RECRUIT_AMOUNT, int(candidate["capacity"]))
-		var money_cost := floori(float(gain) / 10.0)
-		var next := data.duplicate(true)
-		next["cities"][city["id"]]["money"] = int(city.get("money", 0)) - money_cost
-		next["cities"][city["id"]]["reserveTroops"] = int(city.get("reserveTroops", 0)) + gain
 		var officer: Dictionary = executors[0]
-		next["officers"][officer["id"]]["stamina"] = int(officer.get("stamina", 0)) - int(cost.get("stamina", 12))
-		(next["actedOfficerIds"] as Array).append(officer["id"])
-		_append_logs(next, "map", ["%s在%s征募 %d 名后备兵，消耗金钱 %d、体力 %d。" % [officer["name"], city["name"], gain, money_cost, int(cost.get("stamina", 12))]])
-		var issues := Validator.validate_runtime(next)
-		if issues.is_empty(): return {"ok": true, "error": "", "next_state": GameState.new(next), "receipt": {"kind": "recruit_troops", "cityId": city["id"], "officerId": officer["id"], "gain": gain}}
+		var result := ManpowerCommands.execute(state, "recruit_troops", {
+			"cityId": str(city["id"]),
+			"officerId": str(officer["id"]),
+			"amount": DEFAULT_RECRUIT_AMOUNT,
+		})
+		if bool(result.get("ok", false)):
+			return result
 	return {"ok": false, "error": ""}
 
 

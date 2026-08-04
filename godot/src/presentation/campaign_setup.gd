@@ -270,12 +270,18 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 			description_label.visible = false
 			facts_label.visible = false
 			selection_label.visible = false
+			if start_button.disabled:
+				start_button.text = tr("请先完成选择")
 			period_row.get_node("PeriodLabel").custom_minimum_size.x = ceilf(100.0 / maxf(canvas_scale, 0.01))
 			ruler_row.get_node("RulerLabel").custom_minimum_size.x = ceilf(100.0 / maxf(canvas_scale, 0.01))
 		else:
 			description_label.visible = true
 			facts_label.visible = true
 			selection_label.visible = true
+			if not _showing_rulers:
+				start_button.text = tr("下一步：选择君主")
+			else:
+				start_button.text = tr("进入战略地图")
 			period_row.get_node("PeriodLabel").custom_minimum_size.x = 150.0
 			ruler_row.get_node("RulerLabel").custom_minimum_size.x = 150.0
 	else:

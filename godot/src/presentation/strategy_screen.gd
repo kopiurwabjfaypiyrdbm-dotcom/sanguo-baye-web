@@ -153,10 +153,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _configure_localized_ui() -> void:
-	title_label.text = tr("三国霸业 · 原生样片")
+	title_label.text = tr("三国霸业 · 战略地图")
 	world_button.tooltip_text = tr("平滑缩放至完整战略地图")
 	player_button.tooltip_text = tr("定位并选择玩家城池")
-	tactical_demo_button.tooltip_text = tr("打开原生 12×8 战术战场样片")
+	tactical_demo_button.tooltip_text = tr("打开相邻敌城临时交战入口（正式出征编辑器待补）")
 	save_button.tooltip_text = tr("保存当前最小 GameState")
 	load_button.tooltip_text = tr("重建 GameSession 并载入存档")
 	chronicle_button.tooltip_text = tr("查看年月、事件、继承与战役结局")
@@ -493,9 +493,8 @@ func _advance_turn_month() -> void:
 		_set_status(tr("月度推进失败：%s") % _result_error(result), "error")
 		return
 	_refresh_snapshot(false)
-	_open_chronicle()
 	var calendar: Dictionary = _as_dictionary(_snapshot.get("calendar", {}))
-	_set_status(tr("已进入 %d 年 %d 月 · AI 与月度结算完成") % [int(calendar.get("year", 0)), int(calendar.get("month", 0))], "success")
+	_set_status(tr("已进入 %d 年 %d 月 · 可点「纪事」查看本月摘要") % [int(calendar.get("year", 0)), int(calendar.get("month", 0))], "success")
 
 
 func _close_chronicle() -> void:
@@ -1191,7 +1190,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	title_label.visible = not compact
 	world_button.text = tr("全图" if compact else "世界全图")
 	player_button.text = tr("我方" if compact else "我方城池")
-	tactical_demo_button.text = tr("战术" if compact else "战术样片")
+	tactical_demo_button.text = tr("临战" if compact else "临战入口")
 	save_button.text = tr("存" if compact else "保存")
 	load_button.text = tr("读" if compact else "读取")
 	chronicle_button.text = tr("纪" if compact else "纪事")

@@ -11,6 +11,7 @@ const DiplomaticOrderAdapter = preload("res://src/application/commands/diplomati
 const SuccessionAdapter = preload("res://src/application/commands/succession_adapter.gd")
 const StrategicTurnAdapter = preload("res://src/application/commands/strategic_turn_adapter.gd")
 const BattleSettlementAdapter = preload("res://src/application/commands/battle_settlement_adapter.gd")
+const ManpowerAdapter = preload("res://src/application/commands/manpower_adapter.gd")
 const StringContract = preload("res://src/application/commands/application_string_contract.gd")
 
 const ENVELOPE_VERSION: int = 1
@@ -25,6 +26,8 @@ const ADAPTERS: Dictionary = {
 	"trade_food": {"module": InternalAffairsAdapter, "generic": true},
 	"banquet_officer": {"module": InternalAffairsAdapter, "generic": true},
 	"plunder_city": {"module": InternalAffairsAdapter, "generic": true},
+	"recruit_troops": {"module": ManpowerAdapter, "generic": true},
+	"distribute_troops": {"module": ManpowerAdapter, "generic": true},
 	"reward_officer": {"module": OfficerManagementAdapter, "generic": true},
 	"appoint_satrap": {"module": OfficerManagementAdapter, "generic": true},
 	"give_item": {"module": OfficerManagementAdapter, "generic": true},
