@@ -171,6 +171,12 @@
       "wave": "program-closure",
       "title": "Current-source Android acceptance and final Goal decision",
       "dependsOn": ["MB26"]
+    },
+    {
+      "id": "MB28",
+      "wave": "playability-remediation",
+      "title": "Android touch playability remediation to continuous play",
+      "dependsOn": ["MB27"]
     }
   ]
 }

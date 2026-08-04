@@ -8,9 +8,9 @@
   "branch": "codex/godot-migration-spike",
   "status": "active",
   "phase": "executing",
-  "currentMissionId": "MB27",
-  "currentBriefPath": "docs/mission-briefs/MB27-manual-android-acceptance-and-final-goal-decision.md",
-  "readyMissionIds": ["MB27"],
+  "currentMissionId": "MB28",
+  "currentBriefPath": "docs/mission-briefs/MB28-android-touch-playability-remediation.md",
+  "readyMissionIds": ["MB28"],
   "completedMissions": [
     {
       "id": "MB01",
@@ -167,15 +167,21 @@
       "briefPath": "docs/mission-briefs/MB26-android-touch-acceptance-and-goal-gate.md",
       "reportPath": "docs/migration/mission-reports/MB26-android-touch-acceptance-and-goal-gate.md",
       "commit": "f1fe29c"
+    },
+    {
+      "id": "MB27",
+      "briefPath": "docs/mission-briefs/MB27-manual-android-acceptance-and-final-goal-decision.md",
+      "reportPath": "docs/migration/mission-reports/MB27-current-source-android-acceptance.md",
+      "commit": "9d30d7b"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
-    "missionId": "MB26",
-    "commit": "f1fe29c",
+    "missionId": "MB27",
+    "commit": "9d30d7b",
     "date": "2026-08-04"
   },
-  "nextAction": "MB27 code-side high-density screen and touch gaps are fixed in 010ad9c; final layout-reset assertions are in 0242db6, responsive typography-state restoration is in 3315de7, explicit 4× density-cap coverage is in d59df85, safe-area runtime geometry is in 363187d, scaled four-edge fixture correction is in 994c394, chronicle large-landscape restoration is covered by the current source test, and campaign setup now uses two-step in-page period/ruler cards instead of a touch-hostile full-screen PopupMenu. Current-source APK godot/builds/sanguo-baye-godot-mb27-touch-debug.apk (57,825,764 bytes, SHA-256 6498C8B827D34385EB8E9B6B71F4C69E8283A447D173367306F4454BAF80EBE8, exported 2026-08-04 12:17:18) is installed at MuMu 127.0.0.1:16384 (12:17:36) and keyboard-diagnostic launched current campaign setup screenshots at 12:18–12:19; 09:44, 09:48, 09:51, 09:53 and 10:30:44 rechecks found the Activity foreground and MuMu ADB online, but no auditable visible Win32 GUI handle or visible top-level MuMu window. Aggregate npm run check passed in 549.8 seconds after the current presentation patch; Godot campaign setup presentation passed 88 assertions, project verification passed 211 domain/225 presentation assertions, and program-check passed. Current APK resource audit contains monochrome launcher icons and no unexpected themed_icon dependency; collect direct MuMu/real-device touch evidence at both landscape sizes, then make the final Goal decision without fabricating a pass. The Android launcher preset and project-native adaptive icon sources are committed; physical DPI/font calibration and direct manual touch evidence remain P1/P2 acceptance gates.",
+  "nextAction": "MB27 Goal decision: FAIL. User manual touch playability verdict is unplayable / quality severely below bar; MB00 Goal stays active and is not complete. Baseline APK remains godot/builds/sanguo-baye-godot-mb27-touch-debug.apk (SHA-256 6498C8B827D34385EB8E9B6B71F4C69E8283A447D173367306F4454BAF80EBE8). Current Mission is MB28 touch-playability remediation (docs/mission-briefs/MB28-android-touch-playability-remediation.md). Do not treat automated gates as Goal pass. After MB28 user re-acceptance, only then re-apply for Goal evaluation. Web alignment slices deferred to MB29+ per docs/migration/godot-web-alignment-plan.md.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",
