@@ -175,7 +175,7 @@
     "commit": "f1fe29c",
     "date": "2026-08-04"
   },
-  "nextAction": "MB27 code-side high-density screen and touch gaps are fixed in 010ad9c (with the preceding metrics fix bfb7f90); current-source APK godot/builds/sanguo-baye-godot-mb27-touch-debug.apk (57,817,572 bytes, SHA-256 380CC461B695E92A7B5A2C568FEB8419340CF5E12665F79695B7952B51CBC3AC) is exported, installed and cold-launched after aggregate npm run check passed. Collect direct MuMu/real-device touch evidence at both landscape sizes, then make the final Goal decision without fabricating a pass. The Android launcher preset and project-native adaptive icon sources are committed; themed_icon, safe-area, popup measurement, chronicle fallback and physical DPI/font calibration remain P2.",
+  "nextAction": "MB27 code-side high-density screen and touch gaps are fixed in 010ad9c and the final layout-reset assertions are included in the next local checkpoint; current-source APK godot/builds/sanguo-baye-godot-mb27-touch-debug.apk (57,817,572 bytes, SHA-256 1D7ECCD116285E72AAD5E02E1B89B969538059F1036901B26B14184C31E5F2CD, exported 2026-08-04 08:35:51) is installed at MuMu 127.0.0.1:16384 and cold-launched after aggregate npm run check passed in 553.7 seconds. Collect direct MuMu/real-device touch evidence at both landscape sizes, then make the final Goal decision without fabricating a pass. The Android launcher preset and project-native adaptive icon sources are committed; themed_icon, safe-area, popup measurement, chronicle fallback and physical DPI/font calibration remain P2.",
   "approvalRequiredFor": [
     "changing MB00 fixed clauses",
     "destructive Git or filesystem operations",

@@ -7,15 +7,15 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 ## 当前源码 APK
 
 - 路径：`godot/builds/sanguo-baye-godot-mb27-touch-debug.apk`
-- 导出：Godot 4.7.1 stable `a13da4feb`，GDScript，2026-08-04 08:17:36（使用现有本机 Android Debug 模板）
+- 导出：Godot 4.7.1 stable `a13da4feb`，GDScript，2026-08-04 08:35:51（使用现有本机 Android Debug 模板）
 - 大小：57,817,572 bytes（约 55.1 MiB / 57.8 MB，不是 5 GB）
-- SHA-256：`380CC461B695E92A7B5A2C568FEB8419340CF5E12665F79695B7952B51CBC3AC`（`Get-FileHash`）
+- SHA-256：`1D7ECCD116285E72AAD5E02E1B89B969538059F1036901B26B14184C31E5F2CD`（`Get-FileHash`）
 - 包：`com.sumo91.sanguobaye.godotspike`，versionName `0.1.0-spike`，versionCode `1`
 - 静态边界：`aapt2 dump permissions` 仅列包名，未发现 INTERNET；没有 WebView/JSBridge/WASM 依赖。仍有 `mipmap/themed_icon` 缺失警告，列为 P2，不阻止启动。
 
 ## MuMu 运行诊断
 
-- ADB：`emulator-5554`，当前候选 streamed install 后冷启动进程 PID 可见。
+- ADB：MuMu 稳定端点 `127.0.0.1:16384`，当前 streamed install 后冷启动进程可见。
 - Android 15 / API 35，x86_64；物理面板 1440×2560，density 360，surface orientation 1（横屏旋转）。
 - 冷启动截图：[mb27-touch-current-launch.png](../../godot/builds/mb27-touch-current-launch.png)。画面显示原生主菜单和 Godot 4.7.1 标识。
 - ADB `input tap 1280 795` 进入战役设置，截图：[mb27-after-adb-tap.png](../../godot/builds/mb27-after-adb-tap.png)。这是坐标注入诊断，不是人工触控证据。
@@ -25,12 +25,12 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 
 - tactical presentation：131 assertions；覆盖 terminal checkpoint 替换旧 ongoing、同战斗旧 ongoing 拒绝、完整 terminal projection/settlement digest、warm/cold exact-once、真实 `_return_to_strategy()` 场景切换/清理、战术设置高密度滚动和 1280×720/844×390 输入。
 - production save/recovery：139 assertions。
-- campaign setup presentation：68 assertions；包含 360dpi/844×390 高密度主菜单与战役设置行高/折叠/滚动边界检查、2560×1440 战略 Back 对话框检查，以及 38 城、54 道路和生产 GameSession 入口。
+- campaign setup presentation：71 assertions；包含 360dpi/844×390 高密度主菜单与战役设置行高/折叠/滚动边界检查、离开高密度布局后的行高恢复、2560×1440 战略 Back 对话框检查，以及 38 城、54 道路和生产 GameSession 入口。
 - Web：47 个测试文件、378 tests，构建通过。
-- 聚合 `npm run check`：退出码 0，通过；本轮耗时 546.7 秒。日志中的 migration replay 失败项属于预期的负向篡改演练，未改变聚合命令成功结果；根证书、弹窗位置和 Android build-tools 提示为环境警告。
+- 聚合 `npm run check`：退出码 0，通过；本轮耗时 553.7 秒，包含最后的高密度布局恢复断言。日志中的 migration replay 失败项属于预期的负向篡改演练，未改变聚合命令成功结果；根证书、弹窗位置和 Android build-tools 提示为环境警告。
 - 增量项目验证：`npm run godot:project:verify` 退出码 0（211 domain、219 presentation assertions）。当前源码的 Android preset 已使用项目自有 `res://icon.svg` 主图标及独立 adaptive foreground/background/monochrome SVG；触控度量覆盖 160/360 dpi、48dp/拖动阈值换算、显式密度上限和 PopupMenu 行高。
 - 增量导出：沙箱上下文曾把已存在的模板误报为 missing；改用授权环境读取现有模板后导出成功。没有下载或安装组件。
-- 触控增量后重新导出并安装了上述 APK；冷启动进程可见，截图已更新。完整 `npm run check` 在 546.7 秒后退出码 0，Godot/Web/构建门禁均通过；迁移回放中的错误仍是预期负向篡改演练。
+- 触控增量后重新导出并安装了上述 APK；MuMu `127.0.0.1:16384` 冷启动进程可见，截图已更新。完整 `npm run check` 在 553.7 秒后退出码 0，Godot/Web/构建门禁均通过；迁移回放中的错误仍是预期负向篡改演练。
 
 ## 本轮移动端修复
 

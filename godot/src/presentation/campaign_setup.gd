@@ -117,6 +117,8 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		description_label.visible = true
 		facts_label.visible = true
 		selection_label.visible = true
+		period_row.custom_minimum_size.y = 0.0
+		ruler_row.custom_minimum_size.y = 0.0
 		card.custom_minimum_size = Vector2(760.0, 0.0)
 		period_option.custom_minimum_size.y = 54.0
 		ruler_option.custom_minimum_size.y = 54.0

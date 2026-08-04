@@ -106,6 +106,8 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		# below the platform touch target.
 		status_label.custom_minimum_size.y = 28.0
 		title_label.add_theme_font_size_override("font_size", ceili(28.0 / maxf(canvas_scale, 0.01)))
+	else:
+		status_label.custom_minimum_size.y = 56.0
 
 
 func _open_campaign_setup() -> void:

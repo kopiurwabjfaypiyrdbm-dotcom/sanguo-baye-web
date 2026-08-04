@@ -27,6 +27,8 @@ func _run() -> void:
 		_assert_true(menu_control.custom_minimum_size.y * menu_scale >= 108.0, "high-density menu %s must retain a 48dp physical target" % control_name)
 	_assert_true(menu.get_node("%NewCampaignButton").disabled == false, "main menu must expose new campaign entry")
 	_assert_true(menu.get_node("%ContinueButton").disabled, "cold launch must not invent a continuation save")
+	menu.call("_apply_responsive_layout_for_size", Vector2i(1280, 720))
+	_assert_equal(menu.get_node("%StatusLabel").custom_minimum_size.y, 56.0, "main menu status height must restore after leaving ultra-compact mode")
 	menu.queue_free()
 	await process_frame
 
@@ -49,6 +51,9 @@ func _run() -> void:
 	_assert_true(setup_card.position.x >= -0.5 and setup_card.position.x + setup_card.size.x <= setup_center.size.x + 0.5, "high-density setup card must stay within horizontal safe bounds")
 	_assert_true(setup_center.get_v_scroll_bar().max_value > 0.0, "high-density setup card must use vertical scrolling instead of clipping")
 	TouchMetrics.clear_density_override_for_testing()
+	setup.call("_apply_responsive_layout_for_size", Vector2i(1280, 720))
+	_assert_equal(setup.get_node("Center/Card/Margin/Stack/PeriodRow").custom_minimum_size.y, 0.0, "setup row minimum height must restore after leaving high-density compact mode")
+	_assert_equal(setup.get_node("Center/Card/Margin/Stack/RulerRow").custom_minimum_size.y, 0.0, "ruler row minimum height must restore after leaving high-density compact mode")
 	_assert_equal(period_option.item_count, 4, "setup must expose all bundled production periods")
 	_assert_true(ruler_option.selected < 0 and start_button.disabled, "setup must not silently select a ruler")
 	for index: int in range(period_option.item_count):
