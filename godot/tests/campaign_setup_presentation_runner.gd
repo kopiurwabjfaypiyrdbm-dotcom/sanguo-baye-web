@@ -54,6 +54,9 @@ func _run() -> void:
 	setup.call("_apply_responsive_layout_for_size", Vector2i(1280, 720))
 	_assert_equal(setup.get_node("Center/Card/Margin/Stack/PeriodRow").custom_minimum_size.y, 0.0, "setup row minimum height must restore after leaving high-density compact mode")
 	_assert_equal(setup.get_node("Center/Card/Margin/Stack/RulerRow").custom_minimum_size.y, 0.0, "ruler row minimum height must restore after leaving high-density compact mode")
+	_assert_equal(setup.get_node("Center/Card/Margin/Stack/PeriodRow/PeriodLabel").custom_minimum_size.x, 150.0, "period label width must restore after leaving high-density compact mode")
+	_assert_equal(setup.get_node("Center/Card/Margin/Stack/RulerRow/RulerLabel").custom_minimum_size.x, 150.0, "ruler label width must restore after leaving high-density compact mode")
+	_assert_true(not setup.get_node("Center/Card/Margin/Stack/TitleLabel").has_theme_font_size_override("font_size"), "setup title font override must clear after leaving high-density compact mode")
 	_assert_equal(period_option.item_count, 4, "setup must expose all bundled production periods")
 	_assert_true(ruler_option.selected < 0 and start_button.disabled, "setup must not silently select a ruler")
 	for index: int in range(period_option.item_count):

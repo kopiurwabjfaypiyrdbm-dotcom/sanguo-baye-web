@@ -119,6 +119,8 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		selection_label.visible = true
 		period_row.custom_minimum_size.y = 0.0
 		ruler_row.custom_minimum_size.y = 0.0
+		period_label.custom_minimum_size.x = 150.0
+		ruler_label.custom_minimum_size.x = 150.0
 		card.custom_minimum_size = Vector2(760.0, 0.0)
 		period_option.custom_minimum_size.y = 54.0
 		ruler_option.custom_minimum_size.y = 54.0
@@ -126,6 +128,8 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		start_button.custom_minimum_size.y = 56.0
 		for control: Control in [period_option, ruler_option, back_button, start_button]:
 			control.add_theme_font_size_override("font_size", 18)
+		for label: Label in [title_label, description_label, facts_label, period_label, ruler_label, selection_label]:
+			label.remove_theme_font_size_override("font_size")
 
 
 func _on_period_selected(index: int) -> void:
