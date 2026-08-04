@@ -24,6 +24,10 @@ import { getOfficerEquipmentIds } from '../core/equipment';
 import type { TacticalMapController } from '../game/createBattleGame';
 import type { GameBridge } from '../game/events';
 import { formatTacticalUnitStatus } from './tacticalBattleUnitStatus';
+import { TACTICAL_CAVALRY_PREVIEW_FRAMES } from './tacticalCavalryPreview';
+import './tacticalCavalryPreview.css';
+
+const cavalryActionSheet = new URL('../../assets/production/tactical/units/cavalry-actions-v1.png', import.meta.url).href;
 
 type TacticalBattleScreenProps = {
   campaign: GameState;
@@ -46,7 +50,7 @@ type TacticalBattleScreenProps = {
   onFinish: () => void;
 };
 
-type BattlePanel = 'player-roster' | 'enemy-roster' | 'situation' | 'move' | 'attack' | 'skills' | 'details' | 'log';
+type BattlePanel = 'player-roster' | 'enemy-roster' | 'situation' | 'move' | 'attack' | 'skills' | 'details' | 'log' | 'cavalry-preview';
 type ActionMode = 'move' | 'attack';
 
 const number = new Intl.NumberFormat('zh-CN');
@@ -219,6 +223,7 @@ export function TacticalBattleScreen({
           <button type="button" aria-pressed={openPanel === 'enemy-roster'} onClick={() => togglePanel('enemy-roster')}>敌军</button>
           <button type="button" aria-pressed={openPanel === 'situation'} onClick={() => togglePanel('situation')}>战况</button>
           <button type="button" aria-pressed={openPanel === 'log'} onClick={() => togglePanel('log')}>日志</button>
+          <button type="button" aria-pressed={openPanel === 'cavalry-preview'} onClick={() => togglePanel('cavalry-preview')}>骑兵动作</button>
         </nav>
       </header>
 
@@ -333,6 +338,7 @@ export function TacticalBattleScreen({
                 <ol>{battle.logs.slice(-20).map((message, index) => <li key={`${battle.logs.length - 20 + index}:${message}`}>{message}</li>)}</ol>
               </div>
             )}
+            {openPanel === 'cavalry-preview' && <CavalryActionPreview />}
           </aside>
         )}
       </section>
@@ -413,6 +419,28 @@ export function TacticalBattleScreen({
   );
 }
 
+function CavalryActionPreview() {
+  return (
+    <div className="cavalry-action-preview">
+      <p className="battle-preview-intro">当前定版骑兵动作雪碧图，战场中的骑兵会按同一套四帧循环播放。</p>
+      <div
+        className="cavalry-action-preview-sprite"
+        role="img"
+        aria-label="骑兵待机、移动、攻击、受击动作循环预览"
+        style={{ backgroundImage: `url(${cavalryActionSheet})` }}
+      />
+      <div className="cavalry-action-frame-list">
+        {TACTICAL_CAVALRY_PREVIEW_FRAMES.map((frame, index) => (
+          <div key={frame.key} className="cavalry-action-frame">
+            <span>{index + 1}</span>
+            <strong>{frame.label}</strong>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function SkillList({
   battle,
   selectedUnit,
@@ -472,6 +500,7 @@ function SkillList({
 }
 
 function panelTitle(panel: BattlePanel): string {
+  if (panel === 'cavalry-preview') return '骑兵动作预览';
   if (panel === 'player-roster') return '我军队伍';
   if (panel === 'enemy-roster') return '敌军队伍';
   if (panel === 'situation') return '战况与胜负条件';
