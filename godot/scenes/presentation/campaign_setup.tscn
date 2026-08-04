@@ -86,7 +86,90 @@ theme_override_colors/font_color = Color(0.63, 0.77, 0.71, 1)
 text = ""
 horizontal_alignment = 1
 
+[node name="PeriodSection" type="VBoxContainer" parent="Center/Card/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="PeriodStepLabel" type="Label" parent="Center/Card/Margin/Stack/PeriodSection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.81, 0.41, 1)
+theme_override_font_sizes/font_size = 18
+text = "第一步 · 选择剧本"
+
+[node name="PeriodChoices" type="GridContainer" parent="Center/Card/Margin/Stack/PeriodSection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 148)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+columns = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+
+[node name="RulerSection" type="VBoxContainer" parent="Center/Card/Margin/Stack"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="RulerHeader" type="HBoxContainer" parent="Center/Card/Margin/Stack/RulerSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RulerStepLabel" type="Label" parent="Center/Card/Margin/Stack/RulerSection/RulerHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.96, 0.81, 0.41, 1)
+theme_override_font_sizes/font_size = 18
+text = "第二步 · 选择君主"
+vertical_alignment = 1
+
+[node name="BackToPeriodsButton" type="Button" parent="Center/Card/Margin/Stack/RulerSection/RulerHeader"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 48)
+layout_mode = 2
+text = "返回剧本"
+
+[node name="RulerChoicesScroll" type="ScrollContainer" parent="Center/Card/Margin/Stack/RulerSection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 210)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+follow_focus = true
+
+[node name="RulerChoices" type="VBoxContainer" parent="Center/Card/Margin/Stack/RulerSection/RulerChoicesScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="RulerPreview" type="PanelContainer" parent="Center/Card/Margin/Stack/RulerSection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RulerPreviewText" type="Label" parent="Center/Card/Margin/Stack/RulerSection/RulerPreview"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.83, 0.87, 0.81, 1)
+theme_override_font_sizes/font_size = 16
+text = "请选择一位君主"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
 [node name="PeriodRow" type="HBoxContainer" parent="Center/Card/Margin/Stack"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 10
 
@@ -104,6 +187,7 @@ size_flags_horizontal = 3
 layout_mode = 2
 
 [node name="RulerRow" type="HBoxContainer" parent="Center/Card/Margin/Stack"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 10
 
