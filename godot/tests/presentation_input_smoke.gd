@@ -15,6 +15,10 @@ func _initialize() -> void:
 func _run() -> void:
 	_assert_equal(TouchMetrics.density_scale_for_dpi(160.0), 1.0, "touch metrics must preserve the 160 dpi baseline")
 	_assert_equal(TouchMetrics.density_scale_for_dpi(360.0), 2.25, "touch metrics must derive Android density from dpi")
+	_assert_equal(TouchMetrics.density_scale_for_dpi(641.0), 4.0, "touch metrics must cap physical dpi conversion at 4x")
+	TouchMetrics.set_density_override_for_testing(8.0)
+	_assert_equal(TouchMetrics.density_scale(), 4.0, "touch metrics test override must apply the 4x safety cap")
+	TouchMetrics.clear_density_override_for_testing()
 	var high_density_target := TouchMetrics.target_size(0.5, 2.25)
 	_assert_true(high_density_target * 0.5 >= 108.0, "high-density compact controls must retain a 48dp physical target")
 	_assert_true(TouchMetrics.drag_threshold(0.5, 2.25) * 0.5 >= 31.5, "high-density touch drag threshold must scale with dpi")
