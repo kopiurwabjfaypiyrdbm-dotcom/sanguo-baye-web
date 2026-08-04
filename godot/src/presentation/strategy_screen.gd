@@ -8,6 +8,7 @@ const SESSION_CONTEXT := preload("res://src/application/campaign_session_context
 const TACTICAL_CONTEXT := preload("res://src/application/tactical_launch_context.gd")
 const PauseRepository = preload("res://src/application/persistence/tactical_pause_repository.gd")
 const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
+const MonthAdvanceReview = preload("res://src/domain/progression/month_advance_review.gd")
 
 @export var allow_demo_samples := false
 
@@ -53,6 +54,7 @@ const ZOOM_STEP := 1.14
 @onready var reconnaissance_panel: ReconnaissancePanel = %ReconnaissancePanel
 @onready var diplomacy_panel = %DiplomaticOrderPanel
 @onready var chronicle_panel = %CampaignChroniclePanel
+@onready var month_end_review_dialog: MonthEndReviewDialog = %MonthEndReviewDialog
 
 var _session: GameSession
 var _snapshot: Dictionary = {}
@@ -63,7 +65,6 @@ var _command_serial := 0
 var _persistence_enabled := false
 var _pause_save_failed := false
 var _return_confirmation: ConfirmationDialog
-var _month_end_confirmation: ConfirmationDialog
 
 var _mouse_pressed := false
 var _mouse_dragging := false
@@ -90,12 +91,6 @@ func _ready() -> void:
 	_return_confirmation.get_cancel_button().text = tr("继续战役")
 	_return_confirmation.confirmed.connect(_leave_to_menu)
 	add_child(_return_confirmation)
-	_month_end_confirmation = ConfirmationDialog.new()
-	_month_end_confirmation.title = tr("确认结束本月")
-	_month_end_confirmation.get_ok_button().text = tr("确认结束本月")
-	_month_end_confirmation.get_cancel_button().text = tr("返回继续部署")
-	_month_end_confirmation.confirmed.connect(_confirm_advance_turn_month)
-	add_child(_month_end_confirmation)
 	_apply_responsive_labels()
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	var result: Dictionary
@@ -163,6 +158,8 @@ func _process(_delta: float) -> void:
 		diplomacy_panel.place_in(_get_card_usable_rect())
 	if chronicle_panel.visible:
 		chronicle_panel.place_in(_get_card_usable_rect())
+	if month_end_review_dialog.visible:
+		month_end_review_dialog.place_in(_get_card_usable_rect())
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -215,6 +212,9 @@ func _connect_ui() -> void:
 	city_context_menu.detail_requested.connect(_open_city_detail_from_context)
 	city_context_menu.section_requested.connect(_open_city_section_from_context)
 	city_context_menu.close_requested.connect(_hide_city_context_menu)
+	month_end_review_dialog.confirmed.connect(_confirm_advance_turn_month)
+	month_end_review_dialog.cancelled.connect(_close_month_end_review)
+	month_end_review_dialog.city_selected.connect(_on_month_end_review_city_selected)
 	city_card.command_requested.connect(_execute_internal_command)
 	city_card.officer_management_requested.connect(_open_officer_management)
 	city_card.personnel_lifecycle_requested.connect(_open_personnel_lifecycle)
@@ -678,36 +678,29 @@ func _request_advance_turn_month() -> void:
 	if not is_instance_valid(_session) or str(_snapshot.get("phase", "")) != "player":
 		_set_status(tr("当前阶段不能结束玩家回合"), "warning")
 		return
-	if is_instance_valid(_month_end_confirmation) and _month_end_confirmation.visible:
+	if month_end_review_dialog.visible:
 		return
-	var calendar := _as_dictionary(_snapshot.get("calendar", {}))
-	var year := int(calendar.get("year", 0))
-	var month := int(calendar.get("month", 0))
-	var player_faction_id := str(_snapshot.get("playerFactionId", ""))
-	var acted := _snapshot.get("actedOfficerIds", []) as Array
-	var officers := _as_dictionary(_snapshot.get("officers", {}))
-	var cities := _as_dictionary(_snapshot.get("cities", {}))
-	var available := 0
-	var city_count := 0
-	for officer_id: Variant in officers.keys():
-		var officer := _as_dictionary(officers[officer_id])
-		if str(officer.get("factionId", "")) != player_faction_id:
-			continue
-		if str(officer.get("status", "")) != "serving":
-			continue
-		if acted.has(officer_id):
-			continue
-		available += 1
-	for city_id: Variant in cities.keys():
-		if str(_as_dictionary(cities[city_id]).get("ownerId", "")) == player_faction_id:
-			city_count += 1
-	_month_end_confirmation.dialog_text = tr(
-		"确认结束 %d 年 %d 月？\n已行动 %d 人 · 未行动 %d 人 · 城池 %d 座。\n结束本月后，本月未使用的行动机会不会保留。"
-	) % [year, month, acted.size(), available, city_count]
-	_month_end_confirmation.popup_centered()
+	_close_city_card()
+	_close_chronicle()
+	var review: Dictionary = MonthAdvanceReview.build(_snapshot)
+	month_end_review_dialog.show_review(review)
+	month_end_review_dialog.apply_responsive_layout(_compact_layout, _current_canvas_scale(), DisplayServer.window_get_size())
+	month_end_review_dialog.place_in(_get_card_usable_rect())
+
+
+func _close_month_end_review() -> void:
+	month_end_review_dialog.hide()
+
+
+func _on_month_end_review_city_selected(city_id: String) -> void:
+	_close_month_end_review()
+	if city_id.is_empty():
+		return
+	_select_city(city_id, true)
 
 
 func _confirm_advance_turn_month() -> void:
+	_close_month_end_review()
 	_advance_turn_month()
 
 
@@ -734,7 +727,7 @@ func _advance_turn_month() -> void:
 		return
 	_refresh_snapshot(false)
 	var calendar: Dictionary = _as_dictionary(_snapshot.get("calendar", {}))
-	_set_status(tr("已进入 %d 年 %d 月 · 可点「纪事」查看本月摘要") % [int(calendar.get("year", 0)), int(calendar.get("month", 0))], "success")
+	_set_status(tr("已进入 %d 年 %d 月 · 可点底栏「情报」查看本月摘要") % [int(calendar.get("year", 0)), int(calendar.get("month", 0))], "success")
 
 
 func _close_chronicle() -> void:
@@ -1100,8 +1093,8 @@ func _handle_system_back() -> bool:
 		_return_confirmation.hide()
 		menu_button.grab_focus()
 		return true
-	if is_instance_valid(_month_end_confirmation) and _month_end_confirmation.visible:
-		_month_end_confirmation.hide()
+	if month_end_review_dialog.visible:
+		_close_month_end_review()
 		dock_end_month_button.grab_focus()
 		return true
 	if chronicle_panel.visible:
@@ -1319,6 +1312,9 @@ func _mark_all_touches_multitouch() -> void:
 
 
 func _handle_tap(screen_position: Vector2, is_touch: bool) -> void:
+	if month_end_review_dialog.visible:
+		_close_month_end_review()
+		return
 	if officer_panel.visible:
 		_close_officer_management()
 		return
@@ -1436,18 +1432,17 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		float(physical_size.y) / maxf(viewport_size.y, 1.0)
 	)
 	_apply_return_confirmation_layout(compact, canvas_scale)
-	_apply_month_end_confirmation_layout(compact, canvas_scale)
 	_compact_layout = compact
 	title_label.visible = not compact
+	chronicle_button.visible = false
+	end_turn_button.visible = false
 	world_button.text = tr("全图" if compact else "全天下")
 	player_button.text = tr("本势" if compact else "本势力")
 	tactical_demo_button.text = tr("临战" if compact else "临战")
 	save_button.text = tr("存" if compact else "保存")
 	load_button.text = tr("读" if compact else "读取")
-	chronicle_button.text = tr("纪" if compact else "纪事")
-	end_turn_button.text = tr("结束" if compact else "结束本月")
-	dock_end_month_button.text = tr("结束" if compact else "结束本月")
 	menu_button.text = tr("菜单" if compact else "主菜单")
+	dock_end_month_button.text = tr("结束" if compact else "结束本月")
 
 	if touch_mode:
 		var touch_size := TouchMetrics.target_size(canvas_scale)
@@ -1455,7 +1450,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		var action_font_size := ceili(17.0 / maxf(canvas_scale, 0.01))
 		top_panel.custom_minimum_size = Vector2(0.0, touch_size + 14.0)
 		bottom_panel.custom_minimum_size = Vector2(0.0, touch_size + 36.0)
-		for button: Button in [world_button, player_button, tactical_demo_button, save_button, load_button, chronicle_button, end_turn_button, menu_button]:
+		for button: Button in [world_button, player_button, tactical_demo_button, save_button, load_button, menu_button]:
 			button.custom_minimum_size = Vector2(touch_size, touch_size)
 			button.add_theme_font_size_override("font_size", action_font_size)
 		for button: Button in [dock_intel_button, dock_cities_button, dock_officers_button, dock_treasures_button, dock_delegation_button, dock_end_month_button]:
@@ -1475,10 +1470,8 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		tactical_demo_button.custom_minimum_size = Vector2(92.0, 52.0)
 		save_button.custom_minimum_size = Vector2(68.0, 52.0)
 		load_button.custom_minimum_size = Vector2(68.0, 52.0)
-		chronicle_button.custom_minimum_size = Vector2(76.0, 52.0)
-		end_turn_button.custom_minimum_size = Vector2(92.0, 52.0)
 		menu_button.custom_minimum_size = Vector2(76.0, 52.0)
-		for button: Button in [world_button, player_button, tactical_demo_button, save_button, load_button, chronicle_button, end_turn_button, menu_button]:
+		for button: Button in [world_button, player_button, tactical_demo_button, save_button, load_button, menu_button]:
 			button.add_theme_font_size_override("font_size", 18)
 		for button: Button in [dock_intel_button, dock_cities_button, dock_officers_button, dock_treasures_button, dock_delegation_button]:
 			button.custom_minimum_size = Vector2(64.0, 48.0)
@@ -1500,6 +1493,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	reconnaissance_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
 	diplomacy_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
 	chronicle_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
+	month_end_review_dialog.apply_responsive_layout(compact, canvas_scale, physical_size)
 	if not _snapshot.is_empty():
 		_update_hud_from_snapshot()
 
@@ -1525,27 +1519,6 @@ func _apply_return_confirmation_layout(compact: bool, canvas_scale: float) -> vo
 			button.add_theme_font_size_override("font_size", 18)
 
 
-func _apply_month_end_confirmation_layout(compact: bool, canvas_scale: float) -> void:
-	if not is_instance_valid(_month_end_confirmation):
-		return
-	var scale := maxf(canvas_scale, 0.01)
-	var touch_mode := compact or TouchMetrics.uses_density_scaled_targets()
-	if touch_mode:
-		_month_end_confirmation.min_size = Vector2i(ceilf(420.0 / scale), ceilf(220.0 / scale))
-		_month_end_confirmation.get_label().add_theme_font_size_override("font_size", ceili(15.0 / scale))
-		var touch_size := TouchMetrics.target_size(scale)
-		for button: Button in [_month_end_confirmation.get_ok_button(), _month_end_confirmation.get_cancel_button()]:
-			button.custom_minimum_size = Vector2(ceilf(120.0 / scale), touch_size)
-			button.add_theme_font_size_override("font_size", ceili(16.0 / scale))
-	else:
-		_month_end_confirmation.min_size = Vector2i(480, 220)
-		_month_end_confirmation.get_label().add_theme_font_size_override("font_size", 18)
-		_month_end_confirmation.get_ok_button().custom_minimum_size = Vector2(148, 52)
-		_month_end_confirmation.get_cancel_button().custom_minimum_size = Vector2(132, 52)
-		for button: Button in [_month_end_confirmation.get_ok_button(), _month_end_confirmation.get_cancel_button()]:
-			button.add_theme_font_size_override("font_size", 18)
-
-
 func _set_interaction_busy(busy: bool) -> void:
 	save_button.disabled = busy or not _persistence_enabled
 	load_button.disabled = busy or not _persistence_enabled
@@ -1567,6 +1540,7 @@ func _set_interaction_busy(busy: bool) -> void:
 	reconnaissance_panel.set_busy(busy)
 	diplomacy_panel.set_busy(busy)
 	chronicle_panel.set_busy(busy)
+	month_end_review_dialog.set_busy(busy)
 
 
 func _set_status(message: String, tone: String) -> void:

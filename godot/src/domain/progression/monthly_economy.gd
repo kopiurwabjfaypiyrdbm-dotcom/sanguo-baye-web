@@ -89,6 +89,10 @@ static func settle(state: GameState, validate_result: bool = true) -> Dictionary
 	}}
 
 
+static func supported_officers_by_city(data: Dictionary) -> Dictionary:
+	return _supported_officers(data)
+
+
 static func _supported_officers(data: Dictionary) -> Dictionary:
 	var supported: Dictionary = {}
 	for raw_officer_id: Variant in data["officerOrder"]:

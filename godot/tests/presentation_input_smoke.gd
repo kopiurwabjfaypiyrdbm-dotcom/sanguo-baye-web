@@ -4,6 +4,7 @@ const MAIN_SCENE := preload("res://scenes/presentation/strategy_screen.tscn")
 const LAUNCH_CONTEXT := preload("res://src/application/campaign_launch_context.gd")
 const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
 const SafeArea = preload("res://src/presentation/safe_area_margin.gd")
+const MonthAdvanceReview = preload("res://src/domain/progression/month_advance_review.gd")
 
 var _assertions := 0
 var _failures := 0
@@ -551,8 +552,8 @@ func _run() -> void:
 		"compact chronicle with long logs must remain above the status region")
 	screen.call("_apply_responsive_layout_for_size", physical_size)
 	_assert_true(
-		screen.get_node("%ChronicleButton").custom_minimum_size.y * canvas_scale >= 47.5,
-		"compact chronicle entry must retain a 48px-class physical target"
+		screen.get_node("%DockIntelButton").custom_minimum_size.y * canvas_scale >= 47.5,
+		"compact dock intel entry must retain a 48px-class physical target"
 	)
 	chronicle_panel.apply_responsive_layout(true, 1.0, Vector2i(1280, 720))
 	_assert_equal(chronicle_panel.get("_layout_canvas_scale"), 1.0,
@@ -585,11 +586,16 @@ func _run() -> void:
 	_assert_true(not end_turn_button.disabled, "player phase must expose the end-turn control")
 	end_turn_button.emit_signal("pressed")
 	await process_frame
-	var month_confirm: ConfirmationDialog = screen.get("_month_end_confirmation")
-	_assert_true(is_instance_valid(month_confirm) and month_confirm.visible, "end-month dock must open a preflight confirmation")
-	_assert_true("确认结束" in month_confirm.dialog_text, "month-end confirmation must summarize the current calendar month")
-	month_confirm.emit_signal("confirmed")
+	var month_review = screen.get_node("%MonthEndReviewDialog")
+	_assert_true(month_review.visible, "end-month dock must open the Web-aligned month-end review")
+	_assert_true("确认结束" in month_review.get_node("%TitleLabel").text, "month-end review must summarize the current calendar month")
+	_assert_true("未行动" in month_review.get_node("%MetricsLabel").text, "month-end review must expose acted/available officer metrics")
+	var review_dto: Dictionary = MonthAdvanceReview.build(screen.get("_snapshot"))
+	_assert_true(int(review_dto.get("availableOfficerCount", 0)) > 0, "period-1 start review must flag unused officer actions")
+	_assert_true(not (review_dto.get("notices", []) as Array).is_empty(), "month-end review must surface at least one preflight notice")
+	month_review.emit_signal("confirmed")
 	await process_frame
+	_assert_true(not month_review.visible, "confirming month-end review must dismiss the dialog")
 	_assert_equal(int(screen.get("_snapshot")["turn"]), turn_before + 1, "end-turn control must advance exactly one month")
 	_assert_equal(screen.get("_snapshot")["phase"], "player", "end-turn control must settle back into the player phase")
 	_assert_true(not chronicle_panel.visible, "end-turn must not force-open the chronicle panel over the map")
