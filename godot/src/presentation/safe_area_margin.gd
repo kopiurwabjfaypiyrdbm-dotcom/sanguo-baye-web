@@ -8,13 +8,21 @@ var _safe_rect := Rect2()
 
 
 static func compute_safe_rect(viewport_size: Vector2) -> Rect2:
+	if not OS.has_feature("mobile"):
+		return compute_safe_rect_for_insets(viewport_size, Rect2(), Vector2.ZERO)
+	return compute_safe_rect_for_insets(
+		viewport_size,
+		DisplayServer.get_display_safe_area(),
+		DisplayServer.screen_get_size()
+	)
+
+
+static func compute_safe_rect_for_insets(viewport_size: Vector2, display_safe: Rect2, screen_size: Vector2) -> Rect2:
 	var left := float(MIN_GUTTER)
 	var top := float(MIN_GUTTER)
 	var right := float(MIN_GUTTER)
 	var bottom := float(MIN_GUTTER)
-	var display_safe := DisplayServer.get_display_safe_area()
-	var screen_size := DisplayServer.screen_get_size()
-	if OS.has_feature("mobile") and display_safe.size.x > 0 and display_safe.size.y > 0 and screen_size.x > 0 and screen_size.y > 0:
+	if display_safe.size.x > 0 and display_safe.size.y > 0 and screen_size.x > 0 and screen_size.y > 0:
 		var scale := Vector2(viewport_size.x / float(screen_size.x), viewport_size.y / float(screen_size.y))
 		left = maxf(left, float(display_safe.position.x) * scale.x)
 		top = maxf(top, float(display_safe.position.y) * scale.y)
