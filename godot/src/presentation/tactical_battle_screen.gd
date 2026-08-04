@@ -290,12 +290,17 @@ func _build_settings_panel() -> void:
 	_settings_panel.visible = false
 	_settings_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	overlay.add_child(_settings_panel)
+	var scroll := ScrollContainer.new()
+	scroll.name = "SettingsScroll"
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_settings_panel.add_child(scroll)
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 18)
 	margin.add_theme_constant_override("margin_right", 18)
 	margin.add_theme_constant_override("margin_top", 16)
 	margin.add_theme_constant_override("margin_bottom", 16)
-	_settings_panel.add_child(margin)
+	scroll.add_child(margin)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 10)
 	margin.add_child(column)
@@ -522,6 +527,10 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		_text_scale_option.add_theme_font_size_override("font_size", action_size)
 		_text_scale_option.get_popup().add_theme_font_size_override("font_size", action_size)
 		_text_scale_option.get_popup().add_theme_constant_override("v_separation", TouchMetrics.popup_separation(scale, action_size))
+	for toggle: CheckButton in [_high_contrast_toggle, _reduced_motion_toggle, _hints_toggle]:
+		if is_instance_valid(toggle):
+			toggle.custom_minimum_size.y = touch_size
+			toggle.add_theme_font_size_override("font_size", action_size)
 	for label: Label in [_status_label, _round_label, _phase_label, _unit_count_label, _hint_label, _selection_label]:
 		if is_instance_valid(label):
 			label.add_theme_font_size_override("font_size", body_size)
@@ -539,7 +548,10 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		_turn_bar.offset_top = -(touch_size + 18.0 + safe_bottom)
 		_turn_bar.offset_bottom = -safe_bottom
 	if is_instance_valid(_settings_panel):
-		_settings_panel.custom_minimum_size = Vector2(ceilf(360.0 / scale), ceilf(290.0 / scale))
+		var panel_width := ceilf(360.0 / scale)
+		var desired_panel_height := ceilf(420.0 / scale)
+		var max_panel_height := maxf(160.0, safe_rect.size.y - 24.0)
+		_settings_panel.custom_minimum_size = Vector2(panel_width, minf(desired_panel_height, max_panel_height))
 		_settings_panel.position = safe_rect.position + (safe_rect.size - _settings_panel.custom_minimum_size) * 0.5
 	if is_instance_valid(_selection_panel):
 		_selection_panel.custom_minimum_size = Vector2(ceilf((300.0 if compact else 330.0) / scale), ceilf((188.0 if compact else 190.0) / scale))

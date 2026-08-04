@@ -44,6 +44,10 @@ func _run() -> void:
 		_assert_true(control.custom_minimum_size.y * compact_scale >= 108.0, "high-density setup %s must retain a 48dp physical target" % control_name)
 	_assert_true(not setup.get_node("%DescriptionLabel").visible, "high-density 844x390 setup must collapse redundant description copy")
 	_assert_true(not setup.get_node("%FactsLabel").visible, "high-density 844x390 setup must collapse redundant facts copy")
+	var setup_center: ScrollContainer = setup.get_node("Center")
+	var setup_card: Control = setup.get_node("Center/Card")
+	_assert_true(setup_card.position.x >= -0.5 and setup_card.position.x + setup_card.size.x <= setup_center.size.x + 0.5, "high-density setup card must stay within horizontal safe bounds")
+	_assert_true(setup_center.get_v_scroll_bar().max_value > 0.0, "high-density setup card must use vertical scrolling instead of clipping")
 	TouchMetrics.clear_density_override_for_testing()
 	_assert_equal(period_option.item_count, 4, "setup must expose all bundled production periods")
 	_assert_true(ruler_option.selected < 0 and start_button.disabled, "setup must not silently select a ruler")
@@ -103,6 +107,15 @@ func _run() -> void:
 	var dialog: ConfirmationDialog = screen.get("_return_confirmation")
 	for dialog_button: Button in [dialog.get_ok_button(), dialog.get_cancel_button()]:
 		_assert_true(dialog_button.custom_minimum_size.y * dialog_scale >= 47.5, "compact return confirmation must retain a 48px-class physical target")
+	TouchMetrics.set_density_override_for_testing(2.25)
+	screen.call("_apply_responsive_layout_for_size", Vector2i(2560, 1440))
+	await process_frame
+	var high_density_dialog: ConfirmationDialog = screen.get("_return_confirmation")
+	var high_density_scale := minf(2560.0 / 1280.0, 1440.0 / 720.0)
+	for dialog_button: Button in [high_density_dialog.get_ok_button(), high_density_dialog.get_cancel_button()]:
+		_assert_true(dialog_button.custom_minimum_size.y * high_density_scale >= 108.0, "high-density strategic return confirmation must retain a 48dp target")
+	TouchMetrics.clear_density_override_for_testing()
+	screen.call("_apply_responsive_layout_for_size", Vector2i(1280, 720))
 	# Exercise the MB20 crash-window entry path: leave only .tmp, return to the
 	# native menu, and ensure Continue remains available for repository recovery.
 	var primary_path := ProjectSettings.globalize_path("user://godot-spike-save.json")

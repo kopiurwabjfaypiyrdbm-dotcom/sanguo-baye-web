@@ -1244,10 +1244,11 @@ func _apply_return_confirmation_layout(compact: bool, canvas_scale: float) -> vo
 	if not is_instance_valid(_return_confirmation):
 		return
 	var scale := maxf(canvas_scale, 0.01)
-	if compact:
+	var touch_mode := compact or TouchMetrics.uses_density_scaled_targets()
+	if touch_mode:
 		_return_confirmation.min_size = Vector2i(ceilf(360.0 / scale), ceilf(190.0 / scale))
 		_return_confirmation.get_label().add_theme_font_size_override("font_size", ceili(15.0 / scale))
-		var touch_size := TouchMetrics.target_size(scale) if TouchMetrics.uses_density_scaled_targets() else ceilf(48.0 / scale)
+		var touch_size := TouchMetrics.target_size(scale)
 		for button: Button in [_return_confirmation.get_ok_button(), _return_confirmation.get_cancel_button()]:
 			button.custom_minimum_size = Vector2(ceilf(96.0 / scale), touch_size)
 			button.add_theme_font_size_override("font_size", ceili(17.0 / scale))

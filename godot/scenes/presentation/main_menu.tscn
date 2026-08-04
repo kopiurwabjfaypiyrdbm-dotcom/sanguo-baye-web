@@ -51,16 +51,21 @@ offset_bottom = -355.0
 mouse_filter = 2
 color = Color(0.96, 0.68, 0.25, 0.65)
 
-[node name="Center" type="CenterContainer" parent="."]
+[node name="Center" type="ScrollContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+follow_focus = true
 
 [node name="Card" type="PanelContainer" parent="Center"]
 custom_minimum_size = Vector2(520, 0)
+size_flags_horizontal = 4
+size_flags_vertical = 4
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBox_card")
 

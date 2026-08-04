@@ -7,9 +7,9 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 ## 当前源码 APK
 
 - 路径：`godot/builds/sanguo-baye-godot-mb27-touch-debug.apk`
-- 导出：Godot 4.7.1 stable `a13da4feb`，GDScript，2026-08-04 07:56:16（使用现有本机 Android Debug 模板）
+- 导出：Godot 4.7.1 stable `a13da4feb`，GDScript，2026-08-04 08:17:36（使用现有本机 Android Debug 模板）
 - 大小：57,817,572 bytes（约 55.1 MiB / 57.8 MB，不是 5 GB）
-- SHA-256：`F69BD4344F39898458594467C4AF1AB652359282D68917DEF054639CD89B38B9`（`Get-FileHash`）
+- SHA-256：`380CC461B695E92A7B5A2C568FEB8419340CF5E12665F79695B7952B51CBC3AC`（`Get-FileHash`）
 - 包：`com.sumo91.sanguobaye.godotspike`，versionName `0.1.0-spike`，versionCode `1`
 - 静态边界：`aapt2 dump permissions` 仅列包名，未发现 INTERNET；没有 WebView/JSBridge/WASM 依赖。仍有 `mipmap/themed_icon` 缺失警告，列为 P2，不阻止启动。
 
@@ -25,17 +25,18 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 
 - tactical presentation：125 assertions；覆盖 terminal checkpoint 替换旧 ongoing、同战斗旧 ongoing 拒绝、完整 terminal projection/settlement digest、warm/cold exact-once、真实 `_return_to_strategy()` 场景切换/清理和 1280×720/844×390 输入。
 - production save/recovery：139 assertions。
-- campaign setup presentation：64 assertions；包含 360dpi/844×390 高密度主菜单与战役设置行高/折叠检查，以及 38 城、54 道路和生产 GameSession 入口。
+- campaign setup presentation：68 assertions；包含 360dpi/844×390 高密度主菜单与战役设置行高/折叠/滚动边界检查、2560×1440 战略 Back 对话框检查，以及 38 城、54 道路和生产 GameSession 入口。
 - Web：47 个测试文件、378 tests，构建通过。
-- 聚合 `npm run check`：退出码 0，通过；本轮耗时 539.1 秒。日志中的 migration replay 失败项属于预期的负向篡改演练，未改变聚合命令成功结果；根证书、弹窗位置和 Android build-tools 提示为环境警告。
+- 聚合 `npm run check`：退出码 0，通过；本轮耗时 546.7 秒。日志中的 migration replay 失败项属于预期的负向篡改演练，未改变聚合命令成功结果；根证书、弹窗位置和 Android build-tools 提示为环境警告。
 - 增量项目验证：`npm run godot:project:verify` 退出码 0（211 domain、219 presentation assertions）。当前源码的 Android preset 已使用项目自有 `res://icon.svg` 主图标及独立 adaptive foreground/background/monochrome SVG；触控度量覆盖 160/360 dpi、48dp/拖动阈值换算、显式密度上限和 PopupMenu 行高。
 - 增量导出：沙箱上下文曾把已存在的模板误报为 missing；改用授权环境读取现有模板后导出成功。没有下载或安装组件。
-- 触控增量后重新导出并安装了上述 APK；冷启动进程可见，截图已更新。完整 `npm run check` 在 539.1 秒后退出码 0，Godot/Web/构建门禁均通过；迁移回放中的错误仍是预期负向篡改演练。
+- 触控增量后重新导出并安装了上述 APK；冷启动进程可见，截图已更新。完整 `npm run check` 在 546.7 秒后退出码 0，Godot/Web/构建门禁均通过；迁移回放中的错误仍是预期负向篡改演练。
 
 ## 本轮移动端修复
 
 - Android 高 DPI 通过统一 `TouchMetrics` 应用于主菜单、战役设置、战略城池面板、战略命令面板、战术设置、Android Back 确认框和所有 OptionButton PopupMenu 行。
 - 844×390 高密度场景不再把三个主菜单动作纵向堆叠；战役设置将两个选择器改为行式布局，并在极窄高度隐藏冗余说明，保持 48dp 交互目标。
+- 主菜单与战役设置的卡片位于可滚动容器内，战术设置面板也支持高密度纵向滚动；三个 CheckButton、文字大小选择和完成按钮均纳入 48dp 目标。
 - 新增完整场景的 2.25 density 注入测试；不把桌面 density=1 的 headless 结果冒充 Android 物理触控。
 
 ## 尚未关闭的 P1 与人工交接
@@ -52,4 +53,4 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 
 ## 决策
 
-继续 Goal，下一步等待用户可见设备触控证据；不推送、不创建 PR、不发布 APK/AAB。真实 `_return_to_strategy()` 场景切换与 pause/marker 清理已由 125 assertions 覆盖，不再列为 P2。仍保留四项 P2：Godot 模板产生的 `mipmap/themed_icon` 警告（自有 adaptive 图标资源已加入但警告仍存在）、DPI-aware 触控尺寸/拖动阈值实机校准、非对称安全区的可注入测试，以及纪事面板从极窄 headless 尺寸切换到大尺寸时的旧 compact 测量回退启发式。代码侧高密度 P1 已修复；Android-first 的剩余 P1 只是真实 MuMu/真机人工动作证据。
+继续 Goal，下一步等待用户可见设备触控证据；不推送、不创建 PR、不发布 APK/AAB。真实 `_return_to_strategy()` 场景切换与 pause/marker 清理已由 131 tactical assertions 覆盖，不再列为 P2。仍保留五项 P2：Godot 模板产生的 `mipmap/themed_icon` 警告（自有 adaptive 图标资源已加入但警告仍存在）、DPI-aware 触控字体实机可读性校准、PopupMenu 实际 item rect 的设备测量、非对称安全区的可注入测试，以及纪事面板从极窄 headless 尺寸切换到大尺寸时的旧 compact 测量回退启发式。代码侧高密度 P1 已修复；Android-first 的剩余 P1 只是真实 MuMu/真机人工动作证据。

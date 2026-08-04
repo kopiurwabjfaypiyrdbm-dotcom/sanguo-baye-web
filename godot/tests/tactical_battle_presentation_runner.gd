@@ -7,6 +7,7 @@ const GameSession = preload("res://src/application/game_session/game_session.gd"
 const TACTICAL_CONTEXT = preload("res://src/application/tactical_launch_context.gd")
 const SESSION_CONTEXT = preload("res://src/application/campaign_session_context.gd")
 const PauseRepository = preload("res://src/application/persistence/tactical_pause_repository.gd")
+const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
 var _failures := 0
 var _assertions := 0
 
@@ -35,6 +36,16 @@ func _run() -> void:
 			_assert_true(dialog_button.custom_minimum_size.y * responsive_scale >= 47.5, "tactical return confirmation must retain 48px physical targets at %s" % viewport_size)
 		screen._open_settings()
 		_assert_true(screen.get("_settings_panel").visible, "settings panel must open from tactical HUD at %s" % viewport_size)
+		if viewport_size == Vector2i(844, 390):
+			TouchMetrics.set_density_override_for_testing(2.25)
+			screen.call("_apply_responsive_layout_for_size", viewport_size)
+			await process_frame
+			for touch_control: Control in [screen.get("_text_scale_option"), screen.get("_high_contrast_toggle"), screen.get("_reduced_motion_toggle"), screen.get("_hints_toggle"), screen.get("_settings_close_button")]:
+				_assert_true(touch_control.custom_minimum_size.y * responsive_scale >= 108.0, "high-density tactical setting control must retain a 48dp target at %s" % viewport_size)
+			var settings_scroll: ScrollContainer = screen.get("_settings_panel").get_node("SettingsScroll")
+			_assert_true(settings_scroll.get_v_scroll_bar().max_value > 0.0, "high-density tactical settings must remain scrollable at %s" % viewport_size)
+			TouchMetrics.clear_density_override_for_testing()
+			screen.call("_apply_responsive_layout_for_size", viewport_size)
 		screen._on_text_scale_selected(1)
 		screen._on_high_contrast_toggled(true)
 		screen._on_reduced_motion_toggled(true)
