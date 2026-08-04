@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://src/presentation/strategy_screen.gd" id="1_screen"]
 [ext_resource type="Script" path="res://src/presentation/strategy_map_world.gd" id="2_map"]
@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" path="res://scenes/presentation/reconnaissance_panel.tscn" id="9_recon"]
 [ext_resource type="PackedScene" path="res://scenes/presentation/diplomatic_order_panel.tscn" id="10_diplomacy"]
 [ext_resource type="PackedScene" path="res://scenes/presentation/campaign_chronicle_panel.tscn" id="11_chronicle"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/city_context_menu.tscn" id="12_context"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_bar"]
 bg_color = Color(0.035, 0.059, 0.068, 0.94)
@@ -164,6 +165,7 @@ text = "纪事"
 
 [node name="EndTurnButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(92, 52)
 layout_mode = 2
 focus_mode = 2
@@ -195,22 +197,84 @@ mouse_filter = 2
 
 [node name="BottomPanel" type="PanelContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 46)
+custom_minimum_size = Vector2(0, 88)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBox_bar")
 
 [node name="BottomMargin" type="MarginContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 6
 
-[node name="StatusLine" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin"]
+[node name="BottomStack" type="VBoxContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CampaignDock" type="HBoxContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="DockIntelButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack/CampaignDock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 48)
+size_flags_horizontal = 3
+layout_mode = 2
+focus_mode = 2
+text = "情报"
+
+[node name="DockCitiesButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack/CampaignDock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 48)
+size_flags_horizontal = 3
+layout_mode = 2
+focus_mode = 2
+text = "城池"
+
+[node name="DockOfficersButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack/CampaignDock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 48)
+size_flags_horizontal = 3
+layout_mode = 2
+focus_mode = 2
+text = "人物"
+
+[node name="DockTreasuresButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack/CampaignDock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 48)
+size_flags_horizontal = 3
+layout_mode = 2
+focus_mode = 2
+text = "宝物"
+
+[node name="DockDelegationButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack/CampaignDock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 48)
+size_flags_horizontal = 3
+layout_mode = 2
+focus_mode = 2
+text = "委任"
+
+[node name="DockEndMonthButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack/CampaignDock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(88, 48)
+size_flags_horizontal = 3
+layout_mode = 2
+focus_mode = 2
+text = "结束本月"
+
+[node name="StatusLine" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "拖动平移 · 滚轮或双指缩放 · 点击城池"
 text_overrun_behavior = 3
+
+[node name="CityContextMenu" parent="UILayer/HUDRoot" instance=ExtResource("12_context")]
+unique_name_in_owner = true
+layout_mode = 0
+z_index = 18
 
 [node name="CityCard" parent="UILayer/HUDRoot" instance=ExtResource("5_card")]
 unique_name_in_owner = true

@@ -39,6 +39,13 @@ const ZOOM_STEP := 1.14
 @onready var chronicle_button: Button = %ChronicleButton
 @onready var end_turn_button: Button = %EndTurnButton
 @onready var menu_button: Button = %MenuButton
+@onready var dock_intel_button: Button = %DockIntelButton
+@onready var dock_cities_button: Button = %DockCitiesButton
+@onready var dock_officers_button: Button = %DockOfficersButton
+@onready var dock_treasures_button: Button = %DockTreasuresButton
+@onready var dock_delegation_button: Button = %DockDelegationButton
+@onready var dock_end_month_button: Button = %DockEndMonthButton
+@onready var city_context_menu: CityContextMenu = %CityContextMenu
 @onready var city_card: CityCard = %CityCard
 @onready var officer_panel = %OfficerManagementPanel
 @onready var personnel_panel = %PersonnelLifecyclePanel
@@ -56,6 +63,7 @@ var _command_serial := 0
 var _persistence_enabled := false
 var _pause_save_failed := false
 var _return_confirmation: ConfirmationDialog
+var _month_end_confirmation: ConfirmationDialog
 
 var _mouse_pressed := false
 var _mouse_dragging := false
@@ -82,6 +90,12 @@ func _ready() -> void:
 	_return_confirmation.get_cancel_button().text = tr("继续战役")
 	_return_confirmation.confirmed.connect(_leave_to_menu)
 	add_child(_return_confirmation)
+	_month_end_confirmation = ConfirmationDialog.new()
+	_month_end_confirmation.title = tr("确认结束本月")
+	_month_end_confirmation.get_ok_button().text = tr("确认结束本月")
+	_month_end_confirmation.get_cancel_button().text = tr("返回继续部署")
+	_month_end_confirmation.confirmed.connect(_confirm_advance_turn_month)
+	add_child(_month_end_confirmation)
 	_apply_responsive_labels()
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	var result: Dictionary
@@ -127,6 +141,11 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	if city_context_menu.visible and not _selected_city_id.is_empty():
+		city_context_menu.place_near(
+			map_world.get_city_screen_position(_selected_city_id),
+			_get_card_usable_rect()
+		)
 	if city_card.visible and not _selected_city_id.is_empty():
 		city_card.place_near(
 			map_world.get_city_screen_position(_selected_city_id),
@@ -169,6 +188,12 @@ func _configure_localized_ui() -> void:
 	load_button.tooltip_text = tr("重建 GameSession 并载入存档")
 	chronicle_button.tooltip_text = tr("查看年月、事件、继承与战役结局")
 	end_turn_button.tooltip_text = tr("结束玩家阶段，执行确定性 AI 与月度结算")
+	dock_intel_button.tooltip_text = tr("查看本月情报与战役纪事")
+	dock_cities_button.tooltip_text = tr("定位并选择本势力首城")
+	dock_officers_button.tooltip_text = tr("打开当前城池的人物管理")
+	dock_treasures_button.tooltip_text = tr("打开当前城池的人才与宝物")
+	dock_delegation_button.tooltip_text = tr("委任方略（扩张至 6 城后开放）")
+	dock_end_month_button.tooltip_text = tr("预审后结束玩家阶段，执行确定性 AI 与月度结算")
 	menu_button.tooltip_text = tr("返回主菜单；离开前会确认未保存进度")
 	_apply_responsive_labels()
 
@@ -181,13 +206,22 @@ func _connect_ui() -> void:
 	load_button.pressed.connect(_load_game)
 	chronicle_button.pressed.connect(_open_chronicle)
 	end_turn_button.pressed.connect(_advance_turn_month)
+	dock_intel_button.pressed.connect(_open_chronicle)
+	dock_cities_button.pressed.connect(func() -> void: _focus_player_city(true))
+	dock_officers_button.pressed.connect(_dock_open_officers)
+	dock_treasures_button.pressed.connect(_dock_open_treasures)
+	dock_delegation_button.pressed.connect(_dock_open_delegation)
+	dock_end_month_button.pressed.connect(_request_advance_turn_month)
+	city_context_menu.detail_requested.connect(_open_city_detail_from_context)
+	city_context_menu.section_requested.connect(_open_city_section_from_context)
+	city_context_menu.close_requested.connect(_hide_city_context_menu)
 	city_card.command_requested.connect(_execute_internal_command)
 	city_card.officer_management_requested.connect(_open_officer_management)
 	city_card.personnel_lifecycle_requested.connect(_open_personnel_lifecycle)
 	city_card.strategic_logistics_requested.connect(_open_strategic_logistics)
 	city_card.reconnaissance_requested.connect(_open_reconnaissance)
 	city_card.diplomacy_requested.connect(_open_diplomacy)
-	city_card.close_requested.connect(_close_city_card)
+	city_card.close_requested.connect(_close_city_card_to_context)
 	officer_panel.command_requested.connect(_execute_internal_command)
 	officer_panel.close_requested.connect(_close_officer_management)
 	personnel_panel.command_requested.connect(_execute_internal_command)
@@ -222,6 +256,7 @@ func _refresh_snapshot(keep_card_open: bool = true) -> bool:
 	map_world.rebuild(_snapshot)
 	_update_hud_from_snapshot()
 	end_turn_button.disabled = str(_snapshot.get("phase", "")) != "player"
+	dock_end_month_button.disabled = end_turn_button.disabled
 	if str(_snapshot.get("phase", "")) in ["succession", "ended"]:
 		chronicle_panel.show_state(_snapshot)
 
@@ -234,9 +269,14 @@ func _refresh_snapshot(keep_card_open: bool = true) -> bool:
 
 	if not _selected_city_id.is_empty() and not city_ids.has(_selected_city_id):
 		_selected_city_id = ""
+		city_context_menu.hide()
+		city_card.hide()
 	map_world.set_selected_city(_selected_city_id)
-	if keep_card_open and city_card.visible and not _selected_city_id.is_empty():
-		_show_selected_city_card()
+	if keep_card_open and not _selected_city_id.is_empty():
+		if city_card.visible:
+			_show_selected_city_card()
+		elif city_context_menu.visible:
+			_show_city_context_menu()
 	return true
 
 
@@ -295,7 +335,7 @@ func _format_player_resources() -> String:
 	return tr("城池 %d · 金钱 %d · 粮草 %d · 兵力 %d") % [city_count, money, food, troops]
 
 
-func _select_city(city_id: String, open_card: bool = true) -> void:
+func _select_city(city_id: String, open_menu: bool = true) -> void:
 	if city_id.is_empty():
 		return
 	_selected_city_id = city_id
@@ -306,14 +346,56 @@ func _select_city(city_id: String, open_card: bool = true) -> void:
 	_close_diplomacy(false)
 	_close_chronicle()
 	map_world.set_selected_city(city_id)
-	if open_card:
-		_show_selected_city_card()
+	city_card.hide()
+	if open_menu:
+		_show_city_context_menu()
 	else:
-		_close_city_card()
+		_hide_city_context_menu()
 	var city := _as_dictionary(_as_dictionary(_snapshot.get("cities", {})).get(city_id, {}))
 	_set_status(tr("已选择 %s") % str(city.get("name", city_id)), "ready")
 	var target_zoom := maxf(map_camera.zoom.x, 0.92)
 	_animate_camera_to(map_world.get_city_world_position(city_id), target_zoom, 0.32)
+
+
+func _show_city_context_menu() -> void:
+	if _selected_city_id.is_empty() or _snapshot.is_empty():
+		return
+	city_card.hide()
+	city_context_menu.show_city(_snapshot, _selected_city_id)
+	city_context_menu.apply_responsive_layout(_compact_layout, _current_canvas_scale(), DisplayServer.window_get_size())
+	city_context_menu.place_near(map_world.get_city_screen_position(_selected_city_id), _get_card_usable_rect())
+
+
+func _hide_city_context_menu() -> void:
+	city_context_menu.hide()
+
+
+func _open_city_detail_from_context(city_id: String) -> void:
+	if city_id.is_empty():
+		return
+	_selected_city_id = city_id
+	map_world.set_selected_city(city_id)
+	_hide_city_context_menu()
+	_show_selected_city_card()
+
+
+func _open_city_section_from_context(city_id: String, section: String) -> void:
+	if city_id.is_empty():
+		return
+	_selected_city_id = city_id
+	map_world.set_selected_city(city_id)
+	_hide_city_context_menu()
+	match section:
+		"internal":
+			_show_selected_city_card()
+		"personnel":
+			_open_officer_management(city_id)
+		"military":
+			_open_reconnaissance(city_id)
+		"intrigue":
+			_open_diplomacy(city_id)
+		_:
+			_show_city_context_menu()
 
 
 func _show_selected_city_card() -> void:
@@ -328,12 +410,28 @@ func _show_selected_city_card() -> void:
 	if is_instance_valid(_session) and _session.has_method("city_visibility_query"):
 		var visibility_value: Variant = _session.call("city_visibility_query", _selected_city_id)
 		if visibility_value is Dictionary: visibility = visibility_value
+	_hide_city_context_menu()
 	city_card.show_city(_snapshot, _selected_city_id, command_queries, visibility)
 	city_card.place_near(map_world.get_city_screen_position(_selected_city_id), _get_card_usable_rect())
 
 
+func _close_city_card_to_context() -> void:
+	city_card.hide()
+	officer_panel.hide()
+	personnel_panel.hide()
+	logistics_panel.hide()
+	reconnaissance_panel.hide()
+	diplomacy_panel.hide()
+	_preview_logistics_route([])
+	map_world.clear_recon_preview()
+	map_world.clear_diplomacy_preview()
+	if not _selected_city_id.is_empty():
+		_show_city_context_menu()
+
+
 func _close_city_card() -> void:
 	city_card.hide()
+	city_context_menu.hide()
 	officer_panel.hide()
 	personnel_panel.hide()
 	logistics_panel.hide()
@@ -346,6 +444,51 @@ func _close_city_card() -> void:
 	map_world.set_selected_city("")
 
 
+func _dock_resolve_city_id() -> String:
+	if not _selected_city_id.is_empty():
+		return _selected_city_id
+	var player_faction_id := str(_snapshot.get("playerFactionId", ""))
+	var cities := _as_dictionary(_snapshot.get("cities", {}))
+	for city_id in map_world.get_ordered_city_ids():
+		var city := _as_dictionary(cities.get(city_id, {}))
+		if str(city.get("ownerId", "")) == player_faction_id:
+			return str(city_id)
+	return ""
+
+
+func _dock_open_officers() -> void:
+	var city_id := _dock_resolve_city_id()
+	if city_id.is_empty():
+		_set_status(tr("当前没有可管理的己方城池"), "warning")
+		return
+	_selected_city_id = city_id
+	map_world.set_selected_city(city_id)
+	_open_officer_management(city_id)
+
+
+func _dock_open_treasures() -> void:
+	var city_id := _dock_resolve_city_id()
+	if city_id.is_empty():
+		_set_status(tr("当前没有可管理的己方城池"), "warning")
+		return
+	_selected_city_id = city_id
+	map_world.set_selected_city(city_id)
+	_open_personnel_lifecycle(city_id)
+
+
+func _dock_open_delegation() -> void:
+	var player_faction_id := str(_snapshot.get("playerFactionId", ""))
+	var cities := _as_dictionary(_snapshot.get("cities", {}))
+	var city_count := 0
+	for city_id: Variant in cities.keys():
+		if str(_as_dictionary(cities[city_id]).get("ownerId", "")) == player_faction_id:
+			city_count += 1
+	if city_count < 6:
+		_set_status(tr("委任将于扩张至 6 城后开放（当前 %d 城）") % city_count, "warning")
+	else:
+		_set_status(tr("委任方略骨架已开放；正式自动执行规则将在后续阶段接入"), "ready")
+
+
 func _open_officer_management(city_id: String) -> void:
 	if city_id.is_empty() or not is_instance_valid(_session):
 		return
@@ -355,6 +498,7 @@ func _open_officer_management(city_id: String) -> void:
 		return
 	var city: Dictionary = query["city"]
 	city_card.hide()
+	city_context_menu.hide()
 	personnel_panel.hide()
 	logistics_panel.hide()
 	reconnaissance_panel.hide()
@@ -369,9 +513,10 @@ func _open_officer_management(city_id: String) -> void:
 
 
 func _close_officer_management() -> void:
+	var was_open: bool = officer_panel.visible
 	officer_panel.hide()
-	if not _selected_city_id.is_empty():
-		_show_selected_city_card()
+	if was_open and not _selected_city_id.is_empty():
+		_show_city_context_menu()
 
 
 func _open_personnel_lifecycle(city_id: String) -> void:
@@ -383,6 +528,7 @@ func _open_personnel_lifecycle(city_id: String) -> void:
 		return
 	var city: Dictionary = query["city"]
 	city_card.hide()
+	city_context_menu.hide()
 	officer_panel.hide()
 	logistics_panel.hide()
 	reconnaissance_panel.hide()
@@ -397,11 +543,12 @@ func _open_personnel_lifecycle(city_id: String) -> void:
 
 
 func _close_personnel_lifecycle(show_card: bool = true) -> void:
+	var was_open: bool = personnel_panel.visible
 	personnel_panel.hide()
 	reconnaissance_panel.hide()
 	diplomacy_panel.hide()
-	if show_card and not _selected_city_id.is_empty():
-		_show_selected_city_card()
+	if show_card and was_open and not _selected_city_id.is_empty():
+		_show_city_context_menu()
 
 
 func _open_strategic_logistics(city_id: String) -> void:
@@ -413,6 +560,7 @@ func _open_strategic_logistics(city_id: String) -> void:
 		return
 	var city: Dictionary = query["city"]
 	city_card.hide()
+	city_context_menu.hide()
 	officer_panel.hide()
 	personnel_panel.hide()
 	reconnaissance_panel.hide()
@@ -424,10 +572,11 @@ func _open_strategic_logistics(city_id: String) -> void:
 
 
 func _close_strategic_logistics(show_card: bool = true) -> void:
+	var was_open: bool = logistics_panel.visible
 	logistics_panel.hide()
 	_preview_logistics_route([])
-	if show_card and not _selected_city_id.is_empty():
-		_show_selected_city_card()
+	if show_card and was_open and not _selected_city_id.is_empty():
+		_show_city_context_menu()
 
 
 func _open_reconnaissance(city_id: String) -> void:
@@ -438,6 +587,7 @@ func _open_reconnaissance(city_id: String) -> void:
 		return
 	var source: Dictionary = query["sourceCity"]
 	city_card.hide()
+	city_context_menu.hide()
 	officer_panel.hide()
 	personnel_panel.hide()
 	logistics_panel.hide()
@@ -453,9 +603,11 @@ func _open_reconnaissance(city_id: String) -> void:
 
 
 func _close_reconnaissance(show_card: bool = true) -> void:
+	var was_open: bool = reconnaissance_panel.visible
 	reconnaissance_panel.hide()
 	map_world.clear_recon_preview()
-	if show_card and not _selected_city_id.is_empty(): _show_selected_city_card()
+	if show_card and was_open and not _selected_city_id.is_empty():
+		_show_city_context_menu()
 
 
 func _refresh_reconnaissance() -> void:
@@ -477,6 +629,7 @@ func _open_diplomacy(city_id: String) -> void:
 		return
 	var source: Dictionary = query["sourceCity"]
 	city_card.hide()
+	city_context_menu.hide()
 	officer_panel.hide()
 	personnel_panel.hide()
 	logistics_panel.hide()
@@ -501,13 +654,16 @@ func _open_diplomacy(city_id: String) -> void:
 
 
 func _close_diplomacy(show_card: bool = true) -> void:
+	var was_open: bool = diplomacy_panel.visible
 	diplomacy_panel.hide()
 	map_world.clear_diplomacy_preview()
-	if show_card and not _selected_city_id.is_empty(): _show_selected_city_card()
+	if show_card and was_open and not _selected_city_id.is_empty():
+		_show_city_context_menu()
 
 
 func _open_chronicle() -> void:
 	city_card.hide()
+	city_context_menu.hide()
 	officer_panel.hide()
 	personnel_panel.hide()
 	_close_strategic_logistics(false)
@@ -518,10 +674,49 @@ func _open_chronicle() -> void:
 	chronicle_panel.place_in(_get_card_usable_rect())
 
 
+func _request_advance_turn_month() -> void:
+	if not is_instance_valid(_session) or str(_snapshot.get("phase", "")) != "player":
+		_set_status(tr("当前阶段不能结束玩家回合"), "warning")
+		return
+	if is_instance_valid(_month_end_confirmation) and _month_end_confirmation.visible:
+		return
+	var calendar := _as_dictionary(_snapshot.get("calendar", {}))
+	var year := int(calendar.get("year", 0))
+	var month := int(calendar.get("month", 0))
+	var player_faction_id := str(_snapshot.get("playerFactionId", ""))
+	var acted := _snapshot.get("actedOfficerIds", []) as Array
+	var officers := _as_dictionary(_snapshot.get("officers", {}))
+	var cities := _as_dictionary(_snapshot.get("cities", {}))
+	var available := 0
+	var city_count := 0
+	for officer_id: Variant in officers.keys():
+		var officer := _as_dictionary(officers[officer_id])
+		if str(officer.get("factionId", "")) != player_faction_id:
+			continue
+		if str(officer.get("status", "")) != "serving":
+			continue
+		if acted.has(officer_id):
+			continue
+		available += 1
+	for city_id: Variant in cities.keys():
+		if str(_as_dictionary(cities[city_id]).get("ownerId", "")) == player_faction_id:
+			city_count += 1
+	_month_end_confirmation.dialog_text = tr(
+		"确认结束 %d 年 %d 月？\n已行动 %d 人 · 未行动 %d 人 · 城池 %d 座。\n结束本月后，本月未使用的行动机会不会保留。"
+	) % [year, month, acted.size(), available, city_count]
+	_month_end_confirmation.popup_centered()
+
+
+func _confirm_advance_turn_month() -> void:
+	_advance_turn_month()
+
+
 func _advance_turn_month() -> void:
 	if not is_instance_valid(_session) or str(_snapshot.get("phase", "")) != "player":
 		_set_status(tr("当前阶段不能结束玩家回合"), "warning")
 		return
+	_close_city_card()
+	_close_chronicle()
 	_set_interaction_busy(true)
 	_set_status(tr("正在执行诸侯行动与月度结算……"), "busy")
 	_command_serial += 1
@@ -905,6 +1100,10 @@ func _handle_system_back() -> bool:
 		_return_confirmation.hide()
 		menu_button.grab_focus()
 		return true
+	if is_instance_valid(_month_end_confirmation) and _month_end_confirmation.visible:
+		_month_end_confirmation.hide()
+		dock_end_month_button.grab_focus()
+		return true
 	if chronicle_panel.visible:
 		_close_chronicle()
 		return true
@@ -924,6 +1123,9 @@ func _handle_system_back() -> bool:
 		_close_officer_management()
 		return true
 	if city_card.visible:
+		_close_city_card_to_context()
+		return true
+	if city_context_menu.visible:
 		_close_city_card()
 		return true
 	return false
@@ -971,14 +1173,14 @@ func _focus_world() -> void:
 	_set_status(tr("已定位完整战略地图"), "ready")
 
 
-func _focus_player_city(open_card: bool = true) -> void:
+func _focus_player_city(open_menu: bool = true) -> void:
 	var player_faction_id := str(_snapshot.get("playerFactionId", ""))
 	var cities := _as_dictionary(_snapshot.get("cities", {}))
 	for city_id in map_world.get_ordered_city_ids():
 		var city := _as_dictionary(cities.get(city_id, {}))
 		if str(city.get("ownerId", "")) == player_faction_id:
-			_select_city(city_id, open_card)
-			if not open_card:
+			_select_city(city_id, open_menu)
+			if not open_menu:
 				_set_status(tr("已定位本势力首城 · 点击城池下令"), "ready")
 			return
 	_set_status(tr("当前快照没有玩家城池"), "warning")
@@ -1234,6 +1436,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		float(physical_size.y) / maxf(viewport_size.y, 1.0)
 	)
 	_apply_return_confirmation_layout(compact, canvas_scale)
+	_apply_month_end_confirmation_layout(compact, canvas_scale)
 	_compact_layout = compact
 	title_label.visible = not compact
 	world_button.text = tr("全图" if compact else "全天下")
@@ -1243,6 +1446,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	load_button.text = tr("读" if compact else "读取")
 	chronicle_button.text = tr("纪" if compact else "纪事")
 	end_turn_button.text = tr("结束" if compact else "结束本月")
+	dock_end_month_button.text = tr("结束" if compact else "结束本月")
 	menu_button.text = tr("菜单" if compact else "主菜单")
 
 	if touch_mode:
@@ -1250,9 +1454,13 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		var label_font_size := ceili(15.0 / maxf(canvas_scale, 0.01))
 		var action_font_size := ceili(17.0 / maxf(canvas_scale, 0.01))
 		top_panel.custom_minimum_size = Vector2(0.0, touch_size + 14.0)
+		bottom_panel.custom_minimum_size = Vector2(0.0, touch_size + 36.0)
 		for button: Button in [world_button, player_button, tactical_demo_button, save_button, load_button, chronicle_button, end_turn_button, menu_button]:
 			button.custom_minimum_size = Vector2(touch_size, touch_size)
 			button.add_theme_font_size_override("font_size", action_font_size)
+		for button: Button in [dock_intel_button, dock_cities_button, dock_officers_button, dock_treasures_button, dock_delegation_button, dock_end_month_button]:
+			button.custom_minimum_size = Vector2(touch_size, touch_size)
+			button.add_theme_font_size_override("font_size", ceili(14.0 / maxf(canvas_scale, 0.01)))
 		status_badge_panel.custom_minimum_size = Vector2(touch_size, touch_size)
 		year_label.add_theme_font_size_override("font_size", label_font_size)
 		seed_label.add_theme_font_size_override("font_size", label_font_size)
@@ -1261,6 +1469,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		status_line.add_theme_font_size_override("font_size", ceili(15.0 / maxf(canvas_scale, 0.01)))
 	else:
 		top_panel.custom_minimum_size = Vector2(0.0, 68.0)
+		bottom_panel.custom_minimum_size = Vector2(0.0, 88.0)
 		world_button.custom_minimum_size = Vector2(76.0, 52.0)
 		player_button.custom_minimum_size = Vector2(76.0, 52.0)
 		tactical_demo_button.custom_minimum_size = Vector2(92.0, 52.0)
@@ -1271,6 +1480,11 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		menu_button.custom_minimum_size = Vector2(76.0, 52.0)
 		for button: Button in [world_button, player_button, tactical_demo_button, save_button, load_button, chronicle_button, end_turn_button, menu_button]:
 			button.add_theme_font_size_override("font_size", 18)
+		for button: Button in [dock_intel_button, dock_cities_button, dock_officers_button, dock_treasures_button, dock_delegation_button]:
+			button.custom_minimum_size = Vector2(64.0, 48.0)
+			button.add_theme_font_size_override("font_size", 15)
+		dock_end_month_button.custom_minimum_size = Vector2(88.0, 48.0)
+		dock_end_month_button.add_theme_font_size_override("font_size", 15)
 		status_badge_panel.custom_minimum_size = Vector2(82.0, 48.0)
 		year_label.add_theme_font_size_override("font_size", 18)
 		seed_label.add_theme_font_size_override("font_size", 18)
@@ -1278,6 +1492,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		status_badge.add_theme_font_size_override("font_size", 18)
 		status_line.add_theme_font_size_override("font_size", 18)
 	map_world.set_minimum_physical_hit_radius(TouchMetrics.target_size(canvas_scale) * canvas_scale * 0.5, canvas_scale)
+	city_context_menu.apply_responsive_layout(compact, canvas_scale, physical_size)
 	city_card.apply_responsive_layout(compact, canvas_scale, physical_size)
 	officer_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
 	personnel_panel.apply_responsive_layout(compact, canvas_scale, physical_size)
@@ -1310,13 +1525,41 @@ func _apply_return_confirmation_layout(compact: bool, canvas_scale: float) -> vo
 			button.add_theme_font_size_override("font_size", 18)
 
 
+func _apply_month_end_confirmation_layout(compact: bool, canvas_scale: float) -> void:
+	if not is_instance_valid(_month_end_confirmation):
+		return
+	var scale := maxf(canvas_scale, 0.01)
+	var touch_mode := compact or TouchMetrics.uses_density_scaled_targets()
+	if touch_mode:
+		_month_end_confirmation.min_size = Vector2i(ceilf(420.0 / scale), ceilf(220.0 / scale))
+		_month_end_confirmation.get_label().add_theme_font_size_override("font_size", ceili(15.0 / scale))
+		var touch_size := TouchMetrics.target_size(scale)
+		for button: Button in [_month_end_confirmation.get_ok_button(), _month_end_confirmation.get_cancel_button()]:
+			button.custom_minimum_size = Vector2(ceilf(120.0 / scale), touch_size)
+			button.add_theme_font_size_override("font_size", ceili(16.0 / scale))
+	else:
+		_month_end_confirmation.min_size = Vector2i(480, 220)
+		_month_end_confirmation.get_label().add_theme_font_size_override("font_size", 18)
+		_month_end_confirmation.get_ok_button().custom_minimum_size = Vector2(148, 52)
+		_month_end_confirmation.get_cancel_button().custom_minimum_size = Vector2(132, 52)
+		for button: Button in [_month_end_confirmation.get_ok_button(), _month_end_confirmation.get_cancel_button()]:
+			button.add_theme_font_size_override("font_size", 18)
+
+
 func _set_interaction_busy(busy: bool) -> void:
 	save_button.disabled = busy or not _persistence_enabled
 	load_button.disabled = busy or not _persistence_enabled
-	end_turn_button.disabled = busy or str(_snapshot.get("phase", "")) != "player"
+	var end_disabled := busy or str(_snapshot.get("phase", "")) != "player"
+	end_turn_button.disabled = end_disabled
+	dock_end_month_button.disabled = end_disabled
 	world_button.disabled = busy
 	player_button.disabled = busy
 	chronicle_button.disabled = busy
+	dock_intel_button.disabled = busy
+	dock_cities_button.disabled = busy
+	dock_officers_button.disabled = busy
+	dock_treasures_button.disabled = busy
+	dock_delegation_button.disabled = busy
 	city_card.set_busy(busy)
 	officer_panel.set_busy(busy)
 	personnel_panel.set_busy(busy)
