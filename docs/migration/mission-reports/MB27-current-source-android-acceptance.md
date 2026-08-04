@@ -7,9 +7,9 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 ## 当前源码 APK
 
 - 路径：`godot/builds/sanguo-baye-godot-mb27-touch-debug.apk`
-- 导出：Godot 4.7.1 stable `a13da4feb`，GDScript，2026-08-04 08:59:14（使用现有本机 Android Debug 模板）
+- 导出：Godot 4.7.1 stable `a13da4feb`，GDScript，2026-08-04 09:21:11（使用现有本机 Android Debug 模板）
 - 大小：57,817,572 bytes（约 55.1 MiB / 57.8 MB，不是 5 GB）
-- SHA-256：`B5461652516EB70D817A63E771732F9A3601013897A0C958CCB9B60E0230E7D6`（`Get-FileHash`）
+- SHA-256：`FB51A8AB0E96D2668B3CCB839490E9B6228EB5EA7D0713BBBC89E9B31FFA0349`（`Get-FileHash`）
 - 包：`com.sumo91.sanguobaye.godotspike`，versionName `0.1.0-spike`，versionCode `1`
 - 静态边界：`aapt2 dump permissions` 仅列包名，未发现 INTERNET；没有 WebView/JSBridge/WASM 依赖。仍有 `mipmap/themed_icon` 缺失警告，列为 P2，不阻止启动。
 
@@ -17,7 +17,7 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 
 - ADB：MuMu 稳定端点 `127.0.0.1:16384`，当前 streamed install 后冷启动进程可见。
 - Android 15 / API 35，x86_64；物理面板 1440×2560，density 360，surface orientation 1（横屏旋转）。
-- 冷启动截图：[mb27-touch-current-launch.png](../../godot/builds/mb27-touch-current-launch.png)，截图时间 08:59:37，晚于本次 APK 导出。画面显示原生主菜单和 Godot 4.7.1 标识。
+- 冷启动截图：[mb27-touch-current-launch.png](../../godot/builds/mb27-touch-current-launch.png)，截图时间 09:21:33，晚于本次 APK 导出。画面显示原生主菜单和 Godot 4.7.1 标识。
 - 历史 ADB `input tap 1280 795` 诊断截图：[mb27-after-adb-tap.png](../../godot/builds/mb27-after-adb-tap.png)。该文件时间早于本次 08:59:14 当前 APK，画面仍是旧版上下布局；它只保留作坐标注入历史，不支持当前 APK 的开局页结论，也不是人工触控证据。
 - 运行过程未观察到安装失败、Java/FATAL 崩溃或进程立即退出；首次安装尝试遇到短暂 `device offline`，重试后成功。
 
@@ -27,10 +27,10 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 - production save/recovery：139 assertions。
 - campaign setup presentation：74 assertions；包含 360dpi/844×390 高密度主菜单与战役设置行高/折叠/滚动边界检查、离开高密度布局后的行高/标签宽度/字号状态恢复、2560×1440 战略 Back 对话框检查，以及 38 城、54 道路和生产 GameSession 入口。
 - Web：47 个测试文件、378 tests，构建通过。
-- 聚合 `npm run check`：退出码 0，通过；本轮耗时 543 秒，包含最终的高密度布局与响应式字体恢复断言。日志中的 migration replay 失败项属于预期的负向篡改演练，未改变聚合命令成功结果；根证书、弹窗位置和 Android build-tools 提示为环境警告。
-- 增量项目验证：最新 `npm run godot:project:verify` 退出码 0（211 domain、221 presentation assertions；d59df85 新增 DPI/测试 override 的 4× 上限断言）。当前源码的 Android preset 已使用项目自有 `res://icon.svg` 主图标及独立 adaptive foreground/background/monochrome SVG；触控度量覆盖 160/360 dpi、48dp/拖动阈值换算、显式密度上限和 PopupMenu 行高。
+- 聚合 `npm run check`：退出码 0，通过；本轮耗时 554.1 秒，包含最终的高密度布局、响应式字体和安全区几何断言。日志中的 migration replay 失败项属于预期的负向篡改演练，未改变聚合命令成功结果；根证书、弹窗位置和 Android build-tools 提示为环境警告。
+- 增量项目验证：最新 `npm run godot:project:verify` 退出码 0（211 domain、223 presentation assertions；d59df85 新增 DPI/测试 override 的 4× 上限断言，363187d 新增非对称安全区几何断言）。当前源码的 Android preset 已使用项目自有 `res://icon.svg` 主图标及独立 adaptive foreground/background/monochrome SVG；触控度量覆盖 160/360 dpi、48dp/拖动阈值换算、显式密度上限和 PopupMenu 行高。
 - 增量导出：沙箱上下文曾把已存在的模板误报为 missing；改用授权环境读取现有模板后导出成功。没有下载或安装组件。
-- 响应式状态修复后重新导出并安装了上述 APK；MuMu `127.0.0.1:16384` 冷启动进程可见，截图已更新。完整 `npm run check` 在 543 秒后退出码 0，Godot/Web/构建门禁均通过；迁移回放中的错误仍是预期负向篡改演练。
+- 安全区代码修复后重新导出并安装了上述 APK；MuMu `127.0.0.1:16384` 冷启动进程可见，截图已更新。完整 `npm run check` 在 554.1 秒后退出码 0，Godot/Web/构建门禁均通过；迁移回放中的错误仍是预期负向篡改演练。
 
 ## 本轮移动端修复
 
@@ -39,6 +39,7 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 - 主菜单与战役设置的卡片位于可滚动容器内，战术设置面板也支持高密度纵向滚动；三个 CheckButton、文字大小选择和完成按钮均纳入 48dp 目标。
 - 新增完整场景的 2.25 density 注入测试；不把桌面 density=1 的 headless 结果冒充 Android 物理触控。
 - 修复战役设置从 ultra-compact 返回桌面尺寸时的响应式状态残留：恢复时期/君主标签宽度并清除临时字号覆盖；新增回归断言。
+- 将安全区计算拆为可注入纯几何函数，覆盖非对称左/上/右/下 inset；运行时仍仅在移动平台读取 `DisplayServer` 安全区。
 
 ## 尚未关闭的 P1 与人工交接
 
@@ -54,4 +55,4 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 
 ## 决策
 
-继续 Goal，下一步等待用户可见设备触控证据；不推送、不创建 PR、不发布 APK/AAB。真实 `_return_to_strategy()` 场景切换与 pause/marker 清理已由 131 tactical assertions 覆盖，不再列为 P2。响应式状态恢复 P2 已在 3315de7 修复；仍保留五项 P2：Godot 模板产生的 `mipmap/themed_icon` 警告（自有 adaptive 图标资源已加入但警告仍存在）、DPI-aware 触控字体实机可读性校准、PopupMenu 实际 item rect 的设备测量、非对称安全区的可注入测试，以及纪事面板从极窄 headless 尺寸切换到大尺寸时的旧 compact 测量回退启发式。代码侧高密度 P1 已修复；Android-first 的剩余 P1 只是真实 MuMu/真机人工动作证据。
+继续 Goal，下一步等待用户可见设备触控证据；不推送、不创建 PR、不发布 APK/AAB。真实 `_return_to_strategy()` 场景切换与 pause/marker 清理已由 131 tactical assertions 覆盖，不再列为 P2。响应式状态恢复 P2 已在 3315de7 修复，非对称安全区注入 P2 已在 363187d 覆盖；仍保留四项 P2：Godot 模板产生的 `mipmap/themed_icon` 警告（自有 adaptive 图标资源已加入但警告仍存在）、DPI-aware 触控字体实机可读性校准、PopupMenu 实际 item rect 的设备测量，以及纪事面板从极窄 headless 尺寸切换到大尺寸时的旧 compact 测量回退启发式。代码侧高密度 P1 已修复；Android-first 的剩余 P1 只是真实 MuMu/真机人工动作证据。
