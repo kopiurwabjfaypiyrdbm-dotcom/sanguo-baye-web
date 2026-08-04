@@ -79,6 +79,24 @@ func _run() -> void:
 	period_choices.get_child(3).emit_signal("pressed")
 	_assert_true(ruler_section.visible, "clicking an in-page period card must advance to ruler selection")
 	_assert_true(ruler_choices.get_child_count() > 0, "ruler selection must render real in-page choice buttons")
+	_assert_true(start_button.visible, "ruler step must keep the start CTA visible without page scrolling")
+	_assert_true(
+		start_button.get_parent() == setup.get_node("%StartDock"),
+		"start CTA must be viewport-pinned in StartDock for phone playability"
+	)
+	setup.call("_apply_responsive_layout_for_size", Vector2i(844, 390))
+	await process_frame
+	await process_frame
+	_assert_true(
+		start_button.visible
+		and start_button.global_position.y >= 0.0
+		and start_button.global_position.y + start_button.size.y <= setup.get_viewport_rect().size.y + 1.0,
+		"compact phone layout must keep 开始霸业 inside the viewport"
+	)
+	_assert_true(
+		setup.get_node("%RulerPreview").custom_minimum_size.y <= 32.0,
+		"empty ruler preview must stay a compact hint, not a large panel"
+	)
 	TouchMetrics.set_density_override_for_testing(2.25)
 	setup.call("_apply_responsive_layout_for_size", Vector2i(844, 390))
 	var compact_ruler_scroll: ScrollContainer = setup.get_node("%RulerChoicesScroll")
@@ -95,6 +113,10 @@ func _run() -> void:
 	_assert_true(ruler_section.visible and start_button.disabled, "re-entering ruler step after Android back must require a fresh ruler selection")
 	ruler_choices.get_child(0).emit_signal("pressed")
 	_assert_true(not start_button.disabled, "valid period and ruler selection must enable entry")
+	_assert_true(
+		setup.get_node("%RulerPreview").custom_minimum_size.y <= 40.0,
+		"selected ruler preview must remain compact after selection"
+	)
 	setup.get_node("%BackToPeriodsButton").emit_signal("pressed")
 	_assert_true(not ruler_section.visible, "returning from ruler step must show period cards")
 	_assert_true(int(setup.get("_selected_ruler_source")) < 0, "returning to periods must clear old ruler selection")
@@ -142,8 +164,10 @@ func _run() -> void:
 	_assert_true(top_bar_width > 0.0, "strategic top bar must have a measurable 1280px layout width")
 	for top_bar_child: Control in top_bar.get_children():
 		_assert_true(top_bar_child.position.x + top_bar_child.size.x <= top_bar_width + 0.5, "1280px top-bar child %s must remain reachable" % top_bar_child.name)
-	var menu_button_rect: Control = screen.get_node("%MenuButton")
-	_assert_true(menu_button_rect.position.x + menu_button_rect.size.x <= top_bar_width + 0.5, "1280px main-menu button must remain reachable")
+	var more_button_rect: Control = screen.get_node("%MoreButton")
+	_assert_true(more_button_rect.visible, "1280px top bar must keep overflow More control visible")
+	_assert_true(more_button_rect.position.x + more_button_rect.size.x <= top_bar_width + 0.5, "1280px More button must remain reachable")
+	_assert_true(not screen.get_node("%MenuButton").visible, "main-menu control must stay in overflow menu")
 	screen.call("_apply_responsive_layout_for_size", Vector2i(844, 390))
 	var dialog_scale := minf(844.0 / 1280.0, 390.0 / 720.0)
 	var dialog: ConfirmationDialog = screen.get("_return_confirmation")

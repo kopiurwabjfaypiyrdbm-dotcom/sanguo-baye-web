@@ -45,6 +45,8 @@ func _run() -> void:
 	var map_camera: Camera2D = screen.get_node("%MapCamera")
 	var city_card: CityCard = screen.get_node("%CityCard")
 	var city_context_menu = screen.get_node("%CityContextMenu")
+	var mobile_sheet = screen.get_node("%MobileSheet")
+	var campaign_browser = screen.get_node("%CampaignBrowserPanel")
 	var officer_panel = screen.get_node("%OfficerManagementPanel")
 	var personnel_panel = screen.get_node("%PersonnelLifecyclePanel")
 	var logistics_panel = screen.get_node("%StrategicLogisticsPanel")
@@ -59,6 +61,9 @@ func _run() -> void:
 	_assert_true(screen.get_node("%DockTreasuresButton").visible, "campaign dock must expose treasures entry")
 	_assert_true(screen.get_node("%DockDelegationButton").visible, "campaign dock must expose delegation entry")
 	_assert_true(end_turn_button.visible, "campaign dock must expose end-month entry")
+	_assert_true(screen.get_node("%MoreButton").visible, "compact top bar must expose overflow menu")
+	_assert_true(not screen.get_node("%SaveButton").visible, "save must live in overflow menu, not top chrome")
+	_assert_true(not screen.get_node("%MenuButton").visible, "menu must live in overflow menu, not top chrome")
 	var physical_size := Vector2i(844, 390)
 	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
 	_assert_equal(map_world.get_ordered_city_ids().size(), 38, "main scene must render all 38 cities")
@@ -89,15 +94,15 @@ func _run() -> void:
 	_assert_true(not city_card.visible, "a canceled Android touch must not create a ghost city tap")
 	screen.call("_handle_screen_touch", _touch(4, true, player_city_position))
 	screen.call("_handle_screen_touch", _touch(4, false, player_city_position))
-	_assert_true(city_context_menu.visible, "touch tap on city-12 must open the lightweight city context menu")
-	_assert_true(not city_card.visible, "city tap must not jump straight to the heavy city card")
+	_assert_true(mobile_sheet.visible and campaign_browser.visible, "touch tap on city-12 must open the city context sheet")
+	_assert_true(not city_card.visible and not city_context_menu.visible, "city tap must not jump straight to the heavy city card or floating menu")
 	screen.call("_open_city_detail_from_context", "city-12")
-	_assert_true(city_card.visible and not city_context_menu.visible, "context-menu detail must open the spatial city card")
+	_assert_true(city_card.visible and mobile_sheet.visible and not city_context_menu.visible, "context detail must open the city card inside the sheet")
 	var command_option: OptionButton = city_card.get_node("%CommandOption")
 	_assert_equal(command_option.item_count, 9, "city card must expose the nine owned-city command entries")
 	screen.call("_open_officer_management", "city-12")
 	_assert_true(officer_panel.visible, "city card entry must open the native officer-management panel")
-	_assert_true(not city_card.visible and not city_context_menu.visible, "officer-management panel must replace rather than overload the city surfaces")
+	_assert_true(not city_card.visible and not city_context_menu.visible and mobile_sheet.visible, "officer-management panel must replace card surfaces inside the sheet")
 	var officer_option: OptionButton = officer_panel.get_node("%OfficerOption")
 	_assert_equal(officer_option.item_count, 7, "officer panel must preserve stable stationed-officer order")
 	officer_panel.apply_responsive_layout(true, canvas_scale, physical_size)
@@ -242,10 +247,10 @@ func _run() -> void:
 		"released captive must remain visible as a discovered free officer"
 	)
 	screen.call("_close_personnel_lifecycle")
-	_assert_true(city_context_menu.visible and not city_card.visible, "closing personnel must restore the lightweight city context menu")
+	_assert_true(mobile_sheet.visible and campaign_browser.visible and not city_card.visible, "closing personnel must restore the city context sheet")
 	screen.call("_open_city_detail_from_context", "city-12")
 	await process_frame
-	_assert_true(city_card.visible, "detail from context must reopen the spatial city card")
+	_assert_true(city_card.visible and mobile_sheet.visible, "detail from context must reopen the city card inside the sheet")
 	_assert_equal(command_option.item_count, 9, "reopened city card must keep the nine owned-city commands")
 	var plunder_index := -1
 	for index: int in range(command_option.item_count):
@@ -450,8 +455,16 @@ func _run() -> void:
 	screen.call("_select_city", recon_target_id)
 	screen.call("_open_city_detail_from_context", recon_target_id)
 	_assert_true("旧情报" in city_card.get_node("%OwnershipLabel").text, "scouted hostile card must identify report-derived stale knowledge")
-	_assert_true("金：%d" % int(frozen_report["money"]) in city_card.get_node("%StatsLabel").text, "scouted hostile card must render the frozen report value")
-	_assert_true(not "金：%d" % stale_live_money in city_card.get_node("%StatsLabel").text, "scouted hostile card must not leak a newer live enemy value")
+	var hostile_stats := str(city_card.get_node("%StatsLabel").text)
+	_assert_true(
+		("金：%d" % int(frozen_report["money"])) in hostile_stats
+		or ("金 %d" % int(frozen_report["money"])) in hostile_stats,
+		"scouted hostile card must render the frozen report value"
+	)
+	_assert_true(
+		not (("金：%d" % stale_live_money) in hostile_stats or ("金 %d" % stale_live_money) in hostile_stats),
+		"scouted hostile card must not leak a newer live enemy value"
+	)
 
 	# MB08 uses a legitimate period-1 multi-city candidate so the device path can
 	# issue real road orders without mutating ownership in presentation code.

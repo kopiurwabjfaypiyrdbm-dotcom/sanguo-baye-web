@@ -18,6 +18,7 @@ const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
 @onready var ruler_label: Label = %RulerLabel
 @onready var selection_label: Label = %SelectionLabel
 @onready var start_button: Button = %StartButton
+@onready var start_dock: MarginContainer = %StartDock
 @onready var back_button: Button = %BackButton
 @onready var header_back_button: Button = %HeaderBackButton
 @onready var setup_header: HBoxContainer = %SetupHeader
@@ -30,10 +31,13 @@ const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
 @onready var back_to_periods_button: Button = %BackToPeriodsButton
 @onready var ruler_choices_scroll: ScrollContainer = %RulerChoicesScroll
 @onready var ruler_choices: GridContainer = %RulerChoices
+@onready var ruler_preview: PanelContainer = %RulerPreview
 @onready var ruler_preview_text: Label = %RulerPreviewText
 @onready var policy_section: VBoxContainer = %PolicySection
 @onready var ruler_aside: VBoxContainer = %RulerAside
+@onready var aside_scroll: ScrollContainer = %AsideScroll
 @onready var ruler_body: HBoxContainer = %RulerBody
+@onready var card_margin: MarginContainer = $Center/Card/Margin
 @onready var ruleset_option: OptionButton = %RulesetOption
 @onready var ruleset_hint: Label = %RulesetHint
 @onready var battle_death_option: OptionButton = %BattleDeathOption
@@ -41,6 +45,8 @@ const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
 @onready var captive_escape_option: OptionButton = %CaptiveEscapeOption
 @onready var period_row: HBoxContainer = $Center/Card/Margin/Stack/PeriodRow
 @onready var ruler_row: HBoxContainer = $Center/Card/Margin/Stack/RulerRow
+@onready var center_scroll: ScrollContainer = $Center
+@onready var content_stack: VBoxContainer = $Center/Card/Margin/Stack
 
 var _periods: Array[Dictionary] = []
 var _selected_period := -1
@@ -152,7 +158,8 @@ func _on_lifecycle_option_changed(_index: int = -1) -> void:
 
 
 func _refresh_ruleset_hint() -> void:
-	ruleset_hint.text = tr("%s 规则在开局后锁定并随存档保存。") % Rulesets.description_for(_selected_ruleset_id)
+	# Keep this as a one-line footnote; long ruleset copy must not push the CTA.
+	ruleset_hint.text = tr("%s · 开局后锁定") % Rulesets.label_for(_selected_ruleset_id)
 
 
 func _on_viewport_size_changed() -> void:
@@ -316,13 +323,14 @@ func _show_period_selection() -> void:
 	period_section.visible = true
 	ruler_section.visible = false
 	title_label.text = tr("选择剧本")
-	period_step_label.text = tr("第一步 / 共两步")
+	period_step_label.text = tr("1 / 2")
 	description_label.text = tr("点选一个时期进入君主选择")
 	facts_label.text = tr("38 城 · 四段历史剧本")
 	start_button.text = tr("下一步：选择君主")
 	start_button.disabled = _selected_period < 0
 	selection_label.text = tr("选择一个剧本后，再选择你要扮演的君主") if _selected_period < 0 else tr("已选择剧本；点击下一步选择君主")
-	ruler_preview_text.text = tr("选择一位君主后，这里会显示其初始城池和将领数量")
+	ruler_preview_text.text = tr("点选君主查看城池与将领")
+	_apply_preview_density(false)
 	for choice: Button in ruler_choices.get_children():
 		_style_choice_button(choice, false, false)
 	_apply_responsive_layout()
@@ -335,7 +343,7 @@ func _show_ruler_selection() -> void:
 	period_section.visible = false
 	ruler_section.visible = true
 	start_button.text = tr("开始霸业")
-	period_step_label.text = tr("第二步 / 共两步")
+	period_step_label.text = tr("2 / 2")
 	_selection_label_reset()
 	_apply_responsive_layout()
 	if ruler_choices.get_child_count() > 0:
@@ -366,10 +374,6 @@ func _apply_responsive_layout() -> void:
 
 func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	var safe_rect := SafeArea.compute_safe_rect(get_viewport_rect().size)
-	var center: Control = $Center
-	center.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	center.position = safe_rect.position
-	center.size = safe_rect.size
 	var canvas_scale := minf(float(physical_size.x) / 1280.0, float(physical_size.y) / 720.0)
 	var compact := physical_size.x <= 900 or physical_size.y <= 440
 	var mobile_touch := TouchMetrics.uses_density_scaled_targets()
@@ -381,8 +385,24 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	period_option.visible = false
 	ruler_option.visible = false
 	var touch_size := TouchMetrics.target_size(canvas_scale) if touch_mode else 128.0
+	var cta_height := touch_size if touch_mode else 52.0
+	start_button.custom_minimum_size.y = cta_height
+	# Pin 开始霸业 to the viewport bottom so phone players never scroll for the CTA.
+	var dock_margin_v := 20.0 if touch_mode else 24.0
+	var dock_height := cta_height + dock_margin_v if _showing_rulers else 0.0
+	start_dock.visible = _showing_rulers
+	start_dock.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	start_dock.offset_top = -dock_height
+	start_dock.offset_bottom = 0.0
+	start_dock.add_theme_constant_override("margin_left", 16 if touch_mode else 24)
+	start_dock.add_theme_constant_override("margin_right", 16 if touch_mode else 24)
+	start_dock.add_theme_constant_override("margin_top", 8)
+	start_dock.add_theme_constant_override("margin_bottom", maxi(12, int(get_viewport_rect().size.y - safe_rect.end.y)))
+	center_scroll.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	center_scroll.position = safe_rect.position
+	center_scroll.size = Vector2(safe_rect.size.x, maxf(120.0, safe_rect.size.y - dock_height))
 	period_choices.columns = 2
-	var grid_min_y := maxf(touch_size * 2.0 + 16.0, safe_rect.size.y * (0.58 if not ultra_compact else 0.48))
+	var grid_min_y := maxf(touch_size * 2.0 + 16.0, center_scroll.size.y * (0.58 if not ultra_compact else 0.48))
 	period_choices.custom_minimum_size.y = grid_min_y if not _showing_rulers else 0.0
 	period_option.custom_minimum_size.y = touch_size
 	ruler_option.custom_minimum_size.y = touch_size
@@ -393,26 +413,71 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		if caption != null:
 			caption.add_theme_font_size_override("font_size", caption_font)
 	for choice: Button in ruler_choices.get_children():
-		choice.custom_minimum_size = Vector2(0.0, touch_size if touch_mode else 72.0)
-		choice.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)) if touch_mode else 17)
-	ruler_choices_scroll.custom_minimum_size.y = maxf(touch_size * 2.0, 210.0) if _showing_rulers else 0.0
+		choice.custom_minimum_size = Vector2(0.0, touch_size if touch_mode else 64.0)
+		choice.add_theme_font_size_override("font_size", ceili(16.0 / maxf(canvas_scale, 0.01)) if touch_mode else 16)
+	# Ruler step: page scroll off; only monarch grid / policy aside scroll.
+	center_scroll.vertical_scroll_mode = (
+		ScrollContainer.SCROLL_MODE_DISABLED if _showing_rulers else ScrollContainer.SCROLL_MODE_AUTO
+	)
+	center_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content_stack.size_flags_vertical = Control.SIZE_EXPAND_FILL if _showing_rulers else Control.SIZE_SHRINK_BEGIN
+	ruler_section.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	ruler_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	aside_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	ruler_choices_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	if touch_mode:
+		card_margin.add_theme_constant_override("margin_top", 8)
+		card_margin.add_theme_constant_override("margin_bottom", 8)
+		card_margin.add_theme_constant_override("margin_left", 12)
+		card_margin.add_theme_constant_override("margin_right", 12)
+		content_stack.add_theme_constant_override("separation", 8)
+	else:
+		card_margin.add_theme_constant_override("margin_top", 16)
+		card_margin.add_theme_constant_override("margin_bottom", 16)
+		card_margin.add_theme_constant_override("margin_left", 24)
+		card_margin.add_theme_constant_override("margin_right", 24)
+		content_stack.add_theme_constant_override("separation", 12)
 	back_to_periods_button.custom_minimum_size = Vector2(touch_size if touch_mode else 120.0, touch_size if touch_mode else 48.0)
 	header_back_button.custom_minimum_size = Vector2(
-		maxf(142.0, touch_size) if touch_mode else 142.0,
+		maxf(120.0, touch_size) if touch_mode else 142.0,
 		touch_size if touch_mode else 54.0
 	)
+	# Budget body from real chrome so content cannot push the docked CTA away.
+	var margin_v := float(
+		card_margin.get_theme_constant("margin_top") + card_margin.get_theme_constant("margin_bottom")
+	)
+	var stack_sep := float(content_stack.get_theme_constant("separation"))
+	var header_budget := header_back_button.custom_minimum_size.y
+	# Compact ruler step keeps scenario as a single muted line under the title.
+	description_label.visible = _showing_rulers
+	description_label.max_lines_visible = 1
+	description_label.autowrap_mode = TextServer.AUTOWRAP_OFF if compact else TextServer.AUTOWRAP_WORD_SMART
+	var subtitle_budget := 20.0 if _showing_rulers else 0.0
+	var body_height := maxf(
+		140.0,
+		center_scroll.size.y - margin_v - header_budget - subtitle_budget - stack_sep * (2.0 if _showing_rulers else 1.0)
+	)
+	ruler_body.custom_minimum_size.y = body_height if _showing_rulers else 0.0
+	ruler_choices_scroll.custom_minimum_size.y = maxf(touch_size * 2.0, 120.0) if _showing_rulers else 0.0
+	aside_scroll.custom_minimum_size.y = maxf(96.0, 120.0) if _showing_rulers else 0.0
+	ruler_aside.custom_minimum_size.x = 200.0 if (compact or ultra_compact) else 280.0
+	_apply_preview_density(_selected_ruler_source >= 0)
 	if touch_mode:
-		card.custom_minimum_size = Vector2(ceilf(maxf(320.0, safe_rect.size.x - 24.0)), 0.0)
+		card.custom_minimum_size = Vector2(ceilf(maxf(320.0, center_scroll.size.x - 8.0)), 0.0)
+		if _showing_rulers:
+			card.custom_minimum_size.y = center_scroll.size.y
 		for control: Control in [back_button, start_button, header_back_button]:
 			control.custom_minimum_size.y = touch_size
 			control.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
 		back_to_periods_button.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
-		for label: Label in [description_label, facts_label, period_label, ruler_label, selection_label]:
-			label.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
-		title_label.add_theme_font_size_override("font_size", ceili(28.0 / maxf(canvas_scale, 0.01)))
-		period_step_label.add_theme_font_size_override("font_size", ceili(13.0 / maxf(canvas_scale, 0.01)))
-		ruler_step_label.add_theme_font_size_override("font_size", ceili(20.0 / maxf(canvas_scale, 0.01)))
-		ruler_preview_text.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
+		for label: Label in [facts_label, period_label, ruler_label, selection_label]:
+			label.add_theme_font_size_override("font_size", ceili(15.0 / maxf(canvas_scale, 0.01)))
+		title_label.add_theme_font_size_override("font_size", ceili(22.0 / maxf(canvas_scale, 0.01)))
+		period_step_label.add_theme_font_size_override("font_size", ceili(11.0 / maxf(canvas_scale, 0.01)))
+		description_label.add_theme_font_size_override("font_size", ceili(12.0 / maxf(canvas_scale, 0.01)))
+		ruler_step_label.add_theme_font_size_override("font_size", ceili(18.0 / maxf(canvas_scale, 0.01)))
+		ruler_preview_text.add_theme_font_size_override("font_size", ceili(12.0 / maxf(canvas_scale, 0.01)))
+		ruleset_hint.add_theme_font_size_override("font_size", ceili(11.0 / maxf(canvas_scale, 0.01)))
 		period_row.custom_minimum_size.y = touch_size
 		ruler_row.custom_minimum_size.y = touch_size
 		period_row.get_node("PeriodLabel").custom_minimum_size.x = ceilf(100.0 / maxf(canvas_scale, 0.01)) if ultra_compact else 150.0
@@ -422,15 +487,17 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		elif _showing_rulers:
 			start_button.text = tr("开始霸业")
 		else:
-			start_button.text = tr("下一步：选择君主")
+			start_button.text = tr("开始霸业")
 	else:
 		period_row.custom_minimum_size.y = 0.0
 		ruler_row.custom_minimum_size.y = 0.0
 		period_label.custom_minimum_size.x = 150.0
 		ruler_label.custom_minimum_size.x = 150.0
-		card.custom_minimum_size = Vector2(minf(1240.0, maxf(980.0, safe_rect.size.x - 48.0)), 0.0)
+		card.custom_minimum_size = Vector2(minf(1240.0, maxf(980.0, center_scroll.size.x - 48.0)), 0.0)
+		if _showing_rulers:
+			card.custom_minimum_size.y = center_scroll.size.y
 		back_button.custom_minimum_size.y = 56.0
-		start_button.custom_minimum_size.y = 56.0
+		start_button.custom_minimum_size.y = 52.0
 		header_back_button.custom_minimum_size = Vector2(142.0, 54.0)
 		period_option.custom_minimum_size.y = 54.0
 		ruler_option.custom_minimum_size.y = 54.0
@@ -439,29 +506,41 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		back_to_periods_button.remove_theme_font_size_override("font_size")
 		for label: Label in [title_label, period_step_label, description_label, facts_label, period_label, ruler_label, selection_label, ruler_step_label, ruler_preview_text, ruleset_hint]:
 			label.remove_theme_font_size_override("font_size")
+		period_step_label.add_theme_font_size_override("font_size", 12)
+		description_label.add_theme_font_size_override("font_size", 14)
+		ruler_preview_text.add_theme_font_size_override("font_size", 12)
+		ruleset_hint.add_theme_font_size_override("font_size", 11)
 	for policy_control: Control in [ruleset_option, battle_death_option, natural_death_option, captive_escape_option]:
-		policy_control.custom_minimum_size.y = touch_size if touch_mode else 48.0
-		policy_control.add_theme_font_size_override("font_size", ceili(16.0 / maxf(canvas_scale, 0.01)) if touch_mode else 16)
-	# Web scenario screen: header + full grid, no footer CTA. Ruler step keeps
-	# the start action and optional policy copy.
-	description_label.visible = _showing_rulers and not ultra_compact
+		policy_control.custom_minimum_size.y = mini(touch_size, 44.0) if touch_mode else 44.0
+		policy_control.add_theme_font_size_override("font_size", ceili(14.0 / maxf(canvas_scale, 0.01)) if touch_mode else 15)
+	# Period step: header + grid. Ruler step: content above a viewport-pinned CTA dock.
 	facts_label.visible = false
 	selection_label.visible = false
-	actions_row.visible = _showing_rulers
+	actions_row.visible = false
 	back_button.visible = false
 	start_button.visible = _showing_rulers
 	header_back_button.visible = true
 	policy_section.visible = _showing_rulers
-	ruleset_hint.visible = _showing_rulers and not ultra_compact
+	ruleset_hint.visible = _showing_rulers
 	period_step_label.visible = true
 	back_to_periods_button.visible = false
 	ruler_aside.visible = _showing_rulers
 	if _showing_rulers:
-		ruler_choices.columns = 2 if (compact or ultra_compact) else 3
+		ruler_choices.columns = 2 if (compact or ultra_compact or physical_size.x < 1100) else 3
 		header_back_button.text = tr("返回")
+		title_label.text = tr("选择扮演君主")
+		period_step_label.text = tr("2 / 2")
 	else:
 		header_back_button.text = tr("返回")
+		period_step_label.text = tr("1 / 2")
 		ruler_choices.columns = 3
+
+
+func _apply_preview_density(has_selection: bool) -> void:
+	# Hint / selection chip — never a tall panel competing with the CTA.
+	ruler_preview.custom_minimum_size.y = 36.0 if has_selection else 28.0
+	ruler_preview_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	ruler_preview_text.max_lines_visible = 1
 
 
 func _on_period_selected(index: int) -> void:
@@ -489,7 +568,8 @@ func _on_period_selected(index: int) -> void:
 		candidate_index += 1
 	ruler_option.select(-1)
 	ruler_step_label.text = tr("选择扮演君主")
-	ruler_preview_text.text = tr("选择一位君主后，这里会显示其初始城池和将领数量")
+	ruler_preview_text.text = tr("点选君主查看城池与将领")
+	_apply_preview_density(false)
 	for choice_index: int in range(period_choices.get_child_count()):
 		_style_choice_button(period_choices.get_child(choice_index), choice_index == index, true)
 	_selection_label_reset()
@@ -504,12 +584,15 @@ func _on_ruler_selected(index: int) -> void:
 	var candidates: Array = _periods[period_index]["scenario"].get("playerCandidates", [])
 	if index < 0 or index >= candidates.size():
 		_selected_ruler_source = -1
+		ruler_preview_text.text = tr("点选君主查看城池与将领")
+		_apply_preview_density(false)
 	else:
 		var candidate: Dictionary = candidates[index]
 		_selected_ruler_source = int(candidate.get("sourceIndex", -1))
-		ruler_preview_text.text = tr("即将扮演\n%s\n初始城池 %d · 所属人物 %d · 天下城池 38") % [
+		ruler_preview_text.text = tr("%s · %d 城 · %d 将") % [
 			str(candidate.get("name", "")), int(candidate.get("cityCount", 0)), int(candidate.get("officerCount", 0))
 		]
+		_apply_preview_density(true)
 	_selection_label_reset()
 
 
