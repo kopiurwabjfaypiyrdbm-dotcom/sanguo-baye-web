@@ -21,6 +21,12 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 - 历史 ADB `input tap 1280 795` 诊断截图：[mb27-after-adb-tap.png](../../godot/builds/mb27-after-adb-tap.png)。该文件时间早于本次 09:21:11 当前 APK，画面仍是旧版上下布局；它只保留作坐标注入历史，不支持当前 APK 的开局页结论，也不是人工触控证据。
 - 运行过程未观察到安装失败、Java/FATAL 崩溃或进程立即退出；首次安装尝试遇到短暂 `device offline`，重试后成功。
 
+### 2026-08-04 09:44 复核
+
+- 使用仓库外已存在的 MuMu ADB：`D:\04_Apps\MuMuPlayer\nx_main\adb.exe`；`127.0.0.1:16384` 仍为 `device`，前台为 `com.sumo91.sanguobaye.godotspike/com.godot.game.GodotAppLauncher`，物理尺寸 `1440x2560`、density `360`、ABI `x86_64`。
+- `mumu-cli control --vmindex 0 show_window` 返回 RPC `errcode=0`，但对应 `MuMuNxDevice` 进程的 `MainWindowHandle=0`、窗口标题为空；因此当前工具会话没有可审计的可见 MuMu GUI。`main launch` 的无参数调用返回 `action key missing`，不改变已经在线且前台的 Android Activity 事实。
+- 复跑 `npm run godot:project:verify` 退出码 0（211 domain、223 presentation、import 和主场景通过）；复跑 `npm run godot:program-check` 退出码 0（4 项 mutation self-test）。上述结果只证明当前源码和运行时准备度，不替代人工触控。
+
 ## 自动回归
 
 - tactical presentation：131 assertions；覆盖 terminal checkpoint 替换旧 ongoing、同战斗旧 ongoing 拒绝、完整 terminal projection/settlement digest、warm/cold exact-once、真实 `_return_to_strategy()` 场景切换/清理、战术设置高密度滚动和 1280×720/844×390 输入。
