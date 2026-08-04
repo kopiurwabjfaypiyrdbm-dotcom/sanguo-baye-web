@@ -172,13 +172,13 @@
       "id": "MB27",
       "briefPath": "docs/mission-briefs/MB27-manual-android-acceptance-and-final-goal-decision.md",
       "reportPath": "docs/migration/mission-reports/MB27-current-source-android-acceptance.md",
-      "commit": "9d30d7b"
+      "commit": "989f9c5"
     }
   ],
   "blockedMissions": [],
   "lastCheckpoint": {
     "missionId": "MB27",
-    "commit": "9d30d7b",
+    "commit": "989f9c5",
     "date": "2026-08-04"
   },
   "nextAction": "MB27 Goal decision: FAIL. User manual touch playability verdict is unplayable / quality severely below bar; MB00 Goal stays active and is not complete. Baseline APK remains godot/builds/sanguo-baye-godot-mb27-touch-debug.apk (SHA-256 6498C8B827D34385EB8E9B6B71F4C69E8283A447D173367306F4454BAF80EBE8). Current Mission is MB28 touch-playability remediation (docs/mission-briefs/MB28-android-touch-playability-remediation.md). Do not treat automated gates as Goal pass. After MB28 user re-acceptance, only then re-apply for Goal evaluation. Web alignment slices deferred to MB29+ per docs/migration/godot-web-alignment-plan.md.",
