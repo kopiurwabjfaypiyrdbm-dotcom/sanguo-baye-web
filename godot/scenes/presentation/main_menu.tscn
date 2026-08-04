@@ -1,21 +1,11 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://src/presentation/main_menu.gd" id="1_menu"]
 [ext_resource type="Theme" path="res://scenes/theme/strategy_theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://assets/production/entry/title-background.webp" id="3_bg"]
+[ext_resource type="Texture2D" path="res://assets/production/entry/title-wordmark.png" id="4_wordmark"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_card"]
-bg_color = Color(0.035, 0.059, 0.068, 0.96)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.39, 0.57, 0.51, 0.72)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-shadow_color = Color(0, 0, 0, 0.35)
-shadow_size = 18
+[sub_resource type="StyleBoxEmpty" id="StyleBox_empty"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -27,7 +17,7 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_menu")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="TextureRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -35,21 +25,35 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.018, 0.033, 0.043, 1)
+texture = ExtResource("3_bg")
+expand_mode = 1
+stretch_mode = 6
 
-[node name="Accent" type="ColorRect" parent="."]
+[node name="Scrim" type="ColorRect" parent="."]
 layout_mode = 1
-anchors_preset = 12
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -640.0
-offset_top = -360.0
-offset_right = 640.0
-offset_bottom = -355.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
-color = Color(0.96, 0.68, 0.25, 0.65)
+color = Color(0.05, 0.1, 0.09, 0.28)
+
+[node name="Wordmark" type="TextureRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -350.0
+offset_top = 48.0
+offset_right = 350.0
+offset_bottom = 248.0
+grow_horizontal = 2
+mouse_filter = 2
+texture = ExtResource("4_wordmark")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Center" type="ScrollContainer" parent="."]
 layout_mode = 1
@@ -65,23 +69,24 @@ follow_focus = true
 [node name="Card" type="PanelContainer" parent="Center"]
 custom_minimum_size = Vector2(520, 0)
 size_flags_horizontal = 4
-size_flags_vertical = 4
+size_flags_vertical = 8
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBox_card")
+theme_override_styles/panel = SubResource("StyleBox_empty")
 
 [node name="Margin" type="MarginContainer" parent="Center/Card"]
 layout_mode = 2
-theme_override_constants/margin_left = 42
-theme_override_constants/margin_top = 38
-theme_override_constants/margin_right = 42
-theme_override_constants/margin_bottom = 38
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 28
 
 [node name="Stack" type="VBoxContainer" parent="Center/Card/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 12
 
 [node name="TitleLabel" type="Label" parent="Center/Card/Margin/Stack"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.81, 0.41, 1)
 theme_override_font_sizes/font_size = 48
@@ -90,20 +95,19 @@ horizontal_alignment = 1
 
 [node name="SubtitleLabel" type="Label" parent="Center/Card/Margin/Stack"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.63, 0.77, 0.71, 1)
 theme_override_font_sizes/font_size = 18
-text = "原生战略迁移样片 · Godot 4.7.1"
+text = ""
 horizontal_alignment = 1
-
-[node name="Rule" type="HSeparator" parent="Center/Card/Margin/Stack"]
-layout_mode = 2
 
 [node name="StatusLabel" type="Label" parent="Center/Card/Margin/Stack"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.83, 0.87, 0.81, 1)
+theme_override_colors/font_color = Color(0.86, 0.9, 0.82, 0.92)
+theme_override_font_sizes/font_size = 15
 text = "选择战役时期与君主，进入 38 城战略地图"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -112,25 +116,23 @@ autowrap_mode = 2
 [node name="ActionRow" type="HBoxContainer" parent="Center/Card/Margin/Stack"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 10
+alignment = 1
+theme_override_constants/separation = 18
 
 [node name="NewCampaignButton" type="Button" parent="Center/Card/Margin/Stack/ActionRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 58)
-size_flags_horizontal = 3
+custom_minimum_size = Vector2(184, 58)
 layout_mode = 2
-text = "开始新战役"
+text = "新君登基"
 
 [node name="ContinueButton" type="Button" parent="Center/Card/Margin/Stack/ActionRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 58)
-size_flags_horizontal = 3
+custom_minimum_size = Vector2(184, 58)
 layout_mode = 2
-text = "暂无可继续的战役"
+text = "重返沙场"
 
 [node name="QuitButton" type="Button" parent="Center/Card/Margin/Stack/ActionRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 52)
-size_flags_horizontal = 3
+custom_minimum_size = Vector2(120, 52)
 layout_mode = 2
 text = "退出"

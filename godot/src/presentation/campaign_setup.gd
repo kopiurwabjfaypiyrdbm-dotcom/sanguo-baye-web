@@ -6,6 +6,7 @@ const ProductionDataRepository = preload("res://src/application/game_session/pro
 const PauseRepository = preload("res://src/application/persistence/tactical_pause_repository.gd")
 const SafeArea = preload("res://src/presentation/safe_area_margin.gd")
 const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
+const EntryChrome = preload("res://src/presentation/entry_chrome.gd")
 
 @onready var period_option: OptionButton = %PeriodOption
 @onready var ruler_option: OptionButton = %RulerOption
@@ -42,6 +43,9 @@ func _ready() -> void:
 	back_button.pressed.connect(_return_to_menu)
 	back_to_periods_button.pressed.connect(_show_period_selection)
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
+	EntryChrome.apply_plaque_button(back_button, false)
+	EntryChrome.apply_plaque_button(start_button, true)
+	EntryChrome.apply_plaque_button(back_to_periods_button, false)
 	start_button.disabled = true
 	_apply_responsive_layout()
 	var loaded: Dictionary = ProductionDataRepository.load_all()
@@ -83,15 +87,34 @@ func _on_viewport_size_changed() -> void:
 
 
 func _add_period_choice(index: int) -> void:
+	var period: Dictionary = _periods[index]
+	var period_id := int(period.get("periodId", 0))
 	var button := Button.new()
 	button.name = "PeriodChoice%d" % index
-	button.text = _period_choice_text(_periods[index])
-	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.clip_contents = true
+	button.text = _period_choice_text(period)
+	button.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	button.focus_mode = Control.FOCUS_ALL
 	button.mouse_filter = Control.MOUSE_FILTER_STOP
 	button.pressed.connect(_on_period_choice_pressed.bind(index))
+	var art := TextureRect.new()
+	art.name = "Art"
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	art.set_anchors_preset(Control.PRESET_FULL_RECT)
+	art.anchor_right = 1.0
+	art.anchor_bottom = 1.0
+	art.offset_left = 0.0
+	art.offset_top = 0.0
+	art.offset_right = 0.0
+	art.offset_bottom = 0.0
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	art.texture = EntryChrome.load_texture(EntryChrome.period_texture_path(period_id))
+	button.add_child(art)
+	button.move_child(art, 0)
 	period_choices.add_child(button)
 	_style_choice_button(button, false, true)
 
@@ -120,17 +143,29 @@ func _add_ruler_choice(index: int) -> void:
 	_style_choice_button(button, false, false)
 
 
-func _style_choice_button(button: Button, selected: bool, _period_choice: bool) -> void:
+func _style_choice_button(button: Button, selected: bool, period_choice: bool) -> void:
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color("#18342f") if not selected else Color("#385b4b")
-	normal.border_color = Color("#466d60") if not selected else Color("#e0c578")
+	if period_choice:
+		normal.bg_color = Color(0.04, 0.09, 0.08, 0.18) if not selected else Color(0.12, 0.2, 0.16, 0.32)
+		normal.border_color = Color(0.827, 0.737, 0.494, 0.28) if not selected else Color(0.941, 0.804, 0.447, 1.0)
+	else:
+		normal.bg_color = Color("#18342f") if not selected else Color("#385b4b")
+		normal.border_color = Color("#466d60") if not selected else Color("#e0c578")
 	normal.set_border_width_all(1 if not selected else 2)
-	normal.set_corner_radius_all(8)
+	normal.set_corner_radius_all(4 if period_choice else 8)
+	normal.content_margin_left = 16
+	normal.content_margin_top = 14
+	normal.content_margin_right = 16
+	normal.content_margin_bottom = 14
 	var hover := normal.duplicate()
-	hover.bg_color = Color("#284b40") if not selected else Color("#456d59")
-	hover.border_color = Color("#d8b968")
+	if period_choice:
+		hover.bg_color = Color(0.06, 0.12, 0.1, 0.28)
+		hover.border_color = Color(0.941, 0.804, 0.447, 1.0)
+	else:
+		hover.bg_color = Color("#284b40") if not selected else Color("#456d59")
+		hover.border_color = Color("#d8b968")
 	var pressed := hover.duplicate()
-	pressed.bg_color = Color("#345b4a")
+	pressed.bg_color = Color(0.08, 0.15, 0.13, 0.4) if period_choice else Color("#345b4a")
 	button.add_theme_stylebox_override("normal", normal)
 	button.add_theme_stylebox_override("hover", hover)
 	button.add_theme_stylebox_override("pressed", pressed)
@@ -138,20 +173,27 @@ func _style_choice_button(button: Button, selected: bool, _period_choice: bool) 
 	# only state that uses the gold border; keyboard/controller focus gets a
 	# separate green outline so the first card is not presented as selected.
 	var focus := normal.duplicate()
-	focus.border_color = Color("#7fae98")
+	focus.border_color = Color("#7fae98") if not period_choice else Color(1.0, 0.937, 0.663, 0.9)
 	focus.set_border_width_all(2)
 	button.add_theme_stylebox_override("focus", focus)
-	button.add_theme_color_override("font_color", Color("#f0e2c2"))
-	button.add_theme_color_override("font_hover_color", Color("#fff1c4"))
-	button.add_theme_color_override("font_pressed_color", Color("#fff1c4"))
+	button.add_theme_color_override("font_color", Color("#fff0c9") if period_choice else Color("#f0e2c2"))
+	button.add_theme_color_override("font_hover_color", Color("#fff7d8"))
+	button.add_theme_color_override("font_pressed_color", Color("#fff7d8"))
+	button.add_theme_color_override("font_focus_color", Color("#fff7d8"))
 
 
 func _period_choice_text(period: Dictionary) -> String:
 	var scenario: Dictionary = period.get("scenario", {})
-	return "%s\n公元 %d 年 · 38 城 · 54 路" % [
+	var description := str(scenario.get("description", "")).strip_edges()
+	var rulers: Array = scenario.get("playerCandidates", [])
+	var lines: PackedStringArray = PackedStringArray([
 		str(scenario.get("title", "")),
-		int(scenario.get("year", 0)),
-	]
+		tr("公元 %d 年") % int(scenario.get("year", 0)),
+	])
+	if not description.is_empty():
+		lines.append(description)
+	lines.append(tr("38 城 · %d 方诸侯") % maxi(rulers.size(), 0))
+	return "\n".join(lines)
 
 
 func _selected_period_index() -> int:
@@ -184,6 +226,10 @@ func _show_period_selection() -> void:
 	_selected_ruler_source = -1
 	period_section.visible = true
 	ruler_section.visible = false
+	title_label.text = tr("选择剧本")
+	description_label.text = tr("第一步 / 共两步 · 点选一个时期进入君主选择")
+	facts_label.text = tr("38 城 · 四段历史剧本")
+	period_step_label.text = tr("第一步 / 共两步")
 	start_button.text = tr("下一步：选择君主")
 	start_button.disabled = _selected_period < 0
 	selection_label.text = tr("选择一个剧本后，再选择你要扮演的君主") if _selected_period < 0 else tr("已选择剧本；点击下一步选择君主")
@@ -239,16 +285,16 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	# and makes the blank row spacing look selectable when it is not.
 	period_option.visible = false
 	ruler_option.visible = false
-	var touch_size := TouchMetrics.target_size(canvas_scale) if touch_mode else 72.0
+	var touch_size := TouchMetrics.target_size(canvas_scale) if touch_mode else 128.0
 	period_choices.columns = 2
-	period_choices.custom_minimum_size.y = touch_size * 2.0 + 10.0 if not _showing_rulers else 0.0
+	period_choices.custom_minimum_size.y = (touch_size * 2.0 + 14.0) if not _showing_rulers else 0.0
 	period_option.custom_minimum_size.y = touch_size
 	ruler_option.custom_minimum_size.y = touch_size
 	for choice: Button in period_choices.get_children():
 		choice.custom_minimum_size = Vector2(0.0, touch_size)
-		choice.add_theme_font_size_override("font_size", ceili(18.0 / maxf(canvas_scale, 0.01)) if touch_mode else 18)
+		choice.add_theme_font_size_override("font_size", ceili(16.0 / maxf(canvas_scale, 0.01)) if touch_mode else 16)
 	for choice: Button in ruler_choices.get_children():
-		choice.custom_minimum_size = Vector2(0.0, touch_size)
+		choice.custom_minimum_size = Vector2(0.0, touch_size if touch_mode else 72.0)
 		choice.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)) if touch_mode else 17)
 	ruler_choices_scroll.custom_minimum_size.y = maxf(touch_size * 2.0, 210.0) if _showing_rulers else 0.0
 	back_to_periods_button.custom_minimum_size = Vector2(touch_size if touch_mode else 120.0, touch_size if touch_mode else 48.0)
@@ -261,7 +307,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		for label: Label in [description_label, facts_label, period_label, ruler_label, selection_label]:
 			label.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
 		title_label.add_theme_font_size_override("font_size", ceili(30.0 / maxf(canvas_scale, 0.01)))
-		period_step_label.add_theme_font_size_override("font_size", ceili(22.0 / maxf(canvas_scale, 0.01)))
+		period_step_label.add_theme_font_size_override("font_size", ceili(14.0 / maxf(canvas_scale, 0.01)))
 		ruler_step_label.add_theme_font_size_override("font_size", ceili(20.0 / maxf(canvas_scale, 0.01)))
 		ruler_preview_text.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
 		period_row.custom_minimum_size.y = touch_size
@@ -292,7 +338,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		ruler_row.custom_minimum_size.y = 0.0
 		period_label.custom_minimum_size.x = 150.0
 		ruler_label.custom_minimum_size.x = 150.0
-		card.custom_minimum_size = Vector2(760.0, 0.0)
+		card.custom_minimum_size = Vector2(980.0, 0.0)
 		back_button.custom_minimum_size.y = 56.0
 		start_button.custom_minimum_size.y = 56.0
 		period_option.custom_minimum_size.y = 54.0
@@ -309,11 +355,9 @@ func _on_period_selected(index: int) -> void:
 		return
 	_selected_period = int(_periods[index]["periodId"])
 	var scenario: Dictionary = _periods[index]["scenario"]
-	title_label.text = "%s · %s" % [tr("战役设置"), str(scenario.get("title", ""))]
-	description_label.text = str(scenario.get("description", ""))
-	facts_label.text = tr("公元 %d 年 · 38 城 · 54 条道路 · 初始种子 %d") % [
-		int(scenario.get("year", 0)), int(_periods[index].get("rngSeed", 0))
-	]
+	title_label.text = tr("选择扮演君主")
+	description_label.text = tr("%s · 公元 %d 年") % [str(scenario.get("title", "")), int(scenario.get("year", 0))]
+	facts_label.text = tr("第二步 / 共两步 · 38 城 · 初始种子 %d") % int(_periods[index].get("rngSeed", 0))
 	ruler_option.clear()
 	for child: Node in ruler_choices.get_children():
 		child.free()
@@ -330,7 +374,7 @@ func _on_period_selected(index: int) -> void:
 		_add_ruler_choice(candidate_index)
 		candidate_index += 1
 	ruler_option.select(-1)
-	ruler_step_label.text = tr("第二步 · 选择君主 · %s") % str(scenario.get("title", ""))
+	ruler_step_label.text = tr("选择扮演君主")
 	ruler_preview_text.text = tr("选择一位君主后，这里会显示其初始城池和将领数量")
 	for choice_index: int in range(period_choices.get_child_count()):
 		_style_choice_button(period_choices.get_child(choice_index), choice_index == index, true)
@@ -349,7 +393,7 @@ func _on_ruler_selected(index: int) -> void:
 	else:
 		var candidate: Dictionary = candidates[index]
 		_selected_ruler_source = int(candidate.get("sourceIndex", -1))
-		ruler_preview_text.text = tr("即将扮演：%s\n初始城池 %d · 所属将领 %d · 全图 38 城") % [
+		ruler_preview_text.text = tr("即将扮演：%s\n初始城池 %d · 所属人物 %d · 天下城池 38") % [
 			str(candidate.get("name", "")), int(candidate.get("cityCount", 0)), int(candidate.get("officerCount", 0))
 		]
 	_selection_label_reset()
@@ -359,7 +403,7 @@ func _selection_label_reset() -> void:
 	if not _showing_rulers:
 		start_button.disabled = _selected_period < 0
 		if start_button.disabled:
-			selection_label.text = tr("请选择一个剧本；不会替你静默选定")
+			selection_label.text = tr("选择一个剧本后，再选择你要扮演的君主")
 		else:
 			selection_label.text = tr("已选择剧本；点击下一步选择君主")
 		return

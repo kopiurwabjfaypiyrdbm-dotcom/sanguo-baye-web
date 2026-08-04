@@ -1,19 +1,10 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://src/presentation/campaign_setup.gd" id="1_setup"]
 [ext_resource type="Theme" path="res://scenes/theme/strategy_theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://assets/production/entry/period-selection-background.png" id="3_bg"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_card"]
-bg_color = Color(0.035, 0.059, 0.068, 0.97)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.39, 0.57, 0.51, 0.72)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
+[sub_resource type="StyleBoxEmpty" id="StyleBox_empty"]
 
 [node name="CampaignSetup" type="Control"]
 layout_mode = 3
@@ -25,7 +16,8 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_setup")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="TextureRect" parent="."]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -33,7 +25,19 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.018, 0.033, 0.043, 1)
+texture = ExtResource("3_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Scrim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.04, 0.09, 0.08, 0.35)
 
 [node name="Center" type="ScrollContainer" parent="."]
 layout_mode = 1
@@ -47,44 +51,46 @@ vertical_scroll_mode = 1
 follow_focus = true
 
 [node name="Card" type="PanelContainer" parent="Center"]
-custom_minimum_size = Vector2(760, 0)
+custom_minimum_size = Vector2(980, 0)
 size_flags_horizontal = 4
 size_flags_vertical = 4
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBox_card")
+theme_override_styles/panel = SubResource("StyleBox_empty")
 
 [node name="Margin" type="MarginContainer" parent="Center/Card"]
 layout_mode = 2
-theme_override_constants/margin_left = 38
-theme_override_constants/margin_top = 28
-theme_override_constants/margin_right = 38
-theme_override_constants/margin_bottom = 28
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 18
 
 [node name="Stack" type="VBoxContainer" parent="Center/Card/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 
 [node name="TitleLabel" type="Label" parent="Center/Card/Margin/Stack"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.96, 0.81, 0.41, 1)
-theme_override_font_sizes/font_size = 30
-text = "战役设置"
+theme_override_colors/font_color = Color(0.659, 0.51, 0.239, 1)
+theme_override_font_sizes/font_size = 40
+text = "选择剧本"
 horizontal_alignment = 1
 
 [node name="DescriptionLabel" type="Label" parent="Center/Card/Margin/Stack"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.83, 0.87, 0.81, 1)
-text = ""
+text = "第一步 / 共两步 · 点选一个时期进入君主选择"
 horizontal_alignment = 1
+autowrap_mode = 2
 
 [node name="FactsLabel" type="Label" parent="Center/Card/Margin/Stack"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.63, 0.77, 0.71, 1)
-text = ""
+text = "38 城 · 四段历史剧本"
 horizontal_alignment = 1
+autowrap_mode = 2
 
 [node name="PeriodSection" type="VBoxContainer" parent="Center/Card/Margin/Stack"]
 unique_name_in_owner = true
@@ -95,19 +101,20 @@ theme_override_constants/separation = 8
 [node name="PeriodStepLabel" type="Label" parent="Center/Card/Margin/Stack/PeriodSection"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.96, 0.81, 0.41, 1)
-theme_override_font_sizes/font_size = 18
-text = "第一步 · 选择剧本"
+theme_override_colors/font_color = Color(0.514, 0.6, 0.549, 1)
+theme_override_font_sizes/font_size = 14
+text = "第一步 / 共两步"
+horizontal_alignment = 2
 
 [node name="PeriodChoices" type="GridContainer" parent="Center/Card/Margin/Stack/PeriodSection"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 148)
+custom_minimum_size = Vector2(0, 280)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 columns = 2
-theme_override_constants/h_separation = 10
-theme_override_constants/v_separation = 10
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 14
 
 [node name="RulerSection" type="VBoxContainer" parent="Center/Card/Margin/Stack"]
 unique_name_in_owner = true
@@ -125,16 +132,16 @@ theme_override_constants/separation = 10
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.96, 0.81, 0.41, 1)
-theme_override_font_sizes/font_size = 18
-text = "第二步 · 选择君主"
+theme_override_colors/font_color = Color(0.953, 0.867, 0.69, 1)
+theme_override_font_sizes/font_size = 22
+text = "选择扮演君主"
 vertical_alignment = 1
 
 [node name="BackToPeriodsButton" type="Button" parent="Center/Card/Margin/Stack/RulerSection/RulerHeader"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 48)
 layout_mode = 2
-text = "返回剧本"
+text = "返回"
 
 [node name="RulerChoicesScroll" type="ScrollContainer" parent="Center/Card/Margin/Stack/RulerSection"]
 unique_name_in_owner = true
@@ -154,7 +161,7 @@ theme_override_constants/separation = 8
 
 [node name="RulerPreview" type="PanelContainer" parent="Center/Card/Margin/Stack/RulerSection"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 62)
+custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -208,26 +215,26 @@ layout_mode = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.82, 0.42, 1)
-text = "请选择一个时期和一位君主；不会替你静默选定"
+theme_override_colors/font_color = Color(0.898, 0.827, 0.651, 1)
+text = "选择一个剧本后，再选择你要扮演的君主"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
 [node name="Actions" type="HBoxContainer" parent="Center/Card/Margin/Stack"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 
 [node name="BackButton" type="Button" parent="Center/Card/Margin/Stack/Actions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 56)
 size_flags_horizontal = 3
 layout_mode = 2
-text = "返回主菜单"
+text = "返回"
 
 [node name="StartButton" type="Button" parent="Center/Card/Margin/Stack/Actions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 56)
 size_flags_horizontal = 3
 layout_mode = 2
-text = "进入战略地图"
+text = "下一步：选择君主"
