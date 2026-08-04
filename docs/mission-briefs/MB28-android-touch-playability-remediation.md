@@ -8,8 +8,9 @@
 
 - 程序委托见 `docs/mission-briefs/MB00-godot-full-migration-program.md`；账本见 `docs/migration/godot-program-state.json`。
 - MB27 已关闭：用户人工触控结论为**无法游玩、质量严重不达标、Goal 不通过**（`docs/migration/mission-reports/MB27-current-source-android-acceptance.md`）。
-- 自动化 presentation/domain 门禁不能覆盖本 Outcome；失败基线 APK 为 `godot/builds/sanguo-baye-godot-mb27-touch-debug.apk`。
-- Web 产品对齐计划见 `docs/migration/godot-web-alignment-plan.md`；本 Mission 解决的是**可玩性质量门**，不替代征兵/出征等功能对齐，也不因功能补齐而宣称 Goal 完成。
+- **执行立场**：不要把验收责任推回用户反复试玩。Agent 必须先对照 Web 产品主动找出阻塞可玩性的缺口并修复，直到给出人类可接受的连续游玩版本，再请用户复验。
+- 自动化 presentation/domain 门禁不能单独覆盖本 Outcome；失败基线 APK 为 `godot/builds/sanguo-baye-godot-mb27-touch-debug.apk`。
+- Web 产品对齐计划见 `docs/migration/godot-web-alignment-plan.md`；军事闭环（征兵/分兵/出征）属于可玩性先决，可在本 Mission 内优先落地，但不因此自行关闭 Goal。
 
 ## Required Behaviors
 
