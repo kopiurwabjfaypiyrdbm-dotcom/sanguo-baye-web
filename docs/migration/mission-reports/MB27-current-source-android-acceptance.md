@@ -28,7 +28,7 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 - campaign setup presentation：74 assertions；包含 360dpi/844×390 高密度主菜单与战役设置行高/折叠/滚动边界检查、离开高密度布局后的行高/标签宽度/字号状态恢复、2560×1440 战略 Back 对话框检查，以及 38 城、54 道路和生产 GameSession 入口。
 - Web：47 个测试文件、378 tests，构建通过。
 - 聚合 `npm run check`：退出码 0，通过；本轮耗时 554.1 秒，包含最终的高密度布局、响应式字体和安全区几何断言。日志中的 migration replay 失败项属于预期的负向篡改演练，未改变聚合命令成功结果；根证书、弹窗位置和 Android build-tools 提示为环境警告。
-- 增量项目验证：最新 `npm run godot:project:verify` 退出码 0（211 domain、223 presentation assertions；d59df85 新增 DPI/测试 override 的 4× 上限断言，363187d 新增非对称安全区几何断言）。当前源码的 Android preset 已使用项目自有 `res://icon.svg` 主图标及独立 adaptive foreground/background/monochrome SVG；触控度量覆盖 160/360 dpi、48dp/拖动阈值换算、显式密度上限和 PopupMenu 行高。
+- 增量项目验证：最新 `npm run godot:project:verify` 退出码 0（211 domain、223 presentation assertions；d59df85 新增 DPI/测试 override 的 4× 上限断言，363187d/994c394 新增四边不同 inset 与 screen-to-viewport 缩放安全区断言）。当前源码的 Android preset 已使用项目自有 `res://icon.svg` 主图标及独立 adaptive foreground/background/monochrome SVG；触控度量覆盖 160/360 dpi、48dp/拖动阈值换算、显式密度上限和 PopupMenu 行高。
 - 增量导出：沙箱上下文曾把已存在的模板误报为 missing；改用授权环境读取现有模板后导出成功。没有下载或安装组件。
 - 安全区代码修复后重新导出并安装了上述 APK；MuMu `127.0.0.1:16384` 冷启动进程可见，截图已更新。完整 `npm run check` 在 554.1 秒后退出码 0，Godot/Web/构建门禁均通过；迁移回放中的错误仍是预期负向篡改演练。
 
@@ -55,4 +55,4 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 
 ## 决策
 
-继续 Goal，下一步等待用户可见设备触控证据；不推送、不创建 PR、不发布 APK/AAB。真实 `_return_to_strategy()` 场景切换与 pause/marker 清理已由 131 tactical assertions 覆盖，不再列为 P2。响应式状态恢复 P2 已在 3315de7 修复，非对称安全区注入 P2 已在 363187d 覆盖；仍保留四项 P2：Godot 模板产生的 `mipmap/themed_icon` 警告（自有 adaptive 图标资源已加入但警告仍存在）、DPI-aware 触控字体实机可读性校准、PopupMenu 实际 item rect 的设备测量，以及纪事面板从极窄 headless 尺寸切换到大尺寸时的旧 compact 测量回退启发式。代码侧高密度 P1 已修复；Android-first 的剩余 P1 只是真实 MuMu/真机人工动作证据。
+继续 Goal，下一步等待用户可见设备触控证据；不推送、不创建 PR、不发布 APK/AAB。真实 `_return_to_strategy()` 场景切换与 pause/marker 清理已由 131 tactical assertions 覆盖，不再列为 P2。响应式状态恢复 P2 已在 3315de7 修复，四边非对称安全区注入与缩放覆盖已在 363187d/994c394 闭环；仍保留四项 P2：Godot 模板产生的 `mipmap/themed_icon` 警告（自有 adaptive 图标资源已加入但警告仍存在）、DPI-aware 触控字体实机可读性校准、PopupMenu 实际 item rect 的设备测量，以及纪事面板从极窄 headless 尺寸切换到大尺寸时的旧 compact 测量回退启发式。代码侧高密度 P1 已修复；Android-first 的剩余 P1 只是真实 MuMu/真机人工动作证据。
