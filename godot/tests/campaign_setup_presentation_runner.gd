@@ -102,6 +102,8 @@ func _run() -> void:
 	_assert_true(intent.get("mode", "") == "campaign", "setup must publish an application launch intent")
 	_assert_equal(int(intent.get("periodId", -1)), 4, "setup intent must preserve the selected period")
 	_assert_equal(int(intent.get("rulerSourceIndex", -1)), 0, "setup intent must preserve the selected ruler")
+	_assert_equal(str(intent.get("rulesetId", "")), "baye-classic-v1", "setup intent must default to classic ruleset")
+	_assert_equal(str((intent.get("lifecyclePolicy", {}) as Dictionary).get("battleDeath", "")), "disabled", "setup intent must default to safe battleDeath")
 	# Restore the same intent because the assertion above consumes it.
 	Context.request_campaign(4, 0)
 	await process_frame

@@ -175,6 +175,62 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
+[node name="PolicySection" type="VBoxContainer" parent="Center/Card/Margin/Stack/RulerSection"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="RulesetLabel" type="Label" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.898, 0.827, 0.651, 1)
+text = "战役规则集"
+
+[node name="RulesetOption" type="OptionButton" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RulesetHint" type="Label" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.51, 0.59, 0.541, 1)
+theme_override_font_sizes/font_size = 13
+text = "规则在开局后锁定并随存档保存。"
+autowrap_mode = 2
+
+[node name="BattleDeathLabel" type="Label" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.898, 0.827, 0.651, 1)
+text = "战斗死亡"
+
+[node name="BattleDeathOption" type="OptionButton" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
+[node name="NaturalDeathLabel" type="Label" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.898, 0.827, 0.651, 1)
+text = "年龄死亡"
+
+[node name="NaturalDeathOption" type="OptionButton" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
+[node name="CaptiveEscapeLabel" type="Label" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.898, 0.827, 0.651, 1)
+text = "俘虏逃脱"
+
+[node name="CaptiveEscapeOption" type="OptionButton" parent="Center/Card/Margin/Stack/RulerSection/PolicySection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
 [node name="PeriodRow" type="HBoxContainer" parent="Center/Card/Margin/Stack"]
 visible = false
 layout_mode = 2

@@ -15,6 +15,7 @@ const OfficerLifecycle = preload("res://src/domain/progression/officer_lifecycle
 const CampaignOutcome = preload("res://src/domain/progression/campaign_outcome.gd")
 const StrategicTurn = preload("res://src/domain/progression/strategic_turn.gd")
 const TacticalBattleCommands = preload("res://src/domain/tactical/battle_commands.gd")
+const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
 
 const DEFAULT_PERIOD_PATH: String = "res://data/period-1.json"
 const DEFAULT_SAVE_PATH: String = "user://godot-spike-save.json"
@@ -36,7 +37,7 @@ func _init(save_path: String = DEFAULT_SAVE_PATH) -> void:
 	_recovery_repository = BattleRecoveryRepository.new(save_path + ".battle-recovery.json")
 
 
-func start_campaign(period_id: Variant, ruler_source_index: Variant) -> Dictionary:
+func start_campaign(period_id: Variant, ruler_source_index: Variant, options: Dictionary = {}) -> Dictionary:
 	if not _is_integer(period_id) or not _is_integer(ruler_source_index):
 		return _failure("periodId and rulerSourceIndex must be integers")
 	var loaded: Dictionary = _production_bundle
@@ -82,6 +83,11 @@ func start_campaign(period_id: Variant, ruler_source_index: Variant) -> Dictiona
 		return _failure("selected production campaign is invalid: %s" % Validator.first_error(issues))
 	if int(candidate_data["rngSeed"]) != initial_seed:
 		return _failure("player selection changed rngSeed")
+
+	var applied := _apply_campaign_start_options(candidate_data, options)
+	if not bool(applied.get("ok", false)):
+		return _failure(str(applied.get("error", "无法应用开局规则")))
+	candidate_data = applied["state"]
 
 	var next_state: GameState = GameState.new(candidate_data)
 	var state_digest: Dictionary = CanonicalJson.try_sha256(candidate_data)
@@ -881,6 +887,45 @@ func _command_result_base(raw: Variant, ok: bool, code: String, error: String) -
 
 func _success_with_state() -> Dictionary:
 	return {"ok": true, "error": "", "state": snapshot()}
+
+
+func _apply_campaign_start_options(state: Dictionary, options: Dictionary) -> Dictionary:
+	var next := state.duplicate(true)
+	var source_ruleset := str(next.get("rulesetId", Rulesets.DEFAULT_RULESET_ID))
+	var ruleset_id := str(options.get("rulesetId", source_ruleset))
+	if ruleset_id.is_empty():
+		ruleset_id = source_ruleset
+	if not Rulesets.is_supported(ruleset_id):
+		return {"ok": false, "error": "不支持的规则集：%s" % ruleset_id}
+	if ruleset_id != source_ruleset:
+		next["rulesetId"] = ruleset_id
+		var from_troops := Rulesets.starting_troops_for(source_ruleset)
+		var to_troops := Rulesets.starting_troops_for(ruleset_id)
+		var officers: Dictionary = next.get("officers", {})
+		for officer_id: Variant in officers.keys():
+			var officer: Dictionary = officers[officer_id].duplicate(true)
+			if str(officer.get("status", "")) == "serving" and int(officer.get("troops", -1)) == from_troops:
+				officer["troops"] = to_troops
+				officers[officer_id] = officer
+		next["officers"] = officers
+	var lifecycle: Dictionary = Rulesets.default_lifecycle_policy()
+	var raw_policy: Variant = options.get("lifecyclePolicy", {})
+	if typeof(raw_policy) == TYPE_DICTIONARY and not (raw_policy as Dictionary).is_empty():
+		var requested: Dictionary = raw_policy
+		for key: String in ["naturalDeath", "battleDeath", "captiveEscape"]:
+			if requested.has(key):
+				lifecycle[key] = requested[key]
+		if requested.has("ageGrowth"):
+			lifecycle["ageGrowth"] = requested["ageGrowth"]
+		if requested.has("version"):
+			lifecycle["version"] = requested["version"]
+	if bool(next.get("campaignStarted", false)):
+		return {"ok": false, "error": "战役开始后不能更改人物生命周期规则"}
+	next["lifecyclePolicy"] = lifecycle
+	var runtime_issues: Array[Dictionary] = Validator.validate_runtime(next)
+	if not runtime_issues.is_empty():
+		return {"ok": false, "error": Validator.first_error(runtime_issues)}
+	return {"ok": true, "error": "", "state": next}
 
 
 func _failure(reason: String) -> Dictionary:

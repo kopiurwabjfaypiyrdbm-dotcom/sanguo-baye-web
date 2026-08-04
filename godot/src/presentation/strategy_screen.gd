@@ -99,7 +99,14 @@ func _ready() -> void:
 		var launch := LAUNCH_CONTEXT.take()
 		match str(launch.get("mode", "")):
 			"campaign":
-				result = _call_session("start_campaign", [int(launch.get("periodId", -1)), int(launch.get("rulerSourceIndex", -1))])
+				result = _call_session("start_campaign", [
+					int(launch.get("periodId", -1)),
+					int(launch.get("rulerSourceIndex", -1)),
+					{
+						"rulesetId": str(launch.get("rulesetId", "baye-classic-v1")),
+						"lifecyclePolicy": (launch.get("lifecyclePolicy", {}) as Dictionary).duplicate(true),
+					},
+				])
 			"load":
 				result = _call_session("load_game")
 			_:

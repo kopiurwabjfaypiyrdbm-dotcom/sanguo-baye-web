@@ -7,6 +7,7 @@ const PauseRepository = preload("res://src/application/persistence/tactical_paus
 const SafeArea = preload("res://src/presentation/safe_area_margin.gd")
 const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
 const EntryChrome = preload("res://src/presentation/entry_chrome.gd")
+const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
 
 @onready var period_option: OptionButton = %PeriodOption
 @onready var ruler_option: OptionButton = %RulerOption
@@ -27,6 +28,12 @@ const EntryChrome = preload("res://src/presentation/entry_chrome.gd")
 @onready var ruler_choices_scroll: ScrollContainer = %RulerChoicesScroll
 @onready var ruler_choices: VBoxContainer = %RulerChoices
 @onready var ruler_preview_text: Label = %RulerPreviewText
+@onready var policy_section: VBoxContainer = %PolicySection
+@onready var ruleset_option: OptionButton = %RulesetOption
+@onready var ruleset_hint: Label = %RulesetHint
+@onready var battle_death_option: OptionButton = %BattleDeathOption
+@onready var natural_death_option: OptionButton = %NaturalDeathOption
+@onready var captive_escape_option: OptionButton = %CaptiveEscapeOption
 @onready var period_row: HBoxContainer = $Center/Card/Margin/Stack/PeriodRow
 @onready var ruler_row: HBoxContainer = $Center/Card/Margin/Stack/RulerRow
 
@@ -34,6 +41,8 @@ var _periods: Array[Dictionary] = []
 var _selected_period := -1
 var _selected_ruler_source := -1
 var _showing_rulers := false
+var _selected_ruleset_id: String = Rulesets.DEFAULT_RULESET_ID
+var _lifecycle_policy: Dictionary = Rulesets.default_lifecycle_policy()
 
 
 func _ready() -> void:
@@ -42,10 +51,15 @@ func _ready() -> void:
 	start_button.pressed.connect(_on_primary_action_pressed)
 	back_button.pressed.connect(_return_to_menu)
 	back_to_periods_button.pressed.connect(_show_period_selection)
+	ruleset_option.item_selected.connect(_on_ruleset_selected)
+	battle_death_option.item_selected.connect(_on_lifecycle_option_changed)
+	natural_death_option.item_selected.connect(_on_lifecycle_option_changed)
+	captive_escape_option.item_selected.connect(_on_lifecycle_option_changed)
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	EntryChrome.apply_plaque_button(back_button, false)
 	EntryChrome.apply_plaque_button(start_button, true)
 	EntryChrome.apply_plaque_button(back_to_periods_button, false)
+	_populate_policy_options()
 	start_button.disabled = true
 	_apply_responsive_layout()
 	var loaded: Dictionary = ProductionDataRepository.load_all()
@@ -80,6 +94,58 @@ func _ready() -> void:
 	_selection_label_reset()
 	if period_choices.get_child_count() > 0:
 		period_choices.get_child(0).grab_focus()
+
+
+func _populate_policy_options() -> void:
+	ruleset_option.clear()
+	for ruleset_id: String in Rulesets.SUPPORTED_RULESET_IDS:
+		ruleset_option.add_item(Rulesets.label_for(ruleset_id))
+		ruleset_option.set_item_metadata(ruleset_option.item_count - 1, ruleset_id)
+	ruleset_option.select(0)
+	_selected_ruleset_id = Rulesets.DEFAULT_RULESET_ID
+	_refresh_ruleset_hint()
+	battle_death_option.clear()
+	battle_death_option.add_item(tr("关闭（安全模式）"))
+	battle_death_option.set_item_metadata(0, "disabled")
+	battle_death_option.add_item(tr("固定源码稀有战死"))
+	battle_death_option.set_item_metadata(1, "baye-rare")
+	battle_death_option.select(0)
+	natural_death_option.clear()
+	natural_death_option.add_item(tr("关闭（固定源码现行）"))
+	natural_death_option.set_item_metadata(0, "disabled")
+	natural_death_option.add_item(tr("90 岁后年度判定（现代可选）"))
+	natural_death_option.set_item_metadata(1, "age-90-coinflip")
+	natural_death_option.select(0)
+	captive_escape_option.clear()
+	captive_escape_option.add_item(tr("关闭（安全模式）"))
+	captive_escape_option.set_item_metadata(0, "disabled")
+	captive_escape_option.add_item(tr("每月判定（现代可选）"))
+	captive_escape_option.set_item_metadata(1, "modern-monthly")
+	captive_escape_option.select(0)
+	_lifecycle_policy = Rulesets.default_lifecycle_policy()
+	_on_lifecycle_option_changed()
+	_refresh_ruleset_hint()
+
+
+func _on_ruleset_selected(index: int) -> void:
+	if index < 0 or index >= ruleset_option.item_count:
+		return
+	_selected_ruleset_id = str(ruleset_option.get_item_metadata(index))
+	_refresh_ruleset_hint()
+
+
+func _on_lifecycle_option_changed(_index: int = -1) -> void:
+	_lifecycle_policy = {
+		"version": 1,
+		"ageGrowth": "enabled",
+		"battleDeath": str(battle_death_option.get_item_metadata(maxi(battle_death_option.selected, 0))),
+		"naturalDeath": str(natural_death_option.get_item_metadata(maxi(natural_death_option.selected, 0))),
+		"captiveEscape": str(captive_escape_option.get_item_metadata(maxi(captive_escape_option.selected, 0))),
+	}
+
+
+func _refresh_ruleset_hint() -> void:
+	ruleset_hint.text = tr("%s 规则在开局后锁定并随存档保存。") % Rulesets.description_for(_selected_ruleset_id)
 
 
 func _on_viewport_size_changed() -> void:
@@ -245,7 +311,7 @@ func _show_ruler_selection() -> void:
 	_showing_rulers = true
 	period_section.visible = false
 	ruler_section.visible = true
-	start_button.text = tr("进入战略地图")
+	start_button.text = tr("开始霸业")
 	_selection_label_reset()
 	_apply_responsive_layout()
 	if ruler_choices.get_child_count() > 0:
@@ -327,7 +393,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 			if not _showing_rulers:
 				start_button.text = tr("下一步：选择君主")
 			else:
-				start_button.text = tr("进入战略地图")
+				start_button.text = tr("开始霸业")
 			period_row.get_node("PeriodLabel").custom_minimum_size.x = 150.0
 			ruler_row.get_node("RulerLabel").custom_minimum_size.x = 150.0
 	else:
@@ -346,8 +412,16 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		for control: Control in [back_button, start_button]:
 			control.add_theme_font_size_override("font_size", 18)
 		back_to_periods_button.remove_theme_font_size_override("font_size")
-		for label: Label in [title_label, period_step_label, description_label, facts_label, period_label, ruler_label, selection_label, ruler_step_label, ruler_preview_text]:
+		for label: Label in [title_label, period_step_label, description_label, facts_label, period_label, ruler_label, selection_label, ruler_step_label, ruler_preview_text, ruleset_hint]:
 			label.remove_theme_font_size_override("font_size")
+	for policy_control: Control in [ruleset_option, battle_death_option, natural_death_option, captive_escape_option]:
+		policy_control.custom_minimum_size.y = touch_size if touch_mode else 48.0
+		policy_control.add_theme_font_size_override("font_size", ceili(16.0 / maxf(canvas_scale, 0.01)) if touch_mode else 16)
+	policy_section.visible = _showing_rulers
+	if ultra_compact and _showing_rulers:
+		ruleset_hint.visible = false
+	else:
+		ruleset_hint.visible = true
 
 
 func _on_period_selected(index: int) -> void:
@@ -426,7 +500,12 @@ func _start_campaign() -> void:
 		selection_label.text = tr("无法清理旧战术恢复检查点：错误 %d") % int(clear_result.get("error", ERR_CANT_OPEN))
 		return
 	SESSION_CONTEXT.clear()
-	CONTEXT.request_campaign(_selected_period, _selected_ruler_source)
+	CONTEXT.request_campaign(
+		_selected_period,
+		_selected_ruler_source,
+		_selected_ruleset_id,
+		_lifecycle_policy,
+	)
 	var error := get_tree().change_scene_to_file("res://scenes/presentation/strategy_screen.tscn")
 	if error != OK:
 		CONTEXT.clear()

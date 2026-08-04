@@ -4,6 +4,7 @@ const GameState = preload("res://src/domain/game_state/game_state.gd")
 const Validator = preload("res://src/domain/validation/game_state_validator.gd")
 const CanonicalJson = preload("res://src/domain/validation/canonical_json.gd")
 const ProductionDataRepository = preload("res://src/application/game_session/production_data_repository.gd")
+const Rulesets = preload("res://src/domain/rules/campaign_rulesets.gd")
 
 const SAVE_FORMAT: String = "sanguo-baye-godot-spike"
 const SAVE_VERSION: int = 1
@@ -90,7 +91,8 @@ func create_production_envelope(
 	if not _is_integer_number(state_data.get("dataContractVersion")) \
 			or int(state_data.get("dataContractVersion")) != PRODUCTION_DATA_CONTRACT_VERSION:
 		return _failure("生产存档只接受 dataContractVersion 2")
-	if String(state_data.get("rulesetId", "")) != PRODUCTION_RULESET_ID:
+	var ruleset_id := String(state_data.get("rulesetId", ""))
+	if not Rulesets.is_supported(ruleset_id):
 		return _failure("生产存档 rulesetId 不匹配")
 	var campaign_error: String = _validate_campaign(campaign, state_data)
 	if not campaign_error.is_empty():
@@ -102,7 +104,7 @@ func create_production_envelope(
 		"format": PRODUCTION_SAVE_FORMAT,
 		"version": PRODUCTION_SAVE_VERSION,
 		"dataContractVersion": PRODUCTION_DATA_CONTRACT_VERSION,
-		"rulesetId": PRODUCTION_RULESET_ID,
+		"rulesetId": ruleset_id,
 		"saveRevision": 0,
 		"savedAt": saved_at if not saved_at.is_empty() else Time.get_datetime_string_from_system(true),
 		"campaign": campaign.duplicate(true),
@@ -257,7 +259,7 @@ func _load_web_production(envelope: Dictionary) -> Dictionary:
 	if not catalog_error.is_empty(): return _failure(catalog_error)
 	if not _is_integer_number(state_data.get("dataContractVersion")) \
 			or int(state_data.get("dataContractVersion")) != PRODUCTION_DATA_CONTRACT_VERSION \
-			or String(state_data.get("rulesetId", "")) != PRODUCTION_RULESET_ID:
+			or not Rulesets.is_supported(String(state_data.get("rulesetId", ""))):
 		return _failure("Web 存档必须携带完整生产状态契约")
 	var state_issues: Array[Dictionary] = Validator.validate_runtime(state_data)
 	if not state_issues.is_empty(): return _failure(Validator.first_error(state_issues))
@@ -295,7 +297,7 @@ func _load_production(envelope: Dictionary) -> Dictionary:
 		return _failure("生产存档标签必须是字符串")
 	if not _is_integer_number(envelope["dataContractVersion"]) \
 			or int(envelope["dataContractVersion"]) != PRODUCTION_DATA_CONTRACT_VERSION \
-			or String(envelope["rulesetId"]) != PRODUCTION_RULESET_ID:
+			or not Rulesets.is_supported(String(envelope["rulesetId"])):
 		return _failure("生产存档规则/数据契约不匹配")
 	if typeof(envelope["state"]) != TYPE_DICTIONARY:
 		return _failure("生产存档中的游戏状态无效")
@@ -304,7 +306,8 @@ func _load_production(envelope: Dictionary) -> Dictionary:
 	if not catalog_error.is_empty(): return _failure(catalog_error)
 	if not _is_integer_number(state_data.get("dataContractVersion")) \
 			or int(state_data.get("dataContractVersion")) != PRODUCTION_DATA_CONTRACT_VERSION \
-			or String(state_data.get("rulesetId", "")) != PRODUCTION_RULESET_ID:
+			or not Rulesets.is_supported(String(state_data.get("rulesetId", ""))) \
+			or String(state_data.get("rulesetId", "")) != String(envelope["rulesetId"]):
 		return _failure("生产存档状态规则/数据契约不匹配")
 	var state_issues: Array[Dictionary] = Validator.validate_runtime(state_data)
 	if not state_issues.is_empty():
@@ -340,7 +343,7 @@ func _load_legacy_production(envelope: Dictionary) -> Dictionary:
 	if not catalog_error.is_empty(): return _failure(catalog_error)
 	if not _is_integer_number(state_data.get("dataContractVersion")) \
 			or int(state_data.get("dataContractVersion")) != PRODUCTION_DATA_CONTRACT_VERSION \
-			or String(state_data.get("rulesetId", "")) != PRODUCTION_RULESET_ID:
+			or not Rulesets.is_supported(String(state_data.get("rulesetId", ""))):
 		return _failure("旧生产存档的状态契约不完整，拒绝猜测迁移")
 	var state_issues: Array[Dictionary] = Validator.validate_runtime(state_data)
 	if not state_issues.is_empty():

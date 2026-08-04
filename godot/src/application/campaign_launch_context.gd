@@ -6,11 +6,18 @@ extends RefCounted
 static var _pending: Dictionary = {}
 
 
-static func request_campaign(period_id: int, ruler_source_index: int) -> void:
+static func request_campaign(
+	period_id: int,
+	ruler_source_index: int,
+	ruleset_id: String = "baye-classic-v1",
+	lifecycle_policy: Dictionary = {},
+) -> void:
 	_pending = {
 		"mode": "campaign",
 		"periodId": period_id,
 		"rulerSourceIndex": ruler_source_index,
+		"rulesetId": ruleset_id,
+		"lifecyclePolicy": lifecycle_policy.duplicate(true),
 	}
 
 

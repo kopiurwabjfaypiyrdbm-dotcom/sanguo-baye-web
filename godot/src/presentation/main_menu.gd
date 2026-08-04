@@ -16,6 +16,7 @@ const EntryChrome = preload("res://src/presentation/entry_chrome.gd")
 @onready var subtitle_label: Label = %SubtitleLabel
 @onready var action_row: HBoxContainer = %ActionRow
 @onready var wordmark: TextureRect = %Wordmark
+@onready var background_video: VideoStreamPlayer = %BackgroundVideo
 
 
 func _ready() -> void:
@@ -27,6 +28,9 @@ func _ready() -> void:
 	EntryChrome.apply_plaque_button(new_campaign_button, true)
 	EntryChrome.apply_plaque_button(continue_button, false)
 	EntryChrome.apply_plaque_button(quit_button, false)
+	if background_video.stream != null:
+		background_video.volume_db = -80.0
+		background_video.play()
 	# MB20 can recover after a crash where only the transactional .tmp/.bak
 	# candidate remains. Do not hide that recovery path behind a primary-file-only
 	# existence check; GameSession.load_game() performs the authoritative validation.

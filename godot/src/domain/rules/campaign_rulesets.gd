@@ -1,9 +1,26 @@
 extends RefCounted
 
+const DEFAULT_RULESET_ID: String = "baye-classic-v1"
+
 const SUPPORTED_RULESET_IDS: Array[String] = [
 	"baye-classic-v1",
 	"modern-balanced-v1",
 ]
+
+const RULESET_LABELS: Dictionary = {
+	"baye-classic-v1": "经典校准",
+	"modern-balanced-v1": "现代平衡",
+}
+
+const RULESET_DESCRIPTIONS: Dictionary = {
+	"baye-classic-v1": "采用固定版 C 源码已确认的开局兵力、命令消耗与自动太守规则。",
+	"modern-balanced-v1": "保留 v0.8 及更早存档使用的宽松行动消耗和手动太守规则。",
+}
+
+const STARTING_TROOPS: Dictionary = {
+	"baye-classic-v1": 100,
+	"modern-balanced-v1": 400,
+}
 
 const COMMAND_COSTS: Dictionary = {
 	"baye-classic-v1": {
@@ -45,6 +62,28 @@ const COMMAND_COSTS: Dictionary = {
 
 static func is_supported(ruleset_id: String) -> bool:
 	return SUPPORTED_RULESET_IDS.has(ruleset_id)
+
+
+static func label_for(ruleset_id: String) -> String:
+	return str(RULESET_LABELS.get(ruleset_id, ruleset_id))
+
+
+static func description_for(ruleset_id: String) -> String:
+	return str(RULESET_DESCRIPTIONS.get(ruleset_id, ""))
+
+
+static func starting_troops_for(ruleset_id: String) -> int:
+	return int(STARTING_TROOPS.get(ruleset_id, STARTING_TROOPS[DEFAULT_RULESET_ID]))
+
+
+static func default_lifecycle_policy() -> Dictionary:
+	return {
+		"version": 1,
+		"ageGrowth": "enabled",
+		"naturalDeath": "disabled",
+		"battleDeath": "disabled",
+		"captiveEscape": "disabled",
+	}
 
 
 static func get_develop_cost(ruleset_id: String) -> Dictionary:
