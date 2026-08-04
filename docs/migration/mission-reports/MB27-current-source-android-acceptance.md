@@ -11,7 +11,7 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 - 大小：57,817,572 bytes（约 55.1 MiB / 57.8 MB，不是 5 GB）
 - SHA-256：`9A19148B0ADB6EA22DF7BCAC09DCCC8B22E5B077502D1B87AB10FCE1E5123406`（`Get-FileHash`）
 - 包：`com.sumo91.sanguobaye.godotspike`，versionName `0.1.0-spike`，versionCode `1`
-- 静态边界：`aapt2 dump permissions` 仅列包名，未发现 INTERNET；没有 WebView/JSBridge/WASM 依赖。仍有 `mipmap/themed_icon` 缺失警告，列为 P2，不阻止启动。
+- 静态边界：`aapt2 dump permissions` 仅列包名，未发现 INTERNET；没有 WebView/JSBridge/WASM 依赖。当前 APK 资源审计包含 25 个 launcher icon 条目，覆盖 `icon.webp`、foreground/background 和各密度 `icon_monochrome.webp`，没有 `mipmap/themed_icon` 条目；Godot 稳定 Android 导出文档将 Themed Icons 定义为可选、由 monochrome icon 启用，因此此前的 `mipmap/themed_icon` 提示解释为工具链/启动器提示，不是项目缺失资源，不再列为产品 P2。
 
 ## MuMu 运行诊断
 
@@ -39,7 +39,7 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 - 聚合 `npm run check`：退出码 0，通过；本轮耗时 557 秒，包含纪事布局切换、高密度布局、响应式字体和安全区几何断言。日志中的 migration replay 失败项属于预期的负向篡改演练，未改变聚合命令成功结果；根证书、弹窗位置和 Android build-tools 提示为环境警告。
 - 增量项目验证：最新 `npm run godot:project:verify` 退出码 0（211 domain、225 presentation assertions；新增小屏到 1280×720 大横屏的纪事布局恢复断言）。d59df85 新增 DPI/测试 override 的 4× 上限断言，363187d/994c394 新增四边不同 inset 与 screen-to-viewport 缩放安全区断言。当前源码的 Android preset 已使用项目自有 `res://icon.svg` 主图标及独立 adaptive foreground/background/monochrome SVG；触控度量覆盖 160/360 dpi、48dp/拖动阈值换算、显式密度上限和 PopupMenu 行高。
 - 增量导出：沙箱上下文曾把已存在的模板误报为 missing；改用授权环境读取现有模板后导出成功。没有下载或安装组件。
-- 本轮纪事布局修复后使用 Godot 4.7.1 重新导出上述 APK；MuMu `127.0.0.1:16384` 先重连后以 streamed install 成功安装，冷启动进程可见，截图已更新。完整 `npm run check` 在 557 秒后退出码 0，Godot/Web/构建门禁均通过；迁移回放中的错误仍是预期负向篡改演练。
+- 本轮纪事布局修复后使用 Godot 4.7.1 重新导出上述 APK；MuMu `127.0.0.1:16384` 先重连后以 streamed install 成功安装，冷启动进程可见，截图已更新。完整 `npm run check` 在 557 秒后退出码 0，Godot/Web/构建门禁均通过；迁移回放中的错误仍是预期负向篡改演练。图标资源结论依据 [Godot 稳定版 Android 导出文档](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_android.html) 与当前 APK ZIP 条目审计。
 
 ## 本轮移动端修复
 
@@ -65,4 +65,4 @@ MB27 已完成当前源码 APK 的导出、安装和冷启动诊断，但尚未�
 
 ## 决策
 
-继续 Goal，下一步等待用户可见设备触控证据；不推送、不创建 PR、不发布 APK/AAB。真实 `_return_to_strategy()` 场景切换与 pause/marker 清理已由 131 tactical assertions 覆盖，不再列为 P2。响应式状态恢复 P2 已在 3315de7 修复，四边非对称安全区注入与缩放覆盖已在 363187d/994c394 闭环，纪事布局回退启发式已在本轮移除并由 225 项表现断言覆盖；仍保留三项 P2：Godot 模板产生的 `mipmap/themed_icon` 警告（自有 adaptive 图标资源已加入但警告仍存在）、DPI-aware 触控字体实机可读性校准，以及 PopupMenu 实际 item rect 的设备测量。代码侧高密度 P1 已修复；Android-first 的剩余 P1 只是真实 MuMu/真机人工动作证据。
+继续 Goal，下一步等待用户可见设备触控证据；不推送、不创建 PR、不发布 APK/AAB。真实 `_return_to_strategy()` 场景切换与 pause/marker 清理已由 131 tactical assertions 覆盖，不再列为 P2。响应式状态恢复 P2 已在 3315de7 修复，四边非对称安全区注入与缩放覆盖已在 363187d/994c394 闭环，纪事布局回退启发式已在本轮移除并由 225 项表现断言覆盖；图标资源提示已由当前 APK 条目和 Godot 稳定文档解释关闭；仍保留两项 P2：360dpi 字体实机可读性校准，以及 PopupMenu 实际 item rect 的设备测量。代码侧高密度 P1 已修复；Android-first 的剩余 P1 只是真实 MuMu/真机人工动作证据。
