@@ -73,7 +73,7 @@ setx GODOT_BIN "D:\03_Godot\01_Engine\Godot_v4.7.1-stable_win64.exe"
 
 - **`gdeck_scene`**（新工具族）：`doctor`（只读体检）、`set`（headless 编辑，默认 dry-run、`apply` 才写、写前快照，confirmation=always）、`restore`（快照回滚）。
 - **`gdeck_run`**（新工具族）：`query`（确定性白名单运行时查询 property/tree/signals/group）、`watch`（实时输出流 + 错误标注，超时=观察窗口正常结束）。
-- **`gdeck_validate` 扩展**：`check` 支持 `file`（单文件秒级校验）；`verify` 支持 `json`（结构化失败摘要）。
+- **`gdeck_validate` 扩展**：`check` 支持 `file`（单文件秒级校验）；`verify` 支持 `json`（结构化失败摘要）；`oracle`（新增，跑 `npm run check` 的 Godot 侧 18 个 oracle 脚本 + reference:check，逐条计时 + 结构化报告，约 8 分钟，退出码=失败链数）。
 - registry `PI_FIELDS` 新增：`seed`/`file`/`json`/`apply`/`scene`/`query`/`query-file`/`watch`/`main-scene`。
 - ⚠️ 修改扩展 import 模块（runtime.mjs/registry）后需**完全重启 Pi** 才生效（ESM 缓存）。
 
