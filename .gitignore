@@ -15,3 +15,4 @@ godot/builds/
 godot/.android/
 godot/*.apk
 godot/*.aab
+.gdeck/
