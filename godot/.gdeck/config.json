@@ -46,6 +46,12 @@
     "daily": {
       "check": true,
       "unit": true
+    },
+    "core-loop": {
+      "description": "Syntax + logic + interaction regression: check, unit and the strategy-map pan/zoom scenario",
+      "check": true,
+      "unit": true,
+      "scenarios": ["strategy-map-pan-zoom"]
     }
   }
 }
