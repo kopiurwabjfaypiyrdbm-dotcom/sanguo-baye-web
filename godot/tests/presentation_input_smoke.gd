@@ -94,12 +94,38 @@ func _run() -> void:
 	_assert_true(not city_card.visible, "a canceled Android touch must not create a ghost city tap")
 	screen.call("_handle_screen_touch", _touch(4, true, player_city_position))
 	screen.call("_handle_screen_touch", _touch(4, false, player_city_position))
-	_assert_true(mobile_sheet.visible and campaign_browser.visible, "touch tap on city-12 must open the city context sheet")
-	_assert_true(not city_card.visible and not city_context_menu.visible, "city tap must not jump straight to the heavy city card or floating menu")
+	_assert_true(city_context_menu.visible and not mobile_sheet.visible, "touch tap on city-12 must open the radial city clover, not a side sheet")
+	_assert_true(not city_card.visible, "city tap must not jump straight to the heavy city card")
+	screen.call("_open_city_section_from_context", "city-12", "internal")
+	_assert_true(
+		campaign_browser.visible and mobile_sheet.visible and not city_context_menu.visible,
+		"internal petal must open catalog L3 list inside the sheet"
+	)
+	_assert_equal(campaign_browser.section_action_count(), 7, "internal L3 must expose seven catalog commands")
+	_assert_equal(
+		Array(campaign_browser.section_action_labels()),
+		["开垦", "招商", "治理", "出巡", "交易", "宴请", "掠夺"],
+		"internal L3 labels must match cityCommandCatalog"
+	)
+	screen.call("_open_city_section_from_context", "city-12", "personnel")
+	_assert_equal(campaign_browser.section_action_count(), 9, "personnel L3 must expose nine catalog commands")
+	_assert_equal(
+		Array(campaign_browser.section_action_labels()),
+		["搜寻", "登用", "奖赏", "调动", "输送", "太守", "道具", "俘虏", "流放"],
+		"personnel L3 labels must match cityCommandCatalog"
+	)
+	screen.call("_open_city_section_from_context", "city-12", "military")
+	_assert_equal(campaign_browser.section_action_count(), 4, "military L3 must expose four catalog commands")
+	_assert_equal(
+		Array(campaign_browser.section_action_labels()),
+		["征兵", "调兵", "侦察", "出征"],
+		"military L3 labels must match cityCommandCatalog"
+	)
 	screen.call("_open_city_detail_from_context", "city-12")
-	_assert_true(city_card.visible and mobile_sheet.visible and not city_context_menu.visible, "context detail must open the city card inside the sheet")
+	_assert_true(city_card.visible and mobile_sheet.visible and not city_context_menu.visible, "petal detail must open the city card inside an L3 sheet")
 	var command_option: OptionButton = city_card.get_node("%CommandOption")
-	_assert_equal(command_option.item_count, 9, "city card must expose the nine owned-city command entries")
+	_assert_equal(command_option.item_count, 0, "detail petal must be read-only with no command OptionButton entries")
+	_assert_true(not city_card.get_node("%CommandRow").visible, "detail petal must hide the mixed command OptionButton row")
 	screen.call("_open_officer_management", "city-12")
 	_assert_true(officer_panel.visible, "city card entry must open the native officer-management panel")
 	_assert_true(not city_card.visible and not city_context_menu.visible and mobile_sheet.visible, "officer-management panel must replace card surfaces inside the sheet")
@@ -247,29 +273,28 @@ func _run() -> void:
 		"released captive must remain visible as a discovered free officer"
 	)
 	screen.call("_close_personnel_lifecycle")
-	_assert_true(mobile_sheet.visible and campaign_browser.visible and not city_card.visible, "closing personnel must restore the city context sheet")
+	_assert_true(city_context_menu.visible and not city_card.visible and not mobile_sheet.visible, "closing personnel must restore the radial city clover")
 	screen.call("_open_city_detail_from_context", "city-12")
 	await process_frame
-	_assert_true(city_card.visible and mobile_sheet.visible, "detail from context must reopen the city card inside the sheet")
-	_assert_equal(command_option.item_count, 9, "reopened city card must keep the nine owned-city commands")
-	var plunder_index := -1
-	for index: int in range(command_option.item_count):
-		if str(command_option.get_item_metadata(index)) == "plunder_city":
-			plunder_index = index
-			break
-	_assert_true(plunder_index >= 0, "owned-city card must still expose plunder")
-	command_option.select(plunder_index)
-	city_card.call("_on_command_selected", plunder_index)
-	_assert_equal(command_option.get_item_metadata(command_option.selected), "plunder_city", "plunder must remain selectable among owned-city commands")
+	_assert_true(city_card.visible and mobile_sheet.visible and not city_context_menu.visible, "detail from clover must reopen the city card inside an L3 sheet")
+	_assert_equal(command_option.item_count, 0, "reopened detail petal must stay read-only")
+	screen.call("_open_catalog_command_editor", "plunder")
+	await process_frame
+	_assert_equal(command_option.item_count, 1, "plunder L4 must open CityCard with the single catalog command")
+	_assert_equal(command_option.get_item_metadata(0), "plunder_city", "plunder L4 must bind develop plunder_city")
 	city_card.call("_on_action_pressed")
 	var confirmation: ConfirmationDialog = city_card.get("_confirm_dialog")
 	_assert_true(confirmation.visible, "plunder must open a native dangerous-action confirmation")
 	_assert_true(confirmation.get_ok_button().custom_minimum_size.y >= 48.0, "danger confirmation must keep a 48px-class confirm target")
 	confirmation.hide()
+	screen.set("_city_card_filter_kind", "")
+	screen.call("_show_selected_city_card", "internal")
+	await process_frame
+	_assert_equal(command_option.item_count, 7, "internal L4 without filter must expose the seven catalog internal commands")
 	command_option.select(0)
 	city_card.call("_on_command_selected", 0)
 	city_card.call("_step_command", -1)
-	_assert_equal(command_option.get_item_metadata(command_option.selected), "distribute_troops", "left command control must wrap from the first command to the last")
+	_assert_equal(command_option.get_item_metadata(command_option.selected), "plunder_city", "left command control must wrap from the first internal command to plunder")
 	var compact_card: CityCard = load("res://scenes/presentation/city_card.tscn").instantiate()
 	root.add_child(compact_card)
 	await process_frame

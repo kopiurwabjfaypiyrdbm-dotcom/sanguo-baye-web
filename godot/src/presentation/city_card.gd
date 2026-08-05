@@ -40,6 +40,7 @@ signal close_requested
 var _city_id := ""
 var _base_action_enabled := false
 var _busy := false
+var _read_only := false
 var _command_queries: Array[Dictionary] = []
 var _selected_query: Dictionary = {}
 var _confirm_dialog: ConfirmationDialog
@@ -87,7 +88,11 @@ func _ready() -> void:
 
 
 func show_city(
-		snapshot: Dictionary, city_id: String, command_queries: Array = [], visibility: Dictionary = {}
+		snapshot: Dictionary,
+		city_id: String,
+		command_queries: Array = [],
+		visibility: Dictionary = {},
+		read_only: bool = false
 ) -> void:
 	var cities := _as_dictionary(snapshot.get("cities", {}))
 	var city := _as_dictionary(cities.get(city_id, {}))
@@ -96,6 +101,7 @@ func show_city(
 		return
 
 	_city_id = city_id
+	_read_only = read_only
 	title_label.text = str(city.get("name", city_id))
 	var owner_id := str(city.get("ownerId", ""))
 	var factions := _as_dictionary(snapshot.get("factions", {}))
@@ -164,16 +170,35 @@ func show_city(
 			"distribute_troops": "%s · %s · %s" % [owner_short, money_short, tr("后备 %d") % int(city.get("reserveTroops", 0))],
 		}
 	stats_label.text = _full_stats_text
-	_populate_commands(command_queries)
-	command_row.visible = _is_owned
-	executor_row.visible = _is_owned
-	trade_row.visible = _is_owned and trade_row.visible
-	develop_button.visible = _is_owned
-	officer_button.visible = _is_owned
-	personnel_button.visible = _is_owned
-	logistics_button.visible = _is_owned
-	reconnaissance_button.visible = _is_owned
-	diplomacy_button.visible = _is_owned
+	if _read_only:
+		_command_queries.clear()
+		command_option.clear()
+		_selected_query = {}
+		command_label.visible = false
+		command_row.visible = false
+		executor_label.visible = false
+		executor_row.visible = false
+		trade_row.visible = false
+		develop_button.visible = false
+		officer_button.visible = false
+		personnel_button.visible = false
+		logistics_button.visible = false
+		reconnaissance_button.visible = false
+		diplomacy_button.visible = false
+	else:
+		_populate_commands(command_queries)
+		command_label.visible = true
+		executor_label.visible = true
+		command_row.visible = _is_owned
+		executor_row.visible = _is_owned
+		trade_row.visible = _is_owned and trade_row.visible
+		# Command list is owned by L3 catalog; keep CityCard as L4 executor only.
+		develop_button.visible = false
+		officer_button.visible = false
+		personnel_button.visible = false
+		logistics_button.visible = false
+		reconnaissance_button.visible = false
+		diplomacy_button.visible = false
 	# This Control is not container-owned. Recompute its actual rect whenever a
 	# visibility mode hides rows or changes compact hostile text density.
 	reset_size()

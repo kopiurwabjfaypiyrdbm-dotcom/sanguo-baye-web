@@ -1,7 +1,7 @@
-## Web-aligned lightweight city shortcut menu.
-## Detail / section actions emit intent; GameSession stays owned by the strategy screen.
+## CoC-style radial city context (L2). Petals sit around the city marker;
+## choosing a petal emits section/detail and the host opens L3.
 class_name CityContextMenu
-extends PanelContainer
+extends Control
 
 const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
 
@@ -9,24 +9,26 @@ signal detail_requested(city_id: String)
 signal section_requested(city_id: String, section: String)
 signal close_requested
 
+@onready var backdrop: ColorRect = %Backdrop
 @onready var title_label: Label = %TitleLabel
-@onready var subtitle_label: Label = %SubtitleLabel
 @onready var metrics_label: Label = %MetricsLabel
-@onready var actions_row: HBoxContainer = %ActionsRow
 @onready var detail_button: Button = %DetailButton
 @onready var internal_button: Button = %InternalButton
 @onready var personnel_button: Button = %PersonnelButton
 @onready var military_button: Button = %MilitaryButton
 @onready var intrigue_button: Button = %IntrigueButton
-@onready var hostile_hint: Label = %HostileHint
-@onready var close_button: Button = %CloseButton
 
 var _city_id := ""
 var _is_owned := false
+var _anchor := Vector2.ZERO
+var _usable := Rect2()
+var _petal_size := 56.0
+var _radius := 78.0
 
 
 func _ready() -> void:
-	close_button.pressed.connect(func() -> void: close_requested.emit())
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	backdrop.gui_input.connect(_on_backdrop_gui_input)
 	detail_button.pressed.connect(func() -> void: detail_requested.emit(_city_id))
 	internal_button.pressed.connect(func() -> void: section_requested.emit(_city_id, "internal"))
 	personnel_button.pressed.connect(func() -> void: section_requested.emit(_city_id, "personnel"))
@@ -62,49 +64,88 @@ func show_city(snapshot: Dictionary, city_id: String) -> void:
 		troops += int(officer.get("troops", 0))
 	title_label.text = str(city.get("name", city_id))
 	if _is_owned:
-		subtitle_label.text = tr("%s · %d 将") % [str(faction.get("name", "未知势力")), officer_count]
-		metrics_label.text = tr("金 %d · 粮 %d · 兵 %d") % [
-			int(city.get("money", 0)), int(city.get("food", 0)), troops
+		metrics_label.text = tr("%s · %d将 · 金%d 粮%d 兵%d") % [
+			str(faction.get("name", tr("未知"))), officer_count,
+			int(city.get("money", 0)), int(city.get("food", 0)), troops,
 		]
 		detail_button.text = tr("详情")
 		internal_button.visible = true
 		personnel_button.visible = true
 		military_button.visible = true
 		intrigue_button.visible = true
-		hostile_hint.visible = false
 	else:
-		subtitle_label.text = tr("%s · 情报未知或需侦察") % str(faction.get("name", "未知势力"))
-		metrics_label.text = tr("金 — · 粮 — · 兵 —")
+		metrics_label.text = tr("%s · 点详情查看情报") % str(faction.get("name", tr("未知")))
 		detail_button.text = tr("情报")
 		internal_button.visible = false
 		personnel_button.visible = false
 		military_button.visible = false
 		intrigue_button.visible = false
-		hostile_hint.visible = true
-		hostile_hint.text = tr("侦察与出征需从相邻的己方城池发起")
 	show()
+	move_to_front()
+	_layout_petals()
 
 
 func place_near(anchor: Vector2, usable: Rect2) -> void:
-	reset_size()
-	var size := get_combined_minimum_size()
-	if size.x < 1.0:
-		size = custom_minimum_size
-	var opens_below := anchor.y < usable.position.y + usable.size.y * 0.58
-	var left := clampf(anchor.x - size.x * 0.5, usable.position.x + 8.0, usable.end.x - size.x - 8.0)
-	var top := anchor.y + 28.0 if opens_below else anchor.y - size.y - 28.0
-	top = clampf(top, usable.position.y + 8.0, usable.end.y - size.y - 8.0)
-	position = Vector2(left, top)
-	self.size = size
+	_anchor = anchor
+	_usable = usable
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_layout_petals()
 
 
 func apply_responsive_layout(compact: bool, canvas_scale: float, _physical_size: Vector2i) -> void:
 	var touch_mode := compact or TouchMetrics.uses_density_scaled_targets()
-	var touch_size := TouchMetrics.target_size(canvas_scale) if touch_mode else 48.0
-	custom_minimum_size = Vector2(ceilf(320.0 / maxf(canvas_scale, 0.85)) if touch_mode else 360.0, 0.0)
-	for button: Button in [detail_button, internal_button, personnel_button, military_button, intrigue_button, close_button]:
-		button.custom_minimum_size = Vector2(touch_size if touch_mode else 56.0, touch_size if touch_mode else 48.0)
-		button.add_theme_font_size_override("font_size", ceili(15.0 / maxf(canvas_scale, 0.01)) if touch_mode else 15)
+	_petal_size = TouchMetrics.target_size(canvas_scale) if touch_mode else 56.0
+	_radius = maxf(_petal_size * 1.35, 72.0)
+	var font := ceili(13.0 / maxf(canvas_scale, 0.01)) if touch_mode else 14
+	for button: Button in _petals():
+		button.custom_minimum_size = Vector2(_petal_size, _petal_size)
+		button.add_theme_font_size_override("font_size", font)
+	title_label.add_theme_font_size_override("font_size", ceili(15.0 / maxf(canvas_scale, 0.01)) if touch_mode else 16)
+	metrics_label.add_theme_font_size_override("font_size", maxi(11, font - 1))
+	if visible:
+		_layout_petals()
+
+
+func _layout_petals() -> void:
+	var petals: Array[Button] = []
+	for button: Button in _petals():
+		if button.visible:
+			petals.append(button)
+	if petals.is_empty():
+		return
+	var center := _anchor
+	if _usable.size.x > 1.0 and _usable.size.y > 1.0:
+		var pad := _radius + _petal_size * 0.5 + 8.0
+		center.x = clampf(center.x, _usable.position.x + pad, _usable.end.x - pad)
+		center.y = clampf(center.y, _usable.position.y + pad, _usable.end.y - pad)
+	# Caption sits above the ring.
+	var caption_pos := Vector2(center.x - 90.0, center.y - _radius - _petal_size * 0.85)
+	title_label.position = caption_pos
+	title_label.size = Vector2(180.0, 22.0)
+	metrics_label.position = Vector2(caption_pos.x, caption_pos.y + 20.0)
+	metrics_label.size = Vector2(180.0, 36.0)
+	var count := petals.size()
+	# Start from top and go clockwise so 5 petals feel like a clover.
+	var start_angle := -PI * 0.5
+	for index: int in range(count):
+		var angle := start_angle + TAU * float(index) / float(count)
+		var petal: Button = petals[index]
+		var pos := center + Vector2(cos(angle), sin(angle)) * _radius - Vector2(_petal_size, _petal_size) * 0.5
+		petal.position = pos
+		petal.size = Vector2(_petal_size, _petal_size)
+
+
+func _petals() -> Array[Button]:
+	return [detail_button, internal_button, personnel_button, military_button, intrigue_button]
+
+
+func _on_backdrop_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		close_requested.emit()
+		accept_event()
+	elif event is InputEventScreenTouch and event.pressed:
+		close_requested.emit()
+		accept_event()
 
 
 func _as_dictionary(value: Variant) -> Dictionary:

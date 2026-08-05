@@ -19,10 +19,14 @@ signal footer_pressed
 var _mode := "right"
 var _compact := false
 var _canvas_scale := 1.0
+var _prefer_bottom := false
 
 
 func _ready() -> void:
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	frame.mouse_filter = Control.MOUSE_FILTER_STOP
+	body_host.mouse_filter = Control.MOUSE_FILTER_STOP
 	backdrop.gui_input.connect(_on_backdrop_gui_input)
 	close_button.pressed.connect(func() -> void: close_requested.emit())
 	footer_button.pressed.connect(func() -> void: footer_pressed.emit())
@@ -34,15 +38,21 @@ func is_open() -> bool:
 	return visible
 
 
-func open(title: String) -> void:
+func open(title: String, prefer_bottom: bool = false) -> void:
 	title_label.text = title
+	_prefer_bottom = prefer_bottom
 	show()
 	move_to_front()
 	apply_layout(_compact, _canvas_scale, DisplayServer.window_get_size())
+	# Ensure BodyHost has a real size before hosts call get_body_rect().
+	force_update_transform()
+	if frame.has_method("queue_sort"):
+		frame.queue_sort()
 
 
 func close() -> void:
 	hide()
+	_prefer_bottom = false
 	set_footer("", false)
 
 
@@ -55,7 +65,17 @@ func set_footer(text: String, enabled: bool = true) -> void:
 
 
 func get_body_rect() -> Rect2:
-	return Rect2(body_host.global_position, body_host.size)
+	if body_host == null or frame == null:
+		return Rect2()
+	if body_host.size.x >= 8.0 and body_host.size.y >= 8.0:
+		return Rect2(body_host.global_position, body_host.size)
+	var frame_rect := frame.get_global_rect()
+	var top := 56.0
+	var bottom := 12.0 + (footer_button.custom_minimum_size.y + 16.0 if footer_row.visible else 0.0)
+	return Rect2(
+		frame_rect.position + Vector2(12.0, top),
+		Vector2(maxf(80.0, frame_rect.size.x - 24.0), maxf(80.0, frame_rect.size.y - top - bottom))
+	)
 
 
 func apply_layout(compact: bool, canvas_scale: float, physical_size: Vector2i) -> void:
@@ -64,7 +84,7 @@ func apply_layout(compact: bool, canvas_scale: float, physical_size: Vector2i) -
 	var viewport := get_viewport_rect().size
 	var touch_mode := compact or TouchMetrics.uses_density_scaled_targets()
 	var touch_size := TouchMetrics.target_size(canvas_scale) if touch_mode else 48.0
-	var use_right := viewport.x >= 740.0 and viewport.x >= viewport.y
+	var use_right := (not _prefer_bottom) and viewport.x >= 740.0 and viewport.x >= viewport.y
 	_mode = "right" if use_right else "bottom"
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -76,7 +96,7 @@ func apply_layout(compact: bool, canvas_scale: float, physical_size: Vector2i) -
 		frame.offset_right = 0.0
 		frame.offset_bottom = 0.0
 	else:
-		var height := clampf(viewport.y * 0.55, 220.0, viewport.y * 0.72)
+		var height := clampf(viewport.y * 0.48, 200.0, viewport.y * 0.62)
 		frame.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 		frame.offset_left = 0.0
 		frame.offset_top = -height
@@ -87,7 +107,6 @@ func apply_layout(compact: bool, canvas_scale: float, physical_size: Vector2i) -
 	title_label.add_theme_font_size_override("font_size", ceili(18.0 / maxf(canvas_scale, 0.01)) if touch_mode else 20)
 	close_button.add_theme_font_size_override("font_size", ceili(16.0 / maxf(canvas_scale, 0.01)) if touch_mode else 16)
 	footer_button.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)) if touch_mode else 18)
-	# physical_size retained for callers that mirror other panels' signatures.
 	if physical_size.x <= 0:
 		pass
 

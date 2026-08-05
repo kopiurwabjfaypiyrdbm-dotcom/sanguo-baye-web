@@ -2,118 +2,106 @@
 
 [ext_resource type="Script" path="res://src/presentation/city_context_menu.gd" id="1_menu"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
-bg_color = Color(0.93, 0.9, 0.82, 0.96)
+[sub_resource type="StyleBoxFlat" id="StyleBox_petal"]
+bg_color = Color(0.08, 0.12, 0.12, 0.94)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.42, 0.36, 0.24, 0.7)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-shadow_color = Color(0, 0, 0, 0.28)
-shadow_size = 10
+border_color = Color(0.72, 0.58, 0.28, 0.9)
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 6
 
-[node name="CityContextMenu" type="PanelContainer"]
-custom_minimum_size = Vector2(360, 0)
+[node name="CityContextMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 0
-theme_override_styles/panel = SubResource("StyleBox_panel")
 script = ExtResource("1_menu")
 
-[node name="Margin" type="MarginContainer" parent="."]
-layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
-
-[node name="Stack" type="VBoxContainer" parent="Margin"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="Header" type="HBoxContainer" parent="Margin/Stack"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="HeaderText" type="VBoxContainer" parent="Margin/Stack/Header"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 2
-
-[node name="TitleLabel" type="Label" parent="Margin/Stack/Header/HeaderText"]
+[node name="Backdrop" type="ColorRect" parent="."]
 unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.16, 0.1, 1)
-theme_override_font_sizes/font_size = 20
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.02, 0.04, 0.05, 0.18)
+
+[node name="TitleLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 180.0
+offset_bottom = 22.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.96, 0.86, 0.55, 1)
+theme_override_font_sizes/font_size = 16
 text = "城池"
+horizontal_alignment = 1
 
-[node name="SubtitleLabel" type="Label" parent="Margin/Stack/Header/HeaderText"]
+[node name="MetricsLabel" type="Label" parent="."]
 unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.35, 0.32, 0.24, 1)
+layout_mode = 0
+offset_top = 22.0
+offset_right = 180.0
+offset_bottom = 58.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.78, 0.84, 0.8, 1)
 theme_override_font_sizes/font_size = 12
-text = "势力"
+text = "摘要"
+horizontal_alignment = 1
+autowrap_mode = 3
 
-[node name="CloseButton" type="Button" parent="Margin/Stack/Header"]
+[node name="DetailButton" type="Button" parent="."]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(44, 44)
-layout_mode = 2
-text = "×"
-
-[node name="MetricsLabel" type="Label" parent="Margin/Stack"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.28, 0.24, 0.16, 1)
-theme_override_font_sizes/font_size = 13
-text = "金 0 · 粮 0 · 兵 0"
-
-[node name="ActionsRow" type="HBoxContainer" parent="Margin/Stack"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="DetailButton" type="Button" parent="Margin/Stack/ActionsRow"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(56, 48)
-size_flags_horizontal = 3
-layout_mode = 2
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 0
+theme_override_styles/normal = SubResource("StyleBox_petal")
+theme_override_styles/hover = SubResource("StyleBox_petal")
+theme_override_styles/pressed = SubResource("StyleBox_petal")
 text = "详情"
 
-[node name="InternalButton" type="Button" parent="Margin/Stack/ActionsRow"]
+[node name="InternalButton" type="Button" parent="."]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(56, 48)
-size_flags_horizontal = 3
-layout_mode = 2
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 0
+theme_override_styles/normal = SubResource("StyleBox_petal")
+theme_override_styles/hover = SubResource("StyleBox_petal")
+theme_override_styles/pressed = SubResource("StyleBox_petal")
 text = "内政"
 
-[node name="PersonnelButton" type="Button" parent="Margin/Stack/ActionsRow"]
+[node name="PersonnelButton" type="Button" parent="."]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(56, 48)
-size_flags_horizontal = 3
-layout_mode = 2
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 0
+theme_override_styles/normal = SubResource("StyleBox_petal")
+theme_override_styles/hover = SubResource("StyleBox_petal")
+theme_override_styles/pressed = SubResource("StyleBox_petal")
 text = "人事"
 
-[node name="MilitaryButton" type="Button" parent="Margin/Stack/ActionsRow"]
+[node name="MilitaryButton" type="Button" parent="."]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(56, 48)
-size_flags_horizontal = 3
-layout_mode = 2
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 0
+theme_override_styles/normal = SubResource("StyleBox_petal")
+theme_override_styles/hover = SubResource("StyleBox_petal")
+theme_override_styles/pressed = SubResource("StyleBox_petal")
 text = "军事"
 
-[node name="IntrigueButton" type="Button" parent="Margin/Stack/ActionsRow"]
+[node name="IntrigueButton" type="Button" parent="."]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(56, 48)
-size_flags_horizontal = 3
-layout_mode = 2
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 0
+theme_override_styles/normal = SubResource("StyleBox_petal")
+theme_override_styles/hover = SubResource("StyleBox_petal")
+theme_override_styles/pressed = SubResource("StyleBox_petal")
 text = "谋略"
-
-[node name="HostileHint" type="Label" parent="Margin/Stack"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-theme_override_colors/font_color = Color(0.35, 0.3, 0.22, 1)
-theme_override_font_sizes/font_size = 12
-text = "侦察与出征需从相邻的己方城池发起"
-autowrap_mode = 2

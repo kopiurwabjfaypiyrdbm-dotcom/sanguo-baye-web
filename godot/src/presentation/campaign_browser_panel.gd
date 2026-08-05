@@ -4,6 +4,7 @@ class_name CampaignBrowserPanel
 extends Control
 
 const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
+const CityCommandCatalog = preload("res://src/presentation/city_command_catalog.gd")
 
 signal city_selected(city_id: String)
 signal officer_selected(officer_id: String, city_id: String)
@@ -24,6 +25,7 @@ var _view := ""
 var _filter := "owned"
 var _snapshot: Dictionary = {}
 var _city_id := ""
+var _section := ""
 var _touch_size := 48.0
 var _font_size := 15
 
@@ -89,36 +91,70 @@ func show_city_context(snapshot: Dictionary, city_id: String) -> void:
 	show()
 
 
-func show_military_menu(snapshot: Dictionary, city_id: String) -> void:
-	_view = "military"
+func show_section(snapshot: Dictionary, city_id: String, section: String) -> void:
+	_view = "section"
+	_section = section
 	_snapshot = snapshot
 	_city_id = city_id
 	filter_row.visible = false
 	actions_box.visible = true
-	intro_label.text = tr("选择军事行动。出征编辑器未完成的入口会标明原因。")
+	intro_label.text = _section_intro(section)
 	_clear_list()
 	_clear_actions()
-	_add_action_button("recon", tr("侦察"), true, tr("从本城派出斥候"))
-	_add_action_button("logistics", tr("调动 / 输送"), true, tr("跨城兵力与物资"))
-	_add_action_button("conscript", tr("征兵"), false, tr("正式征兵流程待补齐"))
-	_add_action_button("march", tr("出征"), false, tr("正式出征编辑器待补齐；可用顶栏临战样片"))
-	empty_label.visible = false
+	for entry: Variant in CityCommandCatalog.commands_for(section):
+		if not entry is Dictionary:
+			continue
+		var command: Dictionary = entry
+		var command_id := str(command.get("id", ""))
+		var label := str(command.get("label", command_id))
+		var enabled := true
+		var subtitle := str(command.get("glyph", ""))
+		if command_id == "attack":
+			enabled = false
+			subtitle = tr("正式出征编辑器待补齐；可用顶栏临战样片")
+		elif command_id == "appoint":
+			subtitle = tr("现代 · 任命太守")
+		elif bool(command.get("dangerous", false)):
+			subtitle = tr("危险操作")
+		_add_action_button(command_id, label, enabled, subtitle)
+	empty_label.visible = actions_box.get_child_count() == 0
 	show()
+
+
+func show_military_menu(snapshot: Dictionary, city_id: String) -> void:
+	show_section(snapshot, city_id, "military")
 
 
 func show_personnel_tabs(snapshot: Dictionary, city_id: String) -> void:
-	_view = "personnel_tabs"
-	_snapshot = snapshot
-	_city_id = city_id
-	filter_row.visible = false
-	actions_box.visible = true
-	intro_label.text = tr("人事：军官任命与装备，或人才俘虏与搜寻。")
-	_clear_list()
-	_clear_actions()
-	_add_action_button("officers", tr("人物与装备"), true, tr("任命太守、赏赐与卸装"))
-	_add_action_button("talent", tr("人才与俘虏"), true, tr("搜寻、登用、释放与处斩"))
-	empty_label.visible = false
-	show()
+	show_section(snapshot, city_id, "personnel")
+
+
+func section_action_labels() -> PackedStringArray:
+	var labels := PackedStringArray()
+	for child: Node in actions_box.get_children():
+		if child is Button:
+			var text := (child as Button).text
+			var first_line := text.split("\n")[0] if "\n" in text else text
+			labels.append(first_line)
+	return labels
+
+
+func section_action_count() -> int:
+	return actions_box.get_child_count()
+
+
+func _section_intro(section: String) -> String:
+	match section:
+		"internal":
+			return tr("选择内政命令。列表仅来自产品命令目录。")
+		"personnel":
+			return tr("选择人事命令。调动与输送由此进入后勤。")
+		"military":
+			return tr("选择军事命令。未实装项会标明原因。")
+		"intrigue":
+			return tr("选择谋略行动。子计策在外交面板内配置。")
+		_:
+			return tr("选择命令。")
 
 
 func apply_responsive_layout(compact: bool, canvas_scale: float, _physical_size: Vector2i) -> void:
@@ -524,12 +560,14 @@ func _add_action_button(action_id: String, title: String, enabled: bool, subtitl
 
 func _clear_list() -> void:
 	for child: Node in list_box.get_children():
-		child.queue_free()
+		list_box.remove_child(child)
+		child.free()
 
 
 func _clear_actions() -> void:
 	for child: Node in actions_box.get_children():
-		child.queue_free()
+		actions_box.remove_child(child)
+		child.free()
 
 
 func _as_dictionary(value: Variant) -> Dictionary:
