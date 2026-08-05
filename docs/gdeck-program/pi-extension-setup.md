@@ -1,0 +1,64 @@
+# gdeck Pi Extension 启用与 Windows 适配记录
+
+日期：2026-08-05
+状态：已启用并验证通过
+
+## 背景
+
+Godot Flight Deck（Cursor fork 1.6.3-cursor.2）官方自带 Pi Agent 扩展实现（`extensions/godot-flight-deck.ts` + `extensions/runtime.mjs`），注册 4 个工具：`gdeck_project` / `gdeck_validate` / `gdeck_release` / `gdeck_editor`，另有 `/gdeck-status` 命令。上游明确表示 Pi 扩展从未在 Pi 上实际测试过（Cursor 只用 CLI），本仓库（Windows + 混合 Web/godot 布局 + Pi）是首次真实启用，共适配 4 处。
+
+## 启用配置（用户环境，仓库外）
+
+### 1. Pi settings 注册扩展
+
+`C:/Users/HYMOD/.pi/agent/settings.json`（备份 `settings.json.bak-gdeck`）：
+
+```json
+"extensions": ["D:/03_Godot/04_Tools/GodotFlightDeck-Cursor/extensions/godot-flight-deck.ts"]
+```
+
+- 扩展的相对 import（`../registry/commands.mjs`、`./runtime.mjs`、`../cli/*`）基于工具目录解析，因此必须用工具目录内的绝对路径，**不要复制文件**。
+- 升级 CLI 即用新版扩展，无需重新注册。
+
+### 2. GODOT_BIN 用户级环境变量
+
+```powershell
+setx GODOT_BIN "D:\03_Godot\01_Engine\Godot_v4.7.1-stable_win64.exe"
+```
+
+原因：`.cmd` launcher 会设置 GODOT_BIN，但 Pi 扩展直接 `node cli/gdeck.mjs`（不经 launcher），且 `pi.exec` 的 ExecOptions 不支持注入 env。设置后需**重启 Pi**（新进程继承）。
+
+## Windows 适配修复（工具目录内，升级可能覆盖）
+
+### 3. monorepo 项目定位（`extensions/runtime.mjs` 的 `findGodotProject`）
+
+- 问题：扩展只从 Pi cwd **向上**查找 `project.godot`；本仓库是 Web 仓库根 + `godot/` 子项目，Pi 在仓库根启动时找不到。
+- 修复：向上查找失败后探测 `cwd/godot/project.godot`（monorepo 布局）。
+- ⚠️ **升级 CLI 后需重新应用**（备份：`extensions/runtime.mjs.bak-gdeck`）。
+
+### 4. process-runner Windows 私有 spec 校验（`cli/process-runner.mjs` 的 `readPrivateSpecification`）
+
+- 问题：`--spec-file` 传输要求 spec 目录/文件 `mode & 0o077 == 0`（POSIX 私有权限）；Windows 无该语义，Node `chmod` 不限制 ACL → 校验永远失败（`process specification path is not a private temporary file`）。
+- 修复：`process.platform === 'win32'` 时跳过 mode 位检查；**保留** symlink、tmpdir 祖先、命名前缀、uid 一致性校验。
+- 效果：改完立即生效（process-runner 每次调用都是新进程），无需重启 Pi。
+- ⚠️ **升级 CLI 后需重新应用**（备份：`cli/backup-mbgd5/process-runner.mjs.bak`）。
+
+## 验证记录（2026-08-05，全部经 Pi 扩展工具执行）
+
+| 工具 | 结果 |
+|---|---|
+| `gdeck_project doctor` | ✅ 能力评估完整输出（godot_process available、runtime_probe available 等） |
+| `gdeck_validate check` | ✅ "Flight Deck check passed" |
+| `gdeck_editor status` | ✅ 连接编辑器，`Writes: disabled`（安全策略生效） |
+| `gdeck_release` | 未在本轮执行（需显式调用） |
+
+## 已知环境注意
+
+- 若同时开着多个 Godot 编辑器进程，`editor_bridge_read` 保持 unavailable（"2 live Editor sessions"）——gdeck 安全设计，关到只剩一个即可恢复。
+- Pi `/reload` 不清理 ESM 模块缓存：修改 `runtime.mjs` 等 import 模块后必须**完全重启 Pi** 才生效（上游 CHANGELOG 已记录该限制）。
+
+## 回退方法
+
+- 扩展：删除 `settings.json` 的 `extensions` 项（恢复 `settings.json.bak-gdeck`）。
+- GODOT_BIN：`setx GODOT_BIN ""` 或删除。
+- 工具目录修复：用对应 `.bak` 还原，或升级 CLI 后重新应用上文修复。
