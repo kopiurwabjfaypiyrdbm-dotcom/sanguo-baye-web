@@ -27,7 +27,7 @@ import { formatTacticalUnitStatus } from './tacticalBattleUnitStatus';
 import { TACTICAL_CAVALRY_PREVIEW_FRAMES } from './tacticalCavalryPreview';
 import './tacticalCavalryPreview.css';
 
-const cavalryActionSheet = new URL('../../assets/production/tactical/units/cavalry-actions-v1.png', import.meta.url).href;
+const cavalryActionSheet = new URL('../../assets/production/tactical/units/cavalry-actions-v2.png', import.meta.url).href;
 
 type TacticalBattleScreenProps = {
   campaign: GameState;
@@ -96,7 +96,10 @@ export function TacticalBattleScreen({
   latestMapInput.current = { battle, selectedUnitId, reachable: shownReachable, attackableUnitIds: shownAttackable };
 
   useEffect(() => bridge.on('tactical:unit-selected', ({ unitId }) => onUnitSelected(unitId)), [bridge, onUnitSelected]);
-  useEffect(() => bridge.on('tactical:tile-selected', onTileSelected), [bridge, onTileSelected]);
+  useEffect(() => bridge.on('tactical:tile-selected', (position) => {
+    if (selectedUnitId) controller.current?.playAction(selectedUnitId, 'move');
+    onTileSelected(position);
+  }), [bridge, onTileSelected, selectedUnitId]);
 
   useEffect(() => {
     if (!mapHost.current) return;
@@ -357,7 +360,10 @@ export function TacticalBattleScreen({
               <span>预计伤害 {pendingAttackPreview.damage} · 目标剩余 {pendingAttackPreview.targetTroopsAfter} · 地形修正 {pendingAttackPreview.attackerTerrainShift}/{pendingAttackPreview.defenderTerrainShift}</span>
             </div>
             <button type="button" autoFocus onClick={onCancelAttack}>取消</button>
-            <button type="button" className="primary-action" disabled={!canCommand} onClick={onConfirmAttack}>确认攻击</button>
+            <button type="button" className="primary-action" disabled={!canCommand} onClick={() => {
+              if (selectedUnitId) controller.current?.playAction(selectedUnitId, 'attack');
+              onConfirmAttack();
+            }}>确认攻击</button>
           </div>
         )}
 
@@ -422,7 +428,7 @@ export function TacticalBattleScreen({
 function CavalryActionPreview() {
   return (
     <div className="cavalry-action-preview">
-      <p className="battle-preview-intro">当前定版骑兵动作雪碧图，战场中的骑兵会按同一套四帧循环播放。</p>
+      <p className="battle-preview-intro">待机、移动分别循环；攻击、受击按事件播放一次后回到待机。</p>
       <div
         className="cavalry-action-preview-sprite"
         role="img"

@@ -1,21 +1,21 @@
 {
-  "version": 1,
+  "version": 2,
   "status": "production-candidate",
   "unit": "tactical-unit-cavalry",
   "style": "Q-version 16-bit right-facing cavalry commander animation",
-  "source": "assets/source/tactical/units/cavalry-actions-v1.png",
-  "production": "assets/production/tactical/units/cavalry-actions-v1.png",
+  "source": "assets/source/tactical/units/cavalry-actions-v2-grid.png",
+  "production": "assets/production/tactical/units/cavalry-actions-v2.png",
   "dimensions": {
-    "source": [1024, 256],
-    "production": [256, 64],
-    "frame": [256, 256],
+    "source": [1254, 1254],
+    "production": [1152, 64],
+    "frame": [313, 251],
     "productionFrame": [64, 64]
   },
   "frames": [
-    { "index": 0, "key": "idle", "label": "待机" },
-    { "index": 1, "key": "move", "label": "移动" },
-    { "index": 2, "key": "attack", "label": "攻击" },
-    { "index": 3, "key": "hit", "label": "受击" }
+    { "start": 0, "end": 3, "key": "idle", "label": "待机", "repeat": -1 },
+    { "start": 4, "end": 9, "key": "move", "label": "移动", "repeat": -1 },
+    { "start": 10, "end": 14, "key": "attack", "label": "攻击", "repeat": 0 },
+    { "start": 15, "end": 17, "key": "hit", "label": "受击", "repeat": 0 }
   ],
   "generation": {
     "mode": "built-in image generation plus local chroma-key removal and square-frame normalization",

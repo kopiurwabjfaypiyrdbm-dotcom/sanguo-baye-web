@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { TacticalBattleState, TacticalPosition } from '../core/tacticalBattle';
 import { BattleScene } from './BattleScene';
 import type { GameBridge } from './events';
+import type { TacticalCavalryAnimationState } from './tacticalCavalryAnimation';
 
 export type TacticalMapController = {
   update(
@@ -10,6 +11,7 @@ export type TacticalMapController = {
     reachable: TacticalPosition[],
     attackableUnitIds: string[],
   ): void;
+  playAction(unitId: string, action: TacticalCavalryAnimationState): void;
   destroy(): void;
 };
 
@@ -41,6 +43,9 @@ export function createTacticalMap(
   return {
     update(nextBattle, nextSelectedUnitId, nextReachable, nextAttackableUnitIds) {
       scene.updateBattle(nextBattle, nextSelectedUnitId, nextReachable, nextAttackableUnitIds);
+    },
+    playAction(unitId, action) {
+      scene.playUnitAction(unitId, action);
     },
     destroy() {
       game.destroy(true);
