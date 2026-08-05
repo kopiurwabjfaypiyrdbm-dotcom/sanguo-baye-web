@@ -254,6 +254,23 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="StatusLine" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/MapSection/MapFrame"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -28.0
+offset_right = 560.0
+offset_bottom = -8.0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.78, 0.84, 0.8, 0.72)
+theme_override_font_sizes/font_size = 12
+text = "点击城池下令"
+text_overrun_behavior = 3
+
 [node name="BottomPanel" type="PanelContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 88)
@@ -262,73 +279,70 @@ theme_override_styles/panel = SubResource("StyleBox_bar")
 
 [node name="BottomMargin" type="MarginContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 6
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
 
-[node name="BottomStack" type="VBoxContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin"]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="CampaignDock" type="HBoxContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack"]
+[node name="CampaignDock" type="HBoxContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
+alignment = 0
 
-[node name="DockIntelButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack/CampaignDock"]
+[node name="DockIntelButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/CampaignDock"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 48)
-size_flags_horizontal = 3
+custom_minimum_size = Vector2(156, 68)
+size_flags_horizontal = 0
 layout_mode = 2
 focus_mode = 2
 text = "情报"
 
-[node name="DockCitiesButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack/CampaignDock"]
+[node name="DockCitiesButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/CampaignDock"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 48)
-size_flags_horizontal = 3
+custom_minimum_size = Vector2(156, 68)
+size_flags_horizontal = 0
 layout_mode = 2
 focus_mode = 2
 text = "城池"
 
-[node name="DockOfficersButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack/CampaignDock"]
+[node name="DockOfficersButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/CampaignDock"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 48)
-size_flags_horizontal = 3
+custom_minimum_size = Vector2(156, 68)
+size_flags_horizontal = 0
 layout_mode = 2
 focus_mode = 2
 text = "人物"
 
-[node name="DockTreasuresButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack/CampaignDock"]
+[node name="DockTreasuresButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/CampaignDock"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 48)
-size_flags_horizontal = 3
+custom_minimum_size = Vector2(156, 68)
+size_flags_horizontal = 0
 layout_mode = 2
 focus_mode = 2
 text = "宝物"
 
-[node name="DockDelegationButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack/CampaignDock"]
+[node name="DockDelegationButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/CampaignDock"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 48)
-size_flags_horizontal = 3
+custom_minimum_size = Vector2(156, 68)
+size_flags_horizontal = 0
 layout_mode = 2
 focus_mode = 2
 text = "委任"
 
-[node name="DockEndMonthButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack/CampaignDock"]
+[node name="DockSpacer" type="Control" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/CampaignDock"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(88, 48)
+layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="DockEndMonthButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/CampaignDock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(176, 68)
+size_flags_horizontal = 0
 layout_mode = 2
 focus_mode = 2
 text = "结束本月"
-
-[node name="StatusLine" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/BottomStack"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "拖动平移 · 滚轮或双指缩放 · 点击城池"
-text_overrun_behavior = 3
 
 [node name="CityContextMenu" parent="UILayer/HUDRoot" instance=ExtResource("12_context")]
 unique_name_in_owner = true

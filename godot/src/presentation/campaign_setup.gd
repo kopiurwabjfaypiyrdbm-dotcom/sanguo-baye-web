@@ -292,26 +292,34 @@ func _style_choice_button(button: Button, selected: bool, period_choice: bool) -
 		if selected:
 			normal.bg_color = Color(0.314, 0.427, 0.365, 1.0) # ~#506d5d
 			normal.border_color = Color(0.878, 0.773, 0.471, 1.0) # #e0c578
-			normal.set_border_width_all(1)
-			normal.border_width_left = 4 # inset gold bar
 		else:
 			normal.bg_color = Color(0.129, 0.235, 0.2, 0.76) # rgba(33,60,51,.76)
 			normal.border_color = Color(0.678, 0.745, 0.686, 0.22)
-			normal.set_border_width_all(1)
+		# Keep border widths identical for selected/unselected so GridContainer
+		# row metrics stay stable (Web uses inset shadow, not a thicker edge).
+		normal.set_border_width_all(1)
 		normal.set_corner_radius_all(3)
-	normal.content_margin_left = 16
-	normal.content_margin_top = 14
-	normal.content_margin_right = 16
-	normal.content_margin_bottom = 14
+		# Web `.ruler-grid button` padding 12px; keep stable so selection restyle
+		# does not change cell metrics for the whole grid.
+		normal.content_margin_left = 12
+		normal.content_margin_top = 10
+		normal.content_margin_right = 12
+		normal.content_margin_bottom = 10
+		_ensure_ruler_select_bar(button, selected)
+	if period_choice:
+		normal.content_margin_left = 16
+		normal.content_margin_top = 14
+		normal.content_margin_right = 16
+		normal.content_margin_bottom = 14
 	var hover := normal.duplicate() as StyleBoxFlat
 	if period_choice:
-		# Web `.scenario-card:hover`: gold border + multi-layer glow.
+		# Web `.scenario-card:hover`: gold border only — never a gold StyleBox
+		# shadow. Large shadow_size on a transparent fill reads as a full-card
+		# orange wash in Godot (see selection-screen hover bug).
 		hover.bg_color = Color(0, 0, 0, 0)
 		hover.border_color = Color(0.941, 0.804, 0.447, 1.0) # #f0cd72
 		hover.set_border_width_all(1)
-		hover.shadow_color = Color(0.86, 0.68, 0.26, 0.38)
-		hover.shadow_size = 18
-		hover.shadow_offset = Vector2(0, 8)
+		hover.shadow_size = 0
 	elif selected:
 		hover.bg_color = Color(0.345, 0.463, 0.396, 1.0)
 		hover.border_color = Color(0.941, 0.804, 0.447, 1.0)
@@ -321,8 +329,8 @@ func _style_choice_button(button: Button, selected: bool, period_choice: bool) -
 		hover.border_color = Color(0.553, 0.639, 0.588, 1.0) # #8da396
 	var pressed := hover.duplicate() as StyleBoxFlat
 	if period_choice:
-		pressed.shadow_size = 10
-		pressed.shadow_offset = Vector2(0, 3)
+		pressed.bg_color = Color(0, 0, 0, 0)
+		pressed.shadow_size = 0
 	elif not selected:
 		pressed.bg_color = Color(0.145, 0.255, 0.22, 0.9)
 	button.add_theme_stylebox_override("normal", normal)
@@ -355,7 +363,7 @@ func _style_choice_button(button: Button, selected: bool, period_choice: bool) -
 
 
 func _ensure_period_hover_frame(button: Button) -> void:
-	## Web hover uses inset light-gold + dark rings plus an outline offset.
+	## Web hover: outline + inset rings. Keep fills fully transparent so art stays visible.
 	var frame := button.get_node_or_null("HoverFrame") as Panel
 	if frame == null:
 		frame = Panel.new()
@@ -371,15 +379,15 @@ func _ensure_period_hover_frame(button: Button) -> void:
 	frame.z_index = 3
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0, 0, 0, 0)
+	style.draw_center = false
 	# Outer outline ≈ `outline: 1px rgba(255,239,169,.9); outline-offset: 3px`
 	style.border_color = Color(1.0, 0.937, 0.663, 0.9)
 	style.set_border_width_all(1)
 	style.set_corner_radius_all(4)
-	# Draw the Web inset rings via expand margins / content margins:
-	# light gold 1px inside, dark brown band ~2px (inset 0 0 0 3px over 1px).
-	style.shadow_color = Color(0.435, 0.302, 0.098, 0.82) # #6f4d19
-	style.shadow_size = 2
-	style.shadow_offset = Vector2.ZERO
+	# Soft outer drop only — small size, dark, outside the card (not a fill wash).
+	style.shadow_color = Color(0, 0, 0, 0.3)
+	style.shadow_size = 8
+	style.shadow_offset = Vector2(0, 6)
 	frame.add_theme_stylebox_override("panel", style)
 	var inset := frame.get_node_or_null("InsetRim") as Panel
 	if inset == null:
@@ -394,9 +402,11 @@ func _ensure_period_hover_frame(button: Button) -> void:
 	inset.offset_bottom = -4.0
 	var inset_style := StyleBoxFlat.new()
 	inset_style.bg_color = Color(0, 0, 0, 0)
+	inset_style.draw_center = false
 	inset_style.border_color = Color(1.0, 0.957, 0.745, 0.86) # inset light gold
 	inset_style.set_border_width_all(1)
 	inset_style.set_corner_radius_all(2)
+	inset_style.shadow_size = 0
 	inset.add_theme_stylebox_override("panel", inset_style)
 
 
@@ -404,8 +414,8 @@ func _on_period_card_hover(button: Button, hovered: bool) -> void:
 	button.z_index = 2 if hovered else 0
 	var art := button.get_node_or_null("Art") as TextureRect
 	if art != null:
-		# Web `filter: saturate(1.08) brightness(1.04)`
-		art.modulate = Color(1.12, 1.1, 1.05, 1.0) if hovered else Color.WHITE
+		# Web `filter: saturate(1.08) brightness(1.04)` — mild lift, no warm cast.
+		art.modulate = Color(1.06, 1.05, 1.04, 1.0) if hovered else Color.WHITE
 	var frame := button.get_node_or_null("HoverFrame") as Panel
 	if frame != null:
 		frame.visible = hovered
@@ -489,7 +499,27 @@ func _apply_ruler_choice_type(button: Button, _selected: bool) -> void:
 	var font := EntryChrome.serif_extrabold()
 	if font != null:
 		button.add_theme_font_override("font", font)
-	button.add_theme_font_size_override("font_size", 18)
+	# Do not set font_size here. Selection restyles every card; a hardcoded 18
+	# would override the layout size and magnify the whole grid at once.
+	# Size is owned by `_apply_responsive_layout_for_size`.
+
+
+func _ensure_ruler_select_bar(button: Button, selected: bool) -> void:
+	## Web `box-shadow: inset 3px 0 #e0c578` — overlay bar, zero layout impact.
+	var bar := button.get_node_or_null("SelectBar") as ColorRect
+	if bar == null:
+		bar = ColorRect.new()
+		bar.name = "SelectBar"
+		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bar.color = Color(0.878, 0.773, 0.471, 1.0) # #e0c578
+		button.add_child(bar)
+	bar.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
+	bar.offset_left = 0.0
+	bar.offset_top = 0.0
+	bar.offset_right = 3.0
+	bar.offset_bottom = 0.0
+	bar.visible = selected
+	bar.z_index = 1
 
 
 func _on_header_back_pressed() -> void:
@@ -605,8 +635,10 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		for choice: Button in period_choices.get_children():
 			choice.custom_minimum_size = Vector2(0.0, touch_size)
 	for choice: Button in ruler_choices.get_children():
-		choice.custom_minimum_size = Vector2(0.0, touch_size if touch_mode else 64.0)
-		choice.add_theme_font_size_override("font_size", ceili(16.0 / maxf(canvas_scale, 0.01)) if touch_mode else 16)
+		choice.custom_minimum_size = Vector2(0.0, touch_size if touch_mode else 68.0)
+		choice.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		# Web `.ruler-grid strong` is 18px; keep stable across selection restyles.
+		choice.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)) if touch_mode else 17)
 	# Ruler step: page scroll off; only monarch grid / policy aside scroll.
 	center_scroll.vertical_scroll_mode = (
 		ScrollContainer.SCROLL_MODE_DISABLED if _showing_rulers else ScrollContainer.SCROLL_MODE_DISABLED
