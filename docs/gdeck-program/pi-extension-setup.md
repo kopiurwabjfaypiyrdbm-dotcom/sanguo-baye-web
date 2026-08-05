@@ -67,6 +67,16 @@ setx GODOT_BIN "D:\03_Godot\01_Engine\Godot_v4.7.1-stable_win64.exe"
 | `gdeck_editor status / tree` | ✅ 连接编辑器（`Writes: disabled`），场景树正常 |
 | `gdeck_release templates-status` | ✅ 4.7.1 模板已安装 |
 
+## MB-GD 新能力接入 Pi 扩展（2026-08-05 追加）
+
+上游扩展只暴露 4 族；MB-GD1-6 新增能力已补入扩展（提交 d35f9e5）：
+
+- **`gdeck_scene`**（新工具族）：`doctor`（只读体检）、`set`（headless 编辑，默认 dry-run、`apply` 才写、写前快照，confirmation=always）、`restore`（快照回滚）。
+- **`gdeck_run`**（新工具族）：`query`（确定性白名单运行时查询 property/tree/signals/group）、`watch`（实时输出流 + 错误标注，超时=观察窗口正常结束）。
+- **`gdeck_validate` 扩展**：`check` 支持 `file`（单文件秒级校验）；`verify` 支持 `json`（结构化失败摘要）。
+- registry `PI_FIELDS` 新增：`seed`/`file`/`json`/`apply`/`scene`/`query`/`query-file`/`watch`/`main-scene`。
+- ⚠️ 修改扩展 import 模块（runtime.mjs/registry）后需**完全重启 Pi** 才生效（ESM 缓存）。
+
 ## 已知环境注意
 
 - 若同时开着多个 Godot 编辑器进程，`editor_bridge_read` 保持 unavailable（"2 live Editor sessions"）——gdeck 安全设计，关到只剩一个即可恢复。
