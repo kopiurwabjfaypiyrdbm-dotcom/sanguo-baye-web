@@ -88,6 +88,41 @@ func tick(probe: Node) -> void:
 		_complete_step(probe)
 		return
 
+	if step.has("scroll"):
+		var scroll_coordinates = step.scroll
+		if not scroll_coordinates is Array or scroll_coordinates.size() < 2:
+			_fail("Step %d scroll must be [x, y]" % current_step)
+			return
+		var scroll_position := Vector2(float(scroll_coordinates[0]), float(scroll_coordinates[1]))
+		var factor := float(step.get("factor", 1.0))
+		var repeat := maxi(1, int(step.get("frames", 1)))
+		if step_frame == 0:
+			_scroll_at(scroll_position, factor)
+		step_frame += 1
+		if step_frame >= repeat:
+			_complete_step(probe)
+		return
+
+	if step.has("drag"):
+		var drag_points = step.drag
+		if not drag_points is Array or drag_points.size() < 2:
+			_fail("Step %d drag must be [[x1, y1], [x2, y2], ...]" % current_step)
+			return
+		var drag_frames := maxi(2, int(step.get("frames", 12)))
+		var drag_from := Vector2(float(drag_points[0][0]), float(drag_points[0][1]))
+		var drag_to := Vector2(float(drag_points[-1][0]), float(drag_points[-1][1]))
+		if step_frame == 0:
+			_press_mouse_at(drag_from)
+		elif step_frame >= drag_frames:
+			_release_mouse()
+			_complete_step(probe)
+			return
+		else:
+			var drag_t := float(step_frame) / float(drag_frames - 1)
+			_move_mouse_to(drag_from.lerp(drag_to, drag_t))
+		step_frame += 1
+		return
+
 	if step.has("wait_event"):
 		var event_name := str(step.wait_event)
 		var where_value = step.get("where", {})
@@ -262,6 +297,43 @@ func _release_action(action_name: String) -> void:
 	input_event.strength = 0.0
 	Input.parse_input_event(input_event)
 	active_actions.erase(action_name)
+
+func _move_mouse_to(position: Vector2) -> void:
+	var motion := InputEventMouseMotion.new()
+	motion.position = position
+	motion.global_position = position
+	Input.parse_input_event(motion)
+
+func _press_mouse_at(position: Vector2) -> void:
+	Input.warp_mouse(position)
+	var button := InputEventMouseButton.new()
+	button.button_index = MOUSE_BUTTON_LEFT
+	button.pressed = true
+	button.position = position
+	button.global_position = position
+	Input.parse_input_event(button)
+
+func _release_mouse() -> void:
+	var button := InputEventMouseButton.new()
+	button.button_index = MOUSE_BUTTON_LEFT
+	button.pressed = false
+	Input.parse_input_event(button)
+
+func _scroll_at(position: Vector2, factor: float) -> void:
+	Input.warp_mouse(position)
+	var button := InputEventMouseButton.new()
+	button.button_index = MOUSE_BUTTON_WHEEL_UP if factor >= 0.0 else MOUSE_BUTTON_WHEEL_DOWN
+	button.pressed = true
+	button.factor = absf(factor)
+	button.position = position
+	button.global_position = position
+	Input.parse_input_event(button)
+	var release := InputEventMouseButton.new()
+	release.button_index = button.button_index
+	release.pressed = false
+	release.position = position
+	release.global_position = position
+	Input.parse_input_event(release)
 
 func _release_all_actions() -> void:
 	for action_name in active_actions.keys():

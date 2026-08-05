@@ -29,6 +29,13 @@
       "benchmarkWarmupFrames": 30,
       "seed": 42,
       "userArgs": []
+    },
+    "strategy-map": {
+      "description": "Strategy map pan/zoom scenario with camera assertion fixture",
+      "frames": 120,
+      "seed": 42,
+      "userArgs": [],
+      "fixtureAdapter": "res://qa/scenarios/strategy_map_fixture.gd"
     }
   },
   "verificationProfiles": {
