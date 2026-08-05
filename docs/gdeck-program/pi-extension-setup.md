@@ -43,14 +43,29 @@ setx GODOT_BIN "D:\03_Godot\01_Engine\Godot_v4.7.1-stable_win64.exe"
 - 效果：改完立即生效（process-runner 每次调用都是新进程），无需重启 Pi。
 - ⚠️ **升级 CLI 后需重新应用**（备份：`cli/backup-mbgd5/process-runner.mjs.bak`）。
 
+### 5. 内层判定 Windows 适配（`cli/gdeck.mjs` 的 `privateLifecycleRegistry`）
+
+- 问题：CLI 靠 `GDECK_LIFECYCLE_FD=4` 的 fd mode 校验判定"内层调用者"（允许消费 `--gdeck-internal-*`）；Windows 上 fd mode 不满足私有位 → 永远判为外层 → 拒绝扩展传入的 internal 绑定（`Internal verification bindings cannot be supplied by a direct caller`）。
+- 修复：win32 跳过 fd mode 校验（fd 身份即信任边界），其余检查保留。
+- 效果：改完立即生效（CLI 每次由 process-runner 新起）。
+- ⚠️ **升级 CLI 后需重新应用**（备份：`cli/backup-mbgd5/gdeck.mjs.bak`）。
+
+### 6. plan-helper 投影补 invocationIdentity（`cli/verification-plan-helper.mjs` 的 `projectedPlan`）
+
+- 问题：扩展用 plan-helper 预解析的 plan 构建 unit progress binding，但投影缺 `invocationIdentity` → `createUnitExecutionBinding` 报 "Unit invocation identity and owner nonce must be 64 lowercase hexadecimal characters"。
+- 修复：`projectedPlan` 补 `invocationIdentity: plan.invocationIdentity`。
+- 效果：改完立即生效（plan-helper 每次新起）。
+- ⚠️ **升级 CLI 后需重新应用**（备份：`cli/backup-mbgd5/verification-plan-helper.mjs.bak`）。
+
 ## 验证记录（2026-08-05，全部经 Pi 扩展工具执行）
 
 | 工具 | 结果 |
 |---|---|
 | `gdeck_project doctor` | ✅ 能力评估完整输出（godot_process available、runtime_probe available 等） |
 | `gdeck_validate check` | ✅ "Flight Deck check passed" |
-| `gdeck_editor status` | ✅ 连接编辑器，`Writes: disabled`（安全策略生效） |
-| `gdeck_release` | 未在本轮执行（需显式调用） |
+| `gdeck_validate verify --profile core-loop` | ✅ **PASSED**（check + unit + scenario 3 stages；首次运行 plan_drift 属既有机制，第二次通过） |
+| `gdeck_editor status / tree` | ✅ 连接编辑器（`Writes: disabled`），场景树正常 |
+| `gdeck_release templates-status` | ✅ 4.7.1 模板已安装 |
 
 ## 已知环境注意
 
