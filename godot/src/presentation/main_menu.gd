@@ -53,6 +53,7 @@ func _ready() -> void:
 			tactical_recovery_error = String(tactical_check.get("error", "战术恢复文件校验失败"))
 	var has_resume := has_save or has_tactical_recovery
 	continue_button.disabled = not has_resume
+	EntryChrome.sync_plaque_disabled(continue_button, false)
 	new_campaign_button.text = tr("新君登基")
 	if has_tactical_recovery:
 		continue_button.text = tr("恢复未完成战术")
@@ -63,11 +64,16 @@ func _ready() -> void:
 	(new_campaign_button if not has_resume else continue_button).grab_focus()
 	title_label.text = tr("三国霸业")
 	subtitle_label.text = ""
+	# Web title CTAs keep the helper copy inside the button small (hidden on desktop).
+	# Keep a light status line only when recovery needs explanation.
+	status_label.visible = has_tactical_recovery or not tactical_recovery_error.is_empty()
 	status_label.text = tr("选择时期与君主，开始新的霸业") if not has_resume else tr("继续最近的自动存档，或开启新战役")
 	if has_tactical_recovery:
 		status_label.text = tr("检测到未完成战术；可恢复沙场或开启新战役")
+		status_label.visible = true
 	if not tactical_recovery_error.is_empty():
 		status_label.text = tr("战术恢复文件无效：%s") % tactical_recovery_error
+		status_label.visible = true
 	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	wordmark.modulate.a = 0.0
 	tween.tween_property(wordmark, "modulate:a", 1.0, 0.55)
@@ -104,22 +110,30 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	if touch_mode:
 		card.custom_minimum_size = Vector2(ceilf(maxf(320.0, safe_rect.size.x - 32.0)), 0.0)
 		var touch_size := TouchMetrics.target_size(canvas_scale)
-		for button: Button in [new_campaign_button, continue_button, quit_button]:
-			button.custom_minimum_size.y = touch_size
-			button.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
-		new_campaign_button.custom_minimum_size.x = ceili(184.0 / maxf(canvas_scale, 0.85))
-		continue_button.custom_minimum_size.x = ceili(184.0 / maxf(canvas_scale, 0.85))
-		quit_button.custom_minimum_size.x = ceili(120.0 / maxf(canvas_scale, 0.85))
+		var plaque_font := ceili(17.0 / maxf(canvas_scale, 0.01))
+		EntryChrome.set_plaque_minimum_size(
+			new_campaign_button, Vector2(ceili(184.0 / maxf(canvas_scale, 0.85)), touch_size)
+		)
+		EntryChrome.set_plaque_minimum_size(
+			continue_button, Vector2(ceili(184.0 / maxf(canvas_scale, 0.85)), touch_size)
+		)
+		EntryChrome.set_plaque_minimum_size(
+			quit_button, Vector2(ceili(120.0 / maxf(canvas_scale, 0.85)), touch_size)
+		)
+		new_campaign_button.add_theme_font_size_override("font_size", plaque_font)
+		continue_button.add_theme_font_size_override("font_size", plaque_font)
+		quit_button.add_theme_font_size_override("font_size", plaque_font)
 		title_label.add_theme_font_size_override("font_size", ceili(36.0 / maxf(canvas_scale, 0.01)))
 		subtitle_label.add_theme_font_size_override("font_size", ceili(15.0 / maxf(canvas_scale, 0.01)))
 		status_label.add_theme_font_size_override("font_size", ceili(15.0 / maxf(canvas_scale, 0.01)))
 	else:
 		card.custom_minimum_size = Vector2(560.0, 0.0)
-		for button: Button in [new_campaign_button, continue_button]:
-			button.custom_minimum_size = Vector2(184.0, 58.0)
-			button.add_theme_font_size_override("font_size", 19)
-		quit_button.custom_minimum_size = Vector2(120.0, 52.0)
-		quit_button.add_theme_font_size_override("font_size", 17)
+		EntryChrome.set_plaque_minimum_size(new_campaign_button, Vector2(184.0, 58.0))
+		EntryChrome.set_plaque_minimum_size(continue_button, Vector2(184.0, 58.0))
+		EntryChrome.set_plaque_minimum_size(quit_button, Vector2(120.0, 58.0))
+		new_campaign_button.add_theme_font_size_override("font_size", 19)
+		continue_button.add_theme_font_size_override("font_size", 19)
+		quit_button.add_theme_font_size_override("font_size", 19)
 		title_label.add_theme_font_size_override("font_size", 48)
 		subtitle_label.add_theme_font_size_override("font_size", 18)
 		status_label.add_theme_font_size_override("font_size", 15)
@@ -131,7 +145,6 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		status_label.visible = false
 		title_label.add_theme_font_size_override("font_size", ceili(28.0 / maxf(canvas_scale, 0.01)))
 	else:
-		status_label.visible = true
 		status_label.custom_minimum_size.y = 56.0
 	_layout_action_card(safe_rect, ultra_compact)
 

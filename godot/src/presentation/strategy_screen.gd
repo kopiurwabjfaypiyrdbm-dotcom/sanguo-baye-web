@@ -10,6 +10,7 @@ const PauseRepository = preload("res://src/application/persistence/tactical_paus
 const TouchMetrics = preload("res://src/presentation/touch_metrics.gd")
 const MonthAdvanceReview = preload("res://src/domain/progression/month_advance_review.gd")
 const CityCommandCatalog = preload("res://src/presentation/city_command_catalog.gd")
+const EntryChrome = preload("res://src/presentation/entry_chrome.gd")
 
 @export var allow_demo_samples := false
 
@@ -26,6 +27,7 @@ const ZOOM_STEP := 1.14
 @onready var safe_area: SafeAreaMargin = %SafeArea
 @onready var top_panel: PanelContainer = %TopPanel
 @onready var bottom_panel: PanelContainer = %BottomPanel
+@onready var map_input_space: Control = %MapInputSpace
 @onready var title_label: Label = %TitleLabel
 @onready var year_label: Label = %YearLabel
 @onready var seed_label: Label = %SeedLabel
@@ -48,6 +50,12 @@ const ZOOM_STEP := 1.14
 @onready var dock_delegation_button: Button = %DockDelegationButton
 @onready var dock_end_month_button: Button = %DockEndMonthButton
 @onready var more_button: Button = %MoreButton
+var _faction_seal: PanelContainer
+var _seal_glyph: Label
+var _faction_name_label: Label
+var _ruler_name_label: Label
+var _resource_row: HBoxContainer
+var _resource_value_labels: Dictionary = {}
 @onready var mobile_sheet: MobileSheet = %MobileSheet
 @onready var campaign_browser: CampaignBrowserPanel = %CampaignBrowserPanel
 @onready var city_context_menu: CityContextMenu = %CityContextMenu
@@ -200,6 +208,26 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Sheet chrome owns the interaction surface; never let map zoom/pan steal scroll.
+	if mobile_sheet.is_open():
+		if (
+			event is InputEventMagnifyGesture
+			or event is InputEventScreenTouch
+			or event is InputEventScreenDrag
+			or event is InputEventMouseMotion
+			or (
+				event is InputEventMouseButton
+				and (
+					(event as InputEventMouseButton).button_index == MOUSE_BUTTON_WHEEL_UP
+					or (event as InputEventMouseButton).button_index == MOUSE_BUTTON_WHEEL_DOWN
+					or (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT
+					or (event as InputEventMouseButton).button_index == MOUSE_BUTTON_MIDDLE
+					or (event as InputEventMouseButton).button_index == MOUSE_BUTTON_RIGHT
+				)
+			)
+		):
+			get_viewport().set_input_as_handled()
+		return
 	if event is InputEventMouseButton:
 		_handle_mouse_button(event)
 	elif event is InputEventMouseMotion:
@@ -214,6 +242,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _configure_localized_ui() -> void:
+	_ensure_campaign_top_chrome()
+	_style_chrome_bars()
+	_style_map_action_buttons()
+	_style_end_month_cta()
 	title_label.text = tr("三国霸业 · 战略地图")
 	world_button.tooltip_text = tr("平滑缩放至完整战略地图")
 	player_button.tooltip_text = tr("定位并选择玩家城池")
@@ -336,29 +368,37 @@ func _update_hud_from_snapshot() -> void:
 	var factions := _as_dictionary(_snapshot.get("factions", {}))
 	var player_faction_id := str(_snapshot.get("playerFactionId", ""))
 	var player_faction := _as_dictionary(factions.get(player_faction_id, {}))
-	if not campaign.is_empty():
-		title_label.text = tr("%s · %s") % [
-			str(player_faction.get("name", campaign.get("title", "三国霸业"))),
-			str(campaign.get("rulerName", "")),
-		]
+	var faction_name := str(player_faction.get("name", campaign.get("title", "三国霸业")))
+	var ruler_name := str(campaign.get("rulerName", ""))
+	if _faction_name_label != null:
+		_faction_name_label.text = faction_name
+	if _ruler_name_label != null:
+		_ruler_name_label.text = ruler_name if not ruler_name.is_empty() else tr("未指定君主")
+	if _seal_glyph != null:
+		_seal_glyph.text = faction_name.substr(0, 1) if not faction_name.is_empty() else "汉"
+	if _faction_seal != null:
+		_style_faction_seal(Color(str(player_faction.get("color", "#69766e"))))
+	# Keep legacy title for any smoke that still reads it; hide in layout.
+	title_label.text = tr("%s · %s") % [faction_name, ruler_name]
 	var calendar := _as_dictionary(_snapshot.get("calendar", {}))
 	seed_label.visible = false
 	if _compact_layout:
-		year_label.text = tr("%d 年 %d 月") % [
+		year_label.text = tr("%d年 %d月") % [
 			int(calendar.get("year", 0)),
 			int(calendar.get("month", 0)),
 		]
 		seed_label.text = tr("种 %d") % int(_snapshot.get("rngSeed", 0))
 	else:
-		year_label.text = tr("公元 %d 年 · %d 月") % [
+		year_label.text = tr("%d年 %d月") % [
 			int(calendar.get("year", 0)),
 			int(calendar.get("month", 0)),
 		]
 		seed_label.text = tr("种子 %d") % int(_snapshot.get("rngSeed", 0))
+	_update_resource_cells()
 	resource_label.text = _format_player_resources()
 
 
-func _format_player_resources() -> String:
+func _player_resource_totals() -> Dictionary:
 	var player_faction_id := str(_snapshot.get("playerFactionId", ""))
 	var cities := _as_dictionary(_snapshot.get("cities", {}))
 	var officers := _as_dictionary(_snapshot.get("officers", {}))
@@ -381,9 +421,280 @@ func _format_player_resources() -> String:
 		if str(officer.get("status", "")) == "dead":
 			continue
 		troops += int(officer.get("troops", 0))
+	return {
+		"cities": city_count,
+		"money": money,
+		"food": food,
+		"troops": troops,
+	}
+
+
+func _update_resource_cells() -> void:
+	var totals := _player_resource_totals()
+	_set_resource_cell_value("cities", _format_int(int(totals.get("cities", 0))))
+	_set_resource_cell_value("money", _format_int(int(totals.get("money", 0))))
+	_set_resource_cell_value("food", _format_int(int(totals.get("food", 0))))
+	_set_resource_cell_value("troops", _format_int(int(totals.get("troops", 0))))
+
+
+func _set_resource_cell_value(key: String, value: String) -> void:
+	var label: Label = _resource_value_labels.get(key, null) as Label
+	if label != null:
+		label.text = value
+
+
+func _format_int(value: int) -> String:
+	var raw := str(absi(value))
+	var parts: PackedStringArray = []
+	while raw.length() > 3:
+		parts.insert(0, raw.substr(raw.length() - 3, 3))
+		raw = raw.substr(0, raw.length() - 3)
+	if not raw.is_empty():
+		parts.insert(0, raw)
+	var grouped := ",".join(parts)
+	return ("-%s" % grouped) if value < 0 else grouped
+
+
+func _format_player_resources() -> String:
+	var totals := _player_resource_totals()
 	if _compact_layout:
-		return tr("城%d 金%d 粮%d 兵%d") % [city_count, money, food, troops]
-	return tr("城池 %d · 金钱 %d · 粮草 %d · 兵力 %d") % [city_count, money, food, troops]
+		return tr("城%d 金%d 粮%d 兵%d") % [
+			int(totals.get("cities", 0)),
+			int(totals.get("money", 0)),
+			int(totals.get("food", 0)),
+			int(totals.get("troops", 0)),
+		]
+	return tr("城池 %d · 金钱 %d · 粮草 %d · 兵力 %d") % [
+		int(totals.get("cities", 0)),
+		int(totals.get("money", 0)),
+		int(totals.get("food", 0)),
+		int(totals.get("troops", 0)),
+	]
+
+
+func _ensure_campaign_top_chrome() -> void:
+	## Web `.campaign-identity` + `.campaign-resources` — seal, names, dated cells.
+	var top_bar := title_label.get_parent() as HBoxContainer
+	if top_bar == null:
+		return
+	title_label.visible = false
+	resource_label.visible = false
+	if top_bar.get_node_or_null("CampaignIdentity") != null:
+		_faction_seal = top_bar.get_node("CampaignIdentity/FactionSeal") as PanelContainer
+		_seal_glyph = top_bar.get_node("CampaignIdentity/FactionSeal/SealGlyph") as Label
+		_faction_name_label = top_bar.get_node("CampaignIdentity/IdentityText/FactionName") as Label
+		_ruler_name_label = top_bar.get_node("CampaignIdentity/IdentityText/RulerName") as Label
+		_resource_row = top_bar.get_node_or_null("CampaignResources") as HBoxContainer
+		_cache_resource_value_labels()
+		return
+
+	var identity := HBoxContainer.new()
+	identity.name = "CampaignIdentity"
+	identity.add_theme_constant_override("separation", 8)
+	identity.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_faction_seal = PanelContainer.new()
+	_faction_seal.name = "FactionSeal"
+	_faction_seal.custom_minimum_size = Vector2(42, 42)
+	_seal_glyph = Label.new()
+	_seal_glyph.name = "SealGlyph"
+	_seal_glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_seal_glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_seal_glyph.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_seal_glyph.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_faction_seal.add_child(_seal_glyph)
+	identity.add_child(_faction_seal)
+	var identity_text := VBoxContainer.new()
+	identity_text.name = "IdentityText"
+	identity_text.add_theme_constant_override("separation", 1)
+	identity_text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_faction_name_label = Label.new()
+	_faction_name_label.name = "FactionName"
+	_faction_name_label.add_theme_color_override("font_color", Color(0.961, 0.91, 0.78, 1.0))
+	_faction_name_label.add_theme_font_size_override("font_size", 15)
+	var serif := EntryChrome.serif_extrabold()
+	if serif != null:
+		_faction_name_label.add_theme_font_override("font", serif)
+		_seal_glyph.add_theme_font_override("font", serif)
+	_ruler_name_label = Label.new()
+	_ruler_name_label.name = "RulerName"
+	_ruler_name_label.add_theme_color_override("font_color", Color(0.62, 0.69, 0.643, 1.0))
+	_ruler_name_label.add_theme_font_size_override("font_size", 11)
+	identity_text.add_child(_faction_name_label)
+	identity_text.add_child(_ruler_name_label)
+	identity.add_child(identity_text)
+	top_bar.add_child(identity)
+	top_bar.move_child(identity, 0)
+	top_bar.move_child(year_label, 1)
+	year_label.add_theme_color_override("font_color", Color(0.937, 0.816, 0.494, 1.0))
+	year_label.add_theme_font_size_override("font_size", 16)
+
+	_resource_row = HBoxContainer.new()
+	_resource_row.name = "CampaignResources"
+	_resource_row.add_theme_constant_override("separation", 0)
+	_resource_row.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var specs := [
+		{"key": "cities", "label": tr("城池")},
+		{"key": "money", "label": tr("金钱")},
+		{"key": "food", "label": tr("粮草")},
+		{"key": "troops", "label": tr("兵力")},
+	]
+	for index: int in range(specs.size()):
+		var spec: Dictionary = specs[index]
+		_resource_row.add_child(_make_resource_cell(str(spec["key"]), str(spec["label"]), index == specs.size() - 1))
+	top_bar.add_child(_resource_row)
+	top_bar.move_child(_resource_row, 2)
+	_style_faction_seal(Color("#69766e"))
+	_cache_resource_value_labels()
+
+
+func _cache_resource_value_labels() -> void:
+	_resource_value_labels.clear()
+	if _resource_row == null:
+		return
+	for key: String in ["cities", "money", "food", "troops"]:
+		var cell := _resource_row.get_node_or_null(key.capitalize()) as Control
+		if cell == null:
+			continue
+		var value := cell.get_node_or_null("Stack/Value") as Label
+		if value != null:
+			_resource_value_labels[key] = value
+
+
+func _make_resource_cell(key: String, caption: String, last: bool) -> PanelContainer:
+	var cell := PanelContainer.new()
+	cell.name = key.capitalize()
+	cell.custom_minimum_size = Vector2(72, 0)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1, 1, 1, 0.035)
+	style.border_color = Color(0.55, 0.62, 0.58, 0.22)
+	style.border_width_right = 0 if last else 1
+	style.content_margin_left = 8
+	style.content_margin_right = 8
+	style.content_margin_top = 4
+	style.content_margin_bottom = 4
+	cell.add_theme_stylebox_override("panel", style)
+	var stack := VBoxContainer.new()
+	stack.name = "Stack"
+	stack.add_theme_constant_override("separation", 1)
+	var small := Label.new()
+	small.name = "Caption"
+	small.text = caption
+	small.add_theme_color_override("font_color", Color(0.561, 0.631, 0.588, 1.0))
+	small.add_theme_font_size_override("font_size", 11)
+	var value := Label.new()
+	value.name = "Value"
+	value.text = "0"
+	value.add_theme_color_override("font_color", Color(0.906, 0.867, 0.761, 1.0))
+	value.add_theme_font_size_override("font_size", 14)
+	stack.add_child(small)
+	stack.add_child(value)
+	cell.add_child(stack)
+	return cell
+
+
+func _style_faction_seal(fill: Color) -> void:
+	if _faction_seal == null:
+		return
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = Color(0.957, 0.886, 0.686, 0.78)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(21)
+	style.shadow_color = Color(0, 0, 0, 0.28)
+	style.shadow_size = 6
+	_faction_seal.add_theme_stylebox_override("panel", style)
+	if _seal_glyph != null:
+		_seal_glyph.add_theme_color_override("font_color", Color(1.0, 0.957, 0.835, 1.0))
+		_seal_glyph.add_theme_font_size_override("font_size", 18)
+		_seal_glyph.add_theme_constant_override("outline_size", 2)
+		_seal_glyph.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.55))
+
+
+func _style_end_month_cta() -> void:
+	## Web `.campaign-dock .advance-month-action`
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.894, 0.769, 0.431, 1.0) # #e4c46e
+	normal.border_color = Color(0.949, 0.863, 0.588, 1.0) # #f2dc96
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(6)
+	normal.content_margin_left = 14
+	normal.content_margin_right = 14
+	normal.content_margin_top = 8
+	normal.content_margin_bottom = 8
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = Color(0.95, 0.84, 0.52, 1.0)
+	var pressed := normal.duplicate() as StyleBoxFlat
+	pressed.bg_color = Color(0.82, 0.7, 0.36, 1.0)
+	var disabled := normal.duplicate() as StyleBoxFlat
+	disabled.bg_color = Color(0.282, 0.282, 0.247, 1.0) # #48483f
+	disabled.border_color = Color(0.369, 0.365, 0.322, 1.0)
+	dock_end_month_button.add_theme_stylebox_override("normal", normal)
+	dock_end_month_button.add_theme_stylebox_override("hover", hover)
+	dock_end_month_button.add_theme_stylebox_override("pressed", pressed)
+	dock_end_month_button.add_theme_stylebox_override("disabled", disabled)
+	dock_end_month_button.add_theme_stylebox_override("focus", hover)
+	dock_end_month_button.add_theme_color_override("font_color", Color(0.094, 0.141, 0.114, 1.0))
+	dock_end_month_button.add_theme_color_override("font_hover_color", Color(0.094, 0.141, 0.114, 1.0))
+	dock_end_month_button.add_theme_color_override("font_pressed_color", Color(0.094, 0.141, 0.114, 1.0))
+	dock_end_month_button.add_theme_color_override("font_disabled_color", Color(0.498, 0.482, 0.427, 1.0))
+	dock_end_month_button.add_theme_color_override("font_focus_color", Color(0.094, 0.141, 0.114, 1.0))
+	dock_end_month_button.flat = false
+	dock_end_month_button.size_flags_horizontal = Control.SIZE_SHRINK_END
+	dock_end_month_button.text = tr("结束本月")
+
+
+func _style_chrome_bars() -> void:
+	## Web `.top-bar` / `.campaign-dock`: opaque shelves, not floating translucent cards.
+	var top := StyleBoxFlat.new()
+	top.bg_color = Color(0.141, 0.227, 0.204, 1.0) # #243a34
+	top.border_color = Color(0.933, 0.859, 0.651, 0.18)
+	top.border_width_bottom = 1
+	top.shadow_color = Color(0, 0, 0, 0.24)
+	top.shadow_size = 10
+	top_panel.add_theme_stylebox_override("panel", top)
+	var bottom := StyleBoxFlat.new()
+	bottom.bg_color = Color(0.106, 0.176, 0.161, 1.0)
+	bottom.border_color = Color(0.933, 0.859, 0.651, 0.16)
+	bottom.border_width_top = 1
+	bottom.shadow_color = Color(0, 0, 0, 0.28)
+	bottom.shadow_size = 10
+	bottom_panel.add_theme_stylebox_override("panel", bottom)
+
+
+func _style_map_action_buttons() -> void:
+	## Web `.campaign-map-actions button` — quiet secondary, not dock-scale.
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(1, 1, 1, 0.035)
+	normal.border_color = Color(0.871, 0.827, 0.682, 0.22)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(4)
+	normal.content_margin_left = 10
+	normal.content_margin_right = 10
+	normal.content_margin_top = 6
+	normal.content_margin_bottom = 6
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.border_color = Color(0.894, 0.769, 0.431, 0.62)
+	var pressed := normal.duplicate() as StyleBoxFlat
+	pressed.bg_color = Color(1, 1, 1, 0.06)
+	# Web order: 本势力 · 全天下 · 菜单
+	var top_bar := player_button.get_parent() as Node
+	if top_bar != null:
+		var anchor := world_button.get_index()
+		top_bar.move_child(player_button, anchor)
+		top_bar.move_child(world_button, anchor + 1)
+		top_bar.move_child(more_button, anchor + 2)
+	for button: Button in [player_button, world_button, more_button]:
+		button.flat = false
+		button.add_theme_stylebox_override("normal", normal)
+		button.add_theme_stylebox_override("hover", hover)
+		button.add_theme_stylebox_override("pressed", pressed)
+		button.add_theme_stylebox_override("focus", hover)
+		button.add_theme_color_override("font_color", Color(0.847, 0.827, 0.761, 1.0))
+		button.add_theme_color_override("font_hover_color", Color(0.945, 0.835, 0.541, 1.0))
+		button.add_theme_color_override("font_pressed_color", Color(0.945, 0.835, 0.541, 1.0))
+		button.add_theme_color_override("font_focus_color", Color(0.945, 0.835, 0.541, 1.0))
+		button.add_theme_font_size_override("font_size", 12)
+		button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
 func _select_city(city_id: String, open_menu: bool = true) -> void:
@@ -614,6 +925,9 @@ func _hide_floating_panels_for_sheet() -> void:
 
 func _place_city_card_in(usable: Rect2) -> void:
 	if not city_card.visible:
+		return
+	if city_card.has_method("place_in"):
+		city_card.place_in(usable)
 		return
 	var panel_size := city_card.get_combined_minimum_size()
 	panel_size.x = minf(panel_size.x, usable.size.x)
@@ -1459,8 +1773,8 @@ func _focus_world() -> void:
 	if _snapshot.is_empty():
 		return
 	var bounds := map_world.get_map_bounds()
-	var viewport_size := get_viewport_rect().size
-	var available := Vector2(maxf(320.0, viewport_size.x - 72.0), maxf(220.0, viewport_size.y - 154.0))
+	var stage := _get_map_stage_rect().size
+	var available := Vector2(maxf(280.0, stage.x - 24.0), maxf(200.0, stage.y - 24.0))
 	var fit_zoom := clampf(minf(available.x / bounds.size.x, available.y / bounds.size.y), MIN_ZOOM, 1.28)
 	_animate_camera_to(bounds.get_center(), fit_zoom, 0.48)
 	_set_status(tr("已定位完整战略地图"), "ready")
@@ -1668,7 +1982,9 @@ func _screen_to_world(screen_position: Vector2) -> Vector2:
 func _animate_camera_to(target_position: Vector2, target_zoom: float, duration: float) -> void:
 	_kill_camera_tween()
 	var zoom := clampf(target_zoom, MIN_ZOOM, MAX_ZOOM)
-	var clamped_position := _clamp_camera_position(target_position, zoom)
+	# Place the world focus point at the map stage center (not under chrome).
+	var camera_target := _camera_position_for_stage_focus(target_position, zoom)
+	var clamped_position := _clamp_camera_position(camera_target, zoom)
 	_camera_tween = create_tween().set_parallel(true)
 	_camera_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_camera_tween.tween_property(map_camera, "position", clamped_position, duration)
@@ -1681,22 +1997,40 @@ func _kill_camera_tween() -> void:
 	_camera_tween = null
 
 
+func _get_map_stage_rect() -> Rect2:
+	if is_instance_valid(map_input_space) and map_input_space.size.x > 1.0 and map_input_space.size.y > 1.0:
+		return map_input_space.get_global_rect()
+	return _get_card_usable_rect()
+
+
+func _camera_position_for_stage_focus(world_point: Vector2, zoom: float) -> Vector2:
+	## Camera2D centers on the full viewport; offset so `world_point` sits in MapInputSpace.
+	var stage_center := _get_map_stage_rect().get_center()
+	var viewport_center := get_viewport_rect().get_center()
+	return world_point - (stage_center - viewport_center) / maxf(zoom, 0.01)
+
+
 func _clamp_camera_position(target: Vector2, zoom: float) -> Vector2:
 	var bounds := map_world.get_map_bounds()
-	var half_visible := get_viewport_rect().size / (2.0 * maxf(zoom, 0.01))
-	var result := target
+	var stage := _get_map_stage_rect()
+	var half_visible := stage.size / (2.0 * maxf(zoom, 0.01))
+	var viewport_center := get_viewport_rect().get_center()
+	var stage_offset := (stage.get_center() - viewport_center) / maxf(zoom, 0.01)
+	var stage_world := target + stage_offset
 	if half_visible.x >= bounds.size.x * 0.5:
-		result.x = bounds.get_center().x
+		stage_world.x = bounds.get_center().x
 	else:
-		result.x = clampf(result.x, bounds.position.x + half_visible.x, bounds.end.x - half_visible.x)
+		stage_world.x = clampf(stage_world.x, bounds.position.x + half_visible.x, bounds.end.x - half_visible.x)
 	if half_visible.y >= bounds.size.y * 0.5:
-		result.y = bounds.get_center().y
+		stage_world.y = bounds.get_center().y
 	else:
-		result.y = clampf(result.y, bounds.position.y + half_visible.y, bounds.end.y - half_visible.y)
-	return result
+		stage_world.y = clampf(stage_world.y, bounds.position.y + half_visible.y, bounds.end.y - half_visible.y)
+	return stage_world - stage_offset
 
 
 func _get_card_usable_rect() -> Rect2:
+	if is_instance_valid(map_input_space) and map_input_space.size.x > 1.0 and map_input_space.size.y > 1.0:
+		return map_input_space.get_global_rect()
 	var rect := safe_area.get_safe_rect()
 	var top_inset := top_panel.size.y + 10.0
 	var bottom_inset := bottom_panel.size.y + 10.0
@@ -1733,7 +2067,8 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	)
 	_apply_return_confirmation_layout(compact, canvas_scale)
 	_compact_layout = compact
-	title_label.visible = not compact
+	title_label.visible = false
+	resource_label.visible = false
 	chronicle_button.visible = false
 	end_turn_button.visible = false
 	tactical_demo_button.visible = false
@@ -1742,59 +2077,70 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	menu_button.visible = false
 	status_badge_panel.visible = false
 	more_button.visible = true
-	world_button.text = tr("全图" if compact else "全天下")
-	player_button.text = tr("本势" if compact else "本势力")
+	world_button.text = tr("全天下")
+	player_button.text = tr("本势力")
 	tactical_demo_button.text = tr("临战" if compact else "临战")
 	save_button.text = tr("存" if compact else "保存")
 	load_button.text = tr("读" if compact else "读取")
 	menu_button.text = tr("菜单" if compact else "主菜单")
-	more_button.text = tr("更多" if compact else "更多")
-	dock_end_month_button.text = tr("结束" if compact else "结束本月")
+	more_button.text = tr("菜单")
+	dock_end_month_button.text = tr("结束本月")
+	_style_chrome_bars()
+	_style_map_action_buttons()
+	_style_end_month_cta()
 
 	if touch_mode:
 		var touch_size := TouchMetrics.target_size(canvas_scale)
-		var label_font_size := ceili(15.0 / maxf(canvas_scale, 0.01))
-		var action_font_size := ceili(17.0 / maxf(canvas_scale, 0.01))
-		top_panel.custom_minimum_size = Vector2(0.0, touch_size + 14.0)
+		var label_font_size := ceili(14.0 / maxf(canvas_scale, 0.01))
+		var action_font_size := ceili(13.0 / maxf(canvas_scale, 0.01))
+		top_panel.custom_minimum_size = Vector2(0.0, maxf(52.0, touch_size + 8.0))
 		bottom_panel.custom_minimum_size = Vector2(0.0, touch_size + 36.0)
 		for button: Button in [world_button, player_button, more_button]:
-			button.custom_minimum_size = Vector2(touch_size, touch_size)
+			button.custom_minimum_size = Vector2(maxi(64, int(touch_size * 0.85)), maxi(36, int(touch_size * 0.72)))
 			button.add_theme_font_size_override("font_size", action_font_size)
 		for button: Button in [tactical_demo_button, save_button, load_button, menu_button]:
 			button.custom_minimum_size = Vector2(touch_size, touch_size)
 			button.add_theme_font_size_override("font_size", action_font_size)
-		for button: Button in [dock_intel_button, dock_cities_button, dock_officers_button, dock_treasures_button, dock_delegation_button, dock_end_month_button]:
+		for button: Button in [dock_intel_button, dock_cities_button, dock_officers_button, dock_treasures_button, dock_delegation_button]:
 			button.custom_minimum_size = Vector2(touch_size, touch_size)
 			button.add_theme_font_size_override("font_size", ceili(14.0 / maxf(canvas_scale, 0.01)))
+		dock_end_month_button.custom_minimum_size = Vector2(maxi(touch_size + 24, 108), touch_size)
+		dock_end_month_button.add_theme_font_size_override("font_size", ceili(15.0 / maxf(canvas_scale, 0.01)))
 		status_badge_panel.custom_minimum_size = Vector2(touch_size, touch_size)
 		year_label.add_theme_font_size_override("font_size", label_font_size)
 		seed_label.add_theme_font_size_override("font_size", label_font_size)
-		resource_label.add_theme_font_size_override("font_size", label_font_size)
 		status_badge.add_theme_font_size_override("font_size", label_font_size)
-		status_line.add_theme_font_size_override("font_size", ceili(15.0 / maxf(canvas_scale, 0.01)))
+		status_line.add_theme_font_size_override("font_size", ceili(14.0 / maxf(canvas_scale, 0.01)))
+		_apply_top_chrome_fonts(14, 11, 13, 11)
+		if _faction_seal != null:
+			_faction_seal.custom_minimum_size = Vector2(36, 36)
 	else:
-		top_panel.custom_minimum_size = Vector2(0.0, 68.0)
+		top_panel.custom_minimum_size = Vector2(0.0, 58.0)
 		bottom_panel.custom_minimum_size = Vector2(0.0, 88.0)
-		world_button.custom_minimum_size = Vector2(76.0, 52.0)
-		player_button.custom_minimum_size = Vector2(76.0, 52.0)
-		more_button.custom_minimum_size = Vector2(76.0, 52.0)
+		world_button.custom_minimum_size = Vector2(72.0, 36.0)
+		player_button.custom_minimum_size = Vector2(72.0, 36.0)
+		more_button.custom_minimum_size = Vector2(56.0, 36.0)
 		tactical_demo_button.custom_minimum_size = Vector2(92.0, 52.0)
 		save_button.custom_minimum_size = Vector2(68.0, 52.0)
 		load_button.custom_minimum_size = Vector2(68.0, 52.0)
 		menu_button.custom_minimum_size = Vector2(76.0, 52.0)
-		for button: Button in [world_button, player_button, more_button, tactical_demo_button, save_button, load_button, menu_button]:
-			button.add_theme_font_size_override("font_size", 18)
+		for button: Button in [world_button, player_button, more_button]:
+			button.add_theme_font_size_override("font_size", 12)
+		for button: Button in [tactical_demo_button, save_button, load_button, menu_button]:
+			button.add_theme_font_size_override("font_size", 16)
 		for button: Button in [dock_intel_button, dock_cities_button, dock_officers_button, dock_treasures_button, dock_delegation_button]:
 			button.custom_minimum_size = Vector2(64.0, 48.0)
 			button.add_theme_font_size_override("font_size", 15)
-		dock_end_month_button.custom_minimum_size = Vector2(88.0, 48.0)
-		dock_end_month_button.add_theme_font_size_override("font_size", 15)
+		dock_end_month_button.custom_minimum_size = Vector2(120.0, 52.0)
+		dock_end_month_button.add_theme_font_size_override("font_size", 16)
 		status_badge_panel.custom_minimum_size = Vector2(82.0, 48.0)
-		year_label.add_theme_font_size_override("font_size", 18)
-		seed_label.add_theme_font_size_override("font_size", 18)
-		resource_label.add_theme_font_size_override("font_size", 16)
-		status_badge.add_theme_font_size_override("font_size", 18)
-		status_line.add_theme_font_size_override("font_size", 18)
+		year_label.add_theme_font_size_override("font_size", 16)
+		seed_label.add_theme_font_size_override("font_size", 14)
+		status_badge.add_theme_font_size_override("font_size", 14)
+		status_line.add_theme_font_size_override("font_size", 14)
+		_apply_top_chrome_fonts(15, 11, 14, 11)
+		if _faction_seal != null:
+			_faction_seal.custom_minimum_size = Vector2(40, 40)
 	map_world.set_minimum_physical_hit_radius(TouchMetrics.target_size(canvas_scale) * canvas_scale * 0.5, canvas_scale)
 	mobile_sheet.apply_layout(compact, canvas_scale, physical_size)
 	campaign_browser.apply_responsive_layout(compact, canvas_scale, physical_size)
@@ -1809,6 +2155,26 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	month_end_review_dialog.apply_responsive_layout(compact, canvas_scale, physical_size)
 	if not _snapshot.is_empty():
 		_update_hud_from_snapshot()
+
+
+func _apply_top_chrome_fonts(faction_size: int, ruler_size: int, value_size: int, caption_size: int) -> void:
+	if _faction_name_label != null:
+		_faction_name_label.add_theme_font_size_override("font_size", faction_size)
+	if _ruler_name_label != null:
+		_ruler_name_label.add_theme_font_size_override("font_size", ruler_size)
+	if _seal_glyph != null:
+		_seal_glyph.add_theme_font_size_override("font_size", maxi(15, faction_size + 2))
+	if year_label != null:
+		year_label.add_theme_font_size_override("font_size", maxi(faction_size, value_size + 2))
+	if _resource_row == null:
+		return
+	for child: Node in _resource_row.get_children():
+		var caption := child.get_node_or_null("Stack/Caption") as Label
+		var value := child.get_node_or_null("Stack/Value") as Label
+		if caption != null:
+			caption.add_theme_font_size_override("font_size", caption_size)
+		if value != null:
+			value.add_theme_font_size_override("font_size", value_size)
 
 
 func _apply_return_confirmation_layout(compact: bool, canvas_scale: float) -> void:

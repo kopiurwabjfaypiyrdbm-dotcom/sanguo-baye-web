@@ -64,7 +64,7 @@ func _run() -> void:
 	_assert_equal(setup.get_node("Center/Card/Margin/Stack/RulerRow").custom_minimum_size.y, 0.0, "ruler row minimum height must restore after leaving high-density compact mode")
 	_assert_equal(setup.get_node("Center/Card/Margin/Stack/PeriodRow/PeriodLabel").custom_minimum_size.x, 150.0, "period label width must restore after leaving high-density compact mode")
 	_assert_equal(setup.get_node("Center/Card/Margin/Stack/RulerRow/RulerLabel").custom_minimum_size.x, 150.0, "ruler label width must restore after leaving high-density compact mode")
-	_assert_true(not setup.get_node("%TitleLabel").has_theme_font_size_override("font_size"), "setup title font override must clear after leaving high-density compact mode")
+	_assert_true(setup.get_node("%TitleLabel").has_theme_font_size_override("font_size"), "setup title must keep a Web-aligned heading size after leaving high-density compact mode")
 	_assert_equal(period_option.item_count, 4, "setup must expose all bundled production periods")
 	var period_choices: GridContainer = setup.get_node("%PeriodChoices")
 	var ruler_section: Control = setup.get_node("%RulerSection")

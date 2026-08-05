@@ -2,7 +2,7 @@
 class_name FlightDeckEditorBridge
 extends RefCounted
 
-const VERSION := "1.6.0-cursor.1"
+const VERSION := "1.6.3-cursor.2"
 const ALLOWED_RESOURCE_CLASSES := [&"Theme", &"StyleBoxFlat", &"SystemFont", &"Gradient", &"Curve", &"PhysicsMaterial"]
 const ALLOWED_NODE_CLASSES := [
 	&"Node", &"Node2D", &"Control", &"CanvasLayer", &"Label", &"Button", &"ColorRect",
@@ -20,6 +20,7 @@ var clients: Array = []
 var token := ""
 var port := DEFAULT_PORT
 var allow_writes := false
+var supplementary_enabled := false
 var resource_roots: Array[String] = ["res://resources/"]
 var last_history_id := -1
 var history_operation_error := ""
@@ -174,6 +175,7 @@ func _load_configuration() -> void:
 		var bridge: Dictionary = parsed.get("editorBridge", {})
 		port = clampi(int(bridge.get("port", DEFAULT_PORT)), 1024, 65535)
 		allow_writes = bool(bridge.get("allowWrites", false))
+		supplementary_enabled = bool(bridge.get("supplementaryEnabled", false))
 		var configured_roots = bridge.get("resourceRoots", resource_roots)
 		if configured_roots is Array and not configured_roots.is_empty():
 			resource_roots.clear()
@@ -195,7 +197,10 @@ func _handle_request(peer: StreamPeerTCP, line: String) -> void:
 	_record("Request: %s" % action)
 	var params: Dictionary = request.get("params", {}) if request.get("params", {}) is Dictionary else {}
 	var write_actions := [&"set", &"create", &"delete", &"reorder", &"resource-create", &"resource-set", &"resource-delete", &"resource-assign", &"batch", &"undo", &"redo", &"save"]
+	var supplementary_actions := [&"reorder", &"resource-create", &"resource-set", &"resource-assign", &"resource-delete"]
+	var destructive_actions := [&"delete", &"resource-delete"]
 	var is_dry_run := action == "batch" and bool(params.get("dry_run", false))
+	var confirm_apply := bool(params.get("confirm_apply", false))
 	var client_version := str(request.get("client_version", ""))
 	var expected_instance_id := str(request.get("expected_instance_id", ""))
 	if StringName(action) in write_actions and not is_dry_run and expected_instance_id != instance_id:
@@ -207,6 +212,20 @@ func _handle_request(peer: StreamPeerTCP, line: String) -> void:
 	if StringName(action) in write_actions and not allow_writes and not is_dry_run:
 		_send(peer, {"id": request_id, "ok": false, "error": "writes_disabled", "version": VERSION})
 		return
+	if StringName(action) in supplementary_actions and not supplementary_enabled and not is_dry_run:
+		_send(peer, {"id": request_id, "ok": false, "error": "supplementary_disabled", "version": VERSION})
+		return
+	if StringName(action) in destructive_actions and not confirm_apply:
+		_send(peer, {"id": request_id, "ok": false, "error": "apply_required", "version": VERSION})
+		return
+	if action == "batch" and not is_dry_run and not confirm_apply:
+		_send(peer, {"id": request_id, "ok": false, "error": "apply_required", "version": VERSION})
+		return
+	if action == "batch":
+		var batch_policy := _validate_batch_policy(params.get("operations", []))
+		if not batch_policy.ok:
+			_send(peer, {"id": request_id, "ok": false, "error": batch_policy.error, "version": VERSION})
+			return
 	var result: Dictionary
 	match action:
 		"status": result = _status()
@@ -233,6 +252,24 @@ func _handle_request(peer: StreamPeerTCP, line: String) -> void:
 		_send(peer, {"id": request_id, "ok": false, "error": result._error, "version": VERSION})
 	else:
 		_send(peer, {"id": request_id, "ok": true, "result": result, "version": VERSION})
+
+func _validate_batch_policy(operations: Variant) -> Dictionary:
+	if not operations is Array:
+		return {"ok": false, "error": "batch_operations_must_be_array"}
+	for index in range(operations.size()):
+		var operation = operations[index]
+		if not operation is Dictionary:
+			return {"ok": false, "error": "batch[%d]: operation_must_be_object" % index}
+		var op_action := str(operation.get("action", ""))
+		match op_action:
+			"set":
+				pass
+			"resource-set", "resource-assign":
+				if not supplementary_enabled:
+					return {"ok": false, "error": "batch[%d]: supplementary_disabled" % index}
+			_:
+				return {"ok": false, "error": "batch[%d]: unsupported_action" % index}
+	return {"ok": true}
 
 func _send(peer: StreamPeerTCP, payload: Dictionary) -> void:
 	peer.put_data((JSON.stringify(payload) + "\n").to_utf8_buffer())

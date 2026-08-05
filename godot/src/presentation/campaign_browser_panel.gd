@@ -42,6 +42,7 @@ func show_cities(snapshot: Dictionary) -> void:
 	_snapshot = snapshot
 	_city_id = ""
 	filter_row.visible = true
+	list_scroll.visible = true
 	actions_box.visible = false
 	intro_label.text = tr("点选城池后打开情境面板；未侦察城池只显示公开归属。")
 	_set_filter("owned")
@@ -53,6 +54,7 @@ func show_officers(snapshot: Dictionary) -> void:
 	_snapshot = snapshot
 	_city_id = ""
 	filter_row.visible = false
+	list_scroll.visible = true
 	actions_box.visible = false
 	intro_label.text = tr("本势力在职、已发现人才与俘虏。点选后定位其城池。")
 	_rebuild()
@@ -64,6 +66,7 @@ func show_treasures(snapshot: Dictionary) -> void:
 	_snapshot = snapshot
 	_city_id = ""
 	filter_row.visible = false
+	list_scroll.visible = true
 	actions_box.visible = false
 	intro_label.text = tr("汇总本势力已发现宝物。赏赐与没收请进入所在城池人事。")
 	_rebuild()
@@ -75,6 +78,7 @@ func show_delegation(snapshot: Dictionary) -> void:
 	_snapshot = snapshot
 	_city_id = ""
 	filter_row.visible = false
+	list_scroll.visible = true
 	actions_box.visible = false
 	intro_label.text = tr("委任用于多城时期的内政与运输方针；正式自动规则后续接入。")
 	_rebuild()
@@ -86,6 +90,7 @@ func show_city_context(snapshot: Dictionary, city_id: String) -> void:
 	_snapshot = snapshot
 	_city_id = city_id
 	filter_row.visible = false
+	list_scroll.visible = false
 	actions_box.visible = true
 	_rebuild_city_context()
 	show()
@@ -97,7 +102,8 @@ func show_section(snapshot: Dictionary, city_id: String, section: String) -> voi
 	_snapshot = snapshot
 	_city_id = city_id
 	filter_row.visible = false
-	actions_box.visible = true
+	list_scroll.visible = true
+	actions_box.visible = false
 	intro_label.text = _section_intro(section)
 	_clear_list()
 	_clear_actions()
@@ -116,8 +122,8 @@ func show_section(snapshot: Dictionary, city_id: String, section: String) -> voi
 			subtitle = tr("现代 · 任命太守")
 		elif bool(command.get("dangerous", false)):
 			subtitle = tr("危险操作")
-		_add_action_button(command_id, label, enabled, subtitle)
-	empty_label.visible = actions_box.get_child_count() == 0
+		_add_list_action_button(command_id, label, enabled, subtitle)
+	empty_label.visible = list_box.get_child_count() == 0
 	show()
 
 
@@ -131,7 +137,8 @@ func show_personnel_tabs(snapshot: Dictionary, city_id: String) -> void:
 
 func section_action_labels() -> PackedStringArray:
 	var labels := PackedStringArray()
-	for child: Node in actions_box.get_children():
+	var host: Node = list_box if _view == "section" else actions_box
+	for child: Node in host.get_children():
 		if child is Button:
 			var text := (child as Button).text
 			var first_line := text.split("\n")[0] if "\n" in text else text
@@ -140,6 +147,8 @@ func section_action_labels() -> PackedStringArray:
 
 
 func section_action_count() -> int:
+	if _view == "section":
+		return list_box.get_child_count()
 	return actions_box.get_child_count()
 
 
@@ -179,8 +188,17 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, _physical_size:
 func place_in(usable: Rect2) -> void:
 	if not visible:
 		return
-	global_position = usable.position
+	# Detach full-rect anchors from the packed scene so we only occupy the sheet body.
+	set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT, Control.PRESET_MODE_MINSIZE)
+	anchor_right = 0.0
+	anchor_bottom = 0.0
+	var parent_control := get_parent() as Control
+	if parent_control != null:
+		position = (usable.position - parent_control.global_position).round()
+	else:
+		global_position = usable.position.round()
 	size = usable.size
+	mouse_filter = Control.MOUSE_FILTER_STOP
 
 
 func _set_filter(filter_id: String) -> void:
@@ -548,6 +566,16 @@ func _add_list_button(id: String, text: String, kind: String, city_id: String = 
 
 
 func _add_action_button(action_id: String, title: String, enabled: bool, subtitle: String) -> void:
+	var button := _make_action_button(action_id, title, enabled, subtitle)
+	actions_box.add_child(button)
+
+
+func _add_list_action_button(action_id: String, title: String, enabled: bool, subtitle: String) -> void:
+	var button := _make_action_button(action_id, title, enabled, subtitle)
+	list_box.add_child(button)
+
+
+func _make_action_button(action_id: String, title: String, enabled: bool, subtitle: String) -> Button:
 	var button := Button.new()
 	button.text = "%s\n%s" % [title, subtitle]
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -555,7 +583,7 @@ func _add_action_button(action_id: String, title: String, enabled: bool, subtitl
 	button.custom_minimum_size = Vector2(0, _touch_size)
 	button.add_theme_font_size_override("font_size", _font_size)
 	button.pressed.connect(func() -> void: action_selected.emit(action_id))
-	actions_box.add_child(button)
+	return button
 
 
 func _clear_list() -> void:

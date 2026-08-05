@@ -5,7 +5,7 @@ extends Node
 
 signal command_requested(command_name: String, payload: Dictionary)
 
-const VERSION := "1.6.0-cursor.1"
+const VERSION := "1.6.3-cursor.2"
 const DIAGNOSTIC_EVENT_LIMIT := 10
 const DIAGNOSTIC_COLLECTION_LIMIT := 16
 const DIAGNOSTIC_STRING_LIMIT := 256
@@ -26,10 +26,13 @@ var benchmark_enabled := false
 var benchmark_warmup_frames := 0
 var finishing := false
 var exit_code := 0
-var fps_sum := 0.0
+var frame_ms_sum := 0.0
 var process_ms_sum := 0.0
 var physics_ms_sum := 0.0
+var worst_frame_ms := 0.0
 var worst_process_ms := 0.0
+var last_process_usec := 0
+var last_monitor_process_ms := -1.0
 var sample_count := 0
 var performance_timing_samples: Array[Dictionary] = []
 var performance_slowest_frames: Array[Dictionary] = []
@@ -60,9 +63,15 @@ func _process(delta: float) -> void:
 	if target_frames < 0 or finishing:
 		return
 	current_frame += 1
+	var now_usec := Time.get_ticks_usec()
+	var frame_ms := 0.0
+	if last_process_usec > 0:
+		frame_ms = float(now_usec - last_process_usec) / 1000.0
+	last_process_usec = now_usec
 	var sampling_starts_after := benchmark_warmup_frames if benchmark_enabled else 5
-	if current_frame > sampling_starts_after:
-		_sample_performance(delta)
+	# Warmup may be zero; require a prior _process tick so frame_ms is a real interval.
+	if current_frame > sampling_starts_after and last_process_usec > 0 and frame_ms > 0.0:
+		_sample_performance(delta, frame_ms)
 	if scenario_runner != null:
 		scenario_runner.tick(self)
 		if scenario_runner.status == "passed":
@@ -253,41 +262,47 @@ func _fixture_adapter_path_is_safe(path: String) -> bool:
 			return false
 	return FileAccess.file_exists(path)
 
-func _sample_performance(delta: float) -> void:
-	var fps := 1.0 / maxf(delta, 0.0001)
+func _sample_performance(_delta: float, frame_ms: float) -> void:
+	# TIME_PROCESS is a Godot monitor average, not a real per-frame wall-clock sample.
 	var process_ms := float(Performance.get_monitor(Performance.TIME_PROCESS)) * 1000.0
 	var physics_ms := float(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)) * 1000.0
-	fps_sum += fps
+	var monitor_is_duplicate := last_monitor_process_ms >= 0.0 and is_equal_approx(process_ms, last_monitor_process_ms)
+	last_monitor_process_ms = process_ms
+	var fps := 1000.0 / maxf(frame_ms, 0.0001)
+	frame_ms_sum += frame_ms
 	process_ms_sum += process_ms
 	physics_ms_sum += physics_ms
-	worst_process_ms = maxf(worst_process_ms, process_ms)
+	worst_frame_ms = maxf(worst_frame_ms, frame_ms)
+	if not monitor_is_duplicate:
+		worst_process_ms = maxf(worst_process_ms, process_ms)
 	sample_count += 1
 	var expected_samples := maxi(1, target_frames - (benchmark_warmup_frames if benchmark_enabled else 5))
 	var sample_stride := maxi(1, ceili(float(expected_samples) / float(PERFORMANCE_TIMING_SAMPLE_LIMIT)))
 	if performance_timing_samples.size() < PERFORMANCE_TIMING_SAMPLE_LIMIT and ((sample_count - 1) % sample_stride == 0 or current_frame >= target_frames):
-		performance_timing_samples.append(_performance_timing_fact(fps, process_ms, physics_ms))
+		performance_timing_samples.append(_performance_timing_fact(fps, frame_ms, process_ms, physics_ms))
 	var replacement_index := performance_slowest_frames.size()
 	if replacement_index >= PERFORMANCE_SLOWEST_FRAME_LIMIT:
 		replacement_index = 0
 		for index in range(1, performance_slowest_frames.size()):
 			var current_weakest: Dictionary = performance_slowest_frames[replacement_index]
 			var candidate_weakest: Dictionary = performance_slowest_frames[index]
-			if float(candidate_weakest.process_ms) < float(current_weakest.process_ms) or (float(candidate_weakest.process_ms) == float(current_weakest.process_ms) and int(candidate_weakest.frame) > int(current_weakest.frame)):
+			if float(candidate_weakest.frame_ms) < float(current_weakest.frame_ms) or (float(candidate_weakest.frame_ms) == float(current_weakest.frame_ms) and int(candidate_weakest.frame) > int(current_weakest.frame)):
 				replacement_index = index
 		var weakest: Dictionary = performance_slowest_frames[replacement_index]
-		if process_ms < float(weakest.process_ms) or (process_ms == float(weakest.process_ms) and current_frame >= int(weakest.frame)):
+		if frame_ms < float(weakest.frame_ms) or (frame_ms == float(weakest.frame_ms) and current_frame >= int(weakest.frame)):
 			return
-	var slow_fact := _performance_timing_fact(fps, process_ms, physics_ms)
+	var slow_fact := _performance_timing_fact(fps, frame_ms, process_ms, physics_ms)
 	if performance_slowest_frames.size() < PERFORMANCE_SLOWEST_FRAME_LIMIT:
 		performance_slowest_frames.append(slow_fact)
 	else:
 		performance_slowest_frames[replacement_index] = slow_fact
 
-func _performance_timing_fact(fps: float, process_ms: float, physics_ms: float) -> Dictionary:
+func _performance_timing_fact(fps: float, frame_ms: float, process_ms: float, physics_ms: float) -> Dictionary:
 	return {
 		"sample_index": sample_count - 1,
 		"frame": current_frame,
 		"fps": fps,
+		"frame_ms": frame_ms,
 		"process_ms": process_ms,
 		"physics_ms": physics_ms,
 	}
@@ -314,15 +329,19 @@ func _finish_run() -> void:
 func _write_report(capture_error: Error) -> void:
 	DirAccess.make_dir_recursive_absolute(report_path.get_base_dir())
 	performance_slowest_frames.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
-		if float(left.process_ms) == float(right.process_ms):
+		if float(left.frame_ms) == float(right.frame_ms):
 			return int(left.frame) < int(right.frame)
-		return float(left.process_ms) > float(right.process_ms)
+		return float(left.frame_ms) > float(right.frame_ms)
 	)
 	var divisor := maxf(1.0, sample_count)
+	var average_frame_ms := frame_ms_sum / divisor
 	var performance := {
-		"average_fps": fps_sum / divisor,
+		"average_frame_ms": average_frame_ms,
+		"worst_frame_ms": worst_frame_ms,
+		"average_fps": 1000.0 / maxf(average_frame_ms, 0.0001),
 		"average_process_ms": process_ms_sum / divisor,
 		"average_physics_ms": physics_ms_sum / divisor,
+		# Compatibility: monitor-derived, not real per-frame wall-clock data.
 		"worst_process_ms": worst_process_ms,
 		"draw_calls": Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
 		"nodes": Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
@@ -351,6 +370,8 @@ func _write_report(capture_error: Error) -> void:
 			"sample_limit": PERFORMANCE_TIMING_SAMPLE_LIMIT,
 			"slowest_frame_limit": PERFORMANCE_SLOWEST_FRAME_LIMIT,
 			"sample_count": sample_count,
+			"frame_timing": "adjacent_process_wall_clock",
+			"process_monitor_note": "TIME_PROCESS is not real-time per-frame data",
 			"samples": performance_timing_samples,
 			"samples_truncated": sample_count > performance_timing_samples.size(),
 			"slowest_frames": performance_slowest_frames,

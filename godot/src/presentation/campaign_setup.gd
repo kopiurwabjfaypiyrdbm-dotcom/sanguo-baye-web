@@ -70,8 +70,15 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	EntryChrome.apply_plaque_button(back_button, false)
 	EntryChrome.apply_plaque_button(header_back_button, false)
+	# HBox stretches children to the tall title; keep the plaque at Web 54px.
+	header_back_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	EntryChrome.apply_plaque_button(start_button, true)
 	EntryChrome.apply_plaque_button(back_to_periods_button, false)
+	EntryChrome.apply_scenario_heading(title_label, 48)
+	var scrim := get_node_or_null("Scrim") as ColorRect
+	if scrim != null:
+		# Web scenario-screen has no dark overlay; keep parchment readable.
+		scrim.color = Color(0.08, 0.1, 0.09, 0.08)
 	_populate_policy_options()
 	start_button.disabled = true
 	_apply_responsive_layout()
@@ -106,7 +113,7 @@ func _ready() -> void:
 		_show_period_selection()
 	_selection_label_reset()
 	if period_choices.get_child_count() > 0:
-		period_choices.get_child(0).grab_focus()
+		header_back_button.grab_focus()
 
 
 func _populate_policy_options() -> void:
@@ -169,11 +176,12 @@ func _on_viewport_size_changed() -> void:
 func _add_period_choice(index: int) -> void:
 	var period: Dictionary = _periods[index]
 	var period_id := int(period.get("periodId", 0))
+	var scenario: Dictionary = period.get("scenario", {})
 	var button := Button.new()
 	button.name = "PeriodChoice%d" % index
 	button.clip_contents = true
 	# TextureRect children paint above Button text in Godot 4, so captions live in
-	# an overlay Label that matches the Web scenario-card caption placement.
+	# an overlay that matches the Web scenario-card caption placement.
 	button.text = ""
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -183,34 +191,67 @@ func _add_period_choice(index: int) -> void:
 	var art := TextureRect.new()
 	art.name = "Art"
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	art.stretch_mode = TextureRect.STRETCH_SCALE
 	art.texture = EntryChrome.load_texture(EntryChrome.period_texture_path(period_id))
 	button.add_child(art)
 	var veil := ColorRect.new()
 	veil.name = "Veil"
 	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	veil.color = Color(0.02, 0.05, 0.04, 0.22)
+	# Light full-card veil only — Web relies on text-shadow, not a caption plate.
+	veil.color = Color(0.02, 0.05, 0.04, 0.1)
 	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	button.add_child(veil)
-	var caption := Label.new()
+	var caption := VBoxContainer.new()
 	caption.name = "Caption"
 	caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	caption.text = _period_choice_text(period)
-	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	caption.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-	caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	caption.add_theme_constant_override("separation", 6)
 	caption.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	caption.offset_left = 18.0
-	caption.offset_top = 18.0
-	caption.offset_right = -18.0
-	caption.offset_bottom = -18.0
-	caption.add_theme_color_override("font_color", Color("#fff0c9"))
-	caption.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.92))
-	caption.add_theme_constant_override("shadow_offset_x", 1)
-	caption.add_theme_constant_override("shadow_offset_y", 2)
+	caption.offset_left = 24.0
+	caption.offset_top = 24.0
+	caption.offset_right = -24.0
+	caption.offset_bottom = -24.0
+	var spacer := Control.new()
+	spacer.name = "Spacer"
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	caption.add_child(spacer)
+	var title := Label.new()
+	title.name = "Title"
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	title.text = str(scenario.get("title", ""))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	EntryChrome.apply_scenario_card_title(title, 28)
+	caption.add_child(title)
+	var year := Label.new()
+	year.name = "Year"
+	year.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	year.text = tr("公元 %d 年") % int(scenario.get("year", 0))
+	year.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	EntryChrome.apply_scenario_card_year(year, 12)
+	caption.add_child(year)
+	var description := str(scenario.get("description", "")).strip_edges()
+	if not description.is_empty():
+		var body := Label.new()
+		body.name = "Body"
+		body.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		body.text = description
+		body.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		EntryChrome.apply_scenario_card_body(body, 12, false)
+		caption.add_child(body)
+	var meta := Label.new()
+	meta.name = "Meta"
+	meta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var rulers: Array = scenario.get("playerCandidates", [])
+	meta.text = tr("38 城 · %d 方诸侯") % maxi(rulers.size(), 0)
+	meta.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	EntryChrome.apply_scenario_card_body(meta, 12, true)
+	caption.add_child(meta)
 	button.add_child(caption)
+	button.mouse_entered.connect(_on_period_card_hover.bind(button, true))
+	button.mouse_exited.connect(_on_period_card_hover.bind(button, false))
 	period_choices.add_child(button)
 	_style_choice_button(button, false, true)
 
@@ -242,40 +283,132 @@ func _add_ruler_choice(index: int) -> void:
 func _style_choice_button(button: Button, selected: bool, period_choice: bool) -> void:
 	var normal := StyleBoxFlat.new()
 	if period_choice:
-		normal.bg_color = Color(0.04, 0.09, 0.08, 0.18) if not selected else Color(0.12, 0.2, 0.16, 0.32)
-		normal.border_color = Color(0.827, 0.737, 0.494, 0.28) if not selected else Color(0.941, 0.804, 0.447, 1.0)
+		normal.bg_color = Color(0, 0, 0, 0)
+		normal.border_color = Color(0.827, 0.737, 0.494, 0.25)
+		normal.set_border_width_all(1 if not selected else 2)
+		normal.set_corner_radius_all(4)
 	else:
-		normal.bg_color = Color("#18342f") if not selected else Color("#385b4b")
-		normal.border_color = Color("#466d60") if not selected else Color("#e0c578")
-	normal.set_border_width_all(1 if not selected else 2)
-	normal.set_corner_radius_all(4 if period_choice else 8)
+		# Web `.ruler-grid button` / `.ruler-grid button.selected`
+		if selected:
+			normal.bg_color = Color(0.314, 0.427, 0.365, 1.0) # ~#506d5d
+			normal.border_color = Color(0.878, 0.773, 0.471, 1.0) # #e0c578
+			normal.set_border_width_all(1)
+			normal.border_width_left = 4 # inset gold bar
+		else:
+			normal.bg_color = Color(0.129, 0.235, 0.2, 0.76) # rgba(33,60,51,.76)
+			normal.border_color = Color(0.678, 0.745, 0.686, 0.22)
+			normal.set_border_width_all(1)
+		normal.set_corner_radius_all(3)
 	normal.content_margin_left = 16
 	normal.content_margin_top = 14
 	normal.content_margin_right = 16
 	normal.content_margin_bottom = 14
-	var hover := normal.duplicate()
+	var hover := normal.duplicate() as StyleBoxFlat
 	if period_choice:
-		hover.bg_color = Color(0.06, 0.12, 0.1, 0.28)
+		# Web `.scenario-card:hover`: gold border + multi-layer glow.
+		hover.bg_color = Color(0, 0, 0, 0)
+		hover.border_color = Color(0.941, 0.804, 0.447, 1.0) # #f0cd72
+		hover.set_border_width_all(1)
+		hover.shadow_color = Color(0.86, 0.68, 0.26, 0.38)
+		hover.shadow_size = 18
+		hover.shadow_offset = Vector2(0, 8)
+	elif selected:
+		hover.bg_color = Color(0.345, 0.463, 0.396, 1.0)
 		hover.border_color = Color(0.941, 0.804, 0.447, 1.0)
 	else:
-		hover.bg_color = Color("#284b40") if not selected else Color("#456d59")
-		hover.border_color = Color("#d8b968")
-	var pressed := hover.duplicate()
-	pressed.bg_color = Color(0.08, 0.15, 0.13, 0.4) if period_choice else Color("#345b4a")
+		# Web `.ruler-grid button:hover` — only a lighter border, not a selection.
+		hover.bg_color = Color(0.16, 0.28, 0.24, 0.88)
+		hover.border_color = Color(0.553, 0.639, 0.588, 1.0) # #8da396
+	var pressed := hover.duplicate() as StyleBoxFlat
+	if period_choice:
+		pressed.shadow_size = 10
+		pressed.shadow_offset = Vector2(0, 3)
+	elif not selected:
+		pressed.bg_color = Color(0.145, 0.255, 0.22, 0.9)
 	button.add_theme_stylebox_override("normal", normal)
 	button.add_theme_stylebox_override("hover", hover)
 	button.add_theme_stylebox_override("pressed", pressed)
-	# Focus must not look like a confirmed choice. The selected state is the
-	# only state that uses the gold border; keyboard/controller focus gets a
-	# separate green outline so the first card is not presented as selected.
-	var focus := normal.duplicate()
-	focus.border_color = Color("#7fae98") if not period_choice else Color(1.0, 0.937, 0.663, 0.9)
-	focus.set_border_width_all(2)
-	button.add_theme_stylebox_override("focus", focus)
-	button.add_theme_color_override("font_color", Color("#fff0c9") if period_choice else Color("#f0e2c2"))
+	# Focus must never impersonate selection. Use an empty focus ring so keyboard
+	# navigation stays reachable without lighting the first card on entry.
+	var focus := StyleBoxEmpty.new()
+	if period_choice:
+		var period_focus := normal.duplicate() as StyleBoxFlat
+		period_focus.border_color = Color(0.941, 0.804, 0.447, 0.45)
+		period_focus.set_border_width_all(1)
+		button.add_theme_stylebox_override("focus", period_focus)
+	else:
+		button.add_theme_stylebox_override("focus", focus)
+	if period_choice:
+		button.add_theme_color_override("font_color", Color("#fff0c9"))
+	elif selected:
+		button.add_theme_color_override("font_color", Color(0.925, 0.867, 0.725, 1.0)) # #ecddb9
+	else:
+		button.add_theme_color_override("font_color", Color(0.925, 0.867, 0.725, 1.0))
 	button.add_theme_color_override("font_hover_color", Color("#fff7d8"))
 	button.add_theme_color_override("font_pressed_color", Color("#fff7d8"))
-	button.add_theme_color_override("font_focus_color", Color("#fff7d8"))
+	button.add_theme_color_override("font_focus_color", Color(0.925, 0.867, 0.725, 1.0))
+	button.flat = false
+	if period_choice:
+		_ensure_period_hover_frame(button)
+	else:
+		_apply_ruler_choice_type(button, selected)
+
+
+func _ensure_period_hover_frame(button: Button) -> void:
+	## Web hover uses inset light-gold + dark rings plus an outline offset.
+	var frame := button.get_node_or_null("HoverFrame") as Panel
+	if frame == null:
+		frame = Panel.new()
+		frame.name = "HoverFrame"
+		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.add_child(frame)
+	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	frame.offset_left = -3.0
+	frame.offset_top = -3.0
+	frame.offset_right = 3.0
+	frame.offset_bottom = 3.0
+	frame.visible = false
+	frame.z_index = 3
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0)
+	# Outer outline ≈ `outline: 1px rgba(255,239,169,.9); outline-offset: 3px`
+	style.border_color = Color(1.0, 0.937, 0.663, 0.9)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(4)
+	# Draw the Web inset rings via expand margins / content margins:
+	# light gold 1px inside, dark brown band ~2px (inset 0 0 0 3px over 1px).
+	style.shadow_color = Color(0.435, 0.302, 0.098, 0.82) # #6f4d19
+	style.shadow_size = 2
+	style.shadow_offset = Vector2.ZERO
+	frame.add_theme_stylebox_override("panel", style)
+	var inset := frame.get_node_or_null("InsetRim") as Panel
+	if inset == null:
+		inset = Panel.new()
+		inset.name = "InsetRim"
+		inset.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		frame.add_child(inset)
+	inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	inset.offset_left = 4.0
+	inset.offset_top = 4.0
+	inset.offset_right = -4.0
+	inset.offset_bottom = -4.0
+	var inset_style := StyleBoxFlat.new()
+	inset_style.bg_color = Color(0, 0, 0, 0)
+	inset_style.border_color = Color(1.0, 0.957, 0.745, 0.86) # inset light gold
+	inset_style.set_border_width_all(1)
+	inset_style.set_corner_radius_all(2)
+	inset.add_theme_stylebox_override("panel", inset_style)
+
+
+func _on_period_card_hover(button: Button, hovered: bool) -> void:
+	button.z_index = 2 if hovered else 0
+	var art := button.get_node_or_null("Art") as TextureRect
+	if art != null:
+		# Web `filter: saturate(1.08) brightness(1.04)`
+		art.modulate = Color(1.12, 1.1, 1.05, 1.0) if hovered else Color.WHITE
+	var frame := button.get_node_or_null("HoverFrame") as Panel
+	if frame != null:
+		frame.visible = hovered
 
 
 func _period_choice_text(period: Dictionary) -> String:
@@ -334,8 +467,9 @@ func _show_period_selection() -> void:
 	for choice: Button in ruler_choices.get_children():
 		_style_choice_button(choice, false, false)
 	_apply_responsive_layout()
+	# Do not leave the first card looking hovered via focus styling.
 	if period_choices.get_child_count() > 0:
-		period_choices.get_child(0).grab_focus()
+		header_back_button.grab_focus()
 
 
 func _show_ruler_selection() -> void:
@@ -346,8 +480,16 @@ func _show_ruler_selection() -> void:
 	period_step_label.text = tr("2 / 2")
 	_selection_label_reset()
 	_apply_responsive_layout()
-	if ruler_choices.get_child_count() > 0:
-		ruler_choices.get_child(0).grab_focus()
+	# Keep logical selection empty; do not focus the first ruler card or it reads
+	# as "董卓 already chosen" against quieter siblings.
+	header_back_button.grab_focus()
+
+
+func _apply_ruler_choice_type(button: Button, _selected: bool) -> void:
+	var font := EntryChrome.serif_extrabold()
+	if font != null:
+		button.add_theme_font_override("font", font)
+	button.add_theme_font_size_override("font_size", 18)
 
 
 func _on_header_back_pressed() -> void:
@@ -386,7 +528,7 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	ruler_option.visible = false
 	var touch_size := TouchMetrics.target_size(canvas_scale) if touch_mode else 128.0
 	var cta_height := touch_size if touch_mode else 52.0
-	start_button.custom_minimum_size.y = cta_height
+	EntryChrome.set_plaque_min_height(start_button, cta_height)
 	# Pin 开始霸业 to the viewport bottom so phone players never scroll for the CTA.
 	var dock_margin_v := 20.0 if touch_mode else 24.0
 	var dock_height := cta_height + dock_margin_v if _showing_rulers else 0.0
@@ -402,29 +544,10 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 	center_scroll.position = safe_rect.position
 	center_scroll.size = Vector2(safe_rect.size.x, maxf(120.0, safe_rect.size.y - dock_height))
 	period_choices.columns = 2
-	var grid_min_y := maxf(touch_size * 2.0 + 16.0, center_scroll.size.y * (0.58 if not ultra_compact else 0.48))
-	period_choices.custom_minimum_size.y = grid_min_y if not _showing_rulers else 0.0
 	period_option.custom_minimum_size.y = touch_size
 	ruler_option.custom_minimum_size.y = touch_size
-	var caption_font := ceili(15.0 / maxf(canvas_scale, 0.01)) if touch_mode else 16
-	for choice: Button in period_choices.get_children():
-		choice.custom_minimum_size = Vector2(0.0, maxf(touch_size, grid_min_y * 0.45) if not _showing_rulers else touch_size)
-		var caption: Label = choice.get_node_or_null("Caption") as Label
-		if caption != null:
-			caption.add_theme_font_size_override("font_size", caption_font)
-	for choice: Button in ruler_choices.get_children():
-		choice.custom_minimum_size = Vector2(0.0, touch_size if touch_mode else 64.0)
-		choice.add_theme_font_size_override("font_size", ceili(16.0 / maxf(canvas_scale, 0.01)) if touch_mode else 16)
-	# Ruler step: page scroll off; only monarch grid / policy aside scroll.
-	center_scroll.vertical_scroll_mode = (
-		ScrollContainer.SCROLL_MODE_DISABLED if _showing_rulers else ScrollContainer.SCROLL_MODE_AUTO
-	)
-	center_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	content_stack.size_flags_vertical = Control.SIZE_EXPAND_FILL if _showing_rulers else Control.SIZE_SHRINK_BEGIN
-	ruler_section.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	ruler_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	aside_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	ruler_choices_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# Budget chrome first so the period grid can fill the leftover viewport
+	# (Web `.scenario-grid { grid-template-rows: repeat(2, minmax(0, 1fr)) }`).
 	if touch_mode:
 		card_margin.add_theme_constant_override("margin_top", 8)
 		card_margin.add_theme_constant_override("margin_bottom", 8)
@@ -432,23 +555,27 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		card_margin.add_theme_constant_override("margin_right", 12)
 		content_stack.add_theme_constant_override("separation", 8)
 	else:
-		card_margin.add_theme_constant_override("margin_top", 16)
-		card_margin.add_theme_constant_override("margin_bottom", 16)
+		card_margin.add_theme_constant_override("margin_top", 24)
+		card_margin.add_theme_constant_override("margin_bottom", 20)
 		card_margin.add_theme_constant_override("margin_left", 24)
 		card_margin.add_theme_constant_override("margin_right", 24)
-		content_stack.add_theme_constant_override("separation", 12)
-	back_to_periods_button.custom_minimum_size = Vector2(touch_size if touch_mode else 120.0, touch_size if touch_mode else 48.0)
-	header_back_button.custom_minimum_size = Vector2(
-		maxf(120.0, touch_size) if touch_mode else 142.0,
-		touch_size if touch_mode else 54.0
+		content_stack.add_theme_constant_override("separation", 14)
+	EntryChrome.set_plaque_minimum_size(
+		back_to_periods_button,
+		Vector2(touch_size if touch_mode else 120.0, touch_size if touch_mode else 48.0)
 	)
-	# Budget body from real chrome so content cannot push the docked CTA away.
+	EntryChrome.set_plaque_minimum_size(
+		header_back_button,
+		Vector2(
+			maxf(120.0, touch_size) if touch_mode else 142.0,
+			touch_size if touch_mode else 54.0
+		)
+	)
 	var margin_v := float(
 		card_margin.get_theme_constant("margin_top") + card_margin.get_theme_constant("margin_bottom")
 	)
 	var stack_sep := float(content_stack.get_theme_constant("separation"))
-	var header_budget := header_back_button.custom_minimum_size.y
-	# Compact ruler step keeps scenario as a single muted line under the title.
+	var header_budget := EntryChrome.plaque_min_height(header_back_button)
 	description_label.visible = _showing_rulers
 	description_label.max_lines_visible = 1
 	description_label.autowrap_mode = TextServer.AUTOWRAP_OFF if compact else TextServer.AUTOWRAP_WORD_SMART
@@ -457,22 +584,53 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		140.0,
 		center_scroll.size.y - margin_v - header_budget - subtitle_budget - stack_sep * (2.0 if _showing_rulers else 1.0)
 	)
+	var title_font := ceili(clampf(float(physical_size.x) * 0.045, 34.0, 58.0) / maxf(canvas_scale if touch_mode else 1.0, 0.85))
+	if touch_mode:
+		title_font = ceili(clampf(28.0 / maxf(canvas_scale, 0.01), 28.0, 40.0))
+	EntryChrome.apply_scenario_heading(title_label, title_font)
+	var card_title_font := 21 if touch_mode else 28
+	var card_body_font := 11 if touch_mode else 12
+	if not _showing_rulers:
+		content_stack.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		period_section.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		period_choices.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		period_choices.custom_minimum_size.y = body_height
+		var row_h := maxf(touch_size if touch_mode else 160.0, (body_height - float(period_choices.get_theme_constant("v_separation"))) * 0.5)
+		for choice: Button in period_choices.get_children():
+			choice.custom_minimum_size = Vector2(0.0, row_h)
+			choice.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			_style_period_caption_fonts(choice, card_title_font, card_body_font)
+	else:
+		period_choices.custom_minimum_size.y = 0.0
+		for choice: Button in period_choices.get_children():
+			choice.custom_minimum_size = Vector2(0.0, touch_size)
+	for choice: Button in ruler_choices.get_children():
+		choice.custom_minimum_size = Vector2(0.0, touch_size if touch_mode else 64.0)
+		choice.add_theme_font_size_override("font_size", ceili(16.0 / maxf(canvas_scale, 0.01)) if touch_mode else 16)
+	# Ruler step: page scroll off; only monarch grid / policy aside scroll.
+	center_scroll.vertical_scroll_mode = (
+		ScrollContainer.SCROLL_MODE_DISABLED if _showing_rulers else ScrollContainer.SCROLL_MODE_DISABLED
+	)
+	center_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	if _showing_rulers:
+		content_stack.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	ruler_section.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	ruler_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	aside_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	ruler_choices_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	ruler_body.custom_minimum_size.y = body_height if _showing_rulers else 0.0
 	ruler_choices_scroll.custom_minimum_size.y = maxf(touch_size * 2.0, 120.0) if _showing_rulers else 0.0
 	aside_scroll.custom_minimum_size.y = maxf(96.0, 120.0) if _showing_rulers else 0.0
 	ruler_aside.custom_minimum_size.x = 200.0 if (compact or ultra_compact) else 280.0
 	_apply_preview_density(_selected_ruler_source >= 0)
 	if touch_mode:
-		card.custom_minimum_size = Vector2(ceilf(maxf(320.0, center_scroll.size.x - 8.0)), 0.0)
-		if _showing_rulers:
-			card.custom_minimum_size.y = center_scroll.size.y
-		for control: Control in [back_button, start_button, header_back_button]:
-			control.custom_minimum_size.y = touch_size
+		card.custom_minimum_size = Vector2(ceilf(maxf(320.0, center_scroll.size.x - 8.0)), center_scroll.size.y)
+		for control: Button in [back_button, start_button, header_back_button]:
+			EntryChrome.set_plaque_min_height(control, touch_size)
 			control.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
 		back_to_periods_button.add_theme_font_size_override("font_size", ceili(17.0 / maxf(canvas_scale, 0.01)))
 		for label: Label in [facts_label, period_label, ruler_label, selection_label]:
 			label.add_theme_font_size_override("font_size", ceili(15.0 / maxf(canvas_scale, 0.01)))
-		title_label.add_theme_font_size_override("font_size", ceili(22.0 / maxf(canvas_scale, 0.01)))
 		period_step_label.add_theme_font_size_override("font_size", ceili(11.0 / maxf(canvas_scale, 0.01)))
 		description_label.add_theme_font_size_override("font_size", ceili(12.0 / maxf(canvas_scale, 0.01)))
 		ruler_step_label.add_theme_font_size_override("font_size", ceili(18.0 / maxf(canvas_scale, 0.01)))
@@ -493,18 +651,19 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		ruler_row.custom_minimum_size.y = 0.0
 		period_label.custom_minimum_size.x = 150.0
 		ruler_label.custom_minimum_size.x = 150.0
-		card.custom_minimum_size = Vector2(minf(1240.0, maxf(980.0, center_scroll.size.x - 48.0)), 0.0)
-		if _showing_rulers:
-			card.custom_minimum_size.y = center_scroll.size.y
-		back_button.custom_minimum_size.y = 56.0
-		start_button.custom_minimum_size.y = 52.0
-		header_back_button.custom_minimum_size = Vector2(142.0, 54.0)
+		card.custom_minimum_size = Vector2(
+			minf(1240.0, maxf(980.0, center_scroll.size.x - 48.0)),
+			center_scroll.size.y
+		)
+		EntryChrome.set_plaque_min_height(back_button, 56.0)
+		EntryChrome.set_plaque_min_height(start_button, 52.0)
+		EntryChrome.set_plaque_minimum_size(header_back_button, Vector2(142.0, 54.0))
 		period_option.custom_minimum_size.y = 54.0
 		ruler_option.custom_minimum_size.y = 54.0
 		for control: Control in [back_button, start_button, header_back_button]:
 			control.add_theme_font_size_override("font_size", 18)
 		back_to_periods_button.remove_theme_font_size_override("font_size")
-		for label: Label in [title_label, period_step_label, description_label, facts_label, period_label, ruler_label, selection_label, ruler_step_label, ruler_preview_text, ruleset_hint]:
+		for label: Label in [period_step_label, description_label, facts_label, period_label, ruler_label, selection_label, ruler_step_label, ruler_preview_text, ruleset_hint]:
 			label.remove_theme_font_size_override("font_size")
 		period_step_label.add_theme_font_size_override("font_size", 12)
 		description_label.add_theme_font_size_override("font_size", 14)
@@ -534,6 +693,46 @@ func _apply_responsive_layout_for_size(physical_size: Vector2i) -> void:
 		header_back_button.text = tr("返回")
 		period_step_label.text = tr("1 / 2")
 		ruler_choices.columns = 3
+	call_deferred("_layout_period_arts")
+
+
+func _style_period_caption_fonts(choice: Button, title_size: int, body_size: int) -> void:
+	var caption := choice.get_node_or_null("Caption") as VBoxContainer
+	if caption == null:
+		return
+	var title := caption.get_node_or_null("Title") as Label
+	if title != null:
+		EntryChrome.apply_scenario_card_title(title, title_size)
+	var year := caption.get_node_or_null("Year") as Label
+	if year != null:
+		EntryChrome.apply_scenario_card_year(year, body_size)
+	var body := caption.get_node_or_null("Body") as Label
+	if body != null:
+		EntryChrome.apply_scenario_card_body(body, body_size, false)
+	var meta := caption.get_node_or_null("Meta") as Label
+	if meta != null:
+		EntryChrome.apply_scenario_card_body(meta, body_size, true)
+
+
+func _layout_period_arts() -> void:
+	## Cover-fit art pinned to the top so faces survive short card aspect ratios.
+	## Web uses background-size:cover + center; Godot cards were much shorter, so
+	## center crop removed heads — top-align recovers the same focal area.
+	for choice: Button in period_choices.get_children():
+		var art := choice.get_node_or_null("Art") as TextureRect
+		if art == null or art.texture == null:
+			continue
+		var box := choice.size
+		if box.x <= 1.0 or box.y <= 1.0:
+			continue
+		var tex_size := art.texture.get_size()
+		if tex_size.x <= 1.0 or tex_size.y <= 1.0:
+			continue
+		var cover := maxf(box.x / tex_size.x, box.y / tex_size.y)
+		var scaled := tex_size * cover
+		art.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+		art.size = scaled
+		art.position = Vector2((box.x - scaled.x) * 0.5, 0.0)
 
 
 func _apply_preview_density(has_selection: bool) -> void:

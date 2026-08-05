@@ -126,6 +126,13 @@ func _run() -> void:
 	var command_option: OptionButton = city_card.get_node("%CommandOption")
 	_assert_equal(command_option.item_count, 0, "detail petal must be read-only with no command OptionButton entries")
 	_assert_true(not city_card.get_node("%CommandRow").visible, "detail petal must hide the mixed command OptionButton row")
+	var detail_stats: Label = city_card.get_node("%StatsLabel")
+	_assert_true(not detail_stats.text.is_empty(), "owned detail petal must show Web-aligned city summary text")
+	_assert_true("人口" in detail_stats.text and "太守" in detail_stats.text and "驻城人物" in detail_stats.text, "owned detail must include population, satrap and garrison sections")
+	_assert_true(city_card.get_node("%OwnershipLabel").visible, "owned detail must keep ownership visible on compact layout")
+	_assert_true(city_card.z_index >= 61, "detail city card must render above the mobile sheet shell")
+	_assert_true(not city_card.get_node("%CloseButton").visible, "embedded detail must not duplicate the sheet close button")
+	_assert_true(not city_card.get_node("OuterMargin/Content/Header").visible, "embedded detail must hide the inner card header chrome")
 	screen.call("_open_officer_management", "city-12")
 	_assert_true(officer_panel.visible, "city card entry must open the native officer-management panel")
 	_assert_true(not city_card.visible and not city_context_menu.visible and mobile_sheet.visible, "officer-management panel must replace card surfaces inside the sheet")
@@ -482,12 +489,19 @@ func _run() -> void:
 	_assert_true("旧情报" in city_card.get_node("%OwnershipLabel").text, "scouted hostile card must identify report-derived stale knowledge")
 	var hostile_stats := str(city_card.get_node("%StatsLabel").text)
 	_assert_true(
-		("金：%d" % int(frozen_report["money"])) in hostile_stats
+		("金钱：%s" % _format_smoke_number(int(frozen_report["money"]))) in hostile_stats
+		or ("金钱：%d" % int(frozen_report["money"])) in hostile_stats
+		or ("金：%d" % int(frozen_report["money"])) in hostile_stats
 		or ("金 %d" % int(frozen_report["money"])) in hostile_stats,
 		"scouted hostile card must render the frozen report value"
 	)
 	_assert_true(
-		not (("金：%d" % stale_live_money) in hostile_stats or ("金 %d" % stale_live_money) in hostile_stats),
+		not (
+			("金钱：%s" % _format_smoke_number(stale_live_money)) in hostile_stats
+			or ("金钱：%d" % stale_live_money) in hostile_stats
+			or ("金：%d" % stale_live_money) in hostile_stats
+			or ("金 %d" % stale_live_money) in hostile_stats
+		),
 		"scouted hostile card must not leak a newer live enemy value"
 	)
 
@@ -722,6 +736,17 @@ func _drag(index: int, position: Vector2, relative: Vector2) -> InputEventScreen
 	event.position = position
 	event.relative = relative
 	return event
+
+
+func _format_smoke_number(value: int) -> String:
+	var raw := str(absi(value))
+	var parts: Array[String] = []
+	while raw.length() > 3:
+		parts.push_front(raw.right(3))
+		raw = raw.left(raw.length() - 3)
+	parts.push_front(raw)
+	var result := ",".join(parts)
+	return "-%s" % result if value < 0 else result
 
 
 func _assert_true(value: bool, message: String) -> void:

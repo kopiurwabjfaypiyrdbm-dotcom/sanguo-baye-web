@@ -15,9 +15,11 @@ signal close_requested
 
 @onready var title_label: Label = %TitleLabel
 @onready var ownership_label: Label = %OwnershipLabel
+@onready var stats_scroll: ScrollContainer = %StatsScroll
 @onready var stats_label: Label = %StatsLabel
 @onready var outer_margin: MarginContainer = $OuterMargin
 @onready var content: VBoxContainer = $OuterMargin/Content
+@onready var header_row: HBoxContainer = $OuterMargin/Content/Header
 @onready var command_label: Label = %CommandLabel
 @onready var command_row: HBoxContainer = %CommandRow
 @onready var previous_command: Button = %PreviousCommand
@@ -36,6 +38,7 @@ signal close_requested
 @onready var reconnaissance_button: Button = %ReconnaissanceButton
 @onready var diplomacy_button: Button = %DiplomacyButton
 @onready var close_button: Button = %CloseButton
+@onready var action_row: HBoxContainer = $OuterMargin/Content/ActionRow
 
 var _city_id := ""
 var _base_action_enabled := false
@@ -47,17 +50,44 @@ var _confirm_dialog: ConfirmationDialog
 var _compact_mode := false
 var _last_canvas_scale := 1.0
 var _full_stats_text := ""
+var _detail_stats_text := ""
 var _compact_hostile_stats_text := ""
 var _compact_stats_by_kind: Dictionary = {}
 var _is_owned := false
+var _default_z_index := 20
+var _embedded_in_sheet := false
+var _flat_panel_style: StyleBoxFlat
 
 const DEFAULT_CARD_MINIMUM := Vector2(334.0, 254.0)
 const DEFAULT_CLOSE_MINIMUM := Vector2(52.0, 48.0)
 const DEFAULT_EXECUTOR_MINIMUM := Vector2(0.0, 52.0)
 const DEFAULT_DEVELOP_MINIMUM := Vector2(132.0, 54.0)
+const SHEET_Z_INDEX := 61
+
+const CONDITION_LABELS := {
+	"normal": "正常",
+	"famine": "饥荒",
+	"drought": "旱灾",
+	"flood": "水灾",
+	"rebellion": "叛乱",
+}
+
+const CONDITION_GUIDANCE := {
+	"famine": "饥荒：农业、商业和民忠每月约 -5%，人口 -25%，后备兵减半；补足粮草可在月末自然恢复，治理可立即解除。",
+	"drought": "旱灾：农业与粮草每月约 -5%，人口和后备兵 -25%，驻军兵力 -25%；防灾可促使月末恢复，治理可立即解除。",
+	"flood": "水灾：农业/粮草约 -5%，商业/金钱 -10%，人口/后备兵/驻军 -25%；防灾可促使月末恢复，治理可立即解除。",
+	"rebellion": "暴动：农业/粮草/商业/金钱约 -5%，民忠 -10%，后备兵与驻军减半；民忠可促使月末恢复，治理可立即解除。",
+}
 
 
 func _ready() -> void:
+	_default_z_index = z_index
+	_flat_panel_style = StyleBoxFlat.new()
+	_flat_panel_style.bg_color = Color(0, 0, 0, 0)
+	_flat_panel_style.draw_center = false
+	_flat_panel_style.set_border_width_all(0)
+	_flat_panel_style.set_corner_radius_all(0)
+	_flat_panel_style.shadow_size = 0
 	close_button.pressed.connect(func() -> void: close_requested.emit())
 	officer_button.pressed.connect(func() -> void: officer_management_requested.emit(_city_id))
 	personnel_button.pressed.connect(func() -> void: personnel_lifecycle_requested.emit(_city_id))
@@ -87,6 +117,21 @@ func _ready() -> void:
 	hide()
 
 
+func set_embedded_in_sheet(embedded: bool) -> void:
+	_embedded_in_sheet = embedded
+	# MobileSheet already owns the frame chrome and close control.
+	header_row.visible = not embedded
+	close_button.visible = not embedded
+	title_label.visible = not embedded
+	if embedded:
+		add_theme_stylebox_override("panel", _flat_panel_style)
+		z_index = SHEET_Z_INDEX
+		move_to_front()
+	else:
+		remove_theme_stylebox_override("panel")
+		z_index = _default_z_index
+
+
 func show_city(
 		snapshot: Dictionary,
 		city_id: String,
@@ -114,12 +159,10 @@ func show_city(
 			and visibility.get("report") is Dictionary:
 		knowledge = "report"
 	var owner_name: String = str(owner.get("name", tr("无主")))
+	var condition_key := str(city.get("condition", "normal"))
+	var condition_name: String = tr(str(CONDITION_LABELS.get(condition_key, "未知")))
 	if knowledge == "current":
 		ownership_label.text = tr("势力：%s · 己方实时") % owner_name
-		var condition_name: String = {
-			"normal": tr("正常"), "famine": tr("饥荒"), "drought": tr("旱灾"),
-			"flood": tr("水灾"), "rebellion": tr("叛乱"),
-		}.get(str(city.get("condition", "normal")), tr("未知"))
 		_full_stats_text = "%s  %s\n%s  %s\n%s  %s\n%s" % [
 			tr("人口：%s") % _format_number(int(city.get("population", 0))),
 			tr("民忠：%d") % int(city.get("publicLoyalty", 0)),
@@ -129,6 +172,7 @@ func show_city(
 			tr("粮：%d") % int(city.get("food", 0)),
 			tr("城况：%s · 防灾 %d") % [condition_name, int(city.get("disasterPrevention", 0))],
 		]
+		_detail_stats_text = _build_owned_detail_text(snapshot, city, condition_key, condition_name)
 		_compact_hostile_stats_text = ""
 	elif knowledge == "report":
 		var report: Dictionary = _as_dictionary(visibility.get("report", {}))
@@ -143,6 +187,7 @@ func show_city(
 			tr("金：%d") % int(report.get("money", 0)),
 			tr("粮：%d · 后备 %d") % [int(report.get("food", 0)), int(report.get("reserveTroops", 0))],
 		]
+		_detail_stats_text = _build_report_detail_text(snapshot, report)
 		_compact_hostile_stats_text = "%s · %s · %s · %s\n%s · %s · %s" % [
 			tr("人 %s") % _format_number(int(report.get("population", 0))),
 			tr("%d 将 / %d 兵") % [int(report.get("officerCount", 0)), int(report.get("totalTroops", 0))],
@@ -153,6 +198,9 @@ func show_city(
 	else:
 		ownership_label.text = tr("势力：%s · 未侦察") % owner_name
 		_full_stats_text = tr("情报未知\n仅公开城名与当前势力归属\n请从己方城池派武将侦察")
+		_detail_stats_text = tr(
+			"情报未知\n人口：未知\n金钱：未知\n粮草：未知\n后备兵：未知\n农业：未知\n商业：未知\n民忠：未知\n城防：未知\n防灾：未知\n状态：未知\n太守：未知\n\n尚无该城情报；请从己方城池派武将侦察。\n驻城武将与兵力未知。\n敌对或中立城池只显示已掌握的情报。侦察和出征需从相邻的己方城池发起。"
+		)
 		_compact_hostile_stats_text = tr("情报未知 · 仅公开城名与势力\n请从己方城池派武将侦察")
 	_compact_stats_by_kind = {}
 	if knowledge == "current":
@@ -169,7 +217,7 @@ func show_city(
 			"recruit_troops": "%s · %s · %s" % [owner_short, money_short, tr("后备 %d") % int(city.get("reserveTroops", 0))],
 			"distribute_troops": "%s · %s · %s" % [owner_short, money_short, tr("后备 %d") % int(city.get("reserveTroops", 0))],
 		}
-	stats_label.text = _full_stats_text
+	stats_label.text = _detail_stats_text if _read_only else _full_stats_text
 	if _read_only:
 		_command_queries.clear()
 		command_option.clear()
@@ -179,12 +227,14 @@ func show_city(
 		executor_label.visible = false
 		executor_row.visible = false
 		trade_row.visible = false
+		action_row.visible = false
 		develop_button.visible = false
 		officer_button.visible = false
 		personnel_button.visible = false
 		logistics_button.visible = false
 		reconnaissance_button.visible = false
 		diplomacy_button.visible = false
+		set_embedded_in_sheet(true)
 	else:
 		_populate_commands(command_queries)
 		command_label.visible = true
@@ -192,15 +242,18 @@ func show_city(
 		command_row.visible = _is_owned
 		executor_row.visible = _is_owned
 		trade_row.visible = _is_owned and trade_row.visible
-		# Command list is owned by L3 catalog; keep CityCard as L4 executor only.
-		develop_button.visible = false
+		action_row.visible = _is_owned
+		# Keep the execute CTA; secondary panel shortcuts stay on L3 catalog routes.
+		develop_button.visible = _is_owned
 		officer_button.visible = false
 		personnel_button.visible = false
 		logistics_button.visible = false
 		reconnaissance_button.visible = false
 		diplomacy_button.visible = false
+		set_embedded_in_sheet(true)
 	# This Control is not container-owned. Recompute its actual rect whenever a
 	# visibility mode hides rows or changes compact hostile text density.
+	_apply_information_density()
 	reset_size()
 	show()
 
@@ -247,7 +300,9 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 		title_label.add_theme_font_size_override("font_size", ceili(20.0 / scale))
 		for label: Label in [ownership_label, stats_label, command_label, executor_label]:
 			label.add_theme_font_size_override("font_size", body_font_size)
-		stats_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if _read_only else TextServer.AUTOWRAP_OFF
+		if _read_only:
+			custom_minimum_size = Vector2(ceilf(target_width_px / scale), ceilf(160.0 / scale))
 		for control: Control in [close_button, previous_command, command_option, next_command, executor_option, trade_direction, trade_amount, logistics_button, reconnaissance_button, diplomacy_button, personnel_button, officer_button, develop_button]:
 			control.add_theme_font_size_override("font_size", action_font_size)
 		for popup: PopupMenu in [command_option.get_popup(), executor_option.get_popup(), trade_direction.get_popup()]:
@@ -282,7 +337,7 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 		title_label.add_theme_font_size_override("font_size", ceili(24.0 / scale) if touch_mode else 24)
 		for label: Label in [ownership_label, stats_label, command_label, executor_label]:
 			label.add_theme_font_size_override("font_size", desktop_action_size)
-		stats_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if _read_only else TextServer.AUTOWRAP_OFF
 		for control: Control in [close_button, previous_command, command_option, next_command, executor_option, trade_direction, trade_amount, logistics_button, reconnaissance_button, diplomacy_button, personnel_button, officer_button, develop_button]:
 			control.add_theme_font_size_override("font_size", desktop_action_size)
 		for popup: PopupMenu in [command_option.get_popup(), executor_option.get_popup(), trade_direction.get_popup()]:
@@ -294,14 +349,33 @@ func apply_responsive_layout(compact: bool, canvas_scale: float, physical_size: 
 		_confirm_dialog.get_label().add_theme_font_size_override("font_size", desktop_action_size)
 		for button: Button in [_confirm_dialog.get_ok_button(), _confirm_dialog.get_cancel_button()]:
 			button.add_theme_font_size_override("font_size", desktop_action_size)
-		command_label.visible = true
+		command_label.visible = not _read_only
 	_apply_information_density()
 	reset_size()
+
+
+func place_in(usable_rect: Rect2) -> void:
+	if not visible:
+		return
+	set_embedded_in_sheet(true)
+	# One surface only: fill the MobileSheet body; never float a second framed card.
+	var parent_control := get_parent() as Control
+	var local_pos := usable_rect.position
+	if parent_control != null:
+		local_pos = usable_rect.position - parent_control.global_position
+	position = local_pos.round()
+	size = usable_rect.size
+	stats_label.custom_minimum_size = Vector2(maxf(80.0, usable_rect.size.x - 56.0), 0.0)
+	if _read_only:
+		stats_scroll.custom_minimum_size = Vector2(0.0, maxf(120.0, usable_rect.size.y - 72.0))
+	else:
+		stats_scroll.custom_minimum_size = Vector2(0.0, maxf(48.0, usable_rect.size.y * 0.28))
 
 
 func place_near(anchor_position: Vector2, usable_rect: Rect2) -> void:
 	if not visible:
 		return
+	set_embedded_in_sheet(false)
 	var card_size := size
 	if card_size.x <= 1.0 or card_size.y <= 1.0:
 		card_size = get_combined_minimum_size()
@@ -424,6 +498,12 @@ func _apply_trade_amount_limit() -> void:
 
 
 func _apply_information_density() -> void:
+	# Detail petal must keep Web-aligned full summary even on compact phones.
+	if _read_only:
+		ownership_label.visible = true
+		stats_label.text = _detail_stats_text if not _detail_stats_text.is_empty() else _full_stats_text
+		stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		return
 	# Enemy ownership is public knowledge and must remain text-visible on compact
 	# phones; faction color alone is not an accessible information channel.
 	ownership_label.visible = not _compact_mode or not _is_owned
@@ -486,6 +566,116 @@ func _format_number(value: int) -> String:
 	parts.push_front(raw)
 	var result := ",".join(parts)
 	return "-%s" % result if value < 0 else result
+
+
+func _build_owned_detail_text(
+		snapshot: Dictionary, city: Dictionary, condition_key: String, condition_name: String
+) -> String:
+	var satrap_id := str(city.get("satrapOfficerId", ""))
+	var officers := _as_dictionary(snapshot.get("officers", {}))
+	var satrap_name := tr("空缺")
+	if not satrap_id.is_empty() and officers.has(satrap_id):
+		satrap_name = str(_as_dictionary(officers[satrap_id]).get("name", satrap_id))
+	var lines: PackedStringArray = PackedStringArray([
+		tr("人口：%s") % _format_number(int(city.get("population", 0))),
+		tr("金钱：%s") % _format_number(int(city.get("money", 0))),
+		tr("粮草：%s") % _format_number(int(city.get("food", 0))),
+		tr("后备兵：%s") % _format_number(int(city.get("reserveTroops", 0))),
+		tr("农业：%d / %d") % [int(city.get("farming", 0)), int(city.get("farmingLimit", 0))],
+		tr("商业：%d / %d") % [int(city.get("commerce", 0)), int(city.get("commerceLimit", 0))],
+		tr("民忠：%d") % int(city.get("publicLoyalty", 0)),
+		tr("城防：%d") % int(city.get("defense", 0)),
+		tr("防灾：%d") % int(city.get("disasterPrevention", 0)),
+		tr("状态：%s") % condition_name,
+		tr("太守：%s") % satrap_name,
+	])
+	var stationed := _list_stationed_officers(snapshot, str(city.get("id", _city_id)))
+	lines.append("")
+	lines.append(tr("驻城人物 · %d 人") % stationed.size())
+	var acted: Array = snapshot.get("actedOfficerIds", []) if snapshot.get("actedOfficerIds") is Array else []
+	var shown := mini(8, stationed.size())
+	for index: int in range(shown):
+		var officer: Dictionary = stationed[index]
+		var officer_id := str(officer.get("id", ""))
+		var role := tr("太守") if officer_id == satrap_id else tr("在职")
+		var duty := tr("已行动") if acted.has(officer_id) else tr("待命")
+		lines.append(
+			"%s · %s %d · %s %d · %s %s · %s %d · %s · %s" % [
+				str(officer.get("name", officer_id)),
+				tr("武"), int(officer.get("force", 0)),
+				tr("智"), int(officer.get("intelligence", 0)),
+				tr("兵"), _format_number(int(officer.get("troops", 0))),
+				tr("忠"), int(officer.get("loyalty", 0)),
+				role,
+				duty,
+			]
+		)
+	if stationed.size() > 8:
+		lines.append(tr("另有 %d 人") % (stationed.size() - 8))
+	if condition_key != "normal" and CONDITION_GUIDANCE.has(condition_key):
+		lines.append("")
+		lines.append(tr(str(CONDITION_GUIDANCE[condition_key])))
+	return "\n".join(lines)
+
+
+func _build_report_detail_text(snapshot: Dictionary, report: Dictionary) -> String:
+	var turn_now := int(snapshot.get("turn", 0))
+	var observed_turn := int(report.get("observedTurn", turn_now))
+	var age_months := maxi(0, turn_now - observed_turn)
+	var lines: PackedStringArray = PackedStringArray([
+		tr("人口：%s") % _format_number(int(report.get("population", 0))),
+		tr("金钱：%s") % _format_number(int(report.get("money", 0))),
+		tr("粮草：%s") % _format_number(int(report.get("food", 0))),
+		tr("后备兵：%s") % _format_number(int(report.get("reserveTroops", 0))),
+		tr("农业：%d") % int(report.get("farming", 0)),
+		tr("商业：%d") % int(report.get("commerce", 0)),
+		tr("民忠：%s") % (
+			str(int(report.get("publicLoyalty", 0))) if report.has("publicLoyalty") else tr("未知")
+		),
+		tr("城防：%d") % int(report.get("defense", 0)),
+		tr("防灾：未知"),
+		tr("状态：未知"),
+		tr("太守：%s") % str(report.get("satrapName", tr("未知"))),
+		"",
+		tr("情报采集于 %d 年 %d 月（%d 月前）") % [
+			int(report.get("observedYear", 0)),
+			int(report.get("observedMonth", 0)),
+			age_months,
+		],
+		"",
+		tr("驻城人物 · %d 人（侦察时）") % int(report.get("officerCount", 0)),
+		tr("驻军合计 %s 兵") % _format_number(int(report.get("totalTroops", 0))),
+		tr("武将 %d 人 · 后备兵 %s") % [
+			int(report.get("officerCount", 0)),
+			_format_number(int(report.get("reserveTroops", 0))),
+		],
+		tr("这是侦察时的快照，后续变化不会自动更新。"),
+		tr("敌对或中立城池只显示已掌握的情报。侦察和出征需从相邻的己方城池发起。"),
+	])
+	return "\n".join(lines)
+
+
+func _list_stationed_officers(snapshot: Dictionary, city_id: String) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var officers := _as_dictionary(snapshot.get("officers", {}))
+	var order: Array = snapshot.get("officerOrder", []) if snapshot.get("officerOrder") is Array else officers.keys()
+	for raw_id: Variant in order:
+		var officer_id := str(raw_id)
+		if not officers.has(officer_id):
+			continue
+		var officer: Dictionary = _as_dictionary(officers[officer_id]).duplicate(true)
+		if str(officer.get("status", "")) != "serving":
+			continue
+		if str(officer.get("cityId", "")) != city_id:
+			continue
+		officer["id"] = officer_id
+		result.append(officer)
+	return result
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and not visible:
+		set_embedded_in_sheet(false)
 
 
 func _as_dictionary(value: Variant) -> Dictionary:

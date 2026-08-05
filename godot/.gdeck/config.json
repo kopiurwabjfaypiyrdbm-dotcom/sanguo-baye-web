@@ -1,11 +1,12 @@
 {
   "schemaVersion": 1,
-  "flightDeckVersion": "1.6.0-cursor.1",
+  "flightDeckVersion": "1.6.3-cursor.2",
   "godotPath": "",
   "editorBridge": {
     "host": "127.0.0.1",
     "port": 47835,
     "allowWrites": false,
+    "supplementaryEnabled": false,
     "resourceRoots": [
       "res://resources/"
     ]

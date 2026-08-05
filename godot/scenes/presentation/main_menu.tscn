@@ -146,6 +146,6 @@ text = "重返沙场"
 
 [node name="QuitButton" type="Button" parent="Center/Card/Margin/Stack/ActionRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 52)
+custom_minimum_size = Vector2(120, 58)
 layout_mode = 2
 text = "退出"

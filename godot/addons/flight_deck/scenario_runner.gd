@@ -15,6 +15,7 @@ var failure_kind := "none"
 var failure_details: Dictionary = {}
 var assertion_results: Array[Dictionary] = []
 var active_actions: Dictionary = {}
+var trace_events := false
 
 func load_file(path: String) -> bool:
 	scenario_path = path
@@ -32,6 +33,7 @@ func load_file(path: String) -> bool:
 	scenario = parsed
 	steps = scenario.get("steps", [])
 	assertions = scenario.get("assertions", [])
+	trace_events = bool(scenario.get("traceEvents", false)) or OS.get_environment("GDECK_TRACE_EVENTS") == "1"
 	if not steps is Array or steps.is_empty():
 		_fail("Scenario has no steps: %s" % path)
 		return false
@@ -52,11 +54,7 @@ func tick(probe: Node) -> void:
 		_fail("Step %d must be an object" % current_step)
 		return
 	if step_frame == 0:
-		if current_step == 0 and step.has("wait_event"):
-			step_event_offset = 0
-		elif not step.has("wait_event") or not preserve_event_offset_for_next_wait:
-			step_event_offset = probe.semantic_events.size()
-		preserve_event_offset_for_next_wait = false
+		_begin_step_window(probe, step)
 		probe.event("scenario_step_started", {"index": current_step, "step": step})
 
 	if step.has("wait_frames"):
@@ -116,6 +114,8 @@ func tick(probe: Node) -> void:
 				"event_window_end": probe.semantic_events.size(),
 				"prior_matches": probe.matching_semantic_events_before(event_name, where, step_event_offset),
 			}
+			if trace_events or bool(step.get("traceEvents", false)):
+				failure_details["trace"] = _event_trace_summary(probe, event_name, where)
 			_fail("Step %d timed out waiting for event '%s'" % [current_step, event_name], "expectation")
 		return
 
@@ -141,6 +141,50 @@ func result() -> Dictionary:
 		"failure_kind": failure_kind,
 		"failure_details": failure_details,
 		"assertions": assertion_results,
+		"trace_events": trace_events,
+	}
+
+func _begin_step_window(probe: Node, step: Dictionary) -> void:
+	var include_history := bool(step.get("includeHistory", false)) or bool(step.get("include_history", false))
+	var since_value := str(step.get("since", ""))
+	if step.has("wait_event") and include_history:
+		step_event_offset = 0
+		preserve_event_offset_for_next_wait = false
+		return
+	if step.has("wait_event") and since_value == "command":
+		var command_index := _last_scenario_command_index(probe)
+		step_event_offset = command_index + 1 if command_index >= 0 else probe.semantic_events.size()
+		preserve_event_offset_for_next_wait = false
+		return
+	if current_step == 0 and step.has("wait_event"):
+		step_event_offset = 0
+	elif not step.has("wait_event") or not preserve_event_offset_for_next_wait:
+		step_event_offset = probe.semantic_events.size()
+	preserve_event_offset_for_next_wait = false
+
+func _last_scenario_command_index(probe: Node) -> int:
+	for index in range(probe.semantic_events.size() - 1, -1, -1):
+		var candidate: Dictionary = probe.semantic_events[index]
+		if str(candidate.get("name", "")) == "scenario_command":
+			return index
+	return -1
+
+func _event_trace_summary(probe: Node, event_name: String, where: Dictionary) -> Dictionary:
+	var recent: Array = []
+	var start := maxi(0, probe.semantic_events.size() - 12)
+	for index in range(start, probe.semantic_events.size()):
+		var candidate: Dictionary = probe.semantic_events[index]
+		recent.append({
+			"index": index,
+			"name": candidate.get("name", ""),
+			"frame": candidate.get("frame", -1),
+		})
+	return {
+		"offset": step_event_offset,
+		"total_events": probe.semantic_events.size(),
+		"matches_in_window": probe.count_semantic_events(event_name, where, step_event_offset),
+		"prior_matches": probe.matching_semantic_events_before(event_name, where, step_event_offset),
+		"recent_events": recent,
 	}
 
 func _complete_step(probe: Node) -> void:
