@@ -18,9 +18,12 @@ const INTERNAL_COMMANDS: Array[Dictionary] = [
 	{"kind": "trade_food", "label": "交易", "mode": "trade", "dangerous": false},
 	{"kind": "banquet_officer", "label": "宴请", "mode": "target", "dangerous": false},
 	{"kind": "plunder_city", "label": "掠夺", "mode": "executor", "dangerous": true},
-	{"kind": "recruit_troops", "label": "征兵", "mode": "executor", "dangerous": false},
-	{"kind": "distribute_troops", "label": "兵力分配", "mode": "distribute", "dangerous": false},
 ]
+
+# recruit_troops / distribute_troops are intentionally NOT part of the city
+# internal-affairs query: the TypeScript oracle exposes exactly these seven
+# commands there (Web product has a separate military entry point), and the
+# cross-client contract (application-session fixture, MB12) pins this list.
 
 
 static func city(state: RefCounted, city_id: String) -> Dictionary:

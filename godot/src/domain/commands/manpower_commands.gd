@@ -260,9 +260,20 @@ static func _command_label(kind: String) -> String:
 static func _append_logs(data: Dictionary, kind: String, messages: Array) -> void:
 	var logs: Array = data.get("logs", [])
 	var turn := int(data.get("turn", 0))
+	var used := {}
+	for entry: Variant in logs:
+		if entry is Dictionary:
+			used[str((entry as Dictionary).get("id", ""))] = true
+	var serial := logs.size() + 1
 	for message: Variant in messages:
+		var log_id: String = "log-%d-%03d" % [turn, serial]
+		while used.has(log_id):
+			serial += 1
+			log_id = "log-%d-%03d" % [turn, serial]
+		used[log_id] = true
+		serial += 1
 		logs.append({
-			"id": "manpower-%d-%d" % [turn, logs.size()],
+			"id": log_id,
 			"kind": kind,
 			"turn": turn,
 			"message": str(message),
