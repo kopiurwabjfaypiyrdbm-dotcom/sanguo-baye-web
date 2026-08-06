@@ -55,6 +55,7 @@ export function getReconAvailability(state: GameState, order: ReconOrder): Recon
     return { allowed: false, reason: `${source.name}金钱不足，需要 ${cost.money}` };
   }
   return { allowed: true };
+  return { allowed: true };
 }
 
 export function reconnoitreCity(state: GameState, order: ReconOrder): GameState {

@@ -353,7 +353,6 @@ describe('manual tactical battle core', () => {
     expect(createTacticalBattleResult(defendRetreat)).toMatchObject({ winner: 'attacker', cityCaptured: true });
     expect(() => retreatTacticalSide(attackBattle, 'defender')).toThrow('本方行动阶段');
   });
-
   it('uses deterministic paths and gives water troops a river-crossing advantage', () => {
     const { state, order } = battleFixture();
     let battle = createTacticalBattle(state, order);
