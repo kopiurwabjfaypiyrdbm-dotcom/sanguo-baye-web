@@ -22,3 +22,9 @@
 当前可玩版本沿用 `data/source/tool-catalog.csv` 的 33 项道具名称和数值作为临时产品数据；城池队列与人物装备引用来自已入库时期结构，但该 CSV 本身尚未满足上面的固定上游、解析器和 SHA-256 要求。因此它不能作为“原版内容已验证”的证据，也不得据此继续导入本地 `.lib` 或来源不明资产。
 
 四时期生成物 schema 2 只在既有人物对象上附加晚于该时期起年的稀疏登场年和规范化城市，共 69 条；其中 18 人在对应时期已进入城市队列，领域转换以队列为当前状态事实源，实际只为 51 名隐藏人物保留日程。不包含 `GENERAL_CON`/`GOODS_CON` 原始字节、完整条件数组或指定伯乐表。生成器校验既有 `dat.lib.orig` SHA-256，兼容解析器按原设备 3 字节 ABI 读取。本地锁定资源显示四时期没有未来道具日程，因此生成数据以四个空 `itemAppearances` 明确锁定该结论。这个最小语义补充只服务于既有结构化剧本的长期推进，不能重建或替代原资源包。
+
+## Godot 技术样片数据
+
+`godot/data/period-1.json` 与 `godot/data/fixtures/develop-farming-v1.json` 由 `scripts/generate-godot-spike-data.ts` 从仓库现有 `createBundledScenario(1, 1, 'baye-classic-v1')` 状态工厂生成。生成器记录现有 `src/data/generated/baye-periods.json` 的 schema 和来源元数据，并校验 38 城、54 条互惠道路、108 个有向邻接引用及固定初始/后继 seed；不会读取 `.reference/`、本地 `.lib` 或外部媒体。
+
+两个 JSON 都明确标记 `scope: internal-technical-spike` 和 `redistributionReview: pending`。该复制用于跨客户端内部验证，不形成新的内容许可证结论；结构化游戏内容的对外发布形式仍需单独书面决定。Godot 样片没有导入原版图片、字体、音频、视频、WASM 或二进制资源包，地图、反馈和应用图标为项目自有程序化/矢量内容，中文使用平台 `SystemFont`。

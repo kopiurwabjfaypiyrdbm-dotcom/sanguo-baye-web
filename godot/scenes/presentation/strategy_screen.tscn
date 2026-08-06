@@ -1,0 +1,412 @@
+[gd_scene load_steps=19 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/strategy_screen.gd" id="1_screen"]
+[ext_resource type="Script" path="res://src/presentation/strategy_map_world.gd" id="2_map"]
+[ext_resource type="Script" path="res://src/presentation/safe_area_margin.gd" id="3_safe"]
+[ext_resource type="Theme" path="res://scenes/theme/strategy_theme.tres" id="4_theme"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/city_card.tscn" id="5_card"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/officer_management_panel.tscn" id="6_officers"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/personnel_lifecycle_panel.tscn" id="7_personnel"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/strategic_logistics_panel.tscn" id="8_logistics"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/reconnaissance_panel.tscn" id="9_recon"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/diplomatic_order_panel.tscn" id="10_diplomacy"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/campaign_chronicle_panel.tscn" id="11_chronicle"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/city_context_menu.tscn" id="12_context"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/month_end_review_dialog.tscn" id="13_month"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/mobile_sheet.tscn" id="14_sheet"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/campaign_browser_panel.tscn" id="15_browser"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_bar"]
+bg_color = Color(0.141, 0.227, 0.204, 1)
+border_width_bottom = 1
+border_color = Color(0.933, 0.859, 0.651, 0.18)
+corner_radius_top_left = 0
+corner_radius_top_right = 0
+corner_radius_bottom_right = 0
+corner_radius_bottom_left = 0
+shadow_color = Color(0, 0, 0, 0.24)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_map_section"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+bg_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_map_frame"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.808, 0.745, 0.561, 0.25)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+content_margin_left = 0
+content_margin_top = 0
+content_margin_right = 0
+content_margin_bottom = 0
+
+[node name="StrategyScreen" type="Node2D"]
+script = ExtResource("1_screen")
+
+[node name="MapWorld" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_map")
+
+[node name="Cities" type="Node2D" parent="MapWorld"]
+unique_name_in_owner = true
+
+[node name="Effects" type="Node2D" parent="MapWorld"]
+unique_name_in_owner = true
+
+[node name="MapCamera" type="Camera2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(556, 328)
+position_smoothing_enabled = false
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="HUDRoot" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("4_theme")
+
+[node name="SafeArea" type="MarginContainer" parent="UILayer/HUDRoot"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_safe")
+
+[node name="HUDStack" type="VBoxContainer" parent="UILayer/HUDRoot/SafeArea"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="TopPanel" type="PanelContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_bar")
+
+[node name="TopMargin" type="MarginContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 6
+
+[node name="TopBar" type="HBoxContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.81, 0.41, 1)
+theme_override_font_sizes/font_size = 21
+text = "三国霸业 · 原生样片"
+vertical_alignment = 1
+
+[node name="YearLabel" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "公元 190 年 · 1 月"
+vertical_alignment = 1
+
+[node name="SeedLabel" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.63, 0.77, 0.71, 1)
+text = "种子 0"
+vertical_alignment = 1
+
+[node name="ResourceLabel" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.898, 0.867, 0.741, 1)
+text = "城 0 · 金 0 · 粮 0 · 兵 0"
+vertical_alignment = 1
+
+[node name="ToolbarSpacer" type="Control" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="WorldButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(76, 52)
+layout_mode = 2
+focus_mode = 2
+text = "全天下"
+
+[node name="PlayerButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(76, 52)
+layout_mode = 2
+focus_mode = 2
+text = "本势力"
+
+[node name="MoreButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 52)
+layout_mode = 2
+focus_mode = 2
+text = "⋯"
+
+[node name="TacticalDemoButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(92, 52)
+layout_mode = 2
+focus_mode = 2
+text = "临战"
+
+[node name="SaveButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(68, 52)
+layout_mode = 2
+focus_mode = 2
+text = "保存"
+
+[node name="LoadButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(68, 52)
+layout_mode = 2
+focus_mode = 2
+text = "读取"
+
+[node name="ChronicleButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(76, 52)
+layout_mode = 2
+focus_mode = 2
+text = "纪事"
+
+[node name="EndTurnButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(92, 52)
+layout_mode = 2
+focus_mode = 2
+text = "结束本月"
+
+[node name="MenuButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(76, 52)
+layout_mode = 2
+focus_mode = 2
+text = "主菜单"
+
+[node name="StatusBadgePanel" type="PanelContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(82, 48)
+layout_mode = 2
+
+[node name="StatusBadge" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/TopPanel/TopMargin/TopBar/StatusBadgePanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "就绪"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MapSection" type="PanelContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_map_section")
+
+[node name="MapFrame" type="Panel" parent="UILayer/HUDRoot/SafeArea/HUDStack/MapSection"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_map_frame")
+
+[node name="MapInputSpace" type="Control" parent="UILayer/HUDRoot/SafeArea/HUDStack/MapSection/MapFrame"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="StatusLine" type="Label" parent="UILayer/HUDRoot/SafeArea/HUDStack/MapSection/MapFrame"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -28.0
+offset_right = 560.0
+offset_bottom = -8.0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.78, 0.84, 0.8, 0.72)
+theme_override_font_sizes/font_size = 12
+text = "点击城池下令"
+text_overrun_behavior = 3
+
+[node name="BottomPanel" type="PanelContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 88)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_bar")
+
+[node name="BottomMargin" type="MarginContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="CampaignDock" type="HBoxContainer" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 0
+
+[node name="DockIntelButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/CampaignDock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(156, 68)
+size_flags_horizontal = 0
+layout_mode = 2
+focus_mode = 2
+text = "情报"
+
+[node name="DockCitiesButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/CampaignDock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(156, 68)
+size_flags_horizontal = 0
+layout_mode = 2
+focus_mode = 2
+text = "城池"
+
+[node name="DockOfficersButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/CampaignDock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(156, 68)
+size_flags_horizontal = 0
+layout_mode = 2
+focus_mode = 2
+text = "人物"
+
+[node name="DockTreasuresButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/CampaignDock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(156, 68)
+size_flags_horizontal = 0
+layout_mode = 2
+focus_mode = 2
+text = "宝物"
+
+[node name="DockDelegationButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/CampaignDock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(156, 68)
+size_flags_horizontal = 0
+layout_mode = 2
+focus_mode = 2
+text = "委任"
+
+[node name="DockSpacer" type="Control" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/CampaignDock"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="DockEndMonthButton" type="Button" parent="UILayer/HUDRoot/SafeArea/HUDStack/BottomPanel/BottomMargin/CampaignDock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(176, 68)
+size_flags_horizontal = 0
+layout_mode = 2
+focus_mode = 2
+text = "结束本月"
+
+[node name="CityContextMenu" parent="UILayer/HUDRoot" instance=ExtResource("12_context")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+z_index = 25
+
+[node name="MobileSheet" parent="UILayer/HUDRoot" instance=ExtResource("14_sheet")]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+z_index = 60
+
+[node name="CampaignBrowserPanel" parent="UILayer/HUDRoot" instance=ExtResource("15_browser")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+z_index = 61
+
+[node name="CityCard" parent="UILayer/HUDRoot" instance=ExtResource("5_card")]
+unique_name_in_owner = true
+layout_mode = 0
+z_index = 61
+
+[node name="OfficerManagementPanel" parent="UILayer/HUDRoot" instance=ExtResource("6_officers")]
+unique_name_in_owner = true
+layout_mode = 0
+z_index = 30
+
+[node name="PersonnelLifecyclePanel" parent="UILayer/HUDRoot" instance=ExtResource("7_personnel")]
+unique_name_in_owner = true
+layout_mode = 0
+z_index = 30
+
+[node name="StrategicLogisticsPanel" parent="UILayer/HUDRoot" instance=ExtResource("8_logistics")]
+unique_name_in_owner = true
+layout_mode = 0
+z_index = 30
+
+[node name="ReconnaissancePanel" parent="UILayer/HUDRoot" instance=ExtResource("9_recon")]
+unique_name_in_owner = true
+layout_mode = 0
+z_index = 30
+
+[node name="DiplomaticOrderPanel" parent="UILayer/HUDRoot" instance=ExtResource("10_diplomacy")]
+unique_name_in_owner = true
+layout_mode = 0
+z_index = 30
+
+[node name="CampaignChroniclePanel" parent="UILayer/HUDRoot" instance=ExtResource("11_chronicle")]
+unique_name_in_owner = true
+layout_mode = 0
+z_index = 40
+
+[node name="MonthEndReviewDialog" parent="UILayer/HUDRoot" instance=ExtResource("13_month")]
+unique_name_in_owner = true
+layout_mode = 0
+z_index = 50

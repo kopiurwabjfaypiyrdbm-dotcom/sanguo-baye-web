@@ -1,0 +1,122 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/campaign_chronicle_panel.gd" id="1_panel"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
+bg_color = Color(0.035, 0.059, 0.068, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.91, 0.68, 0.25, 0.9)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="CampaignChroniclePanel" type="PanelContainer"]
+visible = false
+custom_minimum_size = Vector2(520, 0)
+offset_right = 520.0
+offset_bottom = 390.0
+mouse_filter = 0
+theme_override_styles/panel = SubResource("StyleBox_panel")
+script = ExtResource("1_panel")
+
+[node name="OuterMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Content" type="VBoxContainer" parent="OuterMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="OuterMargin/Content/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.96, 0.81, 0.41, 1)
+theme_override_font_sizes/font_size = 24
+text = "战役纪事"
+
+[node name="CloseButton" type="Button" parent="OuterMargin/Content/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(92, 52)
+layout_mode = 2
+text = "关闭"
+
+[node name="PhaseLabel" type="Label" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.8, 0.76, 1)
+text = "公元 190 年 1 月 · 玩家阶段"
+
+[node name="ChronicleScroll" type="ScrollContainer" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 116)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="ChronicleLabel" type="Label" parent="OuterMargin/Content/ChronicleScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 116)
+text = "尚无战役纪事。"
+autowrap_mode = 2
+vertical_alignment = 1
+
+[node name="SuccessionRow" type="HBoxContainer" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SuccessorOption" type="OptionButton" parent="OuterMargin/Content/SuccessionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ConfirmButton" type="Button" parent="OuterMargin/Content/SuccessionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 52)
+layout_mode = 2
+text = "拥立"
+
+[node name="DemoHint" type="Label" parent="OuterMargin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.66, 0.62, 1)
+text = "技术样片验收入口 · 会重置时期 1 当前进度"
+
+[node name="DemoRow" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EventDemoButton" type="Button" parent="OuterMargin/Content/DemoRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "水灾反馈"
+
+[node name="SuccessionDemoButton" type="Button" parent="OuterMargin/Content/DemoRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "继承决策"
+
+[node name="OutcomeDemoButton" type="Button" parent="OuterMargin/Content/DemoRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "胜利结局"

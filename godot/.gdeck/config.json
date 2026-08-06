@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "flightDeckVersion": "1.6.3-cursor.2",
+  "godotPath": "",
+  "editorBridge": {
+    "host": "127.0.0.1",
+    "port": 47835,
+    "allowWrites": false,
+    "supplementaryEnabled": false,
+    "resourceRoots": [
+      "res://resources/"
+    ]
+  },
+  "pi": {
+    "confirmationTimeoutSeconds": 90,
+    "approvalLeaseSeconds": 120
+  },
+  "profiles": {
+    "default": {
+      "description": "Main menu cold-start smoke (project main scene)",
+      "frames": 30,
+      "benchmarkWarmupFrames": 60,
+      "seed": 42,
+      "userArgs": []
+    },
+    "main-menu": {
+      "description": "Longer main-menu headless smoke for capture/benchmark",
+      "frames": 90,
+      "benchmarkWarmupFrames": 30,
+      "seed": 42,
+      "userArgs": []
+    },
+    "strategy-map": {
+      "description": "Strategy map pan/zoom scenario with camera assertion fixture",
+      "frames": 120,
+      "seed": 42,
+      "userArgs": [],
+      "fixtureAdapter": "res://qa/scenarios/strategy_map_fixture.gd"
+    }
+  },
+  "verificationProfiles": {
+    "fast": {
+      "check": true,
+      "unit": "auto"
+    },
+    "daily": {
+      "check": true,
+      "unit": true
+    },
+    "core-loop": {
+      "description": "Syntax + logic + interaction regression: check, unit and the strategy-map pan/zoom scenario",
+      "check": true,
+      "unit": true,
+      "scenarios": ["strategy-map-pan-zoom"]
+    }
+  }
+}

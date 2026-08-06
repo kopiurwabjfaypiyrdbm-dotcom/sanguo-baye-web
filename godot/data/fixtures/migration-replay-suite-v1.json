@@ -1,0 +1,274 @@
+{
+  "fixtureSuiteVersion": 1,
+  "id": "godot-migration-replay-suite-v1",
+  "usage": {
+    "scope": "internal-migration-verification",
+    "redistributionReview": "pending"
+  },
+  "algorithms": {
+    "canonical": "canonical-json-v1",
+    "digest": "sha256",
+    "numberDomain": "safe-integer-or-decimal-6-v1"
+  },
+  "initialState": {
+    "path": "godot/data/period-1.json"
+  },
+  "provenance": {
+    "oracle": {
+      "path": "src/core/cityCommands.ts",
+      "symbol": "developFarming"
+    },
+    "generator": {
+      "path": "src/core/migration/replayFixture.ts",
+      "symbol": "buildMigrationReplaySuite"
+    }
+  },
+  "canonicalVectors": [
+    {
+      "id": "null-bool-numbers",
+      "value": {
+        "z": null,
+        "t": true,
+        "f": false,
+        "negative": -7,
+        "ratio": 1.04,
+        "zero": 0
+      },
+      "canonical": "{\"f\":false,\"negative\":-7,\"ratio\":1.04,\"t\":true,\"z\":null,\"zero\":0}",
+      "sha256": "a18f96561d9a9dc07a226c965ed56fbdc03cf46ea38dff2726ce1c568b1a911a"
+    },
+    {
+      "id": "unicode-and-escapes",
+      "value": {
+        "text": "三国\n霸业\t\"\\"
+      },
+      "canonical": "{\"text\":\"三国\\n霸业\\t\\\"\\\\\"}",
+      "sha256": "0d098486a4e798c725ac87886ae3990709dbbbe2b1540c6d0e2d9a48dcb07c8f"
+    },
+    {
+      "id": "arrays-retain-order",
+      "value": [
+        "city-12",
+        "city-3",
+        48641
+      ],
+      "canonical": "[\"city-12\",\"city-3\",48641]",
+      "sha256": "4c360064f64facdbfd15cc4a2c06e957df45e04c5039816298197cc760b22aee"
+    },
+    {
+      "id": "object-keys-sort-a",
+      "value": {
+        "beta": 2,
+        "alpha": {
+          "y": 2,
+          "x": 1
+        }
+      },
+      "canonical": "{\"alpha\":{\"x\":1,\"y\":2},\"beta\":2}",
+      "sha256": "85100dd8e3b76c35a7fdcc1c9f0a46a122925ffb9023ecde5332a619fd1ee9c7"
+    },
+    {
+      "id": "object-keys-sort-b",
+      "value": {
+        "alpha": {
+          "x": 1,
+          "y": 2
+        },
+        "beta": 2
+      },
+      "canonical": "{\"alpha\":{\"x\":1,\"y\":2},\"beta\":2}",
+      "sha256": "85100dd8e3b76c35a7fdcc1c9f0a46a122925ffb9023ecde5332a619fd1ee9c7"
+    },
+    {
+      "id": "unicode-scalar-key-order",
+      "value": {
+        "😀": 1,
+        "": 2,
+        "三": 3
+      },
+      "canonical": "{\"三\":3,\"\":2,\"😀\":1}",
+      "sha256": "acd7692806f620665126746993e344df4ffa3c20e8b55084fa7d51c8cf8e4557"
+    },
+    {
+      "id": "integer-boundaries",
+      "value": {
+        "int32Min": -2147483648,
+        "uint32Max": 4294967295,
+        "uint32Overflow": 4294967296,
+        "maxSafeInteger": 9007199254740991
+      },
+      "canonical": "{\"int32Min\":-2147483648,\"maxSafeInteger\":9007199254740991,\"uint32Max\":4294967295,\"uint32Overflow\":4294967296}",
+      "sha256": "98fff5c61bd56c4da78af7be2daddc69262e6592a48d76795879530ca76e6142"
+    }
+  ],
+  "replays": [
+    {
+      "id": "develop-farming-single-v1",
+      "initialStateSha256": "e8b629e82ba3e606dfeb34ff118f0bcd5b75d5a85c38189ef4a806e8586c551a",
+      "steps": [
+        {
+          "command": {
+            "kind": "developFarming",
+            "cityId": "city-12",
+            "officerId": "officer-1"
+          },
+          "beforeStateSha256": "e8b629e82ba3e606dfeb34ff118f0bcd5b75d5a85c38189ef4a806e8586c551a",
+          "afterStateSha256": "f677c68bd67040122d9ebbf2f85b5853da220347009759f0ec6d66d144ae8c16",
+          "stateChanged": true,
+          "expected": {
+            "ok": true,
+            "receipt": {
+              "gain": 63,
+              "costs": {
+                "money": 50,
+                "stamina": 8
+              },
+              "state": {
+                "turn": 1,
+                "rngSeed": 373686124,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1"
+                ],
+                "logCount": 2
+              },
+              "city": {
+                "id": "city-12",
+                "resources": {
+                  "farming": 1301,
+                  "money": 85
+                }
+              },
+              "officer": {
+                "id": "officer-1",
+                "stamina": 92
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "曹操在濮阳主持开垦，农业提高 63，消耗金钱 50、体力 8。",
+                "turn": 1
+              }
+            }
+          }
+        }
+      ],
+      "finalStateSha256": "f677c68bd67040122d9ebbf2f85b5853da220347009759f0ec6d66d144ae8c16"
+    },
+    {
+      "id": "develop-farming-sequence-v1",
+      "initialStateSha256": "e8b629e82ba3e606dfeb34ff118f0bcd5b75d5a85c38189ef4a806e8586c551a",
+      "steps": [
+        {
+          "command": {
+            "kind": "developFarming",
+            "cityId": "city-12",
+            "officerId": "officer-1"
+          },
+          "beforeStateSha256": "e8b629e82ba3e606dfeb34ff118f0bcd5b75d5a85c38189ef4a806e8586c551a",
+          "afterStateSha256": "f677c68bd67040122d9ebbf2f85b5853da220347009759f0ec6d66d144ae8c16",
+          "stateChanged": true,
+          "expected": {
+            "ok": true,
+            "receipt": {
+              "gain": 63,
+              "costs": {
+                "money": 50,
+                "stamina": 8
+              },
+              "state": {
+                "turn": 1,
+                "rngSeed": 373686124,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1"
+                ],
+                "logCount": 2
+              },
+              "city": {
+                "id": "city-12",
+                "resources": {
+                  "farming": 1301,
+                  "money": 85
+                }
+              },
+              "officer": {
+                "id": "officer-1",
+                "stamina": 92
+              },
+              "appendedLog": {
+                "id": "log-1-002",
+                "kind": "map",
+                "message": "曹操在濮阳主持开垦，农业提高 63，消耗金钱 50、体力 8。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "command": {
+            "kind": "developFarming",
+            "cityId": "city-12",
+            "officerId": "officer-32"
+          },
+          "beforeStateSha256": "f677c68bd67040122d9ebbf2f85b5853da220347009759f0ec6d66d144ae8c16",
+          "afterStateSha256": "7c4858bac3a4063f6dd3ff8915ad02a144c6dd2e03db94a01abeb94d5e29b23e",
+          "stateChanged": true,
+          "expected": {
+            "ok": true,
+            "receipt": {
+              "gain": 42,
+              "costs": {
+                "money": 50,
+                "stamina": 8
+              },
+              "state": {
+                "turn": 1,
+                "rngSeed": 860746715,
+                "campaignStarted": true,
+                "actedOfficerIds": [
+                  "officer-1",
+                  "officer-32"
+                ],
+                "logCount": 3
+              },
+              "city": {
+                "id": "city-12",
+                "resources": {
+                  "farming": 1343,
+                  "money": 35
+                }
+              },
+              "officer": {
+                "id": "officer-32",
+                "stamina": 92
+              },
+              "appendedLog": {
+                "id": "log-1-003",
+                "kind": "map",
+                "message": "夏侯惇在濮阳主持开垦，农业提高 42，消耗金钱 50、体力 8。",
+                "turn": 1
+              }
+            }
+          }
+        },
+        {
+          "command": {
+            "kind": "developFarming",
+            "cityId": "unknown-city",
+            "officerId": "officer-1"
+          },
+          "beforeStateSha256": "7c4858bac3a4063f6dd3ff8915ad02a144c6dd2e03db94a01abeb94d5e29b23e",
+          "afterStateSha256": "7c4858bac3a4063f6dd3ff8915ad02a144c6dd2e03db94a01abeb94d5e29b23e",
+          "stateChanged": false,
+          "expected": {
+            "ok": false,
+            "error": "只能在己方城池执行命令",
+            "receipt": {}
+          }
+        }
+      ],
+      "finalStateSha256": "7c4858bac3a4063f6dd3ff8915ad02a144c6dd2e03db94a01abeb94d5e29b23e"
+    }
+  ]
+}

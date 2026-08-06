@@ -1,0 +1,26 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/tactical_battle_screen.gd" id="1_tactical"]
+
+[node name="TacticalBattleScreen" type="Node2D"]
+script = ExtResource("1_tactical")
+
+[node name="BattleCamera" type="Camera2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(528, 352)
+enabled = true
+position_smoothing_enabled = true
+position_smoothing_speed = 7.0
+
+[node name="Interface" type="CanvasLayer" parent="."]
+layer = 20
+
+[node name="Overlay" type="Control" parent="Interface"]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

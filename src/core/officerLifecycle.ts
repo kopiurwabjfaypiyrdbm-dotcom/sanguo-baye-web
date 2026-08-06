@@ -459,7 +459,7 @@ function dissolveFaction(state: GameState, factionId: string, formerRulerOfficer
   return updateCitySatraps(next);
 }
 
-function cancelOfficerOrders(state: GameState, officerId: string): GameState {
+export function cancelOfficerOrders(state: GameState, officerId: string): GameState {
   const cities = { ...state.cities };
   const officers = { ...state.officers };
   const messages: string[] = [];

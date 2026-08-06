@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "programId": "godot-full-migration",
+  "charterPath": "docs/mission-briefs/MB00-godot-full-migration-program.md",
+  "charterRevision": 1,
+  "charterSha256": "0c95fc8da7287a833080a6703514357326c27fbe48a7d8141675e869218f817f",
+  "missionRange": {
+    "first": "MB01",
+    "last": "MB27",
+    "adaptive": true
+  },
+  "missions": [
+    {
+      "id": "MB01",
+      "wave": "technical-proof",
+      "title": "Godot 4.7.1 Android migration spike",
+      "dependsOn": []
+    },
+    {
+      "id": "MB02",
+      "wave": "migration-foundation",
+      "title": "Deterministic migration verification platform",
+      "dependsOn": ["MB01"]
+    },
+    {
+      "id": "MB03",
+      "wave": "migration-foundation",
+      "title": "Production domain data contract",
+      "dependsOn": ["MB02"]
+    },
+    {
+      "id": "MB04",
+      "wave": "migration-foundation",
+      "title": "Production application GameSession",
+      "dependsOn": ["MB03"]
+    },
+    {
+      "id": "MB05",
+      "wave": "strategic-complete",
+      "title": "City economy and development rules",
+      "dependsOn": ["MB04"]
+    },
+    {
+      "id": "MB06",
+      "wave": "strategic-complete",
+      "title": "Officer management, appointments, and equipment",
+      "dependsOn": ["MB04"]
+    },
+    {
+      "id": "MB07",
+      "wave": "strategic-complete",
+      "title": "Recruitment, captives, surrender, and banishment",
+      "dependsOn": ["MB04"]
+    },
+    {
+      "id": "MB08",
+      "wave": "strategic-complete",
+      "title": "Movement, transport, and strategic logistics",
+      "dependsOn": ["MB04"]
+    },
+    {
+      "id": "MB09",
+      "wave": "strategic-complete",
+      "title": "Reconnaissance, intelligence, and visibility",
+      "dependsOn": ["MB04"]
+    },
+    {
+      "id": "MB10",
+      "wave": "strategic-complete",
+      "title": "Diplomacy and strategic orders",
+      "dependsOn": ["MB04"]
+    },
+    {
+      "id": "MB11",
+      "wave": "strategic-complete",
+      "title": "Calendar, events, lifecycle, succession, and outcomes",
+      "dependsOn": ["MB04"]
+    },
+    {
+      "id": "MB12",
+      "wave": "strategic-complete",
+      "title": "Strategic AI and complete turn-month orchestration",
+      "dependsOn": ["MB05", "MB06", "MB07", "MB08", "MB09", "MB10", "MB11"]
+    },
+    {
+      "id": "MB13",
+      "wave": "tactical-complete",
+      "title": "Deterministic battle state, deployment, and turn framework",
+      "dependsOn": ["MB12"]
+    },
+    {
+      "id": "MB14",
+      "wave": "tactical-complete",
+      "title": "Battlefields, terrain, pathfinding, and movement",
+      "dependsOn": ["MB13"]
+    },
+    {
+      "id": "MB15",
+      "wave": "tactical-complete",
+      "title": "Attacks, damage, status effects, and unit defeat",
+      "dependsOn": ["MB13"]
+    },
+    {
+      "id": "MB16",
+      "wave": "tactical-complete",
+      "title": "Unit types, skills, tactics, equipment, and special effects",
+      "dependsOn": ["MB13"]
+    },
+    {
+      "id": "MB17",
+      "wave": "tactical-complete",
+      "title": "Deterministic tactical AI",
+      "dependsOn": ["MB14", "MB15", "MB16"]
+    },
+    {
+      "id": "MB18",
+      "wave": "tactical-complete",
+      "title": "Native battlefield presentation, camera, and mobile input",
+      "dependsOn": ["MB14", "MB15", "MB16"]
+    },
+    {
+      "id": "MB19",
+      "wave": "tactical-complete",
+      "title": "Battle outcomes, retreat, settlement, and campaign reintegration",
+      "dependsOn": ["MB17", "MB18"]
+    },
+    {
+      "id": "MB20",
+      "wave": "client-platform",
+      "title": "Production saves, migration, and corruption recovery",
+      "dependsOn": ["MB19"]
+    },
+    {
+      "id": "MB21",
+      "wave": "client-platform",
+      "title": "Main menu, campaign setup, and complete strategic UI",
+      "dependsOn": ["MB12", "MB20"]
+    },
+    {
+      "id": "MB22",
+      "wave": "client-platform",
+      "title": "Tactical HUD, feedback, settings, and accessibility",
+      "dependsOn": ["MB19", "MB20"]
+    },
+    {
+      "id": "MB23",
+      "wave": "client-platform",
+      "title": "Android and Windows platform hardening and performance",
+      "dependsOn": ["MB21", "MB22"]
+    },
+    {
+      "id": "MB24",
+      "wave": "program-closure",
+      "title": "Full parity and deterministic regression closure",
+      "dependsOn": ["MB23"]
+    },
+    {
+      "id": "MB25",
+      "wave": "program-closure",
+      "title": "Release-candidate and migration-completion evidence",
+      "dependsOn": ["MB24"]
+    },
+    {
+      "id": "MB26",
+      "wave": "program-closure",
+      "title": "Android touch acceptance and final migration gate",
+      "dependsOn": ["MB25"]
+    },
+    {
+      "id": "MB27",
+      "wave": "program-closure",
+      "title": "Current-source Android acceptance and final Goal decision",
+      "dependsOn": ["MB26"]
+    },
+    {
+      "id": "MB28",
+      "wave": "playability-remediation",
+      "title": "Android touch playability remediation to continuous play",
+      "dependsOn": ["MB27"]
+    }
+  ]
+}

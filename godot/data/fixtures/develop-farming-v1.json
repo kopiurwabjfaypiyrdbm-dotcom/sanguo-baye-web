@@ -1,0 +1,90 @@
+{
+  "fixtureVersion": 1,
+  "id": "develop-farming-v1",
+  "usage": {
+    "scope": "internal-technical-spike",
+    "redistributionReview": "pending",
+    "notice": "Internal technical-spike data only. Redistribution review is pending; this export makes no new license claim."
+  },
+  "provenance": {
+    "scenarioDataPath": "godot/data/period-1.json",
+    "oracle": {
+      "path": "src/core/cityCommands.ts",
+      "symbol": "developFarming"
+    },
+    "rng": {
+      "path": "src/core/random.ts",
+      "symbol": "nextRandom"
+    },
+    "ruleset": {
+      "path": "src/core/rulesets.ts",
+      "id": "baye-classic-v1"
+    }
+  },
+  "input": {
+    "command": {
+      "kind": "developFarming",
+      "cityId": "city-12",
+      "officerId": "officer-1"
+    },
+    "state": {
+      "turn": 1,
+      "rngSeed": 48641,
+      "campaignStarted": false,
+      "actedOfficerIds": [],
+      "logCount": 1
+    },
+    "city": {
+      "id": "city-12",
+      "name": "濮阳",
+      "ownerId": "ruler-1",
+      "farmingLimit": 4424,
+      "resources": {
+        "farming": 1238,
+        "money": 135
+      }
+    },
+    "officer": {
+      "id": "officer-1",
+      "name": "曹操",
+      "factionId": "ruler-1",
+      "cityId": "city-12",
+      "intelligence": 90,
+      "equipmentItemIds": [],
+      "stamina": 100
+    }
+  },
+  "expected": {
+    "gain": 63,
+    "costs": {
+      "money": 50,
+      "stamina": 8
+    },
+    "state": {
+      "turn": 1,
+      "rngSeed": 373686124,
+      "campaignStarted": true,
+      "actedOfficerIds": [
+        "officer-1"
+      ],
+      "logCount": 2
+    },
+    "city": {
+      "id": "city-12",
+      "resources": {
+        "farming": 1301,
+        "money": 85
+      }
+    },
+    "officer": {
+      "id": "officer-1",
+      "stamina": 92
+    },
+    "appendedLog": {
+      "id": "log-1-002",
+      "kind": "map",
+      "message": "曹操在濮阳主持开垦，农业提高 63，消耗金钱 50、体力 8。",
+      "turn": 1
+    }
+  }
+}

@@ -1,0 +1,127 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/personnel_lifecycle_panel.gd" id="1_panel"]
+
+[node name="PersonnelLifecyclePanel" type="PanelContainer"]
+custom_minimum_size = Vector2(820, 350)
+offset_right = 820.0
+offset_bottom = 350.0
+mouse_filter = 0
+script = ExtResource("1_panel")
+
+[node name="OuterMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
+
+[node name="Content" type="VBoxContainer" parent="OuterMargin"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Header" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+
+[node name="CityTitle" type="Label" parent="OuterMargin/Content/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.83, 0.4, 1)
+theme_override_font_sizes/font_size = 24
+text = "城池 · 人才与俘虏"
+
+[node name="HeaderSpacer" type="Control" parent="OuterMargin/Content/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="CloseButton" type="Button" parent="OuterMargin/Content/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 50)
+layout_mode = 2
+focus_mode = 2
+text = "关闭"
+
+[node name="CommandRow" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PreviousCommand" type="Button" parent="OuterMargin/Content/CommandRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+focus_mode = 2
+text = "‹"
+
+[node name="CommandOption" type="OptionButton" parent="OuterMargin/Content/CommandRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+
+[node name="NextCommand" type="Button" parent="OuterMargin/Content/CommandRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+focus_mode = 2
+text = "›"
+
+[node name="SelectionRow" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TargetOption" type="OptionButton" parent="OuterMargin/Content/SelectionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+
+[node name="ExecutorOption" type="OptionButton" parent="OuterMargin/Content/SelectionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+
+[node name="ItemOption" type="OptionButton" parent="OuterMargin/Content/SelectionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 2
+focus_mode = 2
+
+[node name="ActionRow" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CostLabel" type="Label" parent="OuterMargin/Content/ActionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "成本与行动"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="ExecuteButton" type="Button" parent="OuterMargin/Content/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(156, 54)
+layout_mode = 2
+focus_mode = 2
+text = "执行"
+
+[node name="SummaryLabel" type="Label" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "命令影响"
+autowrap_mode = 2
+text_overrun_behavior = 3
+max_lines_visible = 2
+
+[node name="ReasonLabel" type="Label" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.73, 0.28, 1)
+text = "选择命令"
+text_overrun_behavior = 3
