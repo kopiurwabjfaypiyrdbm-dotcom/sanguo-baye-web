@@ -3,11 +3,12 @@ import { BAYE_TERRAINS } from '../compat/baye/tacticalBattle';
 import { getTacticalPath, type TacticalBattleState, type TacticalPosition } from '../core/tacticalBattle';
 import { TACTICAL_UNIT_ART, getTacticalUnitArt } from './tacticalUnitArt';
 import {
-  getTacticalCavalryAnimationKey,
-  TACTICAL_CAVALRY_ANIMATION,
-  TACTICAL_CAVALRY_ANIMATION_STATES,
-  type TacticalCavalryAnimationState,
-} from './tacticalCavalryAnimation';
+  getTacticalUnitAnimationKey,
+  TACTICAL_UNIT_ANIMATIONS,
+  TACTICAL_UNIT_ANIMATION_STATES,
+  type TacticalUnitAnimationSheet,
+  type TacticalUnitAnimationState,
+} from './tacticalUnitAnimation';
 import type { GameBridge } from './events';
 
 const CELL_SIZE = 68;
@@ -37,8 +38,8 @@ export class BattleScene extends Phaser.Scene {
   private battleLayer?: Phaser.GameObjects.Container;
   private lastPointerX = 0;
   private lastPointerY = 0;
-  private cavalryStates = new Map<string, TacticalCavalryAnimationState>();
-  private cavalryStateTimers = new Map<string, Phaser.Time.TimerEvent>();
+  private unitAnimationStates = new Map<string, TacticalUnitAnimationState>();
+  private unitAnimationTimers = new Map<string, Phaser.Time.TimerEvent>();
 
   constructor(
     battle: TacticalBattleState,
@@ -58,28 +59,29 @@ export class BattleScene extends Phaser.Scene {
     for (const art of Object.values(TACTICAL_UNIT_ART)) {
       this.load.image(art.key, art.source);
     }
-    this.load.spritesheet(
-      TACTICAL_CAVALRY_ANIMATION.key,
-      TACTICAL_CAVALRY_ANIMATION.source,
-      {
-        frameWidth: TACTICAL_CAVALRY_ANIMATION.frameWidth,
-        frameHeight: TACTICAL_CAVALRY_ANIMATION.frameHeight,
-        endFrame: TACTICAL_CAVALRY_ANIMATION.frameCount - 1,
-      },
-    );
+    for (const animation of Object.values(TACTICAL_UNIT_ANIMATIONS)) {
+      this.load.spritesheet(animation.key, animation.source, {
+        frameWidth: animation.frameWidth,
+        frameHeight: animation.frameHeight,
+        endFrame: animation.frameCount - 1,
+      });
+    }
   }
 
   create(): void {
-    for (const [state, config] of Object.entries(TACTICAL_CAVALRY_ANIMATION_STATES) as Array<[TacticalCavalryAnimationState, (typeof TACTICAL_CAVALRY_ANIMATION_STATES)[TacticalCavalryAnimationState]]>) {
-      this.anims.create({
-        key: getTacticalCavalryAnimationKey(state),
-        frames: this.anims.generateFrameNumbers(TACTICAL_CAVALRY_ANIMATION.key, {
-          start: config.startFrame,
-          end: config.endFrame,
-        }),
-        frameRate: config.frameRate,
-        repeat: config.repeat,
-      });
+    for (const [armsTypeValue, animation] of Object.entries(TACTICAL_UNIT_ANIMATIONS) as Array<[string, TacticalUnitAnimationSheet]>) {
+      const armsType = Number(armsTypeValue) as keyof typeof TACTICAL_UNIT_ANIMATIONS;
+      for (const [state, config] of Object.entries(TACTICAL_UNIT_ANIMATION_STATES) as Array<[TacticalUnitAnimationState, (typeof TACTICAL_UNIT_ANIMATION_STATES)[TacticalUnitAnimationState]]>) {
+        this.anims.create({
+          key: getTacticalUnitAnimationKey(armsType, state),
+          frames: this.anims.generateFrameNumbers(animation.key, {
+            start: config.startFrame,
+            end: config.endFrame,
+          }),
+          frameRate: config.frameRate,
+          repeat: config.repeat,
+        });
+      }
     }
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.redraw();
@@ -91,8 +93,8 @@ export class BattleScene extends Phaser.Scene {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.handleResize, this);
       this.input.off(Phaser.Input.Events.POINTER_DOWN, this.beginPan, this);
       this.input.off(Phaser.Input.Events.POINTER_MOVE, this.panBattlefield, this);
-      for (const timer of this.cavalryStateTimers.values()) timer.remove(false);
-      this.cavalryStateTimers.clear();
+      for (const timer of this.unitAnimationTimers.values()) timer.remove(false);
+      this.unitAnimationTimers.clear();
     });
   }
 
@@ -109,32 +111,32 @@ export class BattleScene extends Phaser.Scene {
     this.attackableUnitIds = attackableUnitIds;
     for (const unit of Object.values(battle.units)) {
       const previous = previousBattle.units[unit.id];
-      if (!previous || unit.armsType !== 0) continue;
-      if (unit.troops < previous.troops) this.setCavalryState(unit.id, 'hit', 520);
-      else if (unit.x !== previous.x || unit.y !== previous.y) this.setCavalryState(unit.id, 'move', 720);
+      if (!previous) continue;
+      if (unit.troops < previous.troops) this.setUnitAnimationState(unit.id, 'hit', 520);
+      else if (unit.x !== previous.x || unit.y !== previous.y) this.setUnitAnimationState(unit.id, 'move', 720);
     }
     if (this.sys.isActive()) this.redraw();
   }
 
-  playUnitAction(unitId: string, action: TacticalCavalryAnimationState): void {
-    if (this.battle.units[unitId]?.armsType !== 0) return;
+  playUnitAction(unitId: string, action: TacticalUnitAnimationState): void {
+    if (!this.battle.units[unitId]) return;
     const duration = action === 'attack' ? 620 : action === 'hit' ? 520 : action === 'move' ? 720 : undefined;
-    this.setCavalryState(unitId, action, duration);
+    this.setUnitAnimationState(unitId, action, duration);
     if (this.sys.isActive()) this.redraw();
   }
 
-  private setCavalryState(unitId: string, state: TacticalCavalryAnimationState, resetAfterMs?: number): void {
-    const existing = this.cavalryStateTimers.get(unitId);
+  private setUnitAnimationState(unitId: string, state: TacticalUnitAnimationState, resetAfterMs?: number): void {
+    const existing = this.unitAnimationTimers.get(unitId);
     existing?.remove(false);
-    this.cavalryStateTimers.delete(unitId);
-    this.cavalryStates.set(unitId, state);
+    this.unitAnimationTimers.delete(unitId);
+    this.unitAnimationStates.set(unitId, state);
     if (resetAfterMs === undefined || state === 'idle') return;
     const timer = this.time.delayedCall(resetAfterMs, () => {
-      this.cavalryStateTimers.delete(unitId);
-      this.cavalryStates.set(unitId, 'idle');
+      this.unitAnimationTimers.delete(unitId);
+      this.unitAnimationStates.set(unitId, 'idle');
       if (this.sys.isActive()) this.redraw();
     });
-    this.cavalryStateTimers.set(unitId, timer);
+    this.unitAnimationTimers.set(unitId, timer);
   }
 
   private redraw(): void {
@@ -214,12 +216,13 @@ export class BattleScene extends Phaser.Scene {
       feedback.setStrokeStyle(selected ? 4 : canAttack ? 4 : 2, selected ? 0xffdf80 : canAttack ? 0xff776d : 0xf4ead0, 1);
 
       const art = getTacticalUnitArt(unit.armsType);
-      const cavalryState = this.cavalryStates.get(unit.id) ?? 'idle';
-      const sprite = unit.armsType === 0 && this.textures.exists(TACTICAL_CAVALRY_ANIMATION.key)
-        ? this.add.sprite(centerX, centerY + 27, TACTICAL_CAVALRY_ANIMATION.key)
+      const animation = TACTICAL_UNIT_ANIMATIONS[unit.armsType];
+      const animationState = this.unitAnimationStates.get(unit.id) ?? 'idle';
+      const sprite = this.textures.exists(animation.key)
+        ? this.add.sprite(centerX, centerY + 27, animation.key)
             .setDisplaySize(54, 54)
             .setOrigin(0.5, 1)
-            .play(getTacticalCavalryAnimationKey(cavalryState))
+            .play(getTacticalUnitAnimationKey(unit.armsType, animationState))
         : this.textures.exists(art.key)
         ? this.add.image(centerX, centerY + 27, art.key).setDisplaySize(54, 54).setOrigin(0.5, 1)
         : this.add.circle(centerX, centerY - 2, 18, color, unit.acted ? 0.48 : 0.96);

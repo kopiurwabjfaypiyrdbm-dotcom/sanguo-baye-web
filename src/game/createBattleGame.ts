@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { TacticalBattleState, TacticalPosition } from '../core/tacticalBattle';
 import { BattleScene } from './BattleScene';
 import type { GameBridge } from './events';
-import type { TacticalCavalryAnimationState } from './tacticalCavalryAnimation';
+import type { TacticalUnitAnimationState } from './tacticalUnitAnimation';
 
 export type TacticalMapController = {
   update(
@@ -11,7 +11,7 @@ export type TacticalMapController = {
     reachable: TacticalPosition[],
     attackableUnitIds: string[],
   ): void;
-  playAction(unitId: string, action: TacticalCavalryAnimationState): void;
+  playAction(unitId: string, action: TacticalUnitAnimationState): void;
   destroy(): void;
 };
 

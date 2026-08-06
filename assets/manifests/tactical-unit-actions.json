@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "status": "production-candidate",
+  "style": "Q-version 16-bit right-facing Three Kingdoms commander animation",
+  "frameLayout": {
+    "sourceGrid": [4, 5],
+    "productionFrames": 18,
+    "productionFrame": [64, 64],
+    "stateRanges": {
+      "idle": { "start": 0, "end": 3, "repeat": -1 },
+      "move": { "start": 4, "end": 9, "repeat": -1 },
+      "attack": { "start": 10, "end": 14, "repeat": 0 },
+      "hit": { "start": 15, "end": 17, "repeat": 0 }
+    }
+  },
+  "units": [
+    { "armsType": "infantry", "source": "assets/source/tactical/units/infantry-actions-v2-grid.png", "production": "assets/production/tactical/units/infantry-actions-v2.png" },
+    { "armsType": "archer", "source": "assets/source/tactical/units/archer-actions-v2-grid.png", "production": "assets/production/tactical/units/archer-actions-v2.png" },
+    { "armsType": "navy", "source": "assets/source/tactical/units/navy-actions-v2-grid.png", "production": "assets/production/tactical/units/navy-actions-v2.png" },
+    { "armsType": "elite", "source": "assets/source/tactical/units/elite-cavalry-actions-v2-grid.png", "production": "assets/production/tactical/units/elite-cavalry-actions-v2.png" },
+    { "armsType": "mystic", "source": "assets/source/tactical/units/mystic-strategist-actions-v2-grid.png", "production": "assets/production/tactical/units/mystic-strategist-actions-v2.png" }
+  ],
+  "generation": {
+    "mode": "built-in image generation plus local chroma-key removal and square-frame normalization",
+    "historicalBoundary": "Original historically informed interpretation; not an exact reproduction of unlicensed original-game binary or artwork."
+  }
+}
