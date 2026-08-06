@@ -54,6 +54,6 @@ npm run godot:spike-data
 
 ## 数据与素材边界
 
-`data/period-1.json` 和 `data/fixtures/develop-farming-v1.json` 由 `scripts/generate-godot-spike-data.ts` 从现有 Web 状态工厂生成，均标注为内部技术样片且再分发审查待定。样片没有导入原版图片、字体、音频、视频、WASM 或 `.lib`；中文显示使用平台 `SystemFont`，图标与地图视觉均为项目自有矢量/程序化内容。
+`data/period-1.json` 和 `data/fixtures/develop-farming-v1.json` 由 `scripts/generate-godot-spike-data.ts` 从现有 Web 状态工厂生成，均标注为内部技术样片且再分发审查待定。样片没有导入原版图片、字体、音频、视频、WASM 或 `.lib`；`assets/production/entry/` 下的时期背景、标题与装饰视觉与 Web 版 `assets/production/entry/` 同源，均为项目自有内容；`assets/production/entry/title-background.ogv` 是 Web 版自有视频 `assets/source/entry/Video-1785141282737.mp4` 的转码；中文显示字体为 `font/Noto_Serif_SC/`（Noto Serif SC，SIL Open Font License 1.1，许可文件随目录保留），地图与 UI 视觉均为项目自有矢量/程序化内容。
 
 详细决策、设备结果与风险见 `docs/migration/godot-spike-report.md`。
