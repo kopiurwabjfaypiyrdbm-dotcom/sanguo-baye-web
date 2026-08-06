@@ -25,6 +25,8 @@ describe('tactical unit animation configuration', () => {
         getTacticalUnitAnimationKey(Number(armsType) as 0 | 1 | 2 | 3 | 4 | 5, state as keyof typeof TACTICAL_UNIT_ANIMATION_STATES),
       ),
     );
-    expect(new Set(keys).size).toBe(36);
+    expect(new Set(keys).size).toBe(
+      Object.keys(TACTICAL_UNIT_ANIMATIONS).length * Object.keys(TACTICAL_UNIT_ANIMATION_STATES).length,
+    );
   });
 });

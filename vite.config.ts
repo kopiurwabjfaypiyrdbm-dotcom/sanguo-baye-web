@@ -46,6 +46,7 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         cleanupOutdatedCaches: true,
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,json,webp,png,svg}'],
         globIgnores: [
           '**/Video-1785141282737-*.mp4',
