@@ -1,0 +1,91 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/campaign_browser_panel.gd" id="1_browser"]
+[ext_resource type="Theme" path="res://scenes/theme/strategy_theme.tres" id="2_theme"]
+
+[node name="CampaignBrowserPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_browser")
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Stack" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FilterRow" type="HBoxContainer" parent="RootMargin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="FilterOwned" type="Button" parent="RootMargin/Stack/FilterRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+size_flags_horizontal = 3
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+text = "己方"
+
+[node name="FilterIntel" type="Button" parent="RootMargin/Stack/FilterRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+size_flags_horizontal = 3
+layout_mode = 2
+toggle_mode = true
+text = "已侦察"
+
+[node name="FilterAll" type="Button" parent="RootMargin/Stack/FilterRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+size_flags_horizontal = 3
+layout_mode = 2
+toggle_mode = true
+text = "天下"
+
+[node name="IntroLabel" type="Label" parent="RootMargin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.76, 1)
+theme_override_font_sizes/font_size = 13
+text = "目录"
+autowrap_mode = 3
+
+[node name="ActionsBox" type="VBoxContainer" parent="RootMargin/Stack"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ListScroll" type="ScrollContainer" parent="RootMargin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="ListBox" type="VBoxContainer" parent="RootMargin/Stack/ListScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="EmptyLabel" type="Label" parent="RootMargin/Stack"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.66, 1)
+text = "暂无条目"
+autowrap_mode = 3

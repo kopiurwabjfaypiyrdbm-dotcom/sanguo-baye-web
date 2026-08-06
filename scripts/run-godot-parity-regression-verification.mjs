@@ -1,0 +1,37 @@
+import { existsSync, mkdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const project = resolve(root, 'godot');
+const engineCandidate = 'D:\\03_Godot\\01_Engine\\Godot_v4.7.1-stable_win64.exe';
+const engine = process.env.GODOT_BIN || (existsSync(engineCandidate) ? engineCandidate : 'godot');
+const runtimeRoot = resolve(project, '.godot/runtime');
+const appData = resolve(runtimeRoot, 'appdata');
+const localAppData = resolve(runtimeRoot, 'localappdata');
+mkdirSync(appData, { recursive: true });
+mkdirSync(localAppData, { recursive: true });
+const env = { ...process.env, APPDATA: appData, LOCALAPPDATA: localAppData };
+env.XDG_CONFIG_HOME = resolve(runtimeRoot, 'xdg-config');
+env.XDG_CACHE_HOME = resolve(runtimeRoot, 'xdg-cache');
+env.XDG_DATA_HOME = resolve(runtimeRoot, 'xdg-data');
+for (const path of [env.XDG_CONFIG_HOME, env.XDG_CACHE_HOME, env.XDG_DATA_HOME]) mkdirSync(path, { recursive: true });
+const version = spawnSync(engine, ['--version'], { cwd: root, env, encoding: 'utf8', timeout: 60_000 });
+const stdout = String(version.stdout ?? '').trim();
+if (version.error || version.signal || version.status !== 0 || !/^4\.7\.1(?:\.|$)/u.test(stdout)) {
+  throw new Error(`Godot 4.7.1 is required: ${stdout || version.error?.message || String(version.stderr ?? '').trim()}`);
+}
+process.stdout.write(`[Godot parity regression] engine=${stdout}\n`);
+const result = spawnSync(engine, [
+  '--headless', '--path', project, '--script', 'res://tests/parity_regression_runner.gd',
+], { cwd: root, env, encoding: 'utf8', timeout: 60_000 });
+if (result.stdout) process.stdout.write(result.stdout);
+if (result.stderr) process.stderr.write(result.stderr);
+if (result.error || result.signal || result.status !== 0) {
+  throw new Error(`Godot parity regression failed: ${result.error?.message ?? result.signal ?? result.status}`);
+}
+const combinedOutput = `${result.stdout ?? ''}\n${result.stderr ?? ''}`;
+if (/SCRIPT ERROR|Parse Error|Node not found|Invalid call/u.test(combinedOutput)) {
+  throw new Error('Godot parity regression emitted a runtime/script error despite exit code 0');
+}

@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "programId": "godot-full-migration",
+  "charterPath": "docs/mission-briefs/MB00-godot-full-migration-program.md",
+  "charterRevision": 1,
+  "charterSha256": "0c95fc8da7287a833080a6703514357326c27fbe48a7d8141675e869218f817f",
+  "roadmapPath": "docs/migration/godot-program-roadmap.json",
+  "branch": "codex/godot-migration-spike",
+  "status": "active",
+  "phase": "executing",
+  "currentMissionId": "MB28",
+  "currentBriefPath": "docs/mission-briefs/MB28-android-touch-playability-remediation.md",
+  "readyMissionIds": ["MB28"],
+  "completedMissions": [
+    {
+      "id": "MB01",
+      "briefPath": "docs/mission-briefs/godot-migration-spike.md",
+      "reportPath": "docs/migration/godot-spike-report.md",
+      "commit": "0cdcc3f"
+    },
+    {
+      "id": "MB02",
+      "briefPath": "docs/mission-briefs/MB02-deterministic-migration-verification-platform.md",
+      "reportPath": "docs/migration/mission-reports/MB02-deterministic-migration-verification-platform.md",
+      "commit": "9156cda"
+    },
+    {
+      "id": "MB03",
+      "briefPath": "docs/mission-briefs/MB03-production-domain-data-contract.md",
+      "reportPath": "docs/migration/mission-reports/MB03-production-domain-data-contract.md",
+      "commit": "eca357e"
+    },
+    {
+      "id": "MB04",
+      "briefPath": "docs/mission-briefs/MB04-production-application-game-session.md",
+      "reportPath": "docs/migration/mission-reports/MB04-production-application-game-session.md",
+      "commit": "3ba163c"
+    },
+    {
+      "id": "MB05",
+      "briefPath": "docs/mission-briefs/MB05-city-economy-and-development-rules.md",
+      "reportPath": "docs/migration/mission-reports/MB05-city-economy-and-development-rules.md",
+      "commit": "ad2f431"
+    },
+    {
+      "id": "MB06",
+      "briefPath": "docs/mission-briefs/MB06-officer-management-appointments-equipment.md",
+      "reportPath": "docs/migration/mission-reports/MB06-officer-management-appointments-equipment.md",
+      "commit": "6fbc8d6"
+    },
+    {
+      "id": "MB07",
+      "briefPath": "docs/mission-briefs/MB07-recruitment-captives-surrender-banishment.md",
+      "reportPath": "docs/migration/mission-reports/MB07-recruitment-captives-surrender-banishment.md",
+      "commit": "a5a424c"
+    },
+    {
+      "id": "MB08",
+      "briefPath": "docs/mission-briefs/MB08-movement-transport-strategic-logistics.md",
+      "reportPath": "docs/migration/mission-reports/MB08-movement-transport-strategic-logistics.md",
+      "commit": "4a4f658"
+    },
+    {
+      "id": "MB09",
+      "briefPath": "docs/mission-briefs/MB09-reconnaissance-intelligence-visibility.md",
+      "reportPath": "docs/migration/mission-reports/MB09-reconnaissance-intelligence-visibility.md",
+      "commit": "a2cd2ac"
+    },
+    {
+      "id": "MB10",
+      "briefPath": "docs/mission-briefs/MB10-diplomacy-and-strategic-orders.md",
+      "reportPath": "docs/migration/mission-reports/MB10-diplomacy-and-strategic-orders.md",
+      "commit": "6abe8d7"
+    },
+    {
+      "id": "MB11",
+      "briefPath": "docs/mission-briefs/MB11-calendar-events-lifecycle-succession-outcomes.md",
+      "reportPath": "docs/migration/mission-reports/MB11-calendar-events-lifecycle-succession-outcomes.md",
+      "commit": "b4185cb"
+    },
+    {
+      "id": "MB12",
+      "briefPath": "docs/mission-briefs/MB12-strategic-ai-and-turn-orchestration.md",
+      "reportPath": "docs/migration/mission-reports/MB12-strategic-ai-and-turn-orchestration.md",
+      "commit": "26137ad"
+    },
+    {
+      "id": "MB13",
+      "briefPath": "docs/mission-briefs/MB13-deterministic-battle-state-deployment-turn-framework.md",
+      "reportPath": "docs/migration/mission-reports/MB13-deterministic-battle-state-deployment-turn-framework.md",
+      "commit": "9f3bd0b"
+    },
+    {
+      "id": "MB14",
+      "briefPath": "docs/mission-briefs/MB14-battlefields-terrain-pathfinding-movement.md",
+      "reportPath": "docs/migration/mission-reports/MB14-battlefields-terrain-pathfinding-movement.md",
+      "commit": "1f0ba1f"
+    },
+    {
+      "id": "MB15",
+      "briefPath": "docs/mission-briefs/MB15-attacks-damage-status-defeat.md",
+      "reportPath": "docs/migration/mission-reports/MB15-attacks-damage-status-defeat.md",
+      "commit": "d58b6d5"
+    },
+    {
+      "id": "MB16",
+      "briefPath": "docs/mission-briefs/MB16-unit-types-skills-tactics-equipment.md",
+      "reportPath": "docs/migration/mission-reports/MB16-unit-types-skills-tactics-equipment.md",
+      "commit": "ae70847"
+    },
+    {
+      "id": "MB17",
+      "briefPath": "docs/mission-briefs/MB17-deterministic-tactical-ai.md",
+      "reportPath": "docs/migration/mission-reports/MB17-deterministic-tactical-ai.md",
+      "commit": "88c6311"
+    },
+    {
+      "id": "MB18",
+      "briefPath": "docs/mission-briefs/MB18-native-battlefield-presentation-camera-mobile-input.md",
+      "reportPath": "docs/migration/mission-reports/MB18-native-battlefield-presentation-camera-mobile-input.md",
+      "commit": "ccb1236"
+    },
+    {
+      "id": "MB19",
+      "briefPath": "docs/mission-briefs/MB19-battle-outcomes-retreat-settlement-campaign-reintegration.md",
+      "reportPath": "docs/migration/mission-reports/MB19-battle-outcomes-retreat-settlement-campaign-reintegration.md",
+      "commit": "b5600e6"
+    },
+    {
+      "id": "MB20",
+      "briefPath": "docs/mission-briefs/MB20-production-saves-migration-corruption-recovery.md",
+      "reportPath": "docs/migration/mission-reports/MB20-production-saves-migration-corruption-recovery.md",
+      "commit": "233bd7a"
+    },
+    {
+      "id": "MB21",
+      "briefPath": "docs/mission-briefs/MB21-main-menu-campaign-setup-strategic-ui.md",
+      "reportPath": "docs/migration/mission-reports/MB21-main-menu-campaign-setup-strategic-ui.md",
+      "commit": "2b006bf"
+    },
+    {
+      "id": "MB22",
+      "briefPath": "docs/mission-briefs/MB22-tactical-hud-feedback-settings-accessibility.md",
+      "reportPath": "docs/migration/mission-reports/MB22-tactical-hud-feedback-settings-accessibility.md",
+      "commit": "bbe869b"
+    },
+    {
+      "id": "MB23",
+      "briefPath": "docs/mission-briefs/MB23-android-windows-platform-hardening-performance.md",
+      "reportPath": "docs/migration/mission-reports/MB23-android-windows-platform-hardening-performance.md",
+      "commit": "95b01f4"
+    },
+    {
+      "id": "MB24",
+      "briefPath": "docs/mission-briefs/MB24-full-parity-deterministic-regression-closure.md",
+      "reportPath": "docs/migration/mission-reports/MB24-full-parity-deterministic-regression-closure.md",
+      "commit": "962432d"
+    },
+    {
+      "id": "MB25",
+      "briefPath": "docs/mission-briefs/MB25-release-candidate-and-migration-completion-evidence.md",
+      "reportPath": "docs/migration/godot-release-candidate-report.md",
+      "commit": "9b0d11a"
+    },
+    {
+      "id": "MB26",
+      "briefPath": "docs/mission-briefs/MB26-android-touch-acceptance-and-goal-gate.md",
+      "reportPath": "docs/migration/mission-reports/MB26-android-touch-acceptance-and-goal-gate.md",
+      "commit": "f1fe29c"
+    },
+    {
+      "id": "MB27",
+      "briefPath": "docs/mission-briefs/MB27-manual-android-acceptance-and-final-goal-decision.md",
+      "reportPath": "docs/migration/mission-reports/MB27-current-source-android-acceptance.md",
+      "commit": "989f9c5"
+    }
+  ],
+  "blockedMissions": [],
+  "lastCheckpoint": {
+    "missionId": "MB27",
+    "commit": "989f9c5",
+    "date": "2026-08-04"
+  },
+  "nextAction": "MB28 agent-led playability remediation in progress (not waiting on human play). Compared Godot vs Web: P0 military loop gap being closed first — player recruit_troops/distribute_troops domain+adapter+city-card wired; AI uses shared manpower commands; end-month no longer force-opens chronicle; product copy de-sampled. Next: formal sortie/attack editor, replace remaining city PopupMenus, then AI defense interrupt. Do not ask user to play until an acceptable continuous path exists. Goal remains FAIL/active.",
+  "approvalRequiredFor": [
+    "changing MB00 fixed clauses",
+    "destructive Git or filesystem operations",
+    "downloading or installing components",
+    "pushing or creating a pull request",
+    "publishing APK or AAB",
+    "licensing and redistribution decisions"
+  ]
+}

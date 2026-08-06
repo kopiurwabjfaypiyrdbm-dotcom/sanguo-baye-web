@@ -93,6 +93,7 @@ export type BattleResult = {
   defenderScore: number;
   casualties: Record<string, number>;
   experienceGains?: Record<string, number>;
+  experienceGainOrder?: string[];
   defenderReserveLosses: number;
   cityCaptured: boolean;
   guard: BattleStateGuard;
@@ -149,9 +150,11 @@ export function resolveBattle(state: GameState, order: AttackOrder, config = bat
     + defenderReserveLosses;
   const defenderDamage = context.attackers.reduce((sum, officer) => sum + (casualties[officer.id] ?? 0), 0);
   const experienceGains: Record<string, number> = {};
+  const experienceGainOrder: string[] = [];
   const defenderLevel = defenders[0]?.level ?? 1;
   const attackerLevel = context.attackers[0]?.level ?? 1;
   for (const officer of context.attackers) {
+    experienceGainOrder.push(officer.id);
     experienceGains[officer.id] = calculateBayeBattleExperience(
       Math.floor(attackerDamage / Math.max(1, context.attackers.length)),
       officer.level ?? 1,
@@ -159,6 +162,7 @@ export function resolveBattle(state: GameState, order: AttackOrder, config = bat
     );
   }
   for (const officer of defenders) {
+    experienceGainOrder.push(officer.id);
     experienceGains[officer.id] = calculateBayeBattleExperience(
       Math.floor(defenderDamage / Math.max(1, defenders.length)),
       officer.level ?? 1,
@@ -189,6 +193,7 @@ export function resolveBattle(state: GameState, order: AttackOrder, config = bat
     defenderScore,
     casualties,
     experienceGains,
+    experienceGainOrder,
     defenderReserveLosses,
     cityCaptured,
     guard: createBattleStateGuard(state, context),
@@ -223,7 +228,9 @@ export function applyBattleResult(state: GameState, result: BattleResult): GameS
     officers[officerId] = { ...officer, troops: Math.max(0, officer.troops - losses), stamina: 0 };
   }
   const growthLogs: string[] = [];
-  for (const [officerId, gained] of Object.entries(result.experienceGains ?? {})) {
+  const experienceGainOrder = result.experienceGainOrder ?? Object.keys(result.experienceGains ?? {}).sort();
+  for (const officerId of experienceGainOrder) {
+    const gained = result.experienceGains?.[officerId] ?? 0;
     const officer = officers[officerId];
     if (!officer || gained <= 0) continue;
     const growth = applyBayeExperience(officer.level ?? 1, officer.experience ?? 0, gained);
@@ -596,6 +603,16 @@ function assertBattleResultConsistency(result: BattleResult): void {
   }
   for (const officerId of Object.keys(result.casualties)) {
     if (!participantIds.has(officerId)) throw new Error(`Battle result contains an unknown casualty: ${officerId}`);
+  }
+  if (result.experienceGainOrder !== undefined) {
+    const gainIds = Object.keys(result.experienceGains ?? {});
+    if (
+      new Set(result.experienceGainOrder).size !== result.experienceGainOrder.length
+      || result.experienceGainOrder.some((officerId) => !gainIds.includes(officerId))
+      || gainIds.some((officerId) => !result.experienceGainOrder!.includes(officerId))
+    ) {
+      throw new Error('Battle result experience order is invalid');
+    }
   }
   if (
     result.targetFoodAfter !== undefined

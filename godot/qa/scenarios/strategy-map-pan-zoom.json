@@ -1,0 +1,79 @@
+{
+  "name": "strategy-map-pan-zoom",
+  "description": "Drag the strategy map to pan the camera, then scroll to zoom; asserts camera displacement and zoom change via the fixture adapter.",
+  "profile": "strategy-map",
+  "seed": 42,
+  "steps": [
+    {
+      "wait_frames": 15
+    },
+    {
+      "command": "set_baseline",
+      "payload": {}
+    },
+    {
+      "wait_frames": 3
+    },
+    {
+      "drag": [
+        [
+          400,
+          300
+        ],
+        [
+          520,
+          380
+        ]
+      ],
+      "frames": 12
+    },
+    {
+      "wait_frames": 5
+    },
+    {
+      "command": "assert_camera",
+      "payload": {
+        "expect": "panned"
+      }
+    },
+    {
+      "wait_frames": 3
+    },
+    {
+      "scroll": [
+        460,
+        340
+      ],
+      "factor": 1.0,
+      "frames": 3
+    },
+    {
+      "wait_frames": 5
+    },
+    {
+      "command": "assert_camera",
+      "payload": {
+        "expect": "zoomed"
+      }
+    },
+    {
+      "wait_frames": 10
+    }
+  ],
+  "assertions": [
+    {
+      "event": "camera_observed",
+      "where": {
+        "kind": "panned"
+      },
+      "count_gte": 1
+    },
+    {
+      "event": "camera_observed",
+      "where": {
+        "kind": "zoomed"
+      },
+      "count_gte": 1
+    }
+  ]
+}

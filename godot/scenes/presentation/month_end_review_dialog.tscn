@@ -1,0 +1,122 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/month_end_review_dialog.gd" id="1_dialog"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
+bg_color = Color(0.05, 0.07, 0.08, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.91, 0.68, 0.25, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 12
+
+[node name="MonthEndReviewDialog" type="PanelContainer"]
+visible = false
+custom_minimum_size = Vector2(480, 360)
+mouse_filter = 0
+theme_override_styles/panel = SubResource("StyleBox_panel")
+script = ExtResource("1_dialog")
+
+[node name="OuterMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="Content" type="VBoxContainer" parent="OuterMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="OuterMargin/Content/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.96, 0.81, 0.41, 1)
+theme_override_font_sizes/font_size = 22
+text = "确认结束本月"
+
+[node name="CloseButton" type="Button" parent="OuterMargin/Content/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+text = "×"
+
+[node name="MetricsLabel" type="Label" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.86, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "0 人已行动 · 0 人未行动 · 0 座城池 · 0 项在途命令"
+autowrap_mode = 2
+
+[node name="BodyScroll" type="ScrollContainer" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Body" type="VBoxContainer" parent="OuterMargin/Content/BodyScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="ActionsHeading" type="Label" parent="OuterMargin/Content/BodyScroll/Body"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.84, 0.7, 1)
+theme_override_font_sizes/font_size = 15
+text = "本月重要行动"
+
+[node name="ActionsLabel" type="Label" parent="OuterMargin/Content/BodyScroll/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.86, 0.84, 1)
+theme_override_font_sizes/font_size = 13
+text = "尚未记录会改变战役状态的主要行动。"
+autowrap_mode = 2
+
+[node name="NoticesHeading" type="Label" parent="OuterMargin/Content/BodyScroll/Body"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.84, 0.7, 1)
+theme_override_font_sizes/font_size = 15
+text = "结束前检查"
+
+[node name="NoticesBox" type="VBoxContainer" parent="OuterMargin/Content/BodyScroll/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="EmptyNoticesLabel" type="Label" parent="OuterMargin/Content/BodyScroll/Body/NoticesBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.76, 0.74, 1)
+theme_override_font_sizes/font_size = 13
+text = "当前没有需要特别提醒的月末风险。"
+autowrap_mode = 2
+
+[node name="Footer" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+alignment = 2
+theme_override_constants/separation = 10
+
+[node name="CancelButton" type="Button" parent="OuterMargin/Content/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 48)
+layout_mode = 2
+text = "返回继续部署"
+
+[node name="ConfirmButton" type="Button" parent="OuterMargin/Content/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(148, 48)
+layout_mode = 2
+text = "确认结束本月"

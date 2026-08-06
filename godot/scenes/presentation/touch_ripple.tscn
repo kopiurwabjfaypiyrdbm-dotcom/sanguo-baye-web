@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/touch_ripple.gd" id="1_ripple"]
+
+[node name="TouchRipple" type="Node2D"]
+z_index = 5
+script = ExtResource("1_ripple")

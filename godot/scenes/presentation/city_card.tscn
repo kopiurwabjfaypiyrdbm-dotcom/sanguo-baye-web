@@ -1,0 +1,194 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/city_card.gd" id="1_card"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_action"]
+bg_color = Color(0.31, 0.24, 0.09, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.94, 0.74, 0.28, 0.95)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="CityCard" type="PanelContainer"]
+custom_minimum_size = Vector2(334, 254)
+offset_right = 334.0
+offset_bottom = 254.0
+mouse_filter = 0
+script = ExtResource("1_card")
+
+[node name="OuterMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="Content" type="VBoxContainer" parent="OuterMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="OuterMargin/Content/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.83, 0.4, 1)
+theme_override_font_sizes/font_size = 24
+text = "城池"
+
+[node name="HeaderSpacer" type="Control" parent="OuterMargin/Content/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="CloseButton" type="Button" parent="OuterMargin/Content/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(52, 48)
+layout_mode = 2
+focus_mode = 2
+text = "关闭"
+
+[node name="OwnershipLabel" type="Label" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.67, 0.82, 0.72, 1)
+text = "势力"
+
+[node name="StatsScroll" type="ScrollContainer" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="StatsLabel" type="Label" parent="OuterMargin/Content/StatsScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+autowrap_mode = 3
+text = "城市信息"
+
+[node name="CommandRow" type="HBoxContainer" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CommandLabel" type="Label" parent="OuterMargin/Content/CommandRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "内政命令"
+
+[node name="PreviousCommand" type="Button" parent="OuterMargin/Content/CommandRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+focus_mode = 2
+text = "‹"
+
+[node name="CommandOption" type="OptionButton" parent="OuterMargin/Content/CommandRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+
+[node name="NextCommand" type="Button" parent="OuterMargin/Content/CommandRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+focus_mode = 2
+text = "›"
+
+[node name="ExecutorRow" type="HBoxContainer" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ExecutorLabel" type="Label" parent="OuterMargin/Content/ExecutorRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "执行武将"
+
+[node name="ExecutorOption" type="OptionButton" parent="OuterMargin/Content/ExecutorRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+
+[node name="TradeRow" type="HBoxContainer" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TradeDirection" type="OptionButton" parent="OuterMargin/Content/TradeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(92, 48)
+layout_mode = 2
+focus_mode = 2
+
+[node name="TradeAmount" type="SpinBox" parent="OuterMargin/Content/TradeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 1.0
+value = 100.0
+allow_greater = false
+allow_lesser = false
+rounded = true
+
+[node name="ActionRow" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+alignment = 2
+theme_override_constants/separation = 6
+
+[node name="PersonnelButton" type="Button" parent="OuterMargin/Content/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 54)
+layout_mode = 2
+focus_mode = 2
+text = "人才"
+
+[node name="ReconnaissanceButton" type="Button" parent="OuterMargin/Content/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(82, 54)
+layout_mode = 2
+focus_mode = 2
+text = "侦察"
+
+[node name="DiplomacyButton" type="Button" parent="OuterMargin/Content/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(82, 54)
+layout_mode = 2
+focus_mode = 2
+text = "谋略"
+
+[node name="LogisticsButton" type="Button" parent="OuterMargin/Content/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 54)
+layout_mode = 2
+focus_mode = 2
+text = "后勤"
+
+[node name="OfficerButton" type="Button" parent="OuterMargin/Content/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 54)
+layout_mode = 2
+focus_mode = 2
+text = "人物"
+
+[node name="DevelopButton" type="Button" parent="OuterMargin/Content/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 54)
+layout_mode = 2
+focus_mode = 2
+theme_override_styles/normal = SubResource("StyleBox_action")
+text = "开垦"

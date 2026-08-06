@@ -1,0 +1,100 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/diplomatic_order_panel.gd" id="1_panel"]
+
+[node name="DiplomaticOrderPanel" type="PanelContainer"]
+custom_minimum_size = Vector2(900, 0)
+offset_right = 900.0
+offset_bottom = 320.0
+mouse_filter = 0
+script = ExtResource("1_panel")
+
+[node name="OuterMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 10
+
+[node name="Content" type="VBoxContainer" parent="OuterMargin"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Header" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="OuterMargin/Content/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.98, 0.83, 0.4, 1)
+theme_override_font_sizes/font_size = 24
+text = "城池 · 外交谋略"
+
+[node name="CloseButton" type="Button" parent="OuterMargin/Content/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(82, 52)
+layout_mode = 2
+focus_mode = 2
+text = "关闭"
+
+[node name="SelectionRow" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CommandOption" type="OptionButton" parent="OuterMargin/Content/SelectionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 52)
+layout_mode = 2
+focus_mode = 2
+
+[node name="TargetOption" type="OptionButton" parent="OuterMargin/Content/SelectionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+
+[node name="ExecutorOption" type="OptionButton" parent="OuterMargin/Content/SelectionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+
+[node name="EvidenceLabel" type="Label" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "情报证据"
+text_overrun_behavior = 3
+
+[node name="OrdersLabel" type="Label" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "当前无在途谋略"
+text_overrun_behavior = 3
+
+[node name="ActionRow" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ReasonLabel" type="Label" parent="OuterMargin/Content/ActionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "选择谋略、目标与执行武将"
+text_overrun_behavior = 3
+
+[node name="AdvanceButton" type="Button" parent="OuterMargin/Content/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(142, 54)
+layout_mode = 2
+focus_mode = 2
+text = "结算回报"
+
+[node name="ExecuteButton" type="Button" parent="OuterMargin/Content/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 54)
+layout_mode = 2
+focus_mode = 2
+text = "签发谋略"
