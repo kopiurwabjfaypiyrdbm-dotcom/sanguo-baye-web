@@ -40,6 +40,7 @@
 
 原版兼容证据已与临时玩法层分离：`src/compat/baye/` 包含经过参考样本验证的 Web 移植 RNG、战术攻防/伤害、状态驱动、普通攻击形状和战略自动战斗公式。战场按战略方向部署，从七张代码定义地图中确定性选择，并提供路径/伤害/计谋预览、中文兵种与状态、明确胜因和目标/主将评分 AI；每方最多部署 10 名武将。地图逐城对应、十项计谋目录、地形移动/攻防修正、粮草消耗和 AI 权重仍是现代临时规则。仓库不保存原版 `.lib` 或生成资源数组，只保留允许的语义、偏移、长度与哈希证据。范围和剩余不确定性见 `references/parity-matrix.md`。
 
+
 兼容范围、随机数策略和允许的现代化差异见 `docs/design/compatibility-policy.md`。兼容层现已包含原版 `.lib` 的安全容器解析器；原始资源仍只在本地使用，仓库只保存结构元数据和哈希证据。
 
 ## 项目交接
@@ -86,6 +87,16 @@ npm run android:open
 `npm run check` 用于首次接手和提交前验证，会依次校验已入库参考基线、并行运行 Vitest 并执行生产构建；不需要在每次启动开发服务器前运行。测试和构建会短暂使用多个 CPU 核心，完成后自动退出。
 
 不要重复启动 `npm run dev`。开发服务器会持续监视仓库文件，应在原终端按 `Ctrl+C` 关闭；若端口已被占用，项目会直接报错而不会自动改用下一个端口。
+
+## 公共试玩与部署
+
+个人 fork 的 `main` 分支通过 GitHub Actions 自动测试、构建并发布到 GitHub Pages：
+
+<https://sumo91.github.io/sanguo-baye-web/>
+
+首次启用时，在 GitHub 仓库的 `Settings → Pages` 中把 `Build and deployment` 来源设置为 `GitHub Actions`。此后推送到 `main` 会自动运行 `.github/workflows/deploy-pages.yml`，使用 `npm run build:pages` 生成适配仓库子路径的 `dist/` 并更新公共地址。
+
+玩家存档保存在各自浏览器的本地存储中；公共站点不提供账号、云存档或多人联机。
 
 ## 获取复刻参考
 

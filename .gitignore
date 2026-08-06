@@ -10,3 +10,19 @@ Thumbs.db
 .reference/
 .superpowers/
 .worktrees/
+
+# Godot migration spike: editor/runtime artifacts only (tracked sources stay)
+godot/.godot/
+godot/.runtime-user/
+godot/builds/
+godot/.android/
+godot/*.apk
+godot/*.aab
+godot/.gdeck/editor-session-*.json
+godot/.gdeck/editor-token
+godot/.gdeck/reports/
+godot/.gdeck/reports-archive*/
+godot/.gdeck/captures/
+
+# Reasonix desktop session metadata
+.reasonix/
