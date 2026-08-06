@@ -1,0 +1,17 @@
+{
+  "id": "tactical-terrain-atlas-v1",
+  "width": 544,
+  "height": 68,
+  "frameWidth": 68,
+  "frameHeight": 68,
+  "terrains": [
+    { "id": "grass", "label": "草地", "frame": 0 },
+    { "id": "plain", "label": "平原", "frame": 1 },
+    { "id": "hill", "label": "山地", "frame": 2 },
+    { "id": "forest", "label": "森林", "frame": 3 },
+    { "id": "village", "label": "村庄", "frame": 4 },
+    { "id": "city", "label": "城池", "frame": 5 },
+    { "id": "camp", "label": "营寨", "frame": 6 },
+    { "id": "river", "label": "河流", "frame": 7 }
+  ]
+}
