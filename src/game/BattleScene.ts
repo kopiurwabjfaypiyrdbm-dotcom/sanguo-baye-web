@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import { BAYE_TERRAINS } from '../compat/baye/tacticalBattle';
 import { getTacticalPath, type TacticalBattleState, type TacticalPosition } from '../core/tacticalBattle';
 import { TACTICAL_UNIT_ART, getTacticalUnitArt } from './tacticalUnitArt';
 import {
@@ -9,6 +8,7 @@ import {
   type TacticalUnitAnimationSheet,
   type TacticalUnitAnimationState,
 } from './tacticalUnitAnimation';
+import { getTacticalTerrainFrame, TACTICAL_TERRAIN_ART } from './tacticalTerrainArt';
 import type { GameBridge } from './events';
 
 const CELL_SIZE = 68;
@@ -27,8 +27,6 @@ const terrainColors = [
   0x78664f,
   0x477f8a,
 ] as const;
-
-const terrainLabels = ['草', '原', '山', '林', '村', '城', '营', '水'] as const;
 
 export class BattleScene extends Phaser.Scene {
   private battle: TacticalBattleState;
@@ -59,6 +57,11 @@ export class BattleScene extends Phaser.Scene {
     for (const art of Object.values(TACTICAL_UNIT_ART)) {
       this.load.image(art.key, art.source);
     }
+    this.load.spritesheet(TACTICAL_TERRAIN_ART.key, TACTICAL_TERRAIN_ART.source, {
+      frameWidth: TACTICAL_TERRAIN_ART.frameWidth,
+      frameHeight: TACTICAL_TERRAIN_ART.frameHeight,
+      endFrame: TACTICAL_TERRAIN_ART.frameCount - 1,
+    });
     for (const animation of Object.values(TACTICAL_UNIT_ANIMATIONS)) {
       this.load.spritesheet(animation.key, animation.source, {
         frameWidth: animation.frameWidth,
@@ -155,7 +158,19 @@ export class BattleScene extends Phaser.Scene {
       const centerX = OFFSET_X + tile.x * CELL_SIZE + CELL_SIZE / 2;
       const centerY = OFFSET_Y + tile.y * CELL_SIZE + CELL_SIZE / 2;
       const isReachable = reachable.has(`${tile.x},${tile.y}`);
-      const rect = this.add.rectangle(centerX, centerY, CELL_SIZE - 2, CELL_SIZE - 2, terrainColors[tile.terrain], 0.92);
+      const hasTerrainTexture = this.textures.exists(TACTICAL_TERRAIN_ART.key);
+      const terrainSprite = hasTerrainTexture
+        ? this.add.image(centerX, centerY, TACTICAL_TERRAIN_ART.key, getTacticalTerrainFrame(tile.terrain))
+            .setDisplaySize(CELL_SIZE - 2, CELL_SIZE - 2)
+        : undefined;
+      const rect = this.add.rectangle(
+        centerX,
+        centerY,
+        CELL_SIZE - 2,
+        CELL_SIZE - 2,
+        terrainColors[tile.terrain],
+        hasTerrainTexture ? 0 : 0.92,
+      );
       rect.setStrokeStyle(isReachable ? 4 : 1, isReachable ? 0x7ed9ed : 0x233c36, isReachable ? 0.95 : 0.65);
       if (isReachable) {
         rect.setInteractive({ useHandCursor: true });
@@ -184,14 +199,7 @@ export class BattleScene extends Phaser.Scene {
         });
         rect.on('pointerout', () => pathPreview.clear());
       }
-      const label = this.add.text(centerX - CELL_SIZE / 2 + 5, centerY - CELL_SIZE / 2 + 3, terrainLabels[tile.terrain], {
-        color: tile.terrain === BAYE_TERRAINS.indexOf('river') ? '#d9f5ff' : '#f2ecd8',
-        fontFamily: 'Microsoft YaHei, PingFang SC, sans-serif',
-        fontSize: '11px',
-        fontStyle: 'bold',
-      });
-      label.setAlpha(0.72);
-      layer.add([rect, label]);
+      layer.add(terrainSprite ? [terrainSprite, rect] : [rect]);
       if (tile.objective === 'city') {
         const objective = this.add.text(centerX, centerY + 20, '目标', {
           color: '#ffe3a0',
