@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "updatedAt": "2026-08-03",
+  "collection": "campaign-button-art",
+  "style": "realistic Chinese ink-wash historical strategy UI with lacquered wood, antique bronze ornament, warm-gold selection states, and rice-paper text",
+  "assets": [
+    {
+      "id": "ruler-card-frame-v1",
+      "role": "selectable ruler card frame",
+      "path": "assets/production/ui/ruler-card-frame-v1.png",
+      "sourcePath": "assets/source/ui/ruler-card-frame-chroma-v1.png",
+      "format": "png",
+      "colorMode": "RGBA",
+      "sha256": "60D8F1A6FB71374DE7960F48083AEBA524736F56DD24A2D62D2E1EEF2174580D",
+      "sourceSha256": "0C9461D308F2E73D0118B13C8FBBBC439B22E972C7A78D204C50E2D7E865CAFA",
+      "notes": "Reusable lacquered-wood frame with live React text and CSS-controlled warm-gold selected, hover, focus, and disabled states."
+    },
+    {
+      "id": "strategic-nav-frame-v1",
+      "role": "strategic navigation button frame",
+      "path": "assets/production/ui/strategic-nav-frame-v1.png",
+      "sourcePath": "assets/source/ui/strategic-nav-frame-chroma-v1.png",
+      "format": "png",
+      "colorMode": "RGBA",
+      "sha256": "117C49CAFB63A15F5BA979DBACE1404A99BD1B31988E0D5779D629A9A9B2F15D",
+      "sourceSha256": "184DBA33C9ADD5951920ABFAA69CE9E3E068E9DA58FAACAB20974C2B0331169B",
+      "notes": "Reusable low-profile lacquered-wood button plate for strategic navigation; labels and status badges remain code-rendered, with warm-gold active states and no baked-in Chinese text."
+    }
+  ]
+}

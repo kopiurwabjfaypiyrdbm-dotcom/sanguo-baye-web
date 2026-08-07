@@ -1,0 +1,128 @@
+{
+  "manifestVersion": 1,
+  "collection": "officer-character-sheets",
+  "createdAt": "2026-07-29",
+  "author": "sanguo-baye-web contributors with OpenAI image generation",
+  "license": "Project assets generated with OpenAI; use is governed by the applicable OpenAI terms and the project's release policy.",
+  "licenseUrl": "https://openai.com/policies/terms-of-use/",
+  "generationModel": "OpenAI built-in imagegen",
+  "assets": [
+    {
+      "id": "zhang-fei-character-sheet-v1",
+      "category": "officer-character-sheet-template",
+      "sourceFile": "assets/source/officers/zhang-fei-character-sheet-v1.png",
+      "exportFiles": [],
+      "derivedFrom": "Original generated production-reference sheet based on the approved officer template design; no upstream binary art used.",
+      "generationPrompt": "Wide 16:9 Three Kingdoms officer character design sheet for Zhang Fei: large bust portrait, isometric tactical unit, and five consistent action studies for idle, attack, hit, move, and cast; clean neutral background, no paper texture, no border or decorative dividers, realistic painterly historical game concept art, restrained charcoal, crimson, bronze, ivory-gray palette, exact Chinese labels 张飞、力量型近战武将、战棋形象、待机、攻击、受击、移动、施法.",
+      "sha256": {
+        "source": "C1E65EAC5CDC328F31F26F33E006F499F8B0C8D36705CB881EADCA43F6F1899A",
+        "exports": {}
+      },
+      "reviewStatus": "visual-pass; template-review-pending"
+    },
+    {
+      "id": "zhang-fei-character-sheet-v2-spritesheet",
+      "category": "officer-sprite-sheet-template",
+      "sourceFile": "assets/source/officers/zhang-fei-character-sheet-v2-spritesheet.png",
+      "exportFiles": [],
+      "derivedFrom": "Recomposed revision of the approved Zhang Fei character template; enlarged tactical base unit, reduced empty margins, and expanded aligned action frames.",
+      "generationPrompt": "Compact 16:9 Three Kingdoms officer sprite-sheet design for Zhang Fei: portrait, enlarged isometric tactical base unit, and aligned sprite rows for idle, attack, hit, move, and cast; all action frames derived from the same unit proportions, shared baseline and equipment, clean neutral background, no paper texture, no border or ornamental dividers, realistic painterly historical game concept art, exact Chinese labels.",
+      "sha256": {
+        "source": "F9FFC21D66D468EDAB0900E2C03760D50521FB659053C46889AB733970D2F87D",
+        "exports": {}
+      },
+      "reviewStatus": "visual-pass; sprite-slicing-review-pending"
+    },
+    {
+      "id": "zhang-fei-character-sheet-v3-2d-spritesheet",
+      "category": "officer-2d-cartoon-sprite-sheet",
+      "sourceFile": "assets/source/officers/zhang-fei-character-sheet-v3-2d-spritesheet.png",
+      "exportFiles": [],
+      "derivedFrom": "Revised officer sheet with realistic painterly portrait direction and a distinct 2D cartoon tactical/action unit style; adds a non-graphic defeated animation row.",
+      "generationPrompt": "Compact 16:9 Zhang Fei production sheet: realistic painterly portrait area, clearly distinct 2D cartoon tactical unit and aligned action sprites using bold outlines and flat muted charcoal/crimson/old-gold colors; rows for idle, attack, hit, move, cast, defeated; same unit proportions, shared foot baseline, no 3D tile pedestals, no ornate borders.",
+      "sha256": {
+        "source": "0FD680E0564CA200F9BB62D263947DB9C6173F6C6B8C06F2C6026DD690FB7D2F",
+        "exports": {}
+      },
+      "reviewStatus": "visual-pass; sprite-slicing-review-pending"
+    },
+    {
+      "id": "zhang-fei-character-sheet-v4-avatar-frame",
+      "category": "officer-avatar-frame-sheet",
+      "sourceFile": "assets/source/officers/zhang-fei-character-sheet-v4-avatar-frame.png",
+      "exportFiles": [],
+      "derivedFrom": "v3 sheet with the user-provided Zhang Fei portrait cropped into a functional safe-margin bronze/charcoal portrait frame; tactical and action sprite section preserved.",
+      "generationPrompt": null,
+      "sha256": {
+        "source": "839E3ABFD168EBE2AE17BD28E09059FB8C578388D3672E2E9B9FAD92DB919504",
+        "exports": {}
+      },
+      "reviewStatus": "visual-pass; avatar-safe-margin-review-pending"
+    },
+    {
+      "id": "zhang-fei-character-sheet-v5-slash-template",
+      "category": "officer-slash-attack-template",
+      "sourceFile": "assets/source/officers/zhang-fei-character-sheet-v5-slash-template.png",
+      "exportFiles": [],
+      "derivedFrom": "v4 avatar-framed sheet with the portrait shifted downward and the attack row replaced by a reusable six-frame broad-slash animation strip.",
+      "generationPrompt": "Six aligned 2D cartoon full-body frames for a generic broad melee slash: ready, wind-up, rising slash, peak diagonal slash with crescent arc, follow-through, recovery; same scale and baseline, adaptable to swords, axes, spears, halberds, and other weapons; no thrust, projectile, blood, or magic.",
+      "sha256": {
+        "source": "169F0C9087265810558EA552CF7D0AABC7987D452452F64F213359E35DF47AE8",
+        "exports": {}
+      },
+      "reviewStatus": "visual-pass; generic-slash-template-review-pending"
+    },
+    {
+      "id": "zhang-fei-character-sheet-v6-unified-template",
+      "category": "officer-unified-character-template",
+      "sourceFile": "assets/source/officers/zhang-fei-character-sheet-v6-unified-template.png",
+      "exportFiles": [],
+      "derivedFrom": "Brand-new unified redraw based on the approved reference style; portrait frame, portrait, tactical unit, and all sprite rows are generated as one cohesive template rather than composited edits.",
+      "generationPrompt": "Unified Three Kingdoms officer production sheet for Zhang Fei: integrated dark bronze portrait frame with full spear tip inside safe margins, same inked 2D historical cartoon language across portrait and tactical sprites, rows for base, idle, generic broad slash attack, hit, move, cast, and defeated; warm aged background, readable Chinese labels, no pasted panels or mismatched assets.",
+      "sha256": {
+        "source": "54EAD5C4A55C481E6BB5B603A06D50CB5E97FDF808956AA19DAF916DC56C68E9",
+        "exports": {}
+      },
+      "reviewStatus": "visual-pass; unified-template-review-pending"
+    },
+    {
+      "id": "guanyu-character-sheet-v1-unified-template",
+      "category": "officer-unified-character-template",
+      "sourceFile": "assets/source/officers/guanyu-character-sheet-v1-unified-template.png",
+      "exportFiles": [],
+      "derivedFrom": "Brand-new Guan Yu sheet following the approved Zhang Fei v6 template structure and unified art direction.",
+      "generationPrompt": "Unified Three Kingdoms officer production sheet for Guan Yu: integrated dark bronze portrait frame, full Green Dragon Crescent Blade inside safe margins, same inked 2D historical cartoon language across portrait and tactical sprites, rows for base, idle, generic broad slash attack, hit, move, cast, and defeated; green robe, red face, long black beard, warm aged background, readable Chinese labels, no pasted panels.",
+      "sha256": {
+        "source": "E4A38598B447AA7FA2245C4128B480FBEFC1F94524644B7B3E196306A9691AC9",
+        "exports": {}
+      },
+      "reviewStatus": "visual-pass; unified-template-review-pending"
+    },
+    {
+      "id": "lu-fan-character-sheet-v1-unified-template",
+      "category": "officer-unified-character-template",
+      "sourceFile": "assets/source/officers/lu-fan-character-sheet-v1-unified-template.png",
+      "exportFiles": [],
+      "derivedFrom": "Brand-new Lu Fan sheet following the approved Zhang Fei v6 template structure and unified art direction, with Wu kingdom color and material cues.",
+      "generationPrompt": "Unified Three Kingdoms officer production sheet for Lu Fan of Wu: integrated dark bronze portrait frame, refined middle-aged military-civil official in dark teal and jade-green armor/robe with bronze water motifs, straight saber, same inked 2D historical cartoon language across portrait and tactical sprites, rows for base, idle, generic broad slash attack, hit, move, command/cast, and defeated; warm aged background, readable Chinese labels, no pasted panels.",
+      "sha256": {
+        "source": "6E8513FA284710BA165270E7A1207F0DD8B947197ED834495948A9ECA4E8ACF3",
+        "exports": {}
+      },
+      "reviewStatus": "visual-pass; unified-template-review-pending"
+    },
+    {
+      "id": "lu-fan-character-sheet-v2-simplified-template",
+      "category": "officer-simplified-unified-template",
+      "sourceFile": "assets/source/officers/lu-fan-character-sheet-v2-simplified-template.png",
+      "exportFiles": [],
+      "derivedFrom": "Simplified redraw of Lu Fan v1 with reduced texture, ornament, shading layers, and effect noise for stronger small-size readability.",
+      "generationPrompt": "Low-noise unified Lu Fan production sheet: bold restrained outlines, large flat color shapes, minimal armor details and background texture, limited jade-green/charcoal/bronze palette, simple safe portrait frame, readable tactical base and aligned rows for idle, generic broad slash, hit, move, command/cast, and defeated.",
+      "sha256": {
+        "source": "4028FF29CB1CB2CD30B9E85F59949197A0DD7D3584EAEA644AB306DE4B248305",
+        "exports": {}
+      },
+      "reviewStatus": "visual-pass; simplified-template-review-pending"
+    }
+  ]
+}
