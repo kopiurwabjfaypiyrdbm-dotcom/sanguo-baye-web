@@ -36,9 +36,12 @@
 
 应用已经具备 PWA 安装清单、确认式离线更新和核心游戏壳预缓存，并提供 Capacitor 8 Android 工程。Android 调试壳锁定正反横屏、使用沉浸式系统栏和刘海短边区域，并将系统返回键依次用于关闭当前层级、返回上一级或最小化标题页。PWA 与 Android 构建、临时包名和真机验收要求见 [`docs/design/pwa-android-shell.md`](docs/design/pwa-android-shell.md)。
 
+仓库顶层 `godot/` 现包含一个 Godot 4.7.1 原生迁移技术样片；它不嵌入 WebView、TypeScript 或浏览器运行时，也不替代现有 Web 产品。样片已在 MuMu 上以 1280×720 和 844×390 横屏运行，载入时期 1 的完整 38 城，支持原生镜头、触摸点选/拖动、空间城池菜单、与 TypeScript fixture 同 seed 的“开垦”命令以及跨进程保存/读取。当前决策、设备证据、发布边界和是否继续迁移的门槛见 [`docs/migration/godot-spike-report.md`](docs/migration/godot-spike-report.md)。
+
 固定 C 的 `LoadPeriod` 已确认时期载入后把人物体力与兵力设为 100。新开局默认使用这一经典校准值；schema 1–5 旧存档迁移为现代平衡身份，不会因升级静默改变既有 400 兵力战役。
 
 原版兼容证据已与临时玩法层分离：`src/compat/baye/` 包含经过参考样本验证的 Web 移植 RNG、战术攻防/伤害、状态驱动、普通攻击形状和战略自动战斗公式。战场按战略方向部署，从七张代码定义地图中确定性选择，并提供路径/伤害/计谋预览、中文兵种与状态、明确胜因和目标/主将评分 AI；每方最多部署 10 名武将。地图逐城对应、十项计谋目录、地形移动/攻防修正、粮草消耗和 AI 权重仍是现代临时规则。仓库不保存原版 `.lib` 或生成资源数组，只保留允许的语义、偏移、长度与哈希证据。范围和剩余不确定性见 `references/parity-matrix.md`。
+
 
 兼容范围、随机数策略和允许的现代化差异见 `docs/design/compatibility-policy.md`。兼容层现已包含原版 `.lib` 的安全容器解析器；原始资源仍只在本地使用，仓库只保存结构元数据和哈希证据。
 
@@ -87,6 +90,16 @@ npm run android:open
 
 不要重复启动 `npm run dev`。开发服务器会持续监视仓库文件，应在原终端按 `Ctrl+C` 关闭；若端口已被占用，项目会直接报错而不会自动改用下一个端口。
 
+## 公共试玩与部署
+
+个人 fork 的 `main` 分支通过 GitHub Actions 自动测试、构建并发布到 GitHub Pages：
+
+<https://sumo91.github.io/sanguo-baye-web/>
+
+首次启用时，在 GitHub 仓库的 `Settings → Pages` 中把 `Build and deployment` 来源设置为 `GitHub Actions`。此后推送到 `main` 会自动运行 `.github/workflows/deploy-pages.yml`，使用 `npm run build:pages` 生成适配仓库子路径的 `dist/` 并更新公共地址。
+
+玩家存档保存在各自浏览器的本地存储中；公共站点不提供账号、云存档或多人联机。
+
 ## 获取复刻参考
 
 常用的 MIT C 规则与结构源码已筛选到 `references/vendor/baye-c-core/`，协作者普通拉取后即可开展对比，不依赖任何个人电脑上的外部路径。逐文件哈希和来源提交由 `npm run reference:check` 验证。
@@ -120,6 +133,7 @@ npx vite-node scripts/generate-bundled-scenarios.ts <path-to-Baye>
 - Vite + TypeScript
 - React
 - Phaser
+- Godot 4.7.1（独立原生迁移技术样片，GDScript）
 - CSV/JSON 数据驱动
 - Vitest
 
@@ -137,6 +151,7 @@ src/game/          Phaser 战略地图、事件桥与生命周期
 src/platform/      Web 与 Android 原生壳之间的最小平台适配
 src/ui/            React UI
 android/           Capacitor Android 原生工程
+godot/             Godot 4.7.1 原生迁移技术样片；不依赖 Web 运行时
 public/            PWA 图标与静态安装资源
 ```
 

@@ -1,0 +1,10 @@
+
+# Godot Flight Deck generated output
+.gdeck/reports/
+.gdeck/captures/
+.gdeck/editor-token
+.gdeck/editor-session.json
+.gdeck/editor-session-*.json
+.gdeck-init.lock
+.gdeck-init-transaction.json
+.gdeck-init-key-*

@@ -1,0 +1,165 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/officer_management_panel.gd" id="1_panel"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
+bg_color = Color(0.035, 0.065, 0.075, 0.985)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.86, 0.67, 0.27, 0.95)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 12
+
+[node name="OfficerManagementPanel" type="PanelContainer"]
+custom_minimum_size = Vector2(820, 430)
+offset_right = 820.0
+offset_bottom = 430.0
+mouse_filter = 0
+theme_override_styles/panel = SubResource("StyleBox_panel")
+script = ExtResource("1_panel")
+
+[node name="OuterMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
+
+[node name="Content" type="VBoxContainer" parent="OuterMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CityTitle" type="Label" parent="OuterMargin/Content/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.83, 0.4, 1)
+theme_override_font_sizes/font_size = 24
+text = "城池 · 人物与装备"
+
+[node name="RulesetLabel" type="Label" parent="OuterMargin/Content/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.78, 0.67, 1)
+text = "经典自动太守"
+vertical_alignment = 1
+
+[node name="HeaderSpacer" type="Control" parent="OuterMargin/Content/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="CloseButton" type="Button" parent="OuterMargin/Content/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 52)
+layout_mode = 2
+text = "关闭"
+
+[node name="OfficerRow" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PreviousOfficer" type="Button" parent="OuterMargin/Content/OfficerRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+text = "‹"
+
+[node name="OfficerOption" type="OptionButton" parent="OuterMargin/Content/OfficerRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NextOfficer" type="Button" parent="OuterMargin/Content/OfficerRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+text = "›"
+
+[node name="RewardButton" type="Button" parent="OuterMargin/Content/OfficerRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 52)
+layout_mode = 2
+text = "奖赏"
+
+[node name="AppointButton" type="Button" parent="OuterMargin/Content/OfficerRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 52)
+layout_mode = 2
+text = "任命太守"
+
+[node name="Details" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="IdentityLabel" type="Label" parent="OuterMargin/Content/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "兵种 · 忠诚 · 体力"
+
+[node name="AttributesLabel" type="Label" parent="OuterMargin/Content/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "武 0→0 · 智 0→0"
+
+[node name="EquipmentLabel" type="Label" parent="OuterMargin/Content/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.71, 0.84, 0.76, 1)
+text = "装备：无"
+
+[node name="ItemActions" type="HBoxContainer" parent="OuterMargin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="GiveRow" type="HBoxContainer" parent="OuterMargin/Content/ItemActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="GiveOption" type="OptionButton" parent="OuterMargin/Content/ItemActions/GiveRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GiveButton" type="Button" parent="OuterMargin/Content/ItemActions/GiveRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 52)
+layout_mode = 2
+text = "赏赐道具"
+
+[node name="UnequipRow" type="HBoxContainer" parent="OuterMargin/Content/ItemActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="UnequipOption" type="OptionButton" parent="OuterMargin/Content/ItemActions/UnequipRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="UnequipButton" type="Button" parent="OuterMargin/Content/ItemActions/UnequipRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 52)
+layout_mode = 2
+text = "卸下装备"
+
+[node name="ReasonLabel" type="Label" parent="OuterMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.91, 0.72, 0.39, 1)
+text = "操作可用性"
+text_overrun_behavior = 3

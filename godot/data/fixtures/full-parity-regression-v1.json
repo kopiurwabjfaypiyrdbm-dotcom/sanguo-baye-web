@@ -1,0 +1,154 @@
+{
+  "manifestVersion": 1,
+  "id": "godot-full-parity-regression-v1",
+  "algorithms": {
+    "canonical": "canonical-json-v1",
+    "digest": "sha256",
+    "ordering": "fixture-list-order-v1"
+  },
+  "fixtures": [
+    {
+      "id": "develop-farming-v1",
+      "path": "res://data/fixtures/develop-farming-v1.json",
+      "versionFields": [
+        {
+          "key": "fixtureVersion",
+          "value": 1
+        }
+      ],
+      "canonicalSha256": "1b130dd3dd5c3518013398301a735cffd2dcc36b75d0d2fe11c8d8d1f9f3f935"
+    },
+    {
+      "id": "migration-replay-suite-v1",
+      "path": "res://data/fixtures/migration-replay-suite-v1.json",
+      "versionFields": [
+        {
+          "key": "fixtureSuiteVersion",
+          "value": 1
+        }
+      ],
+      "canonicalSha256": "01a1bdef11226a54ad61023c4b4bc8efcd432a7bb2b15d6b7727e6170565996c"
+    },
+    {
+      "id": "application-session-suite-v1",
+      "path": "res://data/fixtures/application-session-suite-v1.json",
+      "versionFields": [
+        {
+          "key": "applicationSessionFixtureVersion",
+          "value": 1
+        }
+      ],
+      "canonicalSha256": "31c62ef65afc25c42601f78b665140294817a3055591dc9de4997ccfccccc6a3"
+    },
+    {
+      "id": "tactical-battle-v1",
+      "path": "res://data/fixtures/tactical-battle-v1.json",
+      "versionFields": [
+        {
+          "key": "tacticalBattleFixtureVersion",
+          "value": 1
+        }
+      ],
+      "canonicalSha256": "0ec0db8637b3841001279b479b28579619be72ae473d1eaa793cfc830165ed50"
+    },
+    {
+      "id": "tactical-battle-movement-v1",
+      "path": "res://data/fixtures/tactical-battle-movement-v1.json",
+      "versionFields": [
+        {
+          "key": "tacticalBattleMovementFixtureVersion",
+          "value": 1
+        }
+      ],
+      "canonicalSha256": "586022e9ed7e1121b0470edaef1fa7b1078faa5ac797b68a42275f512f885d23"
+    },
+    {
+      "id": "tactical-battle-attack-v1",
+      "path": "res://data/fixtures/tactical-battle-attack-v1.json",
+      "versionFields": [
+        {
+          "key": "tacticalBattleAttackFixtureVersion",
+          "value": 1
+        }
+      ],
+      "canonicalSha256": "83b8bf46e88a1ef09bcb7dfdc2440fc298530ea6e4cbc9034a99d99efb8ac27e"
+    },
+    {
+      "id": "tactical-battle-skill-v1",
+      "path": "res://data/fixtures/tactical-battle-skill-v1.json",
+      "versionFields": [
+        {
+          "key": "tacticalBattleSkillFixtureVersion",
+          "value": 1
+        }
+      ],
+      "canonicalSha256": "9915f76fdcefcbe7480b8a94c770f0682d35a1f664256593498d1a77b8a3584f"
+    },
+    {
+      "id": "tactical-battle-ai-v1",
+      "path": "res://data/fixtures/tactical-battle-ai-v1.json",
+      "versionFields": [
+        {
+          "key": "tacticalBattleAiFixtureVersion",
+          "value": 1
+        }
+      ],
+      "canonicalSha256": "89eb9d9e69394f18fa9e00c540e0cb4ec4236eca25bac4471a63ad4be5595b3b"
+    },
+    {
+      "id": "tactical-battle-outcome-v1",
+      "path": "res://data/fixtures/tactical-battle-outcome-v1.json",
+      "versionFields": [
+        {
+          "key": "tacticalBattleOutcomeFixtureVersion",
+          "value": 1
+        }
+      ],
+      "canonicalSha256": "0e60e2b37766ba843634f059ec36860f8aff0d5b5758e3495d7020c38831cfa0"
+    },
+    {
+      "id": "tactical-battle-settlement-v1",
+      "path": "res://data/fixtures/tactical-battle-settlement-v1.json",
+      "versionFields": [
+        {
+          "key": "tacticalBattleSettlementFixtureVersion",
+          "value": 1
+        }
+      ],
+      "canonicalSha256": "f727d62c696d119b4f80a406e3dc36d32b1e902285ffa382304efcd635cd53c6"
+    },
+    {
+      "id": "godot-production-save-recovery-v1",
+      "path": "res://data/fixtures/godot-production-save-recovery-v1.json",
+      "versionFields": [
+        {
+          "key": "fixtureVersion",
+          "value": 1
+        }
+      ],
+      "canonicalSha256": "a9b97bac949664210b2ee202006e3ab7abc4c29afefc26517ea502e5e9ee9c5c"
+    },
+    {
+      "id": "godot-campaign-entry-v1",
+      "path": "res://data/fixtures/godot-campaign-entry-v1.json",
+      "versionFields": [
+        {
+          "key": "fixtureVersion",
+          "value": 1
+        }
+      ],
+      "canonicalSha256": "88e2d515daf4a930d757c7779bb25d280d40380de29afc47b10275f3a9433c0e"
+    },
+    {
+      "id": "godot-full-loop-v1",
+      "path": "res://data/fixtures/godot-full-loop-v1.json",
+      "versionFields": [
+        {
+          "key": "fullLoopFixtureVersion",
+          "value": 1
+        }
+      ],
+      "canonicalSha256": "280adfba4ca2c0df391c39cb25311fe4590eea505e33847c1240049cac6d01df"
+    }
+  ]
+}

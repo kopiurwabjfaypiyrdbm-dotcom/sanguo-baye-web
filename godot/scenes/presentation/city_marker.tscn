@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/city_marker.gd" id="1_marker"]
+
+[sub_resource type="CircleShape2D" id="CircleShape_hit"]
+radius = 32.0
+
+[node name="CityMarker" type="Node2D"]
+z_index = 2
+script = ExtResource("1_marker")
+
+[node name="HitTarget" type="Area2D" parent="."]
+input_pickable = false
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HitTarget"]
+shape = SubResource("CircleShape_hit")

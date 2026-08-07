@@ -2,7 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  base: mode === 'github-pages' ? '/sanguo-baye-web/' : '/',
   plugins: [
     react(),
     VitePWA({
@@ -45,6 +46,7 @@ export default defineConfig({
       },
       workbox: {
         cleanupOutdatedCaches: true,
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,json,webp,png,svg}'],
         globIgnores: [
           '**/Video-1785141282737-*.mp4',
@@ -85,4 +87,4 @@ export default defineConfig({
       ],
     },
   },
-});
+}));
